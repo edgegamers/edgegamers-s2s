@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src",
+    "test",
+    "api.d.ts",
+    ".s2script/gamedata.d.ts",
+    "node_modules/@s2script/sdk/globals.d.ts"
+  ]
+}
