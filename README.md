@@ -9,6 +9,17 @@ This repository is an npm workspace for the Source2Script plugins maintained by 
 EdgeGamers plugins are designed with public use in mind. If you 'd like to learn more about contributing to somehting we maintain reference the [CONTRIBUTING.md](./.github/CONTRIBUTING.md) guide.
 <br>
 
+## License
+
+First-party work in this repository is dual-licensed under [MIT OR
+Apache-2.0](./LICENSE). See the [licensing guide](./licenses/README.md) for
+the covered work, artifact policy, and maintenance details. Distributed
+`.s2sp` plugin artifacts carry the complete MIT notice in `plugin.js`; the
+repository source remains available under either license at your option.
+
+Source2Script and every third-party dependency retain their own terms. This
+repository's first-party license does not relicense them.
+
 <div align="center">
 
 [EdgeGamers Forums](https://edgm.rs) · [Repo Docs](./docs/navigation.md) · [s2s Docs](https://s2script.com)

@@ -28,6 +28,17 @@ npm.cmd run changeset:check
 
 The coverage check compares changed plugin paths with package metadata. It ignores private plugins and fails when a changed publishable plugin is missing from pending Changeset frontmatter. Local overrides use `ALLOW_MISSING_CHANGESET=true`; a future CI integration must derive any override from trusted pull-request metadata rather than arbitrary branch input.
 
+## Licensing release checks
+
+Before deployment:
+
+- Run `npm run build`; its repository license gate and postbuild artifact-notice
+  gate must both pass.
+- Audit the code that will be bundled and its license terms and required
+  notices when introducing or changing an `s2script.libraries` dependency.
+  The repository checker rejects libraries that do not have an explicit
+  first-party compliance path.
+
 ## Development builds
 
 Development builds do not publish permanent registry releases for every commit:
