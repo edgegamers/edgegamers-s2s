@@ -22,17 +22,21 @@
   },
   "scripts": {
     "license:check": "node scripts/check-licenses.mjs",
+    "license:artifacts": "node scripts/check-license-artifacts.mjs",
     "create:plugin": "s2s create",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "prebuild": "npm run license:check",
     "build": "s2s build",
+    "postbuild": "npm run license:artifacts",
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "changeset:check": "node scripts/check-changeset.mjs",
     "manifest:dev": "node scripts/create-dev-manifest.mjs",
     "version": "s2s version",
+    "predeploy": "npm run build",
     "deploy": "s2s deploy"
   },
   "devDependencies": {
@@ -43,6 +47,7 @@
     "@s2script/sdk": "0.14.0",
     "@types/node": "24.13.3",
     "eslint": "10.8.0",
+    "fflate": "^0.8.2",
     "typescript": "5.9.3",
     "vite": "6.4.3",
     "vitest": "4.1.10"
