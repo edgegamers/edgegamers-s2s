@@ -1,3 +1,7 @@
-## docs navigator
+# EdgeGamers Source2Script documentation
 
-WIP
+- [Getting started](./getting-started.md)
+- [Repository architecture](./architecture.md)
+- [Plugin development](./plugin-development.md)
+- [Changesets and releases](./releases.md)
+- [Foundation design](./superpowers/specs/2026-07-31-monorepo-foundation-design.md)
