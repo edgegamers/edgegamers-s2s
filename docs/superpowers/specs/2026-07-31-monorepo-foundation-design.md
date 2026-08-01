@@ -16,6 +16,7 @@ This milestone deliberately stops before GitHub automation and infrastructure in
 
 - Use Node.js 24.x and npm workspaces.
 - Pin `@s2script/sdk` to the verified current version, `0.14.0`.
+- Pin TypeScript to `5.9.3` for this milestone. Although TypeScript `7.0.2` is stable, the SDK's official `@s2script/eslint-plugin@0.2.0` toolchain currently rejects it because `@typescript-eslint/parser@8.65.0` supports TypeScript `<6.1.0`. Upgrade to TypeScript 7 once the official Source2Script lint stack supports it without peer overrides or runtime warnings.
 - Use Source2Script-native workspace commands for plugin creation, build, versioning, and deployment.
 - Do not build custom plugin-discovery, dependency-ordering, versioning, or registry-publishing systems.
 - Keep the repository root private and keep reference plugins private so examples cannot be published accidentally.
