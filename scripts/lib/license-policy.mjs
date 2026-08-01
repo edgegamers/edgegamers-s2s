@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import ts from "typescript";
 
 export const LICENSE_EXPRESSION = "MIT OR Apache-2.0";
@@ -8,6 +8,7 @@ export const COPYRIGHT_LINE = "Copyright (c) 2026 EdgeGamers, LLC";
 
 const CANONICAL_MIT_HASH = "bc3c16ce75979b0a1852ae5a6b8a8339c3ee5f7119206a92ad4b4eb9c04adf8a";
 const CANONICAL_APACHE_HASH = "4af79ba903609ac7d04bd49a7d66f3338e7c6e19d4e95b3ed49d06b59cdfbf33";
+const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
 const APPROVED_NOTICE = `EdgeGamers Source2Script Plugins
 Copyright 2026 EdgeGamers, LLC
 
@@ -69,7 +70,7 @@ function normalizedManifestPath(rootDir, path) {
 
 function findPluginSourceFiles(packageDir) {
   const files = [];
-  const excludedDirectories = new Set([".s2script", "dist", "node_modules", "test", "tests"]);
+  const excludedDirectories = new Set([".s2script", "dist", "node_modules"]);
 
   function visit(directory) {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -146,7 +147,66 @@ function dependencyAllows(specifier, names) {
   return names.some((name) => specifier === name || specifier.startsWith(`${name}/`));
 }
 
-function validatePluginSourceImports({ errors, firstPartyNames, manifest, packageDir, rootDir }) {
+function normalizedPathKey(path) {
+  const normalized = resolve(path);
+  return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
+function isWithin(path, root) {
+  const fromRoot = relative(root, path);
+  return fromRoot === "" || (!fromRoot.startsWith("..") && !isAbsolute(fromRoot));
+}
+
+function relativeModuleCandidates(basePath) {
+  const extension = extname(basePath).toLowerCase();
+  const stem = extension ? basePath.slice(0, -extension.length) : basePath;
+  const substitutions = {
+    ".cjs": [".cts", ".cjs"],
+    ".js": [".ts", ".tsx", ".js", ".jsx"],
+    ".jsx": [".tsx", ".jsx"],
+    ".mjs": [".mts", ".mjs"],
+  };
+  if (substitutions[extension]) {
+    return substitutions[extension].map((candidateExtension) => `${stem}${candidateExtension}`);
+  }
+  if (SOURCE_EXTENSIONS.includes(extension)) return [basePath];
+  if (extension) return [basePath];
+  return [
+    ...SOURCE_EXTENSIONS.map((candidateExtension) => `${basePath}${candidateExtension}`),
+    ...SOURCE_EXTENSIONS.map((candidateExtension) => join(basePath, `index${candidateExtension}`)),
+  ];
+}
+
+function resolveRelativeRuntimeImport({ licensedRoots, licensedSourceFiles, sourcePath, specifier }) {
+  const basePath = resolve(dirname(sourcePath), specifier);
+  const segments = basePath.replaceAll("\\", "/").split("/");
+  if (segments.some((segment) => [".s2script", "dist", "node_modules"].includes(segment))) {
+    return { error: "relative runtime import must not enter node_modules or generated output" };
+  }
+  if (!licensedRoots.some((root) => isWithin(basePath, root))) {
+    return { error: "relative runtime import escapes all licensed first-party workspace packages" };
+  }
+
+  const matches = [...new Set(relativeModuleCandidates(basePath).map(normalizedPathKey))]
+    .filter((candidate) => licensedSourceFiles.has(candidate));
+  if (matches.length === 0) {
+    return { error: "relative runtime import does not resolve to a scanned source file in a licensed workspace package" };
+  }
+  if (matches.length > 1) {
+    return { error: "relative runtime import resolves ambiguously to multiple scanned source files" };
+  }
+  return { target: matches[0] };
+}
+
+function validatePluginSourceImports({
+  errors,
+  firstPartyNames,
+  licensedRoots,
+  licensedSourceFiles,
+  manifest,
+  packageDir,
+  rootDir,
+}) {
   const pluginDependencies = [
     ...Object.keys(manifest.s2script?.pluginDependencies ?? {}),
     ...Object.keys(manifest.s2script?.optionalPluginDependencies ?? {}),
@@ -161,8 +221,17 @@ function validatePluginSourceImports({ errors, firstPartyNames, manifest, packag
       errors.push(`${normalizedPath}: package-loading call must use a string literal so licensing can be validated`);
     }
     for (const specifier of new Set(specifiers)) {
-      if (specifier.startsWith(".")
-        || specifier.startsWith("@s2script/")
+      if (specifier.startsWith(".")) {
+        const result = resolveRelativeRuntimeImport({
+          licensedRoots,
+          licensedSourceFiles,
+          sourcePath: path,
+          specifier,
+        });
+        if (result.error) errors.push(`${normalizedPath} -> ${specifier}: ${result.error}`);
+        continue;
+      }
+      if (specifier.startsWith("@s2script/")
         || dependencyAllows(specifier, pluginDependencies)
         || dependencyAllows(specifier, bundledLibraries)) continue;
       errors.push(`${normalizedPath} -> ${specifier}: bare runtime import is not an approved plugin dependency or licensed first-party bundled library`);
@@ -227,6 +296,12 @@ export function validateRepositoryLicensing(rootDir) {
   }
 
   const firstPartyNames = new Set(packages.map(({ manifest }) => manifest.name));
+  const licensedWorkspacePackages = packages.slice(1)
+    .filter(({ manifest }) => manifest.license === LICENSE_EXPRESSION);
+  const licensedRoots = licensedWorkspacePackages.map(({ path }) => dirname(path));
+  const licensedSourceFiles = new Set(licensedRoots
+    .flatMap((packageDir) => findPluginSourceFiles(packageDir))
+    .map(normalizedPathKey));
   const validationPackages = new Map(packages.map((item) => [normalizedManifestPath(rootDir, item.path), item]));
   for (const item of source2ScriptPlugins) {
     validationPackages.set(normalizedManifestPath(rootDir, item.path), item);
@@ -255,7 +330,15 @@ export function validateRepositoryLicensing(rootDir) {
         errors.push(`${manifest.name} -> ${name}: bundled library is not a licensed workspace package; audit its terms and notices before distribution`);
       }
     }
-    validatePluginSourceImports({ errors, firstPartyNames, manifest, packageDir, rootDir });
+    validatePluginSourceImports({
+      errors,
+      firstPartyNames,
+      licensedRoots,
+      licensedSourceFiles,
+      manifest,
+      packageDir,
+      rootDir,
+    });
   }
   return errors;
 }

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+/// <reference types="vitest/globals" />
+
 import { formatGreeting } from "../src/greeting.ts";
 
 describe("formatGreeting", () => {

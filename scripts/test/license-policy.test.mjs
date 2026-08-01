@@ -180,6 +180,52 @@ describe("repository license policy", () => {
     );
   });
 
+  it("rejects a relative runtime import that enters node_modules", () => {
+    const root = createFixture();
+    write(root, "node_modules/third-party-lib/index.ts", "export {};\n");
+    write(root, "plugins/example/src/extra.ts", 'import "../../../node_modules/third-party-lib/index.ts";');
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "relative runtime import must not enter node_modules or generated output",
+    );
+  });
+
+  it("rejects an undeclared bare runtime import under a test directory", () => {
+    const root = createFixture();
+    write(root, "plugins/example/test/extra.test.ts", 'import "third-party-lib";');
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
+    );
+  });
+
+  it("rejects a missing relative runtime module", () => {
+    const root = createFixture();
+    write(root, "plugins/example/src/extra.ts", 'import "./missing.ts";');
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "./missing.ts: relative runtime import does not resolve to a scanned source file in a licensed workspace package",
+    );
+  });
+
+  it.each([
+    ["extensionless TypeScript", "./local", "local.ts"],
+    ["JavaScript specifier backed by TypeScript", "./local.js", "local.ts"],
+    ["directory index", "./local", "local/index.ts"],
+  ])("resolves a common %s module form", (_label, specifier, target) => {
+    const root = createFixture();
+    write(root, `plugins/example/src/${target}`, "export {};\n");
+    write(root, "plugins/example/src/extra.ts", `import ${JSON.stringify(specifier)};`);
+    expect(validateRepositoryLicensing(root)).toEqual([]);
+  });
+
+  it("rejects an ambiguous relative runtime module", () => {
+    const root = createFixture();
+    write(root, "plugins/example/src/local.ts", "export {};\n");
+    write(root, "plugins/example/src/local.js", "export {};\n");
+    write(root, "plugins/example/src/extra.ts", 'import "./local.js";');
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "./local.js: relative runtime import resolves ambiguously to multiple scanned source files",
+    );
+  });
+
   it.each([
     "void import(packageName);",
     "require(packageName);",
