@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+artifacts/
+dist/
+**/dist/
+**/.s2script/
+*.s2sp
+.DS_Store
