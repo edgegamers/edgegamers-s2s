@@ -1,0 +1,26 @@
+EdgeGamers Source2Script Plugins — Copyright (c) 2026 EdgeGamers, LLC
+
+SPDX-License-Identifier: MIT OR Apache-2.0
+
+This project is dual-licensed under either of
+
+  * Apache License, Version 2.0 .... licenses/Apache-2.0.txt
+  * MIT license ................... licenses/MIT.txt
+
+at your option. You may choose either license; you do not have to comply with
+both. Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this project shall be dual-licensed as above, without any
+additional terms or conditions.
+
+WHAT THIS LICENSE COVERS
+
+This dual license applies only to first-party EdgeGamers work in this
+repository, including .changeset/, .github/, docs/, plugins/, scripts/, root
+files, and future first-party packages/ directories.
+
+WHAT THIS LICENSE DOES NOT COVER
+
+This license does not apply to installed dependencies, Source2Script packages
+or runtime, or future third-party bundled code. Third-party names, logos, game
+assets, and Valve software remain subject to their respective owners' terms
+and are not licensed by EdgeGamers through this repository.
