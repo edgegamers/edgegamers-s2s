@@ -21,4 +21,17 @@ describe("community health policies", () => {
     expect(security).toMatch(/do not (open|report).*public GitHub issue/iu);
     expect(security).toContain("no guaranteed response or resolution time");
   });
+
+  it("adopts Contributor Covenant 2.1 with confidential enforcement", () => {
+    const conduct = readProjectFile(".github/CODE_OF_CONDUCT.md");
+
+    expect(conduct).toContain("# Contributor Covenant Code of Conduct");
+    expect(conduct).toContain("## Our Pledge");
+    expect(conduct).toContain("## Enforcement Guidelines");
+    expect(conduct).toContain(LEADERSHIP_URL);
+    expect(conduct).toContain("Contributor Covenant, version 2.1");
+    expect(conduct).toContain(
+      "https://www.contributor-covenant.org/version/2/1/code_of_conduct.html",
+    );
+  });
 });
