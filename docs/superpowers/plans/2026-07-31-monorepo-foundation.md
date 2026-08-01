@@ -6,7 +6,7 @@
 
 **Architecture:** The root npm package is the only command surface and delegates plugin discovery, build order, versioning, and registry publication to Source2Script. Pure modules under `scripts/lib/` implement repository-specific policy; thin `.mjs` entry points handle filesystem, Git, console, and exit-code concerns. Two private plugins prove live sibling-interface resolution without creating publishable example products.
 
-**Tech Stack:** Node.js 24.x, npm 11.x workspaces, TypeScript 5.9.3, Source2Script SDK 0.14.0, ESLint 10.8.0 with `@s2script/eslint-plugin` 0.2.0, Vitest 4.1.10, Changesets 2.31.1.
+**Tech Stack:** Node.js 24.x, npm 11.x workspaces, TypeScript 5.9.3, Source2Script SDK 0.14.0, ESLint 10.8.0 with `@s2script/eslint-plugin` 0.2.0, Vitest 4.1.10 with Vite 6.4.3, Changesets 2.31.1.
 
 ## Global Constraints
 
@@ -141,6 +141,7 @@ Create `package.json` with exact versions so a clean install never resolves thro
     "@types/node": "24.13.3",
     "eslint": "10.8.0",
     "typescript": "5.9.3",
+    "vite": "6.4.3",
     "vitest": "4.1.10"
   }
 }
