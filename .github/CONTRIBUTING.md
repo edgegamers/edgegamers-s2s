@@ -1,6 +1,6 @@
 ## Contributor Guide
 
-Thanks for helping maintain the EdgeGamers Source2Script plugins. Start by
+Thanks for helping maintain the EdgeGamers s2script plugins. Start by
 checking the relevant plugin and documentation, then keep the change focused
 and include tests when behavior changes.
 
@@ -20,9 +20,8 @@ checks the generated plugin artifacts afterward.
 
 ## Contribution licensing
 
-This repository is dual-licensed `MIT OR Apache-2.0`. Unless you explicitly
-state otherwise, any contribution you intentionally submit for inclusion is
-provided under those same terms without additional conditions.
+This repository is dual-licensed `MIT OR Apache-2.0`. Any contribution intentionally submitted for inclusion in this project shall be dual-licensed as above, without any
+additional terms or conditions.
 
 By submitting a contribution, you represent that you authored it or otherwise
 have authority to submit and license it. Do not submit code, assets, or other

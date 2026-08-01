@@ -9,7 +9,7 @@ export const COPYRIGHT_LINE = "Copyright (c) 2026 EdgeGamers, LLC";
 const CANONICAL_MIT_HASH = "bc3c16ce75979b0a1852ae5a6b8a8339c3ee5f7119206a92ad4b4eb9c04adf8a";
 const CANONICAL_APACHE_HASH = "4af79ba903609ac7d04bd49a7d66f3338e7c6e19d4e95b3ed49d06b59cdfbf33";
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
-const APPROVED_NOTICE = `EdgeGamers Source2Script Plugins
+const APPROVED_NOTICE = `edgegamers-s2s
 Copyright 2026 EdgeGamers, LLC
 
 This product includes software developed by EdgeGamers, LLC.
