@@ -33,7 +33,9 @@ or Apache-2.0.
 ## Bundled libraries
 
 There are currently no bundled third-party libraries in the plugin artifacts.
-Before distributing a plugin that introduces an `s2script.libraries`
-dependency, audit the library's terms and all required notices. Do not
-distribute it until the artifact notice mechanism has been updated to carry
-those obligations.
+The license check keeps npm and Source2Script plugin discovery aligned and
+rejects undeclared bare runtime imports. A bundled first-party workspace
+library must be declared in `s2script.libraries`; plugin API imports must be
+declared as plugin dependencies. Before distributing any third-party bundled
+code, audit its terms and required notices, then update the artifact notice
+mechanism to carry those obligations.

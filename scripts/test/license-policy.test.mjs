@@ -15,6 +15,7 @@ import {
 } from "../lib/license-policy.mjs";
 
 const roots = [];
+const apacheText = readFileSync(new URL("../../licenses/Apache-2.0.txt", import.meta.url), "utf8");
 const mitText = `MIT License
 
 Copyright (c) 2026 EdgeGamers, LLC
@@ -55,6 +56,7 @@ function createFixture() {
     private: true,
     license: LICENSE_EXPRESSION,
     workspaces: ["plugins/*", "packages/*"],
+    s2script: { workspace: { plugins: ["plugins/*"] } },
   }));
   write(root, "plugins/example/package.json", JSON.stringify({
     name: "@edgegamers/example",
@@ -65,7 +67,7 @@ function createFixture() {
   write(root, "plugins/example/src/plugin.ts", `/*!\n${mitText}\n*/\nexport {};\n`);
   write(root, "LICENSE", "Copyright (c) 2026 EdgeGamers, LLC\nSPDX-License-Identifier: MIT OR Apache-2.0\nlicenses/MIT.txt\nlicenses/Apache-2.0.txt\ncontribution intentionally submitted\n");
   write(root, "licenses/MIT.txt", mitText);
-  write(root, "licenses/Apache-2.0.txt", "Apache License\nVersion 2.0, January 2004\n");
+  write(root, "licenses/Apache-2.0.txt", apacheText);
   write(root, "licenses/NOTICE", noticeText);
   write(root, "licenses/README.md", "# Licensing\nMIT OR Apache-2.0\nArtifact policy\n");
   write(root, ".github/CONTRIBUTING.md", "MIT OR Apache-2.0\nauthority to submit\n");
@@ -125,6 +127,17 @@ describe("repository license policy", () => {
     );
   });
 
+  it("rejects an altered Apache application notice", () => {
+    const root = createFixture();
+    write(root, "licenses/Apache-2.0.txt", apacheText.replace(
+      /Copyright 2026 [^\n]+/u,
+      "Copyright 2026 Someone Else",
+    ));
+    expect(validateRepositoryLicensing(root)).toContain(
+      "licenses/Apache-2.0.txt: content must match the approved Apache 2.0 text and EdgeGamers application notice",
+    );
+  });
+
   it("rejects a plugin entry without the complete MIT notice", () => {
     const root = createFixture();
     write(root, "plugins/example/src/plugin.ts", "export {};\n");
@@ -141,6 +154,123 @@ describe("repository license policy", () => {
     writeFileSync(path, JSON.stringify(manifest));
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "third-party-lib: bundled library is not a licensed workspace package",
+    );
+  });
+
+  it.each([
+    ["static import", 'import "third-party-lib";'],
+    ["re-export", 'export { value } from "third-party-lib";'],
+    ["star re-export", 'export * from "third-party-lib";'],
+    ["import equals", 'import value = require("third-party-lib");'],
+    ["dynamic import", 'void import("third-party-lib");'],
+    ["require", 'require("third-party-lib");'],
+  ])("rejects an undeclared third-party %s", (_label, statement) => {
+    const root = createFixture();
+    write(root, "plugins/example/src/extra.ts", statement);
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
+    );
+  });
+
+  it("scans TypeScript ESM source extensions", () => {
+    const root = createFixture();
+    write(root, "plugins/example/src/extra.mts", 'import "third-party-lib";');
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
+    );
+  });
+
+  it.each([
+    "void import(packageName);",
+    "require(packageName);",
+  ])("rejects a nonliteral package-loading call: %s", (statement) => {
+    const root = createFixture();
+    write(root, "plugins/example/src/extra.ts", `const packageName = "./local.ts";\n${statement}`);
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "package-loading call must use a string literal so licensing can be validated",
+    );
+  });
+
+  it("allows Source2Script imports", () => {
+    const root = createFixture();
+    write(root, "plugins/example/src/extra.ts", 'import { plugin } from "@s2script/sdk/plugin";\nvoid plugin;');
+    expect(validateRepositoryLicensing(root)).toEqual([]);
+  });
+
+  it("allows declared plugin dependency imports and subpaths", () => {
+    const root = createFixture();
+    const path = join(root, "plugins/example/package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.s2script = { pluginDependencies: { "@edgegamers/api": "1.0.0" } };
+    writeFileSync(path, JSON.stringify(manifest));
+    write(root, "plugins/example/src/extra.ts", 'import { value } from "@edgegamers/api/runtime";\nvoid value;');
+    expect(validateRepositoryLicensing(root)).toEqual([]);
+  });
+
+  it("allows a licensed first-party workspace library explicitly declared for bundling", () => {
+    const root = createFixture();
+    write(root, "packages/shared/package.json", JSON.stringify({
+      name: "@edgegamers/shared",
+      private: true,
+      license: LICENSE_EXPRESSION,
+    }));
+    const path = join(root, "plugins/example/package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.s2script = { libraries: { "@edgegamers/shared": "1.0.0" } };
+    writeFileSync(path, JSON.stringify(manifest));
+    write(root, "plugins/example/src/extra.ts", 'import "@edgegamers/shared/runtime";');
+    expect(validateRepositoryLicensing(root)).toEqual([]);
+  });
+
+  it("reports an npm workspace plugin omitted from Source2Script discovery", () => {
+    const root = createFixture();
+    const path = join(root, "package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.s2script.workspace.plugins = [];
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "plugins/example/package.json: npm workspace plugin is not selected by s2script.workspace.plugins",
+    );
+  });
+
+  it("reports a Source2Script plugin omitted from npm workspaces", () => {
+    const root = createFixture();
+    const path = join(root, "package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.workspaces = ["packages/*"];
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "plugins/example/package.json: Source2Script plugin is not selected by npm workspaces",
+    );
+  });
+
+  it("rejects unsupported Source2Script plugin patterns clearly", () => {
+    const root = createFixture();
+    const path = join(root, "package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.s2script.workspace.plugins = ["plugins/**"];
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(() => validateRepositoryLicensing(root)).toThrow(
+      "Unsupported Source2Script plugin pattern: plugins/**",
+    );
+  });
+
+  it("validates Source2Script-selected plugins outside the conventional plugins directory", () => {
+    const root = createFixture();
+    const rootPath = join(root, "package.json");
+    const rootManifest = JSON.parse(readFileSync(rootPath, "utf8"));
+    rootManifest.workspaces = ["extensions/*", "packages/*"];
+    rootManifest.s2script.workspace.plugins = ["extensions/*"];
+    writeFileSync(rootPath, JSON.stringify(rootManifest));
+    write(root, "extensions/example/package.json", JSON.stringify({
+      name: "@edgegamers/extension",
+      private: true,
+      license: LICENSE_EXPRESSION,
+      main: "src/plugin.ts",
+    }));
+    write(root, "extensions/example/src/plugin.ts", "export {};\n");
+    expect(validateRepositoryLicensing(root).join("\n")).toContain(
+      "extensions/example/src/plugin.ts: complete MIT notice is missing",
     );
   });
 });

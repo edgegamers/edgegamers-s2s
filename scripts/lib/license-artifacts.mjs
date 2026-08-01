@@ -3,6 +3,10 @@ import { join, relative } from "node:path";
 import { unzipSync } from "fflate";
 import { findS2spFiles, isWorkspaceArtifact } from "./development-manifest.mjs";
 
+function normalizeText(contents) {
+  return contents.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+}
+
 export function validateArtifact({ artifactPath, bytes, mitText }) {
   let entries;
   try {
@@ -12,7 +16,7 @@ export function validateArtifact({ artifactPath, bytes, mitText }) {
   }
   const plugin = entries["plugin.js"];
   if (!plugin) return [`${artifactPath}: archive is missing plugin.js`];
-  if (!Buffer.from(plugin).toString("utf8").includes(mitText)) {
+  if (!normalizeText(Buffer.from(plugin).toString("utf8")).includes(normalizeText(mitText))) {
     return [`${artifactPath}: plugin.js does not contain the complete MIT notice`];
   }
   return [];
