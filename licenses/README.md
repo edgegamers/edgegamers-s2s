@@ -26,9 +26,9 @@ third-party names, logos, game assets, or Valve software.
 ## Published plugin artifacts
 
 Published `.s2sp` plugin artifacts use the MIT option. Each plugin's entry
-source carries the complete MIT notice so it can be preserved in the generated
-artifact. The source repository remains available under either MIT or
-Apache-2.0.
+source MUST carry the complete MIT notice so it can be preserved in the
+generated artifact. The source repository remains available under either MIT
+or Apache-2.0.
 
 ## Bundled libraries
 
