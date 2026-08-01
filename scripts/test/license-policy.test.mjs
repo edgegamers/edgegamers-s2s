@@ -21,7 +21,25 @@ Copyright (c) 2026 EdgeGamers, LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction.`;
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
+const noticeText = `EdgeGamers Source2Script Plugins
+Copyright 2026 EdgeGamers, LLC
+
+This product includes software developed by EdgeGamers, LLC.`;
 
 function write(root, path, contents) {
   const target = join(root, path);
@@ -48,7 +66,7 @@ function createFixture() {
   write(root, "LICENSE", "Copyright (c) 2026 EdgeGamers, LLC\nSPDX-License-Identifier: MIT OR Apache-2.0\nlicenses/MIT.txt\nlicenses/Apache-2.0.txt\ncontribution intentionally submitted\n");
   write(root, "licenses/MIT.txt", mitText);
   write(root, "licenses/Apache-2.0.txt", "Apache License\nVersion 2.0, January 2004\n");
-  write(root, "licenses/NOTICE", "EdgeGamers Source2Script Plugins\nCopyright 2026 EdgeGamers, LLC\n");
+  write(root, "licenses/NOTICE", noticeText);
   write(root, "licenses/README.md", "# Licensing\nMIT OR Apache-2.0\nArtifact policy\n");
   write(root, ".github/CONTRIBUTING.md", "MIT OR Apache-2.0\nauthority to submit\n");
   return root;
@@ -76,6 +94,34 @@ describe("repository license policy", () => {
     writeFileSync(path, JSON.stringify(manifest));
     expect(validateRepositoryLicensing(root)).toContain(
       `plugins${sep}example${sep}package.json: license must be "MIT OR Apache-2.0"`,
+    );
+  });
+
+  it("discovers a workspace declared with a single backslash separator", () => {
+    const root = createFixture();
+    const path = join(root, "package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.workspaces = ["plugins\\*", "packages\\*"];
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(discoverWorkspaceManifests(root).map(({ manifest: found }) => found.name)).toEqual([
+      "root",
+      "@edgegamers/example",
+    ]);
+  });
+
+  it("rejects a truncated MIT license text", () => {
+    const root = createFixture();
+    write(root, "licenses/MIT.txt", mitText.slice(0, -10));
+    expect(validateRepositoryLicensing(root)).toContain(
+      "licenses/MIT.txt: content must match the approved canonical MIT text",
+    );
+  });
+
+  it("rejects an altered NOTICE attribution", () => {
+    const root = createFixture();
+    write(root, "licenses/NOTICE", "All rights reserved.\n");
+    expect(validateRepositoryLicensing(root)).toContain(
+      "licenses/NOTICE: content must match the approved attribution-only notice",
     );
   });
 

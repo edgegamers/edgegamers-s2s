@@ -1,11 +1,23 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export const LICENSE_EXPRESSION = "MIT OR Apache-2.0";
 export const COPYRIGHT_LINE = "Copyright (c) 2026 EdgeGamers, LLC";
 
+const CANONICAL_MIT_HASH = "bc3c16ce75979b0a1852ae5a6b8a8339c3ee5f7119206a92ad4b4eb9c04adf8a";
+const APPROVED_NOTICE = `EdgeGamers Source2Script Plugins
+Copyright 2026 EdgeGamers, LLC
+
+This product includes software developed by EdgeGamers, LLC.
+`;
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function normalizeText(contents) {
+  return `${contents.replaceAll("\r\n", "\n").replaceAll("\r", "\n").replace(/\n*$/, "")}\n`;
 }
 
 export function discoverWorkspaceManifests(rootDir) {
@@ -14,7 +26,7 @@ export function discoverWorkspaceManifests(rootDir) {
   const found = [{ path: rootPath, manifest: rootManifest }];
 
   for (const pattern of rootManifest.workspaces ?? []) {
-    const match = /^(.*)\/\*$/.exec(pattern.replaceAll("\\\\", "/"));
+    const match = /^(.*)\/\*$/.exec(pattern.replaceAll("\\", "/"));
     if (!match) throw new Error(`Unsupported workspace pattern: ${pattern}`);
     const parent = join(rootDir, match[1]);
     if (!existsSync(parent)) continue;
@@ -48,7 +60,8 @@ export function validateRepositoryLicensing(rootDir) {
   }
   if (errors.length > 0) return errors;
 
-  const mitText = readFileSync(join(rootDir, "licenses/MIT.txt"), "utf8").trim();
+  const mitText = normalizeText(readFileSync(join(rootDir, "licenses/MIT.txt"), "utf8"));
+  const notice = normalizeText(readFileSync(join(rootDir, "licenses/NOTICE"), "utf8"));
   const rootLicense = readFileSync(join(rootDir, "LICENSE"), "utf8");
   const contributing = readFileSync(join(rootDir, ".github/CONTRIBUTING.md"), "utf8");
   const markers = [COPYRIGHT_LINE, `SPDX-License-Identifier: ${LICENSE_EXPRESSION}`,
@@ -59,8 +72,11 @@ export function validateRepositoryLicensing(rootDir) {
   if (!contributing.includes(LICENSE_EXPRESSION) || !contributing.includes("authority to submit")) {
     errors.push(".github/CONTRIBUTING.md: missing inbound-license or submission-authority terms");
   }
-  if (!mitText.startsWith(`MIT License\n\n${COPYRIGHT_LINE}`)) {
-    errors.push("licenses/MIT.txt: copyright or canonical heading is incorrect");
+  if (createHash("sha256").update(mitText).digest("hex") !== CANONICAL_MIT_HASH) {
+    errors.push("licenses/MIT.txt: content must match the approved canonical MIT text");
+  }
+  if (notice !== APPROVED_NOTICE) {
+    errors.push("licenses/NOTICE: content must match the approved attribution-only notice");
   }
 
   const packages = discoverWorkspaceManifests(rootDir);
