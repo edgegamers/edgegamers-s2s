@@ -4,7 +4,9 @@
 
 <div align="center">
 
-EdgeGamers plugins are designed with public use in mind. If you'd like to see something in a plugin we maintain, and are not an edgegamers developer, you may still contribute here, feel free to fork this repository and contribute following the guidelines specified in [CONTRIBUTING.md](./.github/CONTRIBUTING.md)
+This repository is an npm workspace for the Source2Script plugins maintained by EdgeGamers. All common development commands run from the repository root.
+
+EdgeGamers plugins are designed with public use in mind. If you 'd like to learn more about contributing to somehting we maintain reference the [CONTRIBUTING.md](./.github/CONTRIBUTING.md) guide.
 <br>
 
 <div align="center">
