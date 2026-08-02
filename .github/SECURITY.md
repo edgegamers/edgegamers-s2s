@@ -2,14 +2,13 @@
 
 ## Supported versions
 
-Security fixes are made against the latest state of `main` and, once public
-plugin releases exist, the latest published version of each affected plugin.
-Older commits and releases may not receive security updates.
+Security fixes are developed through `dev` and promoted to the latest `main`.
+Only the latest `main` is currently supported. Older commits and releases do
+not receive security updates.
 
 | Version | Supported |
 | --- | --- |
 | Latest `main` | Yes |
-| Latest published plugin release, when available | Yes |
 | Older commits and releases | No |
 
 ## Reporting a vulnerability
