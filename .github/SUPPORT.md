@@ -16,8 +16,6 @@ requests. Search existing issues first and include the affected plugin or
 component, your Node and npm versions, reproduction steps, expected behavior,
 and actual behavior.
 
-Issue forms and templates will be added in a later repository milestone.
-
 ## EdgeGamers and Source2Script help
 
 - For general EdgeGamers community or game-server help, use the
