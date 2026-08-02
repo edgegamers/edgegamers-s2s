@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible problem in an EdgeGamers Source2Script plugin or repository tool.
+title: "fix: "
+labels:
+  - plugin
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: affected-plugin
+    attributes:
+      label: Affected plugin or package
+      description: Use the package name or path when you know it.
+      placeholder: "@edgegamers/reference-api"
+    validations:
+      required: false
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest sequence that shows the problem.
+      placeholder: |
+        1. Run ...
+        2. Configure ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Local validation
+      description: Paste relevant command output, such as npm test or npm run build.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This is not a security vulnerability.
+          required: true
+        - label: I checked the existing issues first.
+          required: true

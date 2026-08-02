@@ -1,0 +1,8 @@
+/.github/                 @edgegamers/s2s-maintainers
+/.changeset/              @edgegamers/s2s-maintainers
+/scripts/                 @edgegamers/s2s-maintainers
+/packages/                @edgegamers/s2s-platform
+/licenses/                @edgegamers/s2s-platform
+
+# Add plugin-specific ownership as real teams form:
+# /plugins/reference-api/   @edgegamers/s2s-platform
