@@ -57,7 +57,7 @@ describe("GitHub workflows", () => {
       "npm test",
       "npm run build",
       "has-changesets",
-      "npm run deploy",
+      "npm run deploy -- --ci",
       "Server release is intentionally skipped",
     ]) {
       expect(release).toContain(required);

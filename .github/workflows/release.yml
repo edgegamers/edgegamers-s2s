@@ -60,7 +60,7 @@ jobs:
 
       - name: Deploy Source2Script packages
         if: steps.detect.outputs.has-changesets == 'true'
-        run: npm run deploy
+        run: npm run deploy -- --ci
 
       - name: Skip Source2Script deploy
         if: steps.detect.outputs.has-changesets != 'true'

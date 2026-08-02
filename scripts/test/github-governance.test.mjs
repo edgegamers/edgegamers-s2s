@@ -12,6 +12,8 @@ describe("GitHub governance files", () => {
   it("keeps local GitHub governance files present for maintainers", () => {
     for (const path of [
       [".github", "CODEOWNERS"],
+      [".github", "README.md"],
+      [".github", "MANUAL_SETUP.md"],
       [".github", "pull_request_template.md"],
       [".github", "labels.yml"],
       [".github", "ISSUE_TEMPLATE", "bug_report.yml"],
