@@ -1,0 +1,51 @@
+name: Sync Main to Dev
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Open main to dev sync
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'hotfix/')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Open synchronization pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing="$(gh pr list --base dev --head main --state open --json number --jq 'length')"
+
+          if [ "$existing" -gt 0 ]; then
+            echo "A main to dev synchronization PR already exists."
+            exit 0
+          fi
+
+          gh pr create \
+            --base dev \
+            --head main \
+            --title "sync: merge production hotfixes back into dev" \
+            --body "Automatically opened after a production hotfix. Resolve any conflicts and merge this before the next production promotion."

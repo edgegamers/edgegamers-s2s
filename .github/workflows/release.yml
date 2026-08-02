@@ -1,0 +1,70 @@
+name: Main Source2Script Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-s2s-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  main:
+    name: Validate and deploy changed packages
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      has-changesets: ${{ steps.detect.outputs.has-changesets }}
+    env:
+      S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build Source2Script workspace
+        run: npm run build
+
+      - name: Detect pending Changesets
+        id: detect
+        run: |
+          if find .changeset -type f -name '*.md' ! -name README.md | grep -q .; then
+            echo "has-changesets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changesets=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy Source2Script packages
+        if: steps.detect.outputs.has-changesets == 'true'
+        run: npm run deploy
+
+      - name: Skip Source2Script deploy
+        if: steps.detect.outputs.has-changesets != 'true'
+        run: echo "No pending Changesets; skipping s2s deploy."
+
+      - name: Skip server release
+        run: echo "Server release is intentionally skipped until Source2Script and EdgeGamers release tooling are ready."

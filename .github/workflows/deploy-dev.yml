@@ -1,0 +1,64 @@
+name: Build Development Artifacts
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-artifacts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-artifacts:
+    name: Build development artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build Source2Script workspace
+        run: npm run build
+
+      - name: Generate development manifest
+        run: npm run manifest:dev
+
+      - name: Collect local development artifacts
+        run: npm run artifacts:local
+
+      - name: Upload development artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-development-${{ github.sha }}
+          path: |
+            artifacts/development-manifest.json
+            artifacts/local-development/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Skip server release
+        run: echo "Server release is intentionally skipped until EdgeGamers deployment transport is defined."
