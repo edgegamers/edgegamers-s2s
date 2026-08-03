@@ -43,14 +43,20 @@
   "devDependencies": {
     "@changesets/changelog-github": "0.7.0",
     "@changesets/cli": "2.31.1",
-    "@s2script/cs2": "0.11.4",
+    "@s2script/cs2": "^0.11.4",
     "@s2script/eslint-plugin": "0.2.0",
-    "@s2script/sdk": "0.14.0",
+    "@s2script/sdk": "^0.14.0",
     "@types/node": "24.13.3",
     "eslint": "10.8.0",
     "fflate": "^0.8.2",
     "typescript": "5.9.3",
     "vite": "6.4.3",
     "vitest": "4.1.10"
+  },
+  "dependencies": {
+    "@s2script/cli": "^0.2.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
   }
 }
