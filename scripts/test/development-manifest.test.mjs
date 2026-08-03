@@ -9,6 +9,33 @@ import {
 } from "../lib/development-manifest.mjs";
 
 describe("createDevelopmentManifest", () => {
+  it("marks the manifest as EdgeGamers managed", () => {
+    const manifest = createDevelopmentManifest({
+      artifacts: [
+        { path: "plugins/api/dist/api.s2sp", bytes: Buffer.from("api") },
+      ],
+      commit: "abcdef1234567890",
+      generatedAt: "2026-08-03T12:00:00.000Z",
+    });
+
+    expect(manifest.schemaVersion).toBe(1);
+    expect(manifest.managedBy).toBe("edgegamers-s2s");
+    expect(manifest.environment).toBe("development");
+  });
+
+  it("rejects duplicate artifact file names", () => {
+    expect(() =>
+      createDevelopmentManifest({
+        artifacts: [
+          { path: "plugins/one/dist/shared.s2sp", bytes: Buffer.from("one") },
+          { path: "plugins/two/dist/shared.s2sp", bytes: Buffer.from("two") },
+        ],
+        commit: "abcdef1234567890",
+        generatedAt: "2026-08-03T12:00:00.000Z",
+      }),
+    ).toThrow("Duplicate artifact file name: shared.s2sp");
+  });
+
   it("sorts artifacts, normalizes paths, and records immutable identity", () => {
     const manifest = createDevelopmentManifest({
       artifacts: [
@@ -20,6 +47,8 @@ describe("createDevelopmentManifest", () => {
     });
 
     expect(manifest).toEqual({
+      schemaVersion: 1,
+      managedBy: "edgegamers-s2s",
       environment: "development",
       commit: "abcdef1234567890",
       generatedAt: "2026-07-31T12:00:00.000Z",
