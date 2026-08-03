@@ -91,8 +91,10 @@ npm.cmd run deploy -- --ci
 
 `s2s deploy` builds the workspace, creates a deployment plan, skips private plugins, skips versions already present in the registry, and publishes eligible plugins in dependency order. Automated deployment uses `S2SCRIPT_TOKEN` and the CLI's `--ci` flag.
 
+Production publication stops at the Source2Script registry. Server images consume registry versions with `s2s install`; GitHub Actions does not copy production `.s2sp` files to servers.
+
 This repository does not need a second production upload system, production server manifest, installation command, or server-reconciliation layer. Registry deployment is the production boundary requested for this project.
 
 ## Rollback boundary
 
-Development rollout and rollback depend on the future EdgeGamers artifact transport. Registry versions are immutable; never overwrite or delete a published version as a rollback mechanism. Any production server selection policy belongs to the system that consumes the registry, outside this repository milestone.
+Development rollout uses SSH deployment and manifest-scoped reconciliation. The remote manifest is the ownership boundary: reconciliation deletes only stale files listed by the previous managed manifest and leaves unmanaged files untouched. Automated rollback is not provided; recovery requires manually redeploying the desired development artifact and manifest. Registry versions are immutable; never overwrite or delete a published version as a rollback mechanism. Any production server selection policy belongs to the system that consumes the registry, outside this repository milestone.
