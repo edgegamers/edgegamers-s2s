@@ -27,7 +27,7 @@ describe("GitHub workflows", () => {
     }
   });
 
-  it("builds, manifests, and uploads development artifacts without server deployment", () => {
+  it("builds, manifests, uploads, and deploys development artifacts", () => {
     const deployDev = workflow("deploy-dev.yml");
 
     for (const required of [
@@ -74,6 +74,17 @@ describe("GitHub workflows", () => {
 
     expect(release).not.toContain("changesets/action@v2");
     expect(release).not.toContain("PROD_SSH_PRIVATE_KEY");
+
+    const stepsIndex = release.indexOf("    steps:");
+    const deployIndex = release.indexOf("      - name: Deploy Source2Script packages");
+    const skipIndex = release.indexOf("      - name: Skip Source2Script deploy");
+    const jobConfiguration = release.slice(0, stepsIndex);
+    const deployStep = release.slice(deployIndex, skipIndex);
+
+    expect(jobConfiguration).not.toContain("S2SCRIPT_TOKEN");
+    expect(deployStep).toContain(
+      "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",
+    );
   });
 
   it("opens a main-to-dev synchronization pull request after hotfix merges", () => {

@@ -45,6 +45,9 @@ Create `development`.
 5. Add `DEV_SSH_KEY`.
 6. Add `DEV_S2SCRIPT_PLUGIN_DIR`.
 7. Scope the SSH user to the remote staging path and Source2Script plugin directory.
+8. Install Node.js 20 or newer on the SSH host and ensure `node` is available in
+   the deploy user's non-interactive `PATH`. The remote reconciliation script uses
+   Node.js for digest verification and manifest-scoped file operations.
 
 Create `production`.
 

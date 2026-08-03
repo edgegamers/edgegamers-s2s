@@ -64,6 +64,10 @@ The manifest is written to `artifacts/development-manifest.json`. Entries are so
 
 Development deployment builds `.s2sp` files, writes `artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and reconciles the managed files on the development server over SSH. The remote manifest `.edgegamers-development-manifest.json` is the ownership boundary: automation deletes only stale files listed by the previous managed manifest and leaves unmanaged files alone.
 
+The SSH host must provide Node.js 20 or newer on the deploy user's
+non-interactive `PATH`. Remote digest verification and manifest reconciliation
+run with that `node` executable.
+
 ## Production releases
 
 Production publication stops at the Source2Script registry:
