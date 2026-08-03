@@ -95,6 +95,13 @@ Status: partial.
 
 Status: local gate verified.
 
+### Release Pipeline Verification (2026-08-03)
+
+- `edgegamers-s2s`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (13 files and 74 tests), `npm.cmd run build`, and `npm.cmd run artifacts:local` all passed.
+- `base-s2s`: `bash scripts/validate.sh` and `docker build --pull --progress plain -t base-s2s:local .` both passed.
+- `ttt-s2s`: `bash scripts/validate.sh` and `docker build --pull --progress plain --build-arg BASE_S2S_IMAGE=base-s2s:local -t ttt-s2s:local .` both passed.
+- Legacy `base` and `ttt`: `git status --short` was empty for both repositories; this work did not modify either checkout.
+
 Verified commands:
 
 ```powershell
@@ -108,3 +115,11 @@ npm.cmd run artifacts:local
 `npm.cmd run build` and `npm.cmd run artifacts:local` may need to run outside the Codex sandbox because Source2Script's build process reads plugin entry files through paths the sandbox denies.
 
 Development deployment, production release, and hotfix flow still need GitHub environment setup before end-to-end validation.
+
+Required remote setup:
+
+- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_PORT`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
+- GitHub production environment secret: `S2SCRIPT_TOKEN`.
+- GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
+- The server box must schedule a 10:00 UTC rebuild/restart outside CI.
+- The development SSH user must write only to staging and the Source2Script plugin directory.
