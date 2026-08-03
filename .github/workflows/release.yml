@@ -65,6 +65,3 @@ jobs:
       - name: Skip Source2Script deploy
         if: steps.detect.outputs.has-changesets != 'true'
         run: echo "No pending Changesets; skipping s2s deploy."
-
-      - name: Skip server release
-        run: echo "Server release is intentionally skipped until Source2Script and EdgeGamers release tooling are ready."

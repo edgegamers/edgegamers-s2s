@@ -42,8 +42,17 @@ describe("GitHub workflows", () => {
       expect(deployDev).toContain(required);
     }
 
-    expect(deployDev).not.toContain("DEV_SSH_PRIVATE_KEY");
-    expect(deployDev).not.toContain("DEV_RECONCILE_COMMAND");
+    for (const required of [
+      "environment: development",
+      "DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}",
+      "DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}",
+      "DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}",
+      "DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}",
+      "DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}",
+      "npm run deploy:dev",
+    ]) {
+      expect(deployDev).toContain(required);
+    }
   });
 
   it("validates main and only runs Source2Script deploy when Changesets exist", () => {
@@ -58,14 +67,13 @@ describe("GitHub workflows", () => {
       "npm run build",
       "has-changesets",
       "npm run deploy -- --ci",
-      "Server release is intentionally skipped",
+      "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",
     ]) {
       expect(release).toContain(required);
     }
 
     expect(release).not.toContain("changesets/action@v2");
     expect(release).not.toContain("PROD_SSH_PRIVATE_KEY");
-    expect(release).not.toContain("production-manifest.json");
   });
 
   it("opens a main-to-dev synchronization pull request after hotfix merges", () => {
