@@ -52,6 +52,8 @@ The command runs the Source2Script build, writes `artifacts/development-manifest
 
 Use `artifacts/local-development/README.txt` as the file list for a manual local server copy.
 
+`npm.cmd run artifacts:local` still supports manual local server copies. The CI development path uses the same files, then runs `npm run deploy:dev` with GitHub environment secrets. Do not run `deploy:dev` locally unless `DEV_SSH_*` variables point at a development server account.
+
 ## Load On A Local Server
 
 The installed Source2Script SDK documents the runtime plugin directory as:
@@ -62,16 +64,8 @@ addons/s2script/plugins/
 
 Copy each `.s2sp` from `artifacts/local-development/` into that directory on your local development server. Re-copy the file after rebuilding. Delete it to unload.
 
-Do not use this manual copy process as the production release path. It exists so developers can test one checkout on one server while EdgeGamers finalizes CI transport and server reconciliation.
+Do not use this manual copy process as the production release path. Production plugin delivery stops at the Source2Script registry.
 
-## Known Stubs
-
-EdgeGamers still needs to choose:
-
-1. The development artifact destination.
-2. The development server reconcile command or API.
-3. The production server install strategy.
-4. The exact production manifest, if production keeps one outside the registry.
-5. Rollback storage and activation rules.
+## Environment Setup
 
 Track manual GitHub and environment setup in [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).

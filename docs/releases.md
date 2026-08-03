@@ -50,7 +50,7 @@ immutable .s2sp artifacts
     ↓
 development-manifest.json
     ↓
-EdgeGamers development transport and reconciliation (deferred)
+development server SSH deployment and manifest-scoped reconciliation
 ```
 
 Build and generate the manifest:
@@ -60,7 +60,9 @@ npm.cmd run build
 npm.cmd run manifest:dev
 ```
 
-The manifest is written to `artifacts/development-manifest.json`. Entries are sorted by artifact path and contain the commit-derived `dev.<short-sha>` revision plus a SHA-256 digest. Generated artifacts remain local until later infrastructure connects an upload destination and development servers.
+The manifest is written to `artifacts/development-manifest.json`. Entries are sorted by artifact path and contain the commit-derived `dev.<short-sha>` revision plus a SHA-256 digest.
+
+Development deployment builds `.s2sp` files, writes `artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and reconciles the managed files on the development server over SSH. The remote manifest `.edgegamers-development-manifest.json` is the ownership boundary: automation deletes only stale files listed by the previous managed manifest and leaves unmanaged files alone.
 
 ## Production releases
 

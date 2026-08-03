@@ -33,13 +33,13 @@ Status: complete locally.
 
 ## Phase 4: CI
 
-Status: implemented with deployment stubs.
+Status: implemented with development deployment and registry publication.
 
 - Pull request validation runs lint, typecheck, tests, Source2Script build, and Changeset coverage.
 - Development workflow builds artifacts and uploads a development bundle.
 - Release workflow validates `main` and can run Source2Script registry deploy.
 - Hotfix workflow opens a `main` to `dev` sync PR.
-- Server deployment and reconciliation remain intentionally stubbed until EdgeGamers chooses release paths.
+- Development server deployment and reconciliation run over SSH using GitHub environment secrets.
 
 ## Phase 5: GitHub
 
@@ -70,12 +70,12 @@ Status: complete locally.
 
 ## Phase 8: Deployment
 
-Status: stubbed by design.
+Status: implemented locally.
 
-- Development artifacts and manifest generation exist.
-- Local copy flow is documented.
-- CI server deployment is skipped until EdgeGamers defines artifact transport.
-- Production server rollout and rollback remain outside this repository until final S2S release paths are known.
+- Development artifacts deploy over SSH to the configured development server plugin directory.
+- Reconciliation is manifest-scoped and leaves unmanaged files untouched.
+- Production releases publish to the Source2Script registry only.
+- Server images live in `base-s2s` and `ttt-s2s`.
 
 ## Phase 9: Documentation
 

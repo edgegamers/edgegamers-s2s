@@ -39,16 +39,20 @@ Only maintainers should apply `no-changeset` and `release:hotfix`.
 Create `development`.
 
 1. Limit deployment branches to `dev`.
-2. Add no production credentials.
-3. Add development deployment secrets only after EdgeGamers chooses the artifact transport.
+2. Add `DEV_SSH_HOST`.
+3. Add `DEV_SSH_PORT`.
+4. Add `DEV_SSH_USER`.
+5. Add `DEV_SSH_KEY`.
+6. Add `DEV_S2SCRIPT_PLUGIN_DIR`.
+7. Scope the SSH user to the remote staging path and Source2Script plugin directory.
 
 Create `production`.
 
 1. Limit deployment branches to `main`.
 2. Require production reviewers.
 3. Prevent self-review when the team size allows it.
-4. Add `S2SCRIPT_TOKEN` only after registry publishing is approved.
-5. Do not add server rollout credentials until production server install paths and reconcile commands are known.
+4. Add `S2SCRIPT_TOKEN`.
+5. Do not add production server SSH credentials. Production plugin delivery stops at the Source2Script registry.
 
 ## 5. dev Ruleset
 
@@ -90,26 +94,6 @@ Required checks:
 2. `Lint, typecheck, test, and build`
 3. `Changeset policy`
 
-## 7. Release Path Stubs
+## 7. Release Paths
 
-The repository can build Source2Script packages and upload GitHub Actions artifacts now. EdgeGamers still needs to choose the server release paths.
-
-Development release path to define:
-
-1. Artifact destination.
-2. Development server plugin directory.
-3. Integrity verification method.
-4. Atomic activation process.
-5. Rollback pointer or previous-release directory.
-6. Reconcile command or API.
-
-Production release path to define:
-
-1. Whether production servers pull from the Source2Script registry only.
-2. Exact manifest format if a production manifest remains required.
-3. Production server plugin directory.
-4. Registry token scope.
-5. Reconcile command or API.
-6. Canary and rollback procedure.
-
-Until those details exist, workflows stop after building artifacts or publishing to Source2Script. They intentionally do not run server deployment commands.
+Development releases build and reconcile managed plugin files over SSH. Production plugin delivery stops at the Source2Script registry.
