@@ -36,6 +36,9 @@ export function buildDeployPlan({
   const safeRemotePluginDirectory = validateRemotePluginDirectory(
     remotePluginDirectory,
   );
+  if (typeof runId !== "string" || !/^[A-Za-z0-9._-]+$/u.test(runId)) {
+    throw new Error("Unsafe run ID");
+  }
   const sshDestination = `${user}@${host}`;
   const sshBaseArgs = [
     "-i",
@@ -79,31 +82,41 @@ test -d "$staging"
 test -f "$staging/development-manifest.json"
 mkdir -p "$plugin_dir"
 cd "$staging"
-node - <<'NODE'
-const { createHash } = require("node:crypto");
-const { readFileSync } = require("node:fs");
-const manifest = JSON.parse(readFileSync("development-manifest.json", "utf8"));
-if (manifest.schemaVersion !== 1 || manifest.managedBy !== "edgegamers-s2s") throw new Error("unsupported manifest");
-for (const plugin of manifest.plugins) {
-  const digest = createHash("sha256").update(readFileSync(plugin.fileName)).digest("hex");
-  if (digest !== plugin.sha256) throw new Error("digest mismatch for " + plugin.fileName);
-}
-NODE
 previous="$(mktemp)"
 if [ -f "$manifest_path" ]; then cp "$manifest_path" "$previous"; else printf '{"schemaVersion":1,"managedBy":"edgegamers-s2s","plugins":[]}' > "$previous"; fi
-node - "$previous" "$staging/development-manifest.json" "$plugin_dir" <<'NODE'
-const { readFileSync, rmSync } = require("node:fs");
+node - "$previous" "$staging/development-manifest.json" "$staging" "$plugin_dir" <<'NODE'
+const { createHash } = require("node:crypto");
+const { cpSync, readFileSync, rmSync } = require("node:fs");
 const { join } = require("node:path");
-const [previousPath, nextPath, pluginDir] = process.argv.slice(2);
+const [previousPath, nextPath, staging, pluginDir] = process.argv.slice(2);
 const previous = JSON.parse(readFileSync(previousPath, "utf8"));
 const next = JSON.parse(readFileSync(nextPath, "utf8"));
-const names = (manifest) => manifest.plugins.map((plugin) => plugin.fileName).sort();
-const nextNames = new Set(names(next));
-for (const fileName of names(previous)) {
+function listManagedFileNames(manifest) {
+  if (manifest.schemaVersion !== 1 || manifest.managedBy !== "edgegamers-s2s" || !Array.isArray(manifest.plugins)) {
+    throw new Error("unsupported manifest");
+  }
+  const fileNames = manifest.plugins.map((plugin) => {
+    if (!plugin || typeof plugin.fileName !== "string" || !plugin.fileName.endsWith(".s2sp") || plugin.fileName.includes("/") || plugin.fileName.includes("\\\\")) {
+      throw new Error("unsafe plugin file name");
+    }
+    return plugin.fileName;
+  });
+  return [...new Set(fileNames)].sort();
+}
+const previousFileNames = listManagedFileNames(previous);
+const nextFileNames = listManagedFileNames(next);
+const nextNames = new Set(nextFileNames);
+for (const plugin of next.plugins) {
+  const digest = createHash("sha256").update(readFileSync(join(staging, plugin.fileName))).digest("hex");
+  if (digest !== plugin.sha256) throw new Error("digest mismatch for " + plugin.fileName);
+}
+for (const fileName of previousFileNames) {
   if (!nextNames.has(fileName)) rmSync(join(pluginDir, fileName), { force: true });
 }
+for (const fileName of nextFileNames) {
+  cpSync(join(staging, fileName), join(pluginDir, fileName), { force: true });
+}
 NODE
-find "$staging" -maxdepth 1 -type f -name '*.s2sp' -exec cp -f {} "$plugin_dir/" \\;
 cp -f "$staging/development-manifest.json" "$manifest_path"
 rm -f "$previous"
 `;
