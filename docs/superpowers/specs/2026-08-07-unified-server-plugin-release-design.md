@@ -7,7 +7,9 @@ Approved for implementation planning.
 ## Purpose
 
 `edgegamers-s2s` is the authority for EdgeGamers Source2Script plugins, server
-payloads, and server deployment intent. Development servers consume the latest
+payload content, and server plugin selection. GitLab remains the authority for
+server infrastructure: compose files, deployment jobs, hosts, secrets, and
+environment-specific rollout mechanics. Development servers consume the latest
 plugin artifacts built from `dev`. Production servers consume the latest plugin
 artifacts built from `main` when a protected per-server production tag is
 created.
@@ -17,7 +19,7 @@ operators do not maintain explicit plugin versions in server configuration.
 
 ## Goals
 
-- Keep plugin source, server payloads, and server plugin selection in one
+- Keep plugin source, server payload content, and server plugin selection in one
   repository.
 - Support more Source 2 games without mixing game-specific APIs.
 - Let development servers hot-reload the latest `dev` plugin artifacts.
@@ -32,6 +34,8 @@ operators do not maintain explicit plugin versions in server configuration.
 - Publishing every EdgeGamers plugin to the public Source2Script registry.
 - Allowing global plugins to depend on a game-specific runtime API.
 - Encoding every server's plugin set in CI workflow files.
+- Managing server infrastructure, compose files, deployment jobs, host paths, or
+  secrets in `edgegamers-s2s`.
 
 ## Repository Layout
 
@@ -60,16 +64,12 @@ edgegamers-s2s/
           s2script-plugins.txt
           payload/
             csgo/
-          compose-dev.yml
-          compose-prod.yml
 
         ttt/
           server.json
           s2script-plugins.txt
           payload/
             csgo/
-          compose-dev.yml
-          compose-prod.yml
 
   packages/
     global/
@@ -82,7 +82,9 @@ edgegamers-s2s/
 
 `plugins/global/*` contains game-agnostic Source2Script plugins and plugin APIs.
 `plugins/games/<game>/*` contains plugins and APIs tied to one game. `servers/`
-contains server payloads and the declared plugin list for each server.
+contains server payload content and the declared plugin list for each server.
+It does not contain authoritative compose files or GitLab deployment
+infrastructure.
 
 ## Plugin Metadata
 
@@ -243,17 +245,19 @@ ttt-prod-2026.08.07
 empty-prod-2026.08.07
 ```
 
-On a production server tag:
+On a production server tag, GitLab deployment infrastructure:
 
-1. Select the server under `servers/games/<game>/<server>`.
-2. Deploy that server's payload and compose template.
+1. Selects the server under `servers/games/<game>/<server>`.
+2. Deploys that server's payload content into the GitLab-managed server
+   infrastructure.
 3. Resolve the latest `main` channel plugin manifest from `edgegamers-s2s`.
 4. Filter artifacts through the server's `s2script-plugins.txt`.
 5. Reject any plugin that is not global or for the server's game.
 6. Copy selected `.s2sp` files into the production addon volume.
 7. Write a deployment record containing the server tag, channel, resolved
    `edgegamers-s2s` commit, plugin names, and checksums.
-8. Start or restart the server according to that server's deployment policy.
+8. Start or restart the server according to the GitLab-managed deployment
+   policy.
 
 This keeps production controlled by server tags while still consuming the latest
 approved plugin artifacts from `main`.
@@ -292,7 +296,7 @@ any safety check fails.
 
 1. Add metadata policy checks while preserving the existing `plugins/*` layout.
 2. Move reference plugins into `plugins/global` or `plugins/games/cs2`.
-3. Move server payloads into `servers/games/cs2`.
+3. Move server payload content and plugin lists into `servers/games/cs2`.
 4. Update workspace discovery to include the nested plugin directories.
 5. Replace development artifact collection with channel manifests containing
    metadata.
