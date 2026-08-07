@@ -92,7 +92,6 @@ describe("resolveDeploymentTargets", () => {
       manifest,
       env: {
         DEV_SSH_HOST: "dev.example.test",
-        DEV_SSH_PORT: "22",
         DEV_SSH_USER: "deploy",
         DEV_SERVER_TARGETS: JSON.stringify([
           {
@@ -114,7 +113,6 @@ describe("resolveDeploymentTargets", () => {
         game: "cs2",
         serverName: "empty",
         host: "dev.example.test",
-        port: "22",
         user: "deploy",
         remotePluginDirectory: "/srv/empty/addons/s2script/plugins",
         selectedFileNames: ["core.s2sp"],
@@ -123,7 +121,6 @@ describe("resolveDeploymentTargets", () => {
         game: "cs2",
         serverName: "ttt",
         host: "dev.example.test",
-        port: "22",
         user: "deploy",
         remotePluginDirectory: "/srv/ttt/addons/s2script/plugins",
         selectedFileNames: ["core.s2sp", "ttt.s2sp"],
@@ -147,7 +144,6 @@ describe("resolveDeploymentTargets", () => {
     })).toEqual([
       expect.objectContaining({
         serverName: "ttt",
-        port: "22",
         selectedFileNames: ["core.s2sp", "ttt.s2sp"],
       }),
     ]);
@@ -158,7 +154,6 @@ describe("buildDeployPlan", () => {
   it("builds rsync and ssh commands from explicit inputs", () => {
     const plan = buildDeployPlan({
       host: "example.test",
-      port: "2222",
       user: "deploy",
       keyPath: "/tmp/key",
       localArtifactDirectory: "artifacts/local-development",
@@ -172,6 +167,24 @@ describe("buildDeployPlan", () => {
     expect(plan.rsyncArgs).toContain("--delete");
     expect(plan.rsyncArgs).toContain("artifacts/local-development/");
     expect(plan.sshDestination).toBe("deploy@example.test");
+    expect(plan.sshBaseArgs).not.toContain("-p");
+    expect(plan.rsyncArgs.join(" ")).not.toContain("-p ");
+  });
+
+  it("adds an SSH port only when a port override is provided", () => {
+    const plan = buildDeployPlan({
+      host: "example.test",
+      port: "2222",
+      user: "deploy",
+      keyPath: "/tmp/key",
+      localArtifactDirectory: "artifacts/local-development",
+      remotePluginDirectory: "/srv/cs2/game/csgo/addons/s2script/plugins",
+      runId: "123",
+    });
+
+    expect(plan.sshBaseArgs).toContain("-p");
+    expect(plan.sshBaseArgs).toContain("2222");
+    expect(plan.rsyncArgs.join(" ")).toContain("-p 2222");
   });
 
   it("rejects run IDs that are unsafe in remote paths", () => {

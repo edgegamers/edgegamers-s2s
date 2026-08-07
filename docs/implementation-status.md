@@ -119,7 +119,7 @@ Development deployment, production release, and hotfix flow still need GitHub en
 
 Required remote setup:
 
-- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_PORT`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
+- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
 - The development SSH host needs Node.js 20 or newer in the deploy user's non-interactive `PATH`.
 - GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.

@@ -28,7 +28,6 @@ export function buildDeployPlan({
 }) {
   for (const [name, value] of Object.entries({
     host,
-    port,
     user,
     keyPath,
     localArtifactDirectory,
@@ -44,11 +43,12 @@ export function buildDeployPlan({
     throw new Error("Unsafe run ID");
   }
   const sshDestination = `${user}@${host}`;
+  const portArgs = port ? ["-p", String(port)] : [];
+  const rsyncPortArgs = port ? ` -p ${port}` : "";
   const sshBaseArgs = [
     "-i",
     keyPath,
-    "-p",
-    String(port),
+    ...portArgs,
     "-o",
     "StrictHostKeyChecking=accept-new",
   ];
@@ -63,7 +63,7 @@ export function buildDeployPlan({
       "-az",
       "--delete",
       "-e",
-      `ssh -i ${keyPath} -p ${port} -o StrictHostKeyChecking=accept-new`,
+      `ssh -i ${keyPath}${rsyncPortArgs} -o StrictHostKeyChecking=accept-new`,
       `${localArtifactDirectory.replaceAll("\\", "/")}/`,
       `${sshDestination}:${remoteStagingDirectory}/`,
     ],
@@ -155,7 +155,7 @@ function selectedFileNamesForTarget({ root, manifest, game, serverName }) {
 export function resolveDeploymentTargets({ root, manifest, env }) {
   const shared = {
     host: env.DEV_SSH_HOST,
-    port: env.DEV_SSH_PORT || "22",
+    port: env.DEV_SSH_PORT,
     user: env.DEV_SSH_USER,
   };
   const configuredTargets = parseDeploymentTargetConfig(env.DEV_SERVER_TARGETS);
@@ -175,7 +175,7 @@ export function resolveDeploymentTargets({ root, manifest, env }) {
         game,
         serverName,
         host: target.host ?? shared.host,
-        port: String(target.port ?? shared.port),
+        ...(target.port ?? shared.port ? { port: String(target.port ?? shared.port) } : {}),
         user: target.user ?? shared.user,
         remotePluginDirectory,
         selectedFileNames: selectedFileNamesForTarget({
@@ -192,7 +192,7 @@ export function resolveDeploymentTargets({ root, manifest, env }) {
     game: env.DEV_SERVER_GAME,
     serverName: env.DEV_SERVER_NAME,
     host: shared.host,
-    port: shared.port,
+    ...(shared.port ? { port: shared.port } : {}),
     user: shared.user,
     remotePluginDirectory: env.DEV_S2SCRIPT_PLUGIN_DIR,
     selectedFileNames: selectedFileNamesForTarget({
