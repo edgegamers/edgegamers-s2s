@@ -131,6 +131,79 @@ rm -f "$previous"
 `;
 }
 
+function parseDeploymentTargetConfig(value) {
+  if (!value) return undefined;
+  const parsed = JSON.parse(value);
+  if (!Array.isArray(parsed)) {
+    throw new Error("DEV_SERVER_TARGETS must be a JSON array");
+  }
+  return parsed;
+}
+
+function selectedFileNamesForTarget({ root, manifest, game, serverName }) {
+  if (!game || !serverName) return [];
+  return resolveServerPlugins({
+    server: readServerDefinition({
+      rootDir: root,
+      game,
+      serverName,
+    }),
+    manifest,
+  }).fileNames;
+}
+
+export function resolveDeploymentTargets({ root, manifest, env }) {
+  const shared = {
+    host: env.DEV_SSH_HOST,
+    port: env.DEV_SSH_PORT || "22",
+    user: env.DEV_SSH_USER,
+  };
+  const configuredTargets = parseDeploymentTargetConfig(env.DEV_SERVER_TARGETS);
+
+  if (configuredTargets) {
+    if (configuredTargets.length === 0) {
+      throw new Error("DEV_SERVER_TARGETS must contain at least one target");
+    }
+    return configuredTargets.map((target, index) => {
+      const game = target.game;
+      const serverName = target.serverName ?? target.server;
+      const remotePluginDirectory = target.remotePluginDirectory ?? target.pluginDir;
+      if (!game || !serverName || !remotePluginDirectory) {
+        throw new Error(`DEV_SERVER_TARGETS[${index}] requires game, server, and pluginDir`);
+      }
+      return {
+        game,
+        serverName,
+        host: target.host ?? shared.host,
+        port: String(target.port ?? shared.port),
+        user: target.user ?? shared.user,
+        remotePluginDirectory,
+        selectedFileNames: selectedFileNamesForTarget({
+          root,
+          manifest,
+          game,
+          serverName,
+        }),
+      };
+    });
+  }
+
+  return [{
+    game: env.DEV_SERVER_GAME,
+    serverName: env.DEV_SERVER_NAME,
+    host: shared.host,
+    port: shared.port,
+    user: shared.user,
+    remotePluginDirectory: env.DEV_S2SCRIPT_PLUGIN_DIR,
+    selectedFileNames: selectedFileNamesForTarget({
+      root,
+      manifest,
+      game: env.DEV_SERVER_GAME,
+      serverName: env.DEV_SERVER_NAME,
+    }),
+  }];
+}
+
 export function main({
   env = process.env,
   execFile = execFileSync,
@@ -144,47 +217,49 @@ export function main({
   }
 
   const keyPath = env.DEV_SSH_KEY_PATH;
-  const plan = buildDeployPlan({
-    host: env.DEV_SSH_HOST,
-    port: env.DEV_SSH_PORT || "22",
-    user: env.DEV_SSH_USER,
-    keyPath,
-    localArtifactDirectory: artifactDirectory,
-    remotePluginDirectory: env.DEV_S2SCRIPT_PLUGIN_DIR,
-    runId: env.GITHUB_RUN_ID || String(Date.now()),
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const targets = resolveDeploymentTargets({
+    root: process.cwd(),
+    manifest,
+    env,
   });
-  const selectedFileNames = env.DEV_SERVER_GAME && env.DEV_SERVER_NAME
-    ? resolveServerPlugins({
-      server: readServerDefinition({
-        rootDir: process.cwd(),
-        game: env.DEV_SERVER_GAME,
-        serverName: env.DEV_SERVER_NAME,
-      }),
-      manifest: JSON.parse(readFileSync(manifestPath, "utf8")),
-    }).fileNames
-    : [];
 
-  execFile(
-    "ssh",
-    [
-      ...plan.sshBaseArgs,
-      plan.sshDestination,
-      "mkdir",
-      "-p",
-      plan.remoteStagingDirectory,
-    ],
-    { stdio: "inherit" },
-  );
-  execFile("rsync", plan.rsyncArgs, { stdio: "inherit" });
-  execFile(
-    "ssh",
-    [
-      ...plan.sshBaseArgs,
-      plan.sshDestination,
-      buildRemoteScript({ ...plan, selectedFileNames }),
-    ],
-    { stdio: "inherit" },
-  );
+  for (const [index, target] of targets.entries()) {
+    const plan = buildDeployPlan({
+      host: target.host,
+      port: target.port,
+      user: target.user,
+      keyPath,
+      localArtifactDirectory: artifactDirectory,
+      remotePluginDirectory: target.remotePluginDirectory,
+      runId: `${env.GITHUB_RUN_ID || Date.now()}-${index + 1}`,
+    });
+
+    execFile(
+      "ssh",
+      [
+        ...plan.sshBaseArgs,
+        plan.sshDestination,
+        "mkdir",
+        "-p",
+        plan.remoteStagingDirectory,
+      ],
+      { stdio: "inherit" },
+    );
+    execFile("rsync", plan.rsyncArgs, { stdio: "inherit" });
+    execFile(
+      "ssh",
+      [
+        ...plan.sshBaseArgs,
+        plan.sshDestination,
+        buildRemoteScript({
+          ...plan,
+          selectedFileNames: target.selectedFileNames,
+        }),
+      ],
+      { stdio: "inherit" },
+    );
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

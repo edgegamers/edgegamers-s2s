@@ -50,6 +50,7 @@ describe("GitHub workflows", () => {
       "DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}",
       "DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}",
       "DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}",
+      "DEV_SERVER_TARGETS: ${{ vars.DEV_SERVER_TARGETS }}",
       "DEV_SERVER_GAME: ${{ vars.DEV_SERVER_GAME }}",
       "DEV_SERVER_NAME: ${{ vars.DEV_SERVER_NAME }}",
       "npm run deploy:dev",
