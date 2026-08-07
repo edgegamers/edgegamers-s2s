@@ -86,6 +86,11 @@ contains server payload content and the declared plugin list for each server.
 It does not contain authoritative compose files or GitLab deployment
 infrastructure.
 
+`s2script-plugins.txt` moves from the GitLab server infrastructure repositories
+into `edgegamers-s2s`. GitLab may still copy or render this file into the
+runtime payload during deployment, but the maintained source of truth is the
+file under `servers/games/<game>/<server>/`.
+
 ## Plugin Metadata
 
 Every plugin package declares EdgeGamers metadata in `package.json`.
@@ -188,6 +193,11 @@ Each server declares desired plugins by package name only:
 
 The resolver maps those package names to the latest artifacts from the
 environment channel. Operators do not edit versions in this file.
+
+During migration, existing GitLab `s2script-plugins.txt` files are copied into
+the matching `edgegamers-s2s` server directories. After migration, GitLab deploy
+jobs must consume the `edgegamers-s2s` copy instead of maintaining their own
+independent list.
 
 ## Artifact Channels
 
@@ -297,6 +307,8 @@ any safety check fails.
 1. Add metadata policy checks while preserving the existing `plugins/*` layout.
 2. Move reference plugins into `plugins/global` or `plugins/games/cs2`.
 3. Move server payload content and plugin lists into `servers/games/cs2`.
+   Treat existing GitLab `s2script-plugins.txt` files as migration inputs, not
+   ongoing authoritative files.
 4. Update workspace discovery to include the nested plugin directories.
 5. Replace development artifact collection with channel manifests containing
    metadata.
