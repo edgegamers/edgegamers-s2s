@@ -13,6 +13,19 @@ export function readPluginList(path) {
 }
 
 export function readServerDefinition({ rootDir, game, serverName }) {
+  return readServerDefinitionInternal({
+    rootDir,
+    game,
+    serverName,
+    stack: [],
+  });
+}
+
+function readServerDefinitionInternal({ rootDir, game, serverName, stack }) {
+  if (stack.includes(serverName)) {
+    throw new Error(`servers/games/${game}/${serverName}/server.json: server inheritance cycle: ${[...stack, serverName].join(" -> ")}`);
+  }
+
   const directory = join(rootDir, "servers", "games", game, serverName);
   const serverPath = join(directory, "server.json");
   const listPath = join(directory, "s2script-plugins.txt");
@@ -24,6 +37,22 @@ export function readServerDefinition({ rootDir, game, serverName }) {
   if (server.game !== game) {
     throw new Error(`${normalize(relative(rootDir, serverPath))}: server game must be ${JSON.stringify(game)}`);
   }
+  const inheritedServers = Array.isArray(server.inherits) ? server.inherits : [];
+  const inheritedPluginNames = inheritedServers.flatMap((inheritedServer) => {
+    if (typeof inheritedServer !== "string" || !inheritedServer) {
+      throw new Error(`${normalize(relative(rootDir, serverPath))}: inherits entries must be non-empty server names`);
+    }
+    return readServerDefinitionInternal({
+      rootDir,
+      game,
+      serverName: inheritedServer,
+      stack: [...stack, serverName],
+    }).pluginNames;
+  });
+  const pluginNames = [...new Set([
+    ...inheritedPluginNames,
+    ...readPluginList(listPath),
+  ])];
 
   return {
     name: server.name,
@@ -31,7 +60,8 @@ export function readServerDefinition({ rootDir, game, serverName }) {
     directory,
     listPath,
     relativeListPath: normalize(relative(rootDir, listPath)),
-    pluginNames: readPluginList(listPath),
+    inheritedServers,
+    pluginNames,
   };
 }
 

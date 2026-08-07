@@ -26,10 +26,11 @@ function createServerFixture() {
       game: "cs2",
       environments: ["development"],
       pluginChannel: { development: "dev" },
+      ...(server === "ttt" ? { inherits: ["empty"] } : {}),
     }));
   }
   write(root, "servers/games/cs2/empty/s2script-plugins.txt", "@edgegamers/core\n");
-  write(root, "servers/games/cs2/ttt/s2script-plugins.txt", "@edgegamers/core\n@edgegamers/ttt\n");
+  write(root, "servers/games/cs2/ttt/s2script-plugins.txt", "@edgegamers/ttt\n");
   return root;
 }
 

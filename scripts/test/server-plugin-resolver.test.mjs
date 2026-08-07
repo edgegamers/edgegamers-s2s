@@ -23,10 +23,20 @@ function createFixture() {
     game: "cs2",
     environments: ["development", "production"],
     pluginChannel: { development: "dev", production: "main" },
+    inherits: ["empty"],
   }));
+  write(root, "servers/games/cs2/empty/server.json", JSON.stringify({
+    name: "empty",
+    game: "cs2",
+    environments: ["development"],
+    pluginChannel: { development: "dev" },
+  }));
+  write(root, "servers/games/cs2/empty/s2script-plugins.txt", [
+    "@edgegamers/core",
+    "",
+  ].join("\n"));
   write(root, "servers/games/cs2/ttt/s2script-plugins.txt", [
     "# comments are ignored",
-    "@edgegamers/core",
     "@edgegamers/ttt",
     "",
   ].join("\n"));
@@ -78,6 +88,7 @@ describe("readServerDefinition", () => {
       game: "cs2",
       directory: expect.stringContaining("servers"),
       pluginNames: ["@edgegamers/core", "@edgegamers/ttt"],
+      inheritedServers: ["empty"],
     }));
   });
 });
