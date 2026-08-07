@@ -23,6 +23,9 @@ function createFixture() {
     game: "cs2",
     environments: ["development", "production"],
     pluginChannel: { development: "dev", production: "main" },
+    development: {
+      pluginDirectory: "/var/lib/docker/volumes/ttt-s2s-addons/_data/s2script/plugins",
+    },
     inherits: ["empty"],
   }));
   write(root, "servers/games/cs2/empty/server.json", JSON.stringify({
@@ -30,6 +33,9 @@ function createFixture() {
     game: "cs2",
     environments: ["development"],
     pluginChannel: { development: "dev" },
+    development: {
+      pluginDirectory: "/var/lib/docker/volumes/empty-s2s-addons/_data/s2script/plugins",
+    },
   }));
   write(root, "servers/games/cs2/empty/s2script-plugins.txt", [
     "@edgegamers/core",
@@ -89,6 +95,7 @@ describe("readServerDefinition", () => {
       directory: expect.stringContaining("servers"),
       pluginNames: ["@edgegamers/core", "@edgegamers/ttt"],
       inheritedServers: ["empty"],
+      developmentPluginDirectory: "/var/lib/docker/volumes/ttt-s2s-addons/_data/s2script/plugins",
     }));
   });
 });

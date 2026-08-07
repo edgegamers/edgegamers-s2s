@@ -37,6 +37,13 @@ function readServerDefinitionInternal({ rootDir, game, serverName, stack }) {
   if (server.game !== game) {
     throw new Error(`${normalize(relative(rootDir, serverPath))}: server game must be ${JSON.stringify(game)}`);
   }
+  const developmentPluginDirectory = server.development?.pluginDirectory;
+  if (
+    developmentPluginDirectory !== undefined
+    && (typeof developmentPluginDirectory !== "string" || !developmentPluginDirectory)
+  ) {
+    throw new Error(`${normalize(relative(rootDir, serverPath))}: development.pluginDirectory must be a non-empty string`);
+  }
   const inheritedServers = Array.isArray(server.inherits) ? server.inherits : [];
   const inheritedPluginNames = inheritedServers.flatMap((inheritedServer) => {
     if (typeof inheritedServer !== "string" || !inheritedServer) {
@@ -62,6 +69,7 @@ function readServerDefinitionInternal({ rootDir, game, serverName, stack }) {
     relativeListPath: normalize(relative(rootDir, listPath)),
     inheritedServers,
     pluginNames,
+    ...(developmentPluginDirectory ? { developmentPluginDirectory } : {}),
   };
 }
 

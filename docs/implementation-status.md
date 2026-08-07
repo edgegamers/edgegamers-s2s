@@ -72,7 +72,7 @@ Status: complete locally.
 
 Status: implemented locally.
 
-- Development artifacts deploy over SSH to the configured development server plugin directory.
+- Development artifacts deploy over SSH to each target server's `development.pluginDirectory`.
 - Reconciliation is manifest-scoped and leaves unmanaged files untouched.
 - Production releases publish to the Source2Script registry only.
 - Server images live in `base-s2s` and `ttt-s2s`.
@@ -119,10 +119,11 @@ Development deployment, production release, and hotfix flow still need GitHub en
 
 Required remote setup:
 
-- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
+- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_USER`, `DEV_SSH_KEY`.
+- GitHub development environment variables: `DEV_SERVER_TARGETS`, or `DEV_SERVER_GAME` and `DEV_SERVER_NAME` for a single target.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
 - The development SSH host needs Node.js 20 or newer in the deploy user's non-interactive `PATH`.
 - GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
 - The server box must schedule a 10:00 UTC rebuild/restart outside CI.
-- The development SSH user must write only to staging and the Source2Script plugin directory; `DEV_S2SCRIPT_PLUGIN_DIR` must be the same host bind path used by `compose-dev.yml` and be writable by UID/GID `1000:1000`.
+- The development SSH user must write only to staging and each target server's `development.pluginDirectory`; that path must match the host path backing the server's `compose-dev.yml` addon volume and be writable by UID/GID `1000:1000`.
 - TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.

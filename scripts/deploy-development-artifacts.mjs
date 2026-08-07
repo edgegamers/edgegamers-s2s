@@ -140,14 +140,30 @@ function parseDeploymentTargetConfig(value) {
   return parsed;
 }
 
-function selectedFileNamesForTarget({ root, manifest, game, serverName }) {
-  if (!game || !serverName) return [];
+function readDeploymentServer({ root, game, serverName, targetLabel }) {
+  if (!game || !serverName) {
+    throw new Error(`${targetLabel} requires game and server`);
+  }
+  return readServerDefinition({
+    rootDir: root,
+    game,
+    serverName,
+  });
+}
+
+function remotePluginDirectoryForServer({ server, targetLabel }) {
+  const remotePluginDirectory = server.developmentPluginDirectory;
+  if (!remotePluginDirectory) {
+    throw new Error(
+      `${targetLabel} (${server.game}/${server.name}) requires development.pluginDirectory in server.json`,
+    );
+  }
+  return remotePluginDirectory;
+}
+
+function selectedFileNamesForServer({ server, manifest }) {
   return resolveServerPlugins({
-    server: readServerDefinition({
-      rootDir: root,
-      game,
-      serverName,
-    }),
+    server,
     manifest,
   }).fileNames;
 }
@@ -155,7 +171,6 @@ function selectedFileNamesForTarget({ root, manifest, game, serverName }) {
 export function resolveDeploymentTargets({ root, manifest, env }) {
   const shared = {
     host: env.DEV_SSH_HOST,
-    port: env.DEV_SSH_PORT,
     user: env.DEV_SSH_USER,
   };
   const configuredTargets = parseDeploymentTargetConfig(env.DEV_SERVER_TARGETS);
@@ -167,39 +182,46 @@ export function resolveDeploymentTargets({ root, manifest, env }) {
     return configuredTargets.map((target, index) => {
       const game = target.game;
       const serverName = target.serverName ?? target.server;
-      const remotePluginDirectory = target.remotePluginDirectory ?? target.pluginDir;
-      if (!game || !serverName || !remotePluginDirectory) {
-        throw new Error(`DEV_SERVER_TARGETS[${index}] requires game, server, and pluginDir`);
-      }
+      const targetLabel = `DEV_SERVER_TARGETS[${index}]`;
+      const server = readDeploymentServer({ root, game, serverName, targetLabel });
+      const remotePluginDirectory = remotePluginDirectoryForServer({
+        server,
+        targetLabel,
+      });
       return {
         game,
         serverName,
         host: target.host ?? shared.host,
-        ...(target.port ?? shared.port ? { port: String(target.port ?? shared.port) } : {}),
+        ...(target.port ? { port: String(target.port) } : {}),
         user: target.user ?? shared.user,
         remotePluginDirectory,
-        selectedFileNames: selectedFileNamesForTarget({
-          root,
+        selectedFileNames: selectedFileNamesForServer({
+          server,
           manifest,
-          game,
-          serverName,
         }),
       };
     });
   }
 
+  const singleServer = readDeploymentServer({
+    root,
+    game: env.DEV_SERVER_GAME,
+    serverName: env.DEV_SERVER_NAME,
+    targetLabel: "development deploy target",
+  });
+
   return [{
     game: env.DEV_SERVER_GAME,
     serverName: env.DEV_SERVER_NAME,
     host: shared.host,
-    ...(shared.port ? { port: shared.port } : {}),
     user: shared.user,
-    remotePluginDirectory: env.DEV_S2SCRIPT_PLUGIN_DIR,
-    selectedFileNames: selectedFileNamesForTarget({
-      root,
+    remotePluginDirectory: remotePluginDirectoryForServer({
+      server: singleServer,
+      targetLabel: "development deploy target",
+    }),
+    selectedFileNames: selectedFileNamesForServer({
+      server: singleServer,
       manifest,
-      game: env.DEV_SERVER_GAME,
-      serverName: env.DEV_SERVER_NAME,
     }),
   }];
 }

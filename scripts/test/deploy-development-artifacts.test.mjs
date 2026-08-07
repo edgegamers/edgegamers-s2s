@@ -26,6 +26,9 @@ function createServerFixture() {
       game: "cs2",
       environments: ["development"],
       pluginChannel: { development: "dev" },
+      development: {
+        pluginDirectory: `/var/lib/docker/volumes/${server}-s2s-addons/_data/s2script/plugins`,
+      },
       ...(server === "ttt" ? { inherits: ["empty"] } : {}),
     }));
   }
@@ -97,12 +100,10 @@ describe("resolveDeploymentTargets", () => {
           {
             game: "cs2",
             server: "empty",
-            pluginDir: "/srv/empty/addons/s2script/plugins",
           },
           {
             game: "cs2",
             server: "ttt",
-            pluginDir: "/srv/ttt/addons/s2script/plugins",
           },
         ]),
       },
@@ -114,7 +115,7 @@ describe("resolveDeploymentTargets", () => {
         serverName: "empty",
         host: "dev.example.test",
         user: "deploy",
-        remotePluginDirectory: "/srv/empty/addons/s2script/plugins",
+        remotePluginDirectory: "/var/lib/docker/volumes/empty-s2s-addons/_data/s2script/plugins",
         selectedFileNames: ["core.s2sp"],
       },
       {
@@ -122,13 +123,13 @@ describe("resolveDeploymentTargets", () => {
         serverName: "ttt",
         host: "dev.example.test",
         user: "deploy",
-        remotePluginDirectory: "/srv/ttt/addons/s2script/plugins",
+        remotePluginDirectory: "/var/lib/docker/volumes/ttt-s2s-addons/_data/s2script/plugins",
         selectedFileNames: ["core.s2sp", "ttt.s2sp"],
       },
     ]);
   });
 
-  it("keeps the legacy single target environment shape", () => {
+  it("builds a single dev target from server metadata", () => {
     const root = createServerFixture();
 
     expect(resolveDeploymentTargets({
@@ -137,13 +138,13 @@ describe("resolveDeploymentTargets", () => {
       env: {
         DEV_SSH_HOST: "dev.example.test",
         DEV_SSH_USER: "deploy",
-        DEV_S2SCRIPT_PLUGIN_DIR: "/srv/ttt/addons/s2script/plugins",
         DEV_SERVER_GAME: "cs2",
         DEV_SERVER_NAME: "ttt",
       },
     })).toEqual([
       expect.objectContaining({
         serverName: "ttt",
+        remotePluginDirectory: "/var/lib/docker/volumes/ttt-s2s-addons/_data/s2script/plugins",
         selectedFileNames: ["core.s2sp", "ttt.s2sp"],
       }),
     ]);
