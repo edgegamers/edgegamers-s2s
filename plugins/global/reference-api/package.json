@@ -10,5 +10,9 @@
   },
   "s2script": {
     "publishes": "self"
+  },
+  "edgegamers": {
+    "scope": "global",
+    "publicRegistry": false
   }
 }

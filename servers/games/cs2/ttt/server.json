@@ -1,0 +1,9 @@
+{
+  "name": "ttt",
+  "game": "cs2",
+  "environments": ["development", "production"],
+  "pluginChannel": {
+    "development": "dev",
+    "production": "main"
+  }
+}

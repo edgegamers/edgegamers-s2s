@@ -9,10 +9,20 @@ describe("check-changeset CLI", () => {
     const root = mkdtempSync(join(tmpdir(), "edgegamers-changeset-"));
 
     try {
-      mkdirSync(join(root, "plugins", "public-plugin"), { recursive: true });
+      mkdirSync(join(root, "plugins", "global", "public-plugin"), { recursive: true });
       mkdirSync(join(root, ".changeset"), { recursive: true });
       writeFileSync(
-        join(root, "plugins", "public-plugin", "package.json"),
+        join(root, "package.json"),
+        JSON.stringify({
+          s2script: {
+            workspace: {
+              plugins: ["plugins/global/*"],
+            },
+          },
+        }),
+      );
+      writeFileSync(
+        join(root, "plugins", "global", "public-plugin", "package.json"),
         JSON.stringify({
           name: "@edgegamers/public-plugin",
           version: "1.0.0",
@@ -26,7 +36,7 @@ describe("check-changeset CLI", () => {
       const messages = [];
       const git = (args) => {
         if (args[0] === "merge-base") return "base-commit";
-        if (args[0] === "diff") return "plugins/public-plugin/src/plugin.ts";
+        if (args[0] === "diff") return "plugins/global/public-plugin/src/plugin.ts";
         throw new Error(`Unexpected git arguments: ${args.join(" ")}`);
       };
 

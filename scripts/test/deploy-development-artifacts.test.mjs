@@ -18,15 +18,24 @@ describe("buildRemoteScript", () => {
     const script = buildRemoteScript({
       remoteStagingDirectory: "/tmp/edgegamers-s2s-development/123",
       remotePluginDirectory: "/srv/cs2/game/csgo/addons/s2script/plugins",
+      selectedFileNames: ["core.s2sp", "ttt.s2sp"],
     });
 
     expect(script).toContain("function listManagedFileNames(manifest)");
+    expect(script).toContain(
+      'const selectedFileNames = new Set(["core.s2sp","ttt.s2sp"]);',
+    );
+    expect(script).toContain(
+      "const selectedPlugins = next.plugins.filter((plugin) => selectedFileNames.size === 0 || selectedFileNames.has(plugin.fileName));",
+    );
     expect(script).toContain(
       "const previousFileNames = listManagedFileNames(previous);",
     );
     expect(script).toContain(
       "cpSync(join(staging, fileName), join(pluginDir, fileName), { force: true });",
     );
+    expect(script).toContain("writeFileSync(manifestPath, `${JSON.stringify(filteredManifest, null, 2)}\\n`);");
+    expect(script).not.toContain('cp -f "$staging/development-manifest.json" "$manifest_path"');
     expect(script).not.toContain('find "$staging"');
   });
 });

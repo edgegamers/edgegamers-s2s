@@ -11,5 +11,9 @@
     "pluginDependencies": {
       "@edgegamers/reference-api": "^0.1.0"
     }
+  },
+  "edgegamers": {
+    "scope": "global",
+    "publicRegistry": false
   }
 }

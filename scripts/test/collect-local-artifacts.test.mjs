@@ -16,10 +16,10 @@ describe("collect-local-artifacts", () => {
     const root = mkdtempSync(join(tmpdir(), "edgegamers-local-artifacts-"));
 
     try {
-      mkdirSync(join(root, "plugins", "alpha", "dist"), { recursive: true });
-      mkdirSync(join(root, "plugins", "zeta", "dist"), { recursive: true });
-      writeFileSync(join(root, "plugins", "alpha", "dist", "alpha.s2sp"), "alpha");
-      writeFileSync(join(root, "plugins", "zeta", "dist", "zeta.s2sp"), "zeta");
+      mkdirSync(join(root, "plugins", "global", "alpha", "dist"), { recursive: true });
+      mkdirSync(join(root, "plugins", "games", "cs2", "zeta", "dist"), { recursive: true });
+      writeFileSync(join(root, "plugins", "global", "alpha", "dist", "alpha.s2sp"), "alpha");
+      writeFileSync(join(root, "plugins", "games", "cs2", "zeta", "dist", "zeta.s2sp"), "zeta");
 
       const result = writeLocalArtifacts({ root });
 

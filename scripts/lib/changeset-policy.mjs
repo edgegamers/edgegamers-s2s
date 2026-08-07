@@ -62,7 +62,7 @@ export function evaluateChangesetCoverage({
 
   for (const changedFile of changedFiles) {
     const normalized = changedFile.replaceAll("\\", "/");
-    const match = /^plugins\/([^/]+)\//u.exec(normalized);
+    const match = /^plugins\/((?:global\/[^/]+)|(?:games\/[^/]+\/[^/]+)|(?:[^/]+))\//u.exec(normalized);
     const packageName = match
       ? publishableByDirectory.get(match[1])
       : undefined;

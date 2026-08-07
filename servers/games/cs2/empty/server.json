@@ -1,0 +1,8 @@
+{
+  "name": "empty",
+  "game": "cs2",
+  "environments": ["development"],
+  "pluginChannel": {
+    "development": "dev"
+  }
+}

@@ -1,0 +1,1329 @@
+{
+  "add": [
+    {
+      "classname": "weapon_molotov",
+      "origin": "-88.75 2287.87 -126.25",
+      "angles": "21.99 -7.24 -89.66"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1367.47 2565.62 8.63",
+      "angles": "2.19 -176.99 0.45"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1268.44 114.08 9.86",
+      "angles": "-22.11 -165.60 -90.00"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1268.92 92.58 9.87",
+      "angles": "-23.25 -168.39 -90.00"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1268.39 72.72 9.87",
+      "angles": "-23.34 -165.47 -90.03"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-2057.20 -236.41 36.38",
+      "angles": "-61.85 26.39 -121.44"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1027.76 -599.86 170.19",
+      "angles": "-18.28 -173.27 -95.17"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-998.48 -602.73 170.79",
+      "angles": "-69.32 164.66 -102.58"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-1004.09 -666.12 148.75",
+      "angles": "-0.00 84.95 0.00"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-1004.32 -668.67 127.61",
+      "angles": "-0.00 84.95 0.00"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1004.32 -668.67 127.61",
+      "angles": "-0.00 84.95 0.00"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-1004.09 -666.12 148.75",
+      "angles": "-0.00 84.95 0.00"
+    },
+    {
+      "classname": "weapon_molotov",
+      "origin": "-1012.70 -706.09 129.03",
+      "angles": "-0.00 43.40 0.00"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-215.53 -1138.00 50.32",
+      "angles": "44.50 -102.66 -114.52"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "151.63 14.99 9.33",
+      "angles": "-45.56 -38.84 -96.40"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "1287.43 193.06 -182.41",
+      "angles": "47.50 -23.06 98.17"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "1682.83 1009.52 2.01",
+      "angles": "-46.01 87.23 -96.10"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "1595.32 1549.85 1.51",
+      "angles": "44.16 -7.57 -96.14"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "1783.52 1804.75 2.91",
+      "angles": "46.49 -167.50 -95.63"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "1245.16 3063.49 129.63",
+      "angles": "-46.16 -73.59 -95.36"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-773.35 2074.42 -109.31",
+      "angles": "40.63 146.66 102.88"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-1276.49 2107.74 8.96",
+      "angles": "-45.90 28.70 -107.53"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-2087.46 3120.51 36.28",
+      "angles": "-43.15 -75.34 -97.22"
+    },
+    {
+      "classname": "weapon_smokegrenade",
+      "origin": "-1978.21 3121.70 34.41",
+      "angles": "-43.50 -65.16 -95.90"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-2151.25 1896.21 5.60",
+      "angles": "-66.74 -23.63 -85.47"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-2029.89 566.87 35.31",
+      "angles": "-61.69 -69.54 139.78"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-1633.86 -95.53 10.24",
+      "angles": "12.40 134.56 -105.00"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-1543.66 -94.90 10.25",
+      "angles": "11.85 138.41 -105.08"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-1616.58 -174.43 166.11",
+      "angles": "62.46 -32.58 -141.04"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-154.10 -1126.18 37.12",
+      "angles": "-18.08 -125.26 84.56"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "439.88 -999.82 2.68",
+      "angles": "0.33 -165.36 6.81"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "1548.01 199.98 -181.09",
+      "angles": "-65.27 130.47 143.53"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "1703.28 1011.52 2.90",
+      "angles": "-11.41 -89.78 112.68"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "1234.56 1561.48 3.14",
+      "angles": "0.68 -131.70 40.51"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "1263.10 3060.19 131.18",
+      "angles": "-0.49 -0.00 5.89"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "755.02 2740.39 98.09",
+      "angles": "-12.25 -7.30 112.53"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "283.81 2277.07 100.19",
+      "angles": "15.66 67.36 113.45"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "299.22 2222.51 100.03",
+      "angles": "-13.26 112.58 113.62"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-58.82 1560.72 3.26",
+      "angles": "14.60 20.17 114.03"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "-704.18 317.05 10.78",
+      "angles": "0.67 129.99 6.59"
+    },
+    {
+      "classname": "weapon_hegrenade",
+      "origin": "748.01 41.13 10.67",
+      "angles": "0.33 86.88 6.11"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "753.66 94.82 9.97",
+      "angles": "-54.60 108.95 83.50"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "1570.60 192.82 -180.08",
+      "angles": "51.64 5.39 98.75"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "1794.28 1816.44 3.23",
+      "angles": "-56.52 99.38 90.86"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "1569.83 3065.19 128.10",
+      "angles": "67.10 -46.70 -91.13"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "986.23 2381.90 14.83",
+      "angles": "-46.73 -138.88 124.57"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-752.55 2073.65 -111.25",
+      "angles": "51.41 159.07 98.16"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-2151.82 1921.29 4.93",
+      "angles": "54.81 109.16 95.19"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-2036.40 588.28 36.40",
+      "angles": "52.48 77.79 103.85"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-1673.88 -253.42 129.36",
+      "angles": "45.16 71.29 -95.22"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-869.65 -665.00 130.76",
+      "angles": "-63.92 -140.61 -92.20"
+    },
+    {
+      "classname": "weapon_flashbang",
+      "origin": "-274.16 -1160.69 66.21",
+      "angles": "61.30 131.35 -54.73"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1724.78 314.58 57.86",
+      "angles": "0.80 124.34 90.97"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1752.02 314.49 57.90",
+      "angles": "1.75 123.25 89.17"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "583.05 1163.97 2.29",
+      "angles": "-0.37 -58.71 91.01"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "749.64 -90.14 9.00",
+      "angles": "0.13 126.39 89.83"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "365.62 -581.36 1.49",
+      "angles": "-0.23 122.30 88.66"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1787.57 -1056.68 129.63",
+      "angles": "0.55 137.69 90.17"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1724.37 -285.12 164.99",
+      "angles": "0.03 122.00 90.21"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1647.14 -190.01 164.99",
+      "angles": "0.02 131.66 90.21"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "-1697.34 -173.95 166.10",
+      "angles": "-0.81 52.30 -113.96"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "-1746.55 -174.14 166.07",
+      "angles": "-0.84 52.71 -113.97"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "-497.89 -230.98 2.16",
+      "angles": "-1.85 -123.58 -115.24"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "-724.66 488.66 13.15",
+      "angles": "0.21 -15.57 -137.06"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "-25.24 1578.67 3.59",
+      "angles": "0.35 -124.68 -115.43"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "14.58 1578.74 3.29",
+      "angles": "-0.28 -124.41 -115.03"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "41.89 1578.50 3.22",
+      "angles": "0.05 -122.09 -114.90"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "454.14 1941.17 98.10",
+      "angles": "-0.85 -126.51 -114.05"
+    },
+    {
+      "classname": "weapon_elite",
+      "origin": "484.41 1939.96 98.10",
+      "angles": "-0.85 -113.76 -114.00"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "490.58 2213.16 96.78",
+      "angles": "-0.21 -33.53 90.09"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "490.99 2383.36 96.89",
+      "angles": "-4.01 -34.23 89.54"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "494.63 2762.16 97.73",
+      "angles": "0.82 -36.70 91.13"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "515.66 2762.01 97.85",
+      "angles": "0.59 -33.02 91.27"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1053.32 2885.76 128.52",
+      "angles": "-1.22 58.30 91.40"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1053.84 2932.34 129.18",
+      "angles": "-0.52 62.11 90.50"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1489.71 3059.17 121.80",
+      "angles": "-0.98 -50.39 91.82"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1449.43 3059.25 120.75",
+      "angles": "-1.29 -50.37 90.94"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "929.63 2376.41 -4.92",
+      "angles": "-16.24 -21.65 91.97"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "877.61 2375.02 -18.00",
+      "angles": "-10.34 -6.65 90.56"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1251.54 1687.93 0.85",
+      "angles": "0.11 72.55 89.68"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1243.51 1721.63 0.86",
+      "angles": "-0.68 82.09 90.19"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "1260.45 1757.40 2.18",
+      "angles": "-3.52 97.59 95.96"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "149.82 -224.90 8.85",
+      "angles": "0.08 54.55 89.68"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "149.02 -187.28 8.85",
+      "angles": "-0.01 39.82 90.16"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-654.94 -679.39 129.50",
+      "angles": "-0.06 83.86 91.60"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-352.45 -663.83 88.43",
+      "angles": "11.48 39.75 99.67"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-137.23 -664.44 33.87",
+      "angles": "11.55 19.92 100.00"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1204.49 -1054.99 129.29",
+      "angles": "1.71 119.36 91.10"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1398.63 -1058.33 129.35",
+      "angles": "-0.93 145.41 87.64"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1598.37 -1057.68 128.99",
+      "angles": "-0.03 148.06 90.17"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-1721.19 -1057.65 129.26",
+      "angles": "0.27 149.10 90.69"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-2038.40 279.02 8.84",
+      "angles": "1.93 28.60 90.52"
+    },
+    {
+      "classname": "weapon_deagle",
+      "origin": "-2043.90 150.46 9.47",
+      "angles": "1.17 57.62 92.20"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1667.11 -101.15 8.67",
+      "angles": "-0.03 179.67 90.40"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1497.08 -101.85 8.67",
+      "angles": "0.01 178.17 90.20"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1684.67 -1052.57 128.96",
+      "angles": "-0.06 -176.58 90.59"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1484.30 -1054.84 128.68",
+      "angles": "-0.34 166.04 87.86"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1294.15 -1054.83 128.71",
+      "angles": "-2.11 121.71 90.98"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-1091.08 -1053.36 128.99",
+      "angles": "0.25 179.41 90.29"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-552.70 -1058.78 128.64",
+      "angles": "0.00 53.11 90.00"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "-507.33 -1058.99 128.65",
+      "angles": "0.15 53.13 89.77"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "40.25 -1152.22 5.38",
+      "angles": "-4.12 -147.55 85.01"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "62.63 -1151.29 2.94",
+      "angles": "-5.18 -141.07 86.55"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "687.52 -396.39 8.57",
+      "angles": "-0.13 -21.05 -90.14"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "592.25 -399.60 8.62",
+      "angles": "0.14 148.19 -89.56"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1586.84 1619.75 0.58",
+      "angles": "-0.15 -87.91 89.84"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1586.84 1646.75 0.49",
+      "angles": "-0.14 -87.88 89.85"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1586.87 1667.56 0.42",
+      "angles": "0.24 -88.18 88.76"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1011.66 2453.15 168.87",
+      "angles": "0.14 49.31 89.54"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1033.02 2446.33 169.00",
+      "angles": "0.25 -177.68 90.36"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1050.58 2459.03 169.07",
+      "angles": "-0.67 -55.80 91.82"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1418.43 3057.33 120.71",
+      "angles": "0.47 -43.82 88.95"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1386.77 3057.37 121.36",
+      "angles": "0.55 -44.30 88.57"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1348.06 3057.43 122.19",
+      "angles": "0.54 -44.95 88.77"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1769.71 2185.46 3.91",
+      "angles": "-0.26 -86.77 91.41"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1768.42 2202.27 3.89",
+      "angles": "-0.17 -87.16 91.50"
+    },
+    {
+      "classname": "weapon_p250",
+      "origin": "1767.45 2218.22 3.88",
+      "angles": "0.01 -88.24 91.48"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "848.96 2371.27 -22.93",
+      "angles": "5.86 -112.20 -81.16"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "805.29 2368.92 -32.30",
+      "angles": "10.40 -117.35 -80.87"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "764.07 2368.09 -41.88",
+      "angles": "-0.45 -61.60 104.24"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "354.03 2059.41 -124.10",
+      "angles": "0.27 -19.24 -90.27"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "275.00 2059.41 -123.63",
+      "angles": "0.27 -19.30 -90.26"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "217.52 2059.26 -123.22",
+      "angles": "0.25 -19.10 -90.79"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "126.47 2059.27 -122.42",
+      "angles": "0.29 -18.73 -90.56"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2.15 2020.21 -122.59",
+      "angles": "0.71 11.58 -90.80"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-48.86 2014.88 -121.39",
+      "angles": "1.87 -10.43 -91.23"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-762.89 2543.43 -81.67",
+      "angles": "1.36 -108.96 -84.75"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-777.96 2542.25 -82.24",
+      "angles": "-0.09 -107.59 -89.01"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-796.03 2542.38 -82.44",
+      "angles": "-1.79 -97.95 -91.36"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2174.09 2156.14 3.51",
+      "angles": "1.40 -18.97 -91.56"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2174.11 2144.91 3.71",
+      "angles": "1.40 -19.09 -91.55"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2174.35 2131.92 3.95",
+      "angles": "1.53 -14.66 -91.53"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-1456.29 489.11 9.07",
+      "angles": "0.00 157.50 -90.16"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-1382.79 488.98 9.06",
+      "angles": "0.00 159.30 -90.00"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-1340.99 492.27 9.07",
+      "angles": "0.08 138.17 -89.78"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2206.49 -727.65 120.77",
+      "angles": "-0.21 71.12 -88.69"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2206.81 -842.48 120.62",
+      "angles": "0.43 67.90 -88.74"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2207.07 -919.94 121.06",
+      "angles": "0.13 67.29 -90.22"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-2207.32 -996.51 129.28",
+      "angles": "-0.25 70.72 -90.70"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-945.06 -794.39 117.01",
+      "angles": "-2.56 72.93 -90.15"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-710.60 -774.55 117.99",
+      "angles": "-4.80 70.35 -89.15"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-525.45 -774.44 111.17",
+      "angles": "-0.51 68.56 -85.94"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "-378.86 -774.36 86.47",
+      "angles": "16.84 77.11 -16.28"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "82.91 -1155.50 2.55",
+      "angles": "0.13 68.24 -88.84"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "98.36 -1155.45 2.11",
+      "angles": "0.37 67.74 -89.11"
+    },
+    {
+      "classname": "weapon_hkp2000",
+      "origin": "114.82 -1155.57 1.59",
+      "angles": "0.30 66.72 -89.02"
+    },
+    {
+      "classname": "weapon_awp",
+      "origin": "-1909.20 3115.69 180.10",
+      "angles": "-0.02 -81.24 90.02"
+    },
+    {
+      "classname": "weapon_awp",
+      "origin": "674.51 2761.48 245.20",
+      "angles": "0.01 -77.26 89.75"
+    },
+    {
+      "classname": "weapon_awp",
+      "origin": "1772.19 311.86 58.73",
+      "angles": "0.95 87.36 88.31"
+    },
+    {
+      "classname": "weapon_sawedoff",
+      "origin": "377.09 -518.31 0.85",
+      "angles": "-0.08 94.41 90.15"
+    },
+    {
+      "classname": "weapon_sawedoff",
+      "origin": "-1020.55 -515.10 193.31",
+      "angles": "2.16 9.51 90.75"
+    },
+    {
+      "classname": "weapon_sawedoff",
+      "origin": "-1020.12 -529.26 193.19",
+      "angles": "2.18 4.15 90.55"
+    },
+    {
+      "classname": "weapon_sawedoff",
+      "origin": "-1019.86 -544.20 193.11",
+      "angles": "2.25 5.78 90.83"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-2060.77 -397.61 76.09",
+      "angles": "-14.00 -87.72 88.89"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1450.31 678.39 34.79",
+      "angles": "-2.08 -85.79 95.09"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1427.96 679.34 37.00",
+      "angles": "-7.77 -79.40 93.75"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1835.82 978.32 40.82",
+      "angles": "-1.43 -12.28 88.61"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1557.22 983.31 36.11",
+      "angles": "1.95 -169.79 92.14"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1758.51 1815.93 2.86",
+      "angles": "3.59 98.33 91.09"
+    },
+    {
+      "classname": "weapon_nova",
+      "origin": "-1763.87 1815.96 2.87",
+      "angles": "3.56 100.00 91.23"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-2184.91 2107.35 4.49",
+      "angles": "1.82 0.23 88.98"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-2184.95 2097.22 4.67",
+      "angles": "1.82 -0.18 88.99"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-2170.69 1261.46 40.53",
+      "angles": "1.05 3.61 92.29"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-1904.13 677.54 36.41",
+      "angles": "5.04 4.77 89.77"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-651.37 1515.64 -109.28",
+      "angles": "-0.22 -180.00 81.24"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-553.91 1521.23 -110.34",
+      "angles": "-1.13 -171.33 89.83"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-96.02 1584.00 2.62",
+      "angles": "1.58 -89.95 90.47"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "-113.46 1583.90 2.43",
+      "angles": "1.12 -93.57 90.48"
+    },
+    {
+      "classname": "weapon_xm1014",
+      "origin": "492.16 1365.97 74.74",
+      "angles": "0.03 177.60 89.86"
+    },
+    {
+      "classname": "weapon_p90",
+      "origin": "280.15 2118.74 99.06",
+      "angles": "-0.79 91.68 91.14"
+    },
+    {
+      "classname": "weapon_p90",
+      "origin": "1608.00 2743.39 109.09",
+      "angles": "-0.49 0.48 101.60"
+    },
+    {
+      "classname": "weapon_p90",
+      "origin": "-2156.71 1860.34 4.67",
+      "angles": "-0.73 99.47 92.28"
+    },
+    {
+      "classname": "weapon_p90",
+      "origin": "-1813.28 1269.56 71.03",
+      "angles": "-0.06 58.77 90.26"
+    },
+    {
+      "classname": "weapon_p90",
+      "origin": "-1728.16 -200.65 165.07",
+      "angles": "-0.00 87.40 90.00"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "-2062.72 -307.70 53.82",
+      "angles": "-14.06 -93.91 89.05"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "-2062.95 -135.62 10.80",
+      "angles": "-12.56 -103.82 88.62"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "-1681.69 1390.41 43.44",
+      "angles": "-0.01 -172.17 89.13"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "-1202.41 1508.30 -75.53",
+      "angles": "-0.02 -83.40 90.25"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "-275.02 1432.25 -27.11",
+      "angles": "-0.48 -175.24 90.12"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "437.14 1980.85 133.07",
+      "angles": "0.01 102.15 89.96"
+    },
+    {
+      "classname": "weapon_bizon",
+      "origin": "475.77 1988.27 133.07",
+      "angles": "0.01 102.17 89.95"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "1764.45 2254.29 4.29",
+      "angles": "-1.05 -42.12 91.06"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "983.45 219.78 13.04",
+      "angles": "2.91 117.56 91.31"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "1217.74 217.96 11.96",
+      "angles": "-2.07 -119.97 88.32"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "550.71 1151.95 2.60",
+      "angles": "0.12 95.95 93.49"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "450.32 -834.40 -3.05",
+      "angles": "37.46 150.50 78.31"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "-459.89 -1056.90 129.10",
+      "angles": "0.00 38.81 90.02"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "-1590.98 -99.00 9.09",
+      "angles": "-0.00 -159.77 90.00"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "-2158.28 1074.14 39.43",
+      "angles": "0.68 136.55 94.86"
+    },
+    {
+      "classname": "weapon_mac10",
+      "origin": "-2158.18 1052.32 40.10",
+      "angles": "-0.96 140.10 92.84"
+    },
+    {
+      "classname": "weapon_negev",
+      "origin": "-273.22 1495.75 -121.91",
+      "angles": "0.29 -149.15 -107.52"
+    },
+    {
+      "classname": "weapon_negev",
+      "origin": "1431.53 188.29 -182.93",
+      "angles": "1.13 -162.45 -112.00"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "679.80 1182.14 4.07",
+      "angles": "-2.12 13.90 85.98"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "401.80 463.79 2.79",
+      "angles": "0.89 -168.54 90.39"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "-526.04 925.93 -32.28",
+      "angles": "-13.18 -82.57 84.15"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "-574.92 1729.29 -114.31",
+      "angles": "-2.91 -88.37 88.22"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "-575.81 1681.20 -114.85",
+      "angles": "1.36 -83.45 87.73"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "493.53 2529.54 -106.33",
+      "angles": "-8.50 47.81 96.59"
+    },
+    {
+      "classname": "weapon_sg556",
+      "origin": "88.26 2536.92 -116.92",
+      "angles": "-4.51 141.81 87.72"
+    },
+    {
+      "classname": "weapon_aug",
+      "origin": "422.26 2754.49 98.08",
+      "angles": "0.44 27.44 91.63"
+    },
+    {
+      "classname": "weapon_aug",
+      "origin": "1155.76 2031.01 2.91",
+      "angles": "0.94 19.15 88.97"
+    },
+    {
+      "classname": "weapon_aug",
+      "origin": "-676.89 2543.54 -81.18",
+      "angles": "2.47 -0.76 84.75"
+    },
+    {
+      "classname": "weapon_aug",
+      "origin": "-2149.54 1819.36 4.04",
+      "angles": "-1.12 121.96 92.28"
+    },
+    {
+      "classname": "weapon_aug",
+      "origin": "-1358.68 1256.67 71.41",
+      "angles": "3.03 -70.59 90.97"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "-1287.99 53.67 9.42",
+      "angles": "2.15 -179.72 69.16"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "139.31 -1163.38 1.53",
+      "angles": "2.03 89.64 69.10"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "-887.15 -1062.30 129.06",
+      "angles": "1.85 -176.41 69.31"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "649.90 -406.29 9.39",
+      "angles": "2.13 -178.52 69.34"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "1266.54 1485.31 1.85",
+      "angles": "3.49 -87.92 65.72"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "677.71 2380.53 3.47",
+      "angles": "7.56 168.62 68.11"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "-242.10 2277.71 -119.86",
+      "angles": "6.01 -80.30 72.89"
+    },
+    {
+      "classname": "weapon_ssg08",
+      "origin": "-1085.27 2081.65 65.72",
+      "angles": "1.66 97.95 69.48"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "453.07 2004.14 133.17",
+      "angles": "-0.00 109.50 90.00"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "490.56 2004.64 133.17",
+      "angles": "0.00 109.74 90.00"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "-202.10 1514.60 1.70",
+      "angles": "-0.12 28.81 90.53"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "452.02 460.34 3.13",
+      "angles": "0.45 -177.45 91.21"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "180.97 -39.85 80.22",
+      "angles": "-0.00 129.63 90.01"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "161.92 -47.97 80.22",
+      "angles": "-0.00 127.00 90.02"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "-1026.58 -196.03 129.20",
+      "angles": "0.02 35.73 89.98"
+    },
+    {
+      "classname": "weapon_famas",
+      "origin": "-1075.49 -180.37 130.03",
+      "angles": "-0.91 113.49 91.55"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-2193.58 -652.21 129.20",
+      "angles": "0.04 39.99 89.92"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-2199.77 -792.74 120.61",
+      "angles": "-0.05 79.16 90.97"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-2199.27 -962.98 131.58",
+      "angles": "28.86 82.93 86.57"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-371.73 -1040.61 94.43",
+      "angles": "-13.53 175.09 89.12"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-691.51 272.25 9.52",
+      "angles": "0.26 102.66 89.27"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-638.00 613.64 10.26",
+      "angles": "-0.04 -101.29 89.80"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "407.72 1369.06 1.38",
+      "angles": "-0.09 172.60 89.98"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "561.92 2749.84 97.86",
+      "angles": "-0.32 170.08 89.64"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "1053.07 2992.48 130.02",
+      "angles": "0.18 -9.66 91.26"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "1053.06 3027.53 130.90",
+      "angles": "0.75 -7.83 91.09"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "1053.36 3055.30 131.23",
+      "angles": "0.66 -4.55 90.13"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-303.75 1739.77 -114.78",
+      "angles": "-17.95 -3.37 85.49"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-302.45 1768.28 -113.25",
+      "angles": "-16.96 -8.40 89.71"
+    },
+    {
+      "classname": "weapon_galilar",
+      "origin": "-1706.08 1616.25 3.73",
+      "angles": "0.30 -11.07 89.42"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "-629.59 2559.64 -80.84",
+      "angles": "-3.37 153.56 94.49"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "185.79 2050.64 -122.71",
+      "angles": "0.41 -7.83 89.25"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "320.82 2050.26 -123.74",
+      "angles": "0.30 -9.98 89.70"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "578.70 2375.37 65.94",
+      "angles": "-0.00 -3.33 90.08"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "1286.76 2407.83 90.32",
+      "angles": "35.77 -61.23 27.18"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "1599.32 1442.51 1.93",
+      "angles": "0.23 81.17 89.63"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "185.31 -132.30 45.17",
+      "angles": "0.00 87.51 89.98"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "156.35 -132.97 45.17",
+      "angles": "0.00 84.89 89.98"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "-456.48 -838.34 98.95",
+      "angles": "0.53 86.17 100.73"
+    },
+    {
+      "classname": "weapon_m4a1",
+      "origin": "-824.54 -840.19 117.97",
+      "angles": "0.26 86.77 90.91"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-1422.07 628.87 37.06",
+      "angles": "-1.21 81.80 94.12"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-2197.72 -873.03 120.43",
+      "angles": "0.42 81.19 90.63"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-2200.67 -1033.39 128.97",
+      "angles": "-0.31 76.60 88.39"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-1068.16 -836.37 117.22",
+      "angles": "0.75 83.70 88.64"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-650.11 -833.20 116.31",
+      "angles": "1.23 82.47 91.25"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-310.98 -830.79 67.27",
+      "angles": "2.43 79.79 103.83"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "436.33 -882.95 -7.14",
+      "angles": "-0.09 -97.83 89.54"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "436.51 -761.72 -7.06",
+      "angles": "0.27 -95.83 89.50"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "744.75 -25.97 8.85",
+      "angles": "-0.02 -96.47 89.91"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "744.37 236.16 8.85",
+      "angles": "-0.02 -86.07 89.91"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "1765.38 890.50 -7.73",
+      "angles": "0.60 -99.35 90.16"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "1765.79 983.76 1.25",
+      "angles": "1.13 -97.38 89.72"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "565.04 2767.33 97.77",
+      "angles": "-0.50 170.82 88.59"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "1785.99 1849.11 2.79",
+      "angles": "1.08 -142.33 90.17"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "1750.23 2261.37 3.70",
+      "angles": "-0.90 -46.50 91.08"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-340.27 2362.22 -106.63",
+      "angles": "7.32 -97.02 89.89"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-346.39 2418.93 -92.51",
+      "angles": "14.60 -74.03 95.85"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-1248.61 2103.85 11.15",
+      "angles": "4.26 174.94 99.11"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "-188.99 2013.23 -123.38",
+      "angles": "5.61 168.76 91.20"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "256.27 2052.73 -123.67",
+      "angles": "0.44 -5.54 89.52"
+    },
+    {
+      "classname": "weapon_ak47",
+      "origin": "413.29 2052.84 -125.18",
+      "angles": "-0.42 -6.02 89.53"
+    }
+  ]
+}

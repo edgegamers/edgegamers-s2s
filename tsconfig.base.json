@@ -15,9 +15,12 @@
     "types": ["node"]
   },
   "include": [
-    "plugins/*/src/**/*.ts",
-    "plugins/*/test/**/*.ts",
-    "plugins/*/*.d.ts"
+    "plugins/global/*/src/**/*.ts",
+    "plugins/global/*/test/**/*.ts",
+    "plugins/global/*/*.d.ts",
+    "plugins/games/*/*/src/**/*.ts",
+    "plugins/games/*/*/test/**/*.ts",
+    "plugins/games/*/*/*.d.ts"
   ],
   "exclude": ["**/dist/**", "**/node_modules/**", "**/.s2script/**"]
 }

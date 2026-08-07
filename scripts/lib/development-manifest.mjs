@@ -6,6 +6,7 @@ export function createDevelopmentManifest({
   artifacts,
   commit,
   generatedAt,
+  channel = "dev",
 }) {
   if (!commit.trim()) throw new Error("Commit identity is required");
   if (artifacts.length === 0) throw new Error("No .s2sp artifacts found");
@@ -27,6 +28,10 @@ export function createDevelopmentManifest({
     seenFileNames.add(fileName);
 
     return {
+      name: artifact.metadata.name,
+      scope: artifact.metadata.scope,
+      ...(artifact.metadata.game ? { game: artifact.metadata.game } : {}),
+      publicRegistry: artifact.metadata.publicRegistry,
       artifact: normalizedPath,
       fileName,
       revision: `dev.${commit.slice(0, 7)}`,
@@ -40,6 +45,7 @@ export function createDevelopmentManifest({
     schemaVersion: 1,
     managedBy: "edgegamers-s2s",
     environment: "development",
+    channel,
     commit,
     generatedAt,
     plugins,
@@ -48,7 +54,8 @@ export function createDevelopmentManifest({
 
 export function isWorkspaceArtifact(path) {
   const normalizedPath = path.replaceAll("\\", "/");
-  return /^plugins\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(normalizedPath);
+  return /^plugins\/global\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(normalizedPath)
+    || /^plugins\/games\/[^/]+\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(normalizedPath);
 }
 
 export function findS2spFiles(root) {

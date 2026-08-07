@@ -1,0 +1,2 @@
+# One Source2Script registry package per line.
+# Current real publishable TTT package names will be added after they exist in edgegamers-s2s.

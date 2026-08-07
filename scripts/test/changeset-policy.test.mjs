@@ -7,6 +7,8 @@ import {
 
 const plugins = [
   { directory: "public-plugin", name: "@edgegamers/public-plugin", private: false },
+  { directory: "global/nested-public", name: "@edgegamers/nested-public", private: false },
+  { directory: "games/cs2/cs2-public", name: "@edgegamers/cs2-public", private: false },
   { directory: "private-plugin", name: "@edgegamers/private-plugin", private: true },
 ];
 
@@ -46,6 +48,22 @@ describe("evaluateChangesetCoverage", () => {
       missingPackages: [],
     });
   });
+
+  it("reports changed publishable plugins under nested global and game directories", () => {
+    expect(
+      evaluateChangesetCoverage({
+        changedFiles: [
+          "plugins/global/nested-public/src/plugin.ts",
+          "plugins/games/cs2/cs2-public/src/plugin.ts",
+        ],
+        plugins,
+        coveredPackages: new Set(["@edgegamers/nested-public"]),
+      }),
+    ).toEqual({
+      affectedPackages: ["@edgegamers/cs2-public", "@edgegamers/nested-public"],
+      missingPackages: ["@edgegamers/cs2-public"],
+    });
+  });
 });
 
 describe("parseChangesetPackages", () => {
@@ -74,8 +92,8 @@ describe("parseChangesetPackages", () => {
 
 describe("parsePluginMetadata", () => {
   it("rejects a package without a name and identifies its directory", () => {
-    expect(() => parsePluginMetadata("broken", '{"private":false}')).toThrow(
-      "plugins/broken/package.json",
+    expect(() => parsePluginMetadata("global/broken", '{"private":false}')).toThrow(
+      "plugins/global/broken/package.json",
     );
   });
 });

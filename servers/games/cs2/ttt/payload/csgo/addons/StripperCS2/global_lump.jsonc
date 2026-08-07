@@ -1,0 +1,119 @@
+{
+  "modify": [
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*TRAITOR.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "TRAITOR"
+      }
+    },
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*DETECTIVE.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "DETECTIVE"
+      }
+    },
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*INNOCENT.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "INNOCENT"
+      }
+    },
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*traitor.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "TRAITOR"
+      }
+    },
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*detective.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "DETECTIVE"
+      }
+    },
+    {
+      "match": {
+        "classname": "filter_activator_name",
+        "filtername": "/.*innocent.*/"
+      },
+      "replace": {
+        "classname": "filter_activator_context"
+      },
+      "insert": {
+        "responsecontext": "INNOCENT"
+      }
+    },
+    {
+      "match": {
+        "classname": "info_player_terrorist"
+      },
+      "replace": {
+        "classname": "ctspawn"
+      }
+    },
+    {
+      "match": {
+        "classname": "info_player_counterterrorist"
+      },
+      "replace": {
+        "classname": "tspawn"
+      }
+    },
+    {
+      "match": {
+        "classname": "tspawn"
+      },
+      "replace": {
+        "classname": "info_player_terrorist"
+      }
+    },
+    {
+      "match": {
+        "classname": "ctspawn"
+      },
+      "replace": {
+        "classname": "info_player_counterterrorist"
+      }
+    }
+  ],
+  "filter": [
+    {
+      "classname": "func_buyzone"
+    },
+    {
+      "classname": "func_bomb_target"
+    },
+    {
+      "classname": "env_cs_place"
+    }
+  ]
+}

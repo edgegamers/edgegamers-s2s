@@ -1,0 +1,2 @@
+# One shared Source2Script registry package per line.
+# Only add packages that every CS2 S2S server should run.

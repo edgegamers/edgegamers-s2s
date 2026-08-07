@@ -76,4 +76,6 @@ jobs:
           DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}
           DEV_SSH_KEY_PATH: ~/.ssh/edgegamers-development
           DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}
+          DEV_SERVER_GAME: ${{ vars.DEV_SERVER_GAME }}
+          DEV_SERVER_NAME: ${{ vars.DEV_SERVER_NAME }}
         run: npm run deploy:dev

@@ -63,19 +63,19 @@ describe("validateArtifact", () => {
     expect(validateArtifact({ artifactPath: "crlf.s2sp", bytes: crlfArchive, mitText })).toEqual([]);
   });
 
-  it("discovers direct workspace artifacts and filters nested archives", () => {
+  it("discovers nested workspace artifacts and filters nested archives", () => {
     const root = createRoot();
-    write(root, "plugins/example/dist/example.s2sp", archive({
+    write(root, "plugins/global/example/dist/example.s2sp", archive({
       "plugin.js": `/*!\n${mitText}\n*/`,
     }));
-    write(root, "plugins/example/dist/nested/ignored.s2sp", Buffer.from("not a zip"));
+    write(root, "plugins/global/example/dist/nested/ignored.s2sp", Buffer.from("not a zip"));
     expect(validateBuiltArtifacts({ rootDir: root })).toEqual([]);
   });
 
   it("fails when no built workspace artifact exists", () => {
     const root = createRoot();
     expect(validateBuiltArtifacts({ rootDir: root })).toEqual([
-      "plugins/*/dist/*.s2sp: no built plugin artifacts found",
+      "plugins/{global/*,games/*/*}/dist/*.s2sp: no built plugin artifacts found",
     ]);
   });
 });
