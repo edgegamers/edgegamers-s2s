@@ -115,11 +115,13 @@ affected server target in `config/development-servers.json`.
 Each target points at a server repository `server-plugins.json` intent file, so
 server plugin membership stays owned by the server repos.
 Disabled plugins are still managed and install under
-`plugins/disabled/<plugin-name>.s2sp`.
+`plugins/disabled/<artifact-file>.s2sp`.
 
-Production plugin delivery starts with GitHub release assets named
-`<plugin-name>.s2sp`. Plugins with `edgegamers.release.publishToRegistry: true`
-also use `S2SCRIPT_TOKEN` for Source2Script registry opt-ins.
+Production plugin delivery starts with GitHub release assets. GitHub may show a
+clean `<plugin-name>.s2sp` label, but the uploaded and downloaded file keeps the
+real built artifact name, such as `_edgegamers_maul.s2sp`. Plugins with
+`edgegamers.release.publishToRegistry: true` also use `S2SCRIPT_TOKEN` for
+Source2Script registry opt-ins.
 
 Server operators release in this order:
 

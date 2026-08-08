@@ -85,7 +85,7 @@ non-interactive `PATH`. Remote digest verification and manifest reconciliation
 run with that `node` executable.
 
 Disabled development plugins are still managed. They install under
-`plugins/disabled/<plugin-name>.s2sp`, receive updates from the generated
+`plugins/disabled/<artifact-file>.s2sp`, receive updates from the generated
 manifest, and remain part of stale-file cleanup.
 
 Each development target derives the plugin packages it consumes from its
@@ -132,7 +132,7 @@ build .s2sp artifacts
     ↓
 plugin release plan for packages named in Changesets
     |
-GitHub release assets named <plugin-name>.s2sp
+GitHub release assets with clean labels and real artifact file names
     |
 server tag resolvers consume GitHub assets
 
@@ -160,8 +160,10 @@ step skips cleanly. Automated registry deployment uses `S2SCRIPT_TOKEN`.
 
 On `main`, the repository builds `.s2sp` files, detects pending Changesets, and
 creates GitHub release assets only for plugin packages named in pending
-Changeset frontmatter. The asset file name is stable: `<plugin-name>.s2sp`.
-Server repositories resolve those GitHub releases at tag time.
+Changeset frontmatter. GitHub may show a clean `<plugin-name>.s2sp` label, but
+the uploaded and downloaded file name stays the real built artifact name, such
+as `_edgegamers_maul.s2sp`. Server repositories resolve those GitHub releases
+at tag time and install that real artifact file name.
 
 Plugins with `edgegamers.release.publishToRegistry: true` may also publish to
 the Source2Script registry. EdgeGamers servers still install EdgeGamers plugins

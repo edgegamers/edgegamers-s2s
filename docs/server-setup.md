@@ -159,7 +159,7 @@ Common/base plugins go in `empty-s2s/server-plugins.json`. Child-server-only plu
 Development reconcile removes no-longer-listed managed plugins and keeps disabled plugins updated under:
 
 ```text
-addons/s2script/plugins/disabled/<plugin-name>.s2sp
+addons/s2script/plugins/disabled/<artifact-file>.s2sp
 ```
 
 ## Production Release Flow
