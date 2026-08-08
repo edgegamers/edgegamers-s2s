@@ -8,7 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   quotePosix,
@@ -98,6 +98,68 @@ function uniqueSorted(values) {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function addPluginState(map, name, enabled, fieldName) {
+  if (typeof name !== "string" || !name.trim()) {
+    throw new Error(`${fieldName} entries must have non-empty plugin names`);
+  }
+  if (enabled !== true && enabled !== false) {
+    throw new Error(`${fieldName} entries must have boolean enabled values`);
+  }
+  map.set(name.trim(), enabled);
+}
+
+function readIntentPluginState({ root, intentFile, fieldName }) {
+  if (intentFile === undefined) return new Map();
+  if (typeof intentFile !== "string" || !intentFile.trim()) {
+    throw new Error(`${fieldName}.intentFile must be a non-empty string`);
+  }
+
+  const intentPath = resolve(root, intentFile);
+  if (!existsSync(intentPath)) {
+    throw new Error(`Missing development target intent file: ${intentFile}`);
+  }
+
+  const intent = JSON.parse(readFileSync(intentPath, "utf8"));
+  if (!intent || !Array.isArray(intent.plugins)) {
+    throw new Error(`${fieldName}.intentFile must contain a plugins array`);
+  }
+
+  const result = new Map();
+  for (const plugin of intent.plugins) {
+    addPluginState(
+      result,
+      plugin?.name,
+      plugin.enabled ?? true,
+      `${fieldName}.intentFile.plugins`,
+    );
+  }
+  return result;
+}
+
+function explicitPluginState({ plugins, disabledPlugins, fieldName }) {
+  const result = new Map();
+  for (const plugin of plugins) addPluginState(result, plugin, true, fieldName);
+  for (const plugin of disabledPlugins) {
+    addPluginState(result, plugin, false, fieldName);
+  }
+  return result;
+}
+
+function targetListsFromState(state) {
+  return {
+    plugins: uniqueSorted(
+      [...state.entries()]
+        .filter(([, enabled]) => enabled === true)
+        .map(([name]) => name),
+    ),
+    disabledPlugins: uniqueSorted(
+      [...state.entries()]
+        .filter(([, enabled]) => enabled === false)
+        .map(([name]) => name),
+    ),
+  };
+}
+
 function readPluginPackageByDirectory(root) {
   const pluginsRoot = join(root, "plugins");
   const result = new Map();
@@ -176,6 +238,11 @@ export function readDevelopmentTargets({
         server.disabledPlugins,
         `${name}.disabledPlugins`,
       ),
+      intentPluginState: readIntentPluginState({
+        root,
+        intentFile: server.intentFile,
+        fieldName: name,
+      }),
     });
   }
 
@@ -193,17 +260,28 @@ export function readDevelopmentTargets({
     const inherited = target.inherits.map((parent) =>
       resolveTarget(parent, [...stack, name]),
     );
+    const pluginState = new Map();
+    for (const parent of inherited) {
+      for (const plugin of parent.plugins) pluginState.set(plugin, true);
+      for (const plugin of parent.disabledPlugins) pluginState.set(plugin, false);
+    }
+    for (const [plugin, enabled] of target.intentPluginState) {
+      pluginState.set(plugin, enabled);
+    }
+    for (const [plugin, enabled] of explicitPluginState({
+      plugins: target.plugins,
+      disabledPlugins: target.disabledPlugins,
+      fieldName: target.name,
+    })) {
+      pluginState.set(plugin, enabled);
+    }
+
+    const lists = targetListsFromState(pluginState);
     const next = {
       name: target.name,
       pluginDir: target.pluginDir,
-      plugins: uniqueSorted([
-        ...inherited.flatMap((parent) => parent.plugins),
-        ...target.plugins,
-      ]),
-      disabledPlugins: uniqueSorted([
-        ...inherited.flatMap((parent) => parent.disabledPlugins),
-        ...target.disabledPlugins,
-      ]),
+      plugins: lists.plugins,
+      disabledPlugins: lists.disabledPlugins,
     };
     resolved.set(name, next);
     return next;

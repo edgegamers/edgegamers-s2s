@@ -86,6 +86,26 @@ describe("readDevelopmentTargets", () => {
 
     try {
       mkdirSync(join(root, "config"), { recursive: true });
+      mkdirSync(join(root, ".dev-server-repos", "empty-s2s"), { recursive: true });
+      mkdirSync(join(root, ".dev-server-repos", "ttt-s2s"), { recursive: true });
+      writeFileSync(
+        join(root, ".dev-server-repos", "empty-s2s", "server-plugins.json"),
+        JSON.stringify({
+          plugins: [
+            { name: "@edgegamers/common" },
+            { name: "@edgegamers/shared", enabled: false },
+          ],
+        }),
+      );
+      writeFileSync(
+        join(root, ".dev-server-repos", "ttt-s2s", "server-plugins.json"),
+        JSON.stringify({
+          plugins: [
+            { name: "@edgegamers/ttt" },
+            { name: "@edgegamers/shared", enabled: true },
+          ],
+        }),
+      );
       writeFileSync(
         join(root, "config", "development-servers.json"),
         JSON.stringify({
@@ -93,13 +113,13 @@ describe("readDevelopmentTargets", () => {
             {
               name: "empty-s2s",
               pluginDir: "/var/lib/docker/volumes/empty/_data/s2script/plugins",
-              plugins: ["@edgegamers/common"],
+              intentFile: ".dev-server-repos/empty-s2s/server-plugins.json",
             },
             {
               name: "ttt-s2s",
               pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
               inherits: "empty-s2s",
-              plugins: ["@edgegamers/ttt"],
+              intentFile: ".dev-server-repos/ttt-s2s/server-plugins.json",
               disabledPlugins: ["@edgegamers/common"],
             },
           ],
@@ -111,12 +131,12 @@ describe("readDevelopmentTargets", () => {
           name: "empty-s2s",
           pluginDir: "/var/lib/docker/volumes/empty/_data/s2script/plugins",
           plugins: ["@edgegamers/common"],
-          disabledPlugins: [],
+          disabledPlugins: ["@edgegamers/shared"],
         },
         {
           name: "ttt-s2s",
           pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
-          plugins: ["@edgegamers/common", "@edgegamers/ttt"],
+          plugins: ["@edgegamers/shared", "@edgegamers/ttt"],
           disabledPlugins: ["@edgegamers/common"],
         },
       ]);

@@ -71,8 +71,11 @@ Development deployment builds `.s2sp` files, writes
 `artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and
 reconciles the managed files on affected development servers over SSH. Server
 targets and their live plugin directories are defined in
-`config/development-servers.json`; GitHub secrets only hold the SSH host, user,
-key, and optional port. The remote manifest
+`config/development-servers.json`. Each target points at that server repo's
+`server-plugins.json`, cloned from GitLab during the workflow, so server plugin
+membership has the same source of truth as tagged releases. GitHub secrets hold
+the SSH host, user, key, optional port, and a GitLab read token for those intent
+files. The remote manifest
 `.edgegamers-development-manifest.json` is the ownership boundary: automation
 deletes only stale files listed by the previous managed manifest and leaves
 unmanaged files alone.
@@ -85,10 +88,11 @@ Disabled development plugins are still managed. They install under
 `plugins/disabled/<plugin-name>.s2sp`, receive updates from the generated
 manifest, and remain part of stale-file cleanup.
 
-Each development target lists the plugin packages it consumes. A `dev` push
-deploys only to targets whose plugin set intersects the changed plugin
-packages. Shared package or workspace-level changes are treated as unknown
-impact and reconcile every configured target with plugins.
+Each development target derives the plugin packages it consumes from its
+`intentFile` plus any inherited parent target. A `dev` push deploys only to
+targets whose plugin set intersects the changed plugin packages. Shared package
+or workspace-level changes are treated as unknown impact and reconcile every
+configured target with plugins.
 
 ## Operator release order
 
@@ -167,6 +171,8 @@ Required operator credentials:
 
 - `edgegamers-s2s` GitHub Actions needs `contents: write` to create GitHub
   release assets and `S2SCRIPT_TOKEN` for registry opt-ins.
+- The development workflow needs `DEV_GITLAB_TOKEN` to read server repo
+  `server-plugins.json` intent files from GitLab.
 - Server GitLab tag resolvers need GitHub access for EdgeGamers plugin releases;
   configure `GH_TOKEN` when the releases are private or rate-limited.
 - Child server GitLab tag resolvers need `GITLAB_API_TOKEN` that can read

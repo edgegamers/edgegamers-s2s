@@ -37,6 +37,10 @@ describe("GitHub workflows", () => {
       "npm run manifest:dev",
       "npm run artifacts:local",
       "development-manifest.json",
+      "Check out development server intents",
+      "DEV_GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}",
+      "gitlab.edgegamers.io/source2/cs2/servers/empty-s2s.git",
+      "gitlab.edgegamers.io/source2/cs2/servers/ttt-s2s.git",
       "actions/upload-artifact@v4",
     ]) {
       expect(deployDev).toContain(required);
