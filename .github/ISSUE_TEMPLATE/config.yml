@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/edgegamers/edgegamers-s2s/security/policy
+    about: Report suspected vulnerabilities privately instead of opening a public issue.
+  - name: EdgeGamers support
+    url: https://www.edgegamers.com/forums/list/contact-leadership/post-thread
+    about: Contact EdgeGamers leadership for community or server support.

@@ -1,7 +1,22 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { unzipSync } from "fflate";
-import { findS2spFiles, isWorkspaceArtifact } from "./development-manifest.mjs";
+
+function isWorkspaceArtifact(path) {
+  return /^plugins\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(path.replaceAll("\\", "/"));
+}
+
+function findS2spFiles(root) {
+  if (!existsSync(root)) return [];
+
+  const files = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) files.push(...findS2spFiles(path));
+    else if (entry.isFile() && entry.name.endsWith(".s2sp")) files.push(path);
+  }
+  return files.sort();
+}
 
 function normalizeText(contents) {
   return contents.replaceAll("\r\n", "\n").replaceAll("\r", "\n");

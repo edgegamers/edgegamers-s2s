@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a focused plugin, repository, or developer-workflow improvement.
+title: "feat: "
+labels:
+  - plugin
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or maintainer problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the smallest useful version of the change.
+    validations:
+      required: true
+  - type: input
+    id: affected-plugin
+    attributes:
+      label: Affected plugin or package
+      placeholder: "@edgegamers/reference-api"
+    validations:
+      required: false
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: This does not require production server deployment work in the current local-only milestone.
+          required: true
+        - label: I considered whether a Changeset would be needed if this changes publishable behavior.
+          required: true

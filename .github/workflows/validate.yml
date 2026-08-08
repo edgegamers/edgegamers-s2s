@@ -1,0 +1,101 @@
+name: Validate
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-policy:
+    name: Source branch policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify main source branch
+        if: github.base_ref == 'main'
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          ALLOW_HOTFIX: ${{ startsWith(github.head_ref, 'hotfix/') }}
+        run: node scripts/verify-main-source.mjs
+
+  validate:
+    name: Lint, typecheck, test, and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build Source2Script workspace
+        run: npm run build
+
+      - name: Upload built plugin packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2script-packages-${{ github.sha }}
+          path: |
+            plugins/**/dist/*.s2sp
+          if-no-files-found: error
+          retention-days: 7
+
+  changeset:
+    name: Changeset policy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch target branch
+        run: git fetch origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Changeset coverage
+        env:
+          CHANGESET_BASE_REF: origin/${{ github.base_ref }}
+          ALLOW_MISSING_CHANGESET: "false"
+        run: npm run changeset:check

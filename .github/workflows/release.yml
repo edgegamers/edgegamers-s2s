@@ -1,0 +1,79 @@
+name: Main Source2Script Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-s2s-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  main:
+    name: Validate and deploy changed packages
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      has-changesets: ${{ steps.detect.outputs.has-changesets }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build Source2Script workspace
+        run: npm run build
+
+      - name: Build production server bundles
+        run: npm run bundles:servers -- --environment production
+
+      - name: Upload production server bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-bundles-${{ github.sha }}
+          path: |
+            artifacts/server-bundles/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Detect pending Changesets
+        id: detect
+        run: |
+          if find .changeset -type f -name '*.md' ! -name README.md | grep -q .; then
+            echo "has-changesets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changesets=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy Source2Script packages
+        if: steps.detect.outputs.has-changesets == 'true'
+        env:
+          S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+        run: npm run deploy -- --ci
+
+      - name: Skip Source2Script deploy
+        if: steps.detect.outputs.has-changesets != 'true'
+        run: echo "No pending Changesets; skipping s2s deploy."

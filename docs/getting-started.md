@@ -59,6 +59,23 @@ Upgrade to TypeScript 7 only after the official Source2Script ESLint dependency 
 
 Vite is pinned to 6.4.3 because Vitest's broad dependency range otherwise selects a newer Vite line that requires a different esbuild version than Source2Script SDK 0.14.0. The explicit pin keeps the npm tree valid and on a patched Vite release.
 
+## Local server testing
+
+Build the workspace and development bundles with:
+
+```powershell
+npm.cmd run build
+npm.cmd run bundles:servers -- --environment development
+```
+
+Development delivery triggers the affected server repositories, which build
+their runnable images, pull them on the development hosts, and restart their
+development containers. Production delivery updates the selected image and
+compose configuration without a live restart; the host restart at 10:00 applies
+the selected image.
+
+See [Local development](./local-development.md) for the full local setup and current release-path stubs.
+
 ## Next steps
 
 - Read [Repository architecture](./architecture.md) before introducing shared code.
