@@ -47,14 +47,6 @@ jobs:
       - name: Build Source2Script workspace
         run: npm run build
 
-      - name: Create plugin release plan
-        run: npm run release:plan
-
-      - name: Publish GitHub plugin releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: npm run release:github-plugins
-
       - name: Detect pending Changesets
         id: detect
         run: |
@@ -64,11 +56,21 @@ jobs:
             echo "has-changesets=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Create plugin release plan
+        if: steps.detect.outputs.has-changesets == 'true'
+        run: npm run release:plan
+
+      - name: Publish GitHub plugin releases
+        if: steps.detect.outputs.has-changesets == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run release:github-plugins
+
       - name: Deploy Source2Script packages
         if: steps.detect.outputs.has-changesets == 'true'
         env:
           S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
-        run: npm run deploy -- --ci
+        run: npm run deploy:registry-opt-ins
 
       - name: Skip Source2Script deploy
         if: steps.detect.outputs.has-changesets != 'true'

@@ -36,6 +36,7 @@
     "changeset:check": "node scripts/check-changeset.mjs",
     "release:plan": "node scripts/create-plugin-release-plan.mjs",
     "release:github-plugins": "node scripts/publish-github-plugin-releases.mjs",
+    "deploy:registry-opt-ins": "node scripts/deploy-registry-opt-ins.mjs",
     "manifest:dev": "node scripts/create-dev-manifest.mjs",
     "artifacts:local": "npm run build && npm run manifest:dev && node scripts/collect-local-artifacts.mjs",
     "deploy:dev": "node scripts/deploy-development-artifacts.mjs",

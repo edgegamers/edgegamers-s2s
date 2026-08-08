@@ -55,7 +55,7 @@ describe("GitHub workflows", () => {
     }
   });
 
-  it("validates main and only runs Source2Script deploy when Changesets exist", () => {
+  it("validates main and gates plugin releases and registry deploy on Changesets", () => {
     const release = workflow("release.yml");
 
     for (const required of [
@@ -71,7 +71,7 @@ describe("GitHub workflows", () => {
       "permissions:",
       "contents: write",
       "has-changesets",
-      "npm run deploy -- --ci",
+      "npm run deploy:registry-opt-ins",
       "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",
     ]) {
       expect(release).toContain(required);
@@ -81,11 +81,24 @@ describe("GitHub workflows", () => {
     expect(release).not.toContain("PROD_SSH_PRIVATE_KEY");
 
     const stepsIndex = release.indexOf("    steps:");
+    const detectIndex = release.indexOf("      - name: Detect pending Changesets");
+    const planIndex = release.indexOf("      - name: Create plugin release plan");
+    const githubIndex = release.indexOf("      - name: Publish GitHub plugin releases");
     const deployIndex = release.indexOf("      - name: Deploy Source2Script packages");
     const skipIndex = release.indexOf("      - name: Skip Source2Script deploy");
     const jobConfiguration = release.slice(0, stepsIndex);
     const deployStep = release.slice(deployIndex, skipIndex);
 
+    expect(detectIndex).toBeGreaterThan(stepsIndex);
+    expect(planIndex).toBeGreaterThan(detectIndex);
+    expect(githubIndex).toBeGreaterThan(planIndex);
+    expect(deployIndex).toBeGreaterThan(githubIndex);
+    expect(release.slice(planIndex, githubIndex)).toContain(
+      "if: steps.detect.outputs.has-changesets == 'true'",
+    );
+    expect(release.slice(githubIndex, deployIndex)).toContain(
+      "if: steps.detect.outputs.has-changesets == 'true'",
+    );
     expect(jobConfiguration).not.toContain("S2SCRIPT_TOKEN");
     expect(deployStep).toContain(
       "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",

@@ -33,11 +33,12 @@ Status: complete locally.
 
 ## Phase 4: CI
 
-Status: implemented with development deployment and registry publication.
+Status: implemented with development deployment and gated production publication.
 
 - Pull request validation runs lint, typecheck, tests, Source2Script build, and Changeset coverage.
 - Development workflow builds artifacts and uploads a development bundle.
-- Release workflow validates `main` and can run Source2Script registry deploy.
+- Release workflow validates `main`, publishes GitHub release assets for
+  changed plugins, and can run plan-gated Source2Script registry opt-ins.
 - Hotfix workflow opens a `main` to `dev` sync PR.
 - Development server deployment and reconciliation run over SSH using GitHub environment secrets.
 
@@ -74,12 +75,13 @@ Status: implemented locally.
 
 - Development artifacts deploy over SSH to the configured development server plugin directory.
 - Reconciliation is manifest-scoped and leaves unmanaged files untouched.
-- Production releases create GitHub release assets for all released plugins.
-- Source2Script registry publishing is limited to opt-in plugins.
+- Production releases create GitHub release assets for plugins named in pending
+  Changesets.
+- Source2Script registry publishing is limited to plan-gated opt-in plugins.
 - Server repositories resolve GitHub release assets at their own `YY.MM.DD` or
   `YY.MM.DD-HOTPATCH-N` tag time into `server-release-manifest.json`.
 - Production servers adopt changes only when their server repository is tagged.
-- Server images live in `base-s2s` and `ttt-s2s`.
+- Server images live in `empty-s2s` and child repos such as `ttt-s2s`.
 
 ## Phase 9: Documentation
 
@@ -102,8 +104,8 @@ Status: local gate verified.
 ### Release Pipeline Verification (2026-08-03)
 
 - `edgegamers-s2s`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (13 files and 74 tests), `npm.cmd run build`, and `npm.cmd run artifacts:local` all passed.
-- `base-s2s`: Git Bash `scripts/validate.sh` passed its representative Valve `SearchPaths` fixture, and `docker build --pull --progress plain -t base-s2s:local .` passed.
-- `ttt-s2s`: Git Bash `scripts/validate.sh`, both `docker compose ... config --quiet --no-interpolate` checks, and `docker build --pull --progress plain --build-arg BASE_S2S_IMAGE=base-s2s:local -t ttt-s2s:local .` passed.
+- `empty-s2s`: Git Bash `scripts/validate.sh` passed its representative Valve `SearchPaths` fixture, and `docker build --pull --progress plain -t empty-s2s:local .` passed.
+- `ttt-s2s`: Git Bash `scripts/validate.sh`, both `docker compose ... config --quiet --no-interpolate` checks, and `docker build --pull --progress plain --build-arg EMPTY_S2S_IMAGE=empty-s2s:local -t ttt-s2s:local .` passed.
 - Built `ttt-s2s:local` metadata reported `ENTRYPOINT=["/docker-entrypoint.sh"]`, `CMD=["bash","entry.sh"]`, and user `1000:1000`; temporary-container checks found Node v20.19.0, executable `s2s`, and the copied upstream CS2 startup script.
 - Legacy `base` and `ttt`: `git status --short` was empty for both repositories; this work did not modify either checkout.
 
@@ -126,7 +128,7 @@ Required remote setup:
 - GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_PORT`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
 - The development SSH host needs Node.js 20 or newer in the deploy user's non-interactive `PATH`.
-- GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
+- GitLab runners need Docker-in-Docker support for `empty-s2s` and child repos such as `ttt-s2s`.
 - The server box must schedule a 10:00 UTC rebuild/restart outside CI.
 - The development SSH user must write only to staging and the Source2Script plugin directory; `DEV_S2SCRIPT_PLUGIN_DIR` must be the same host bind path used by `compose-dev.yml` and be writable by UID/GID `1000:1000`.
 - TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.

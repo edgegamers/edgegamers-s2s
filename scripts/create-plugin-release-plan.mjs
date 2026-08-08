@@ -9,7 +9,10 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { parsePluginMetadata } from "./lib/changeset-policy.mjs";
+import {
+  parseChangesetPackages,
+  parsePluginMetadata,
+} from "./lib/changeset-policy.mjs";
 import { createPluginReleasePlan } from "./lib/plugin-release-plan.mjs";
 
 export function writePluginReleasePlan({
@@ -17,6 +20,7 @@ export function writePluginReleasePlan({
   generatedAt = new Date().toISOString(),
 } = {}) {
   const pluginsDirectory = join(root, "plugins");
+  const pendingPackages = readPendingChangesetPackages(root);
   const plugins = readdirSync(pluginsDirectory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => {
@@ -26,7 +30,8 @@ export function writePluginReleasePlan({
       const packageJson = JSON.parse(packageContent);
 
       return { ...metadata, version: packageJson.version };
-    });
+    })
+    .filter((plugin) => pendingPackages.has(plugin.name));
   const artifacts = plugins.map((plugin) => {
     const directory = join(pluginsDirectory, plugin.directory, "dist");
     const artifactNames = readdirSync(directory).filter((name) =>
@@ -59,6 +64,22 @@ export function writePluginReleasePlan({
   }
 
   return { plan, outputPath };
+}
+
+export function readPendingChangesetPackages(root) {
+  const changesetDirectory = join(root, ".changeset");
+  if (!existsSync(changesetDirectory)) return new Set();
+
+  const changesets = readdirSync(changesetDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .filter((entry) => entry.name.endsWith(".md") && entry.name !== "README.md")
+    .map((entry) => ({
+      path: `.changeset/${entry.name}`,
+      content: readFileSync(join(changesetDirectory, entry.name), "utf8"),
+    }));
+
+  if (changesets.length === 0) return new Set();
+  return parseChangesetPackages(changesets);
 }
 
 export function main({ root = process.cwd(), write = console.log, error = console.error } = {}) {

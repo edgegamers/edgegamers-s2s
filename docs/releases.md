@@ -111,29 +111,40 @@ s2s version
     ↓
 review version, dependency-range, and changelog changes
     ↓
-s2s deploy
+build .s2sp artifacts
     ↓
-GitHub release assets and optional Source2Script registry opt-ins
+plugin release plan for packages named in Changesets
+    |
+GitHub release assets named <plugin-name>.s2sp
+    |
+server tag resolvers consume GitHub assets
+
+optional branch from the release plan:
+publishToRegistry: true -> Source2Script registry deploy
 ```
 
 The corresponding root commands are:
 
 ```powershell
 npm.cmd run version
-npm.cmd run deploy -- --ci
+npm.cmd run build
+npm.cmd run release:plan
+npm.cmd run release:github-plugins
+npm.cmd run deploy:registry-opt-ins
 ```
 
 `s2s version` applies Changesets and updates sibling interface ranges where required. Review its output before committing the release change.
 
-`s2s deploy` builds the workspace, creates a deployment plan, skips versions
-already present in the registry for opted-in plugins, and publishes registry
-plugins in dependency order. Automated registry deployment uses `S2SCRIPT_TOKEN`
-and the CLI's `--ci` flag.
+`npm run deploy:registry-opt-ins` reads `artifacts/plugin-release-plan.json`,
+narrows the Source2Script workspace to releases with
+`publishToRegistry: true`, runs `s2s deploy --ci`, and restores the root
+workspace config. If no planned release opts into registry publication, the
+step skips cleanly. Automated registry deployment uses `S2SCRIPT_TOKEN`.
 
-On `main`, the repository builds `.s2sp` files and creates GitHub release
-assets for every released plugin. The asset file name is stable:
-`<plugin-name>.s2sp`. Server repositories resolve those GitHub releases at
-tag time.
+On `main`, the repository builds `.s2sp` files, detects pending Changesets, and
+creates GitHub release assets only for plugin packages named in pending
+Changeset frontmatter. The asset file name is stable: `<plugin-name>.s2sp`.
+Server repositories resolve those GitHub releases at tag time.
 
 Plugins with `edgegamers.release.publishToRegistry: true` may also publish to
 the Source2Script registry. EdgeGamers servers still install EdgeGamers plugins

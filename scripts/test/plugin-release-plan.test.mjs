@@ -1,4 +1,14 @@
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { writePluginReleasePlan } from "../create-plugin-release-plan.mjs";
 import {
   createPluginReleasePlan,
   pluginReleaseTag,
@@ -59,3 +69,88 @@ describe("createPluginReleasePlan", () => {
     ]);
   });
 });
+
+describe("writePluginReleasePlan", () => {
+  it("plans only plugins named in pending Changesets", () => {
+    const root = mkdtempSync(join(tmpdir(), "edgegamers-release-plan-"));
+
+    try {
+      writePluginFixture({
+        root,
+        directory: "reference-api",
+        name: "@edgegamers/reference-api",
+        version: "1.2.3",
+        publishToRegistry: true,
+      });
+      writePluginFixture({
+        root,
+        directory: "reference-consumer",
+        name: "@edgegamers/reference-consumer",
+        version: "4.5.6",
+        publishToRegistry: true,
+      });
+      mkdirSync(join(root, ".changeset"), { recursive: true });
+      writeFileSync(
+        join(root, ".changeset", "release-api.md"),
+        '---\n"@edgegamers/reference-api": patch\n---\n\nRelease API.\n',
+      );
+
+      const { plan } = writePluginReleasePlan({
+        root,
+        generatedAt: "2026-08-08T12:00:00.000Z",
+      });
+
+      expect(plan.releases.map((release) => release.packageName)).toEqual([
+        "@edgegamers/reference-api",
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("writes an empty plan without requiring artifacts when no Changesets exist", () => {
+    const root = mkdtempSync(join(tmpdir(), "edgegamers-release-plan-"));
+
+    try {
+      mkdirSync(join(root, "plugins", "reference-api"), { recursive: true });
+      mkdirSync(join(root, ".changeset"), { recursive: true });
+      writeFileSync(
+        join(root, "plugins", "reference-api", "package.json"),
+        JSON.stringify({
+          name: "@edgegamers/reference-api",
+          version: "1.2.3",
+        }),
+      );
+
+      const { outputPath, plan } = writePluginReleasePlan({
+        root,
+        generatedAt: "2026-08-08T12:00:00.000Z",
+      });
+
+      expect(plan.releases).toEqual([]);
+      expect(JSON.parse(readFileSync(outputPath, "utf8")).releases).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+function writePluginFixture({
+  root,
+  directory,
+  name,
+  version,
+  publishToRegistry,
+}) {
+  const pluginDirectory = join(root, "plugins", directory);
+  mkdirSync(join(pluginDirectory, "dist"), { recursive: true });
+  writeFileSync(
+    join(pluginDirectory, "package.json"),
+    JSON.stringify({
+      name,
+      version,
+      edgegamers: { release: { publishToRegistry } },
+    }),
+  );
+  writeFileSync(join(pluginDirectory, "dist", `${directory}.s2sp`), directory);
+}
