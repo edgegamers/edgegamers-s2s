@@ -26,14 +26,37 @@ function normalizeText(contents) {
 function discoverPatternManifests(rootDir, patterns, label) {
   const found = new Map();
   for (const pattern of patterns ?? []) {
-    const match = /^(.*)\/\*$/.exec(pattern.replaceAll("\\", "/"));
-    if (!match || /[*?]/u.test(match[1])) throw new Error(`Unsupported ${label} pattern: ${pattern}`);
-    const parent = join(rootDir, match[1]);
-    if (!existsSync(parent)) continue;
-    for (const entry of readdirSync(parent, { withFileTypes: true })) {
-      const path = join(parent, entry.name, "package.json");
-      if (entry.isDirectory() && existsSync(path)) {
-        found.set(path, { path, manifest: readJson(path) });
+    const segments = pattern.replaceAll("\\", "/").split("/");
+    if (
+      segments.length === 0 ||
+      segments.some((segment) => segment === "**" || segment.includes("?")) ||
+      segments.at(-1) !== "*"
+    ) {
+      throw new Error(`Unsupported ${label} pattern: ${pattern}`);
+    }
+
+    const parents = segments.slice(0, -1).reduce((directories, segment) => {
+      if (segment === "*") {
+        return directories.flatMap((directory) => {
+          if (!existsSync(directory)) return [];
+          return readdirSync(directory, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => join(directory, entry.name));
+        });
+      }
+      if (segment.includes("*")) {
+        throw new Error(`Unsupported ${label} pattern: ${pattern}`);
+      }
+      return directories.map((directory) => join(directory, segment));
+    }, [rootDir]);
+
+    for (const parent of parents) {
+      if (!existsSync(parent)) continue;
+      for (const entry of readdirSync(parent, { withFileTypes: true })) {
+        const path = join(parent, entry.name, "package.json");
+        if (entry.isDirectory() && existsSync(path)) {
+          found.set(path, { path, manifest: readJson(path) });
+        }
       }
     }
   }

@@ -14,12 +14,27 @@ import {
   findS2spFiles,
   isWorkspaceArtifact,
 } from "./lib/development-manifest.mjs";
+import { parsePluginPath } from "./lib/plugin-workspace.mjs";
 
 function currentCommit(root) {
   return execFileSync("git", ["rev-parse", "HEAD"], {
     cwd: root,
     encoding: "utf8",
   }).trim();
+}
+
+function pluginPackageName({ root, artifactPath }) {
+  const normalizedPath = artifactPath.replaceAll("\\", "/");
+  const pluginPath = parsePluginPath(normalizedPath);
+  if (!pluginPath) throw new Error(`Cannot resolve plugin package for ${artifactPath}`);
+
+  const packageJson = JSON.parse(
+    readFileSync(join(root, "plugins", pluginPath.directory, "package.json"), "utf8"),
+  );
+  if (typeof packageJson.name !== "string" || !packageJson.name) {
+    throw new Error(`Missing package name for plugins/${pluginPath.directory}`);
+  }
+  return packageJson.name;
 }
 
 export function writeDevelopmentManifest({ root, commit, generatedAt }) {
@@ -31,6 +46,7 @@ export function writeDevelopmentManifest({ root, commit, generatedAt }) {
     .filter((artifact) => isWorkspaceArtifact(artifact.path))
     .map((artifact) => ({
       path: artifact.path,
+      packageName: pluginPackageName({ root, artifactPath: artifact.path }),
       bytes: readFileSync(artifact.absolutePath),
     }));
   const manifest = createDevelopmentManifest({

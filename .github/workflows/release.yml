@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: main-s2s-deploy-${{ github.ref }}
@@ -20,8 +20,6 @@ jobs:
     environment: production
     outputs:
       has-changesets: ${{ steps.detect.outputs.has-changesets }}
-    env:
-      S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -58,13 +56,22 @@ jobs:
             echo "has-changesets=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Create plugin release plan
+        if: steps.detect.outputs.has-changesets == 'true'
+        run: npm run release:plan
+
+      - name: Publish GitHub plugin releases
+        if: steps.detect.outputs.has-changesets == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run release:github-plugins
+
       - name: Deploy Source2Script packages
         if: steps.detect.outputs.has-changesets == 'true'
-        run: npm run deploy
+        env:
+          S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+        run: npm run deploy:registry-opt-ins
 
       - name: Skip Source2Script deploy
         if: steps.detect.outputs.has-changesets != 'true'
         run: echo "No pending Changesets; skipping s2s deploy."
-
-      - name: Skip server release
-        run: echo "Server release is intentionally skipped until Source2Script and EdgeGamers release tooling are ready."

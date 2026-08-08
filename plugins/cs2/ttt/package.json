@@ -1,0 +1,15 @@
+{
+  "name": "@edgegamers/ttt",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "main": "src/plugin.ts",
+  "scripts": {
+    "build": "s2s build ."
+  },
+  "s2script": {
+    "pluginDependencies": {
+      "@edgegamers/maul": "^0.1.0"
+    }
+  }
+}

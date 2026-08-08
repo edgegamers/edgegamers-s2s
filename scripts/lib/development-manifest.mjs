@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
+import { isWorkspaceArtifactPath } from "./plugin-workspace.mjs";
 
 export function createDevelopmentManifest({
   artifacts,
@@ -10,18 +11,28 @@ export function createDevelopmentManifest({
   if (!commit.trim()) throw new Error("Commit identity is required");
   if (artifacts.length === 0) throw new Error("No .s2sp artifacts found");
 
-  const seen = new Set();
+  const seenPaths = new Set();
+  const seenFileNames = new Set();
   const plugins = artifacts.map((artifact) => {
     const normalizedPath = artifact.path.replaceAll("\\", "/");
+    const fileName = basename(normalizedPath);
 
-    if (seen.has(normalizedPath)) {
+    if (seenPaths.has(normalizedPath)) {
       throw new Error(`Duplicate artifact path: ${normalizedPath}`);
     }
-    seen.add(normalizedPath);
+    seenPaths.add(normalizedPath);
+
+    if (seenFileNames.has(fileName)) {
+      throw new Error(`Duplicate artifact file name: ${fileName}`);
+    }
+    seenFileNames.add(fileName);
 
     return {
       artifact: normalizedPath,
-      fileName: basename(normalizedPath),
+      ...(artifact.packageName ? { packageName: artifact.packageName } : {}),
+      fileName,
+      enabled: true,
+      installPath: "enabled",
       revision: `dev.${commit.slice(0, 7)}`,
       sha256: createHash("sha256").update(artifact.bytes).digest("hex"),
     };
@@ -30,6 +41,8 @@ export function createDevelopmentManifest({
   plugins.sort((left, right) => left.artifact.localeCompare(right.artifact));
 
   return {
+    schemaVersion: 1,
+    managedBy: "edgegamers-s2s",
     environment: "development",
     commit,
     generatedAt,
@@ -38,8 +51,7 @@ export function createDevelopmentManifest({
 }
 
 export function isWorkspaceArtifact(path) {
-  const normalizedPath = path.replaceAll("\\", "/");
-  return /^plugins\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(normalizedPath);
+  return isWorkspaceArtifactPath(path);
 }
 
 export function findS2spFiles(root) {

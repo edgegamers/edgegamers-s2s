@@ -26,8 +26,26 @@ This repository is an npm workspace for the Source2Script plugins maintained by 
 ## Contributing
 
 EdgeGamers plugins are designed with public use in mind. 
-If you 'd like to learn more about contributing to 
-somehting we maintain reference the [CONTRIBUTING.md](./.github/CONTRIBUTING.md) guide.
+If you want to contribute to something EdgeGamers maintains, read the [contributing guide](./.github/CONTRIBUTING.md).
+
+## Local development
+
+Run the local gate from the repository root:
+
+```powershell
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
+```
+
+Build a local Source2Script artifact bundle with:
+
+```powershell
+npm.cmd run artifacts:local
+```
+
+See [local development](./docs/local-development.md) for server copy steps, [plugin workflows](./docs/plugin-workflows.md) for plugin layout, and [server setup](./docs/server-setup.md) for infrastructure rollout.
 
 ## License
 

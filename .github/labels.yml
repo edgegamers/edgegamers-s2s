@@ -1,0 +1,35 @@
+- name: no-changeset
+  color: "6a737d"
+  description: Maintainer-approved override for changes that do not need a Changeset.
+
+- name: release
+  color: "0e8a16"
+  description: Release planning or release automation work.
+
+- name: release:hotfix
+  color: "d73a4a"
+  description: Production hotfix allowed to target main directly.
+
+- name: sync-required
+  color: "fbca04"
+  description: main must be synchronized back into dev before the next promotion.
+
+- name: breaking-change
+  color: "b60205"
+  description: Plugin behavior, configuration, or runtime interface breaks compatibility.
+
+- name: plugin
+  color: "1d76db"
+  description: Work scoped to one or more Source2Script plugins.
+
+- name: shared-package
+  color: "5319e7"
+  description: Work scoped to private shared npm workspace packages.
+
+- name: ci
+  color: "0052cc"
+  description: GitHub Actions, validation, release, or repository automation.
+
+- name: documentation
+  color: "0075ca"
+  description: Documentation-only work.

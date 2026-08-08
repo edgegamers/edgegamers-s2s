@@ -1,7 +1,8 @@
+import { parsePluginPath } from "./plugin-workspace.mjs";
+
 const RELEASE_LINE = /^(["'])(.+)\1:\s+(patch|minor|major)$/u;
 
-export function parsePluginMetadata(directory, content) {
-  const source = `plugins/${directory}/package.json`;
+export function parsePluginMetadata(directory, content, source = `plugins/${directory}/package.json`) {
   let packageJson;
 
   try {
@@ -18,6 +19,8 @@ export function parsePluginMetadata(directory, content) {
     directory,
     name: packageJson.name,
     private: packageJson.private === true,
+    publishToRegistry:
+      packageJson.edgegamers?.release?.publishToRegistry === true,
   };
 }
 
@@ -53,18 +56,16 @@ export function evaluateChangesetCoverage({
   plugins,
   coveredPackages,
 }) {
-  const publishableByDirectory = new Map(
-    plugins
-      .filter((plugin) => !plugin.private)
-      .map((plugin) => [plugin.directory, plugin.name]),
+  const packageByDirectory = new Map(
+    plugins.map((plugin) => [plugin.directory, plugin.name]),
   );
   const affected = new Set();
 
   for (const changedFile of changedFiles) {
     const normalized = changedFile.replaceAll("\\", "/");
-    const match = /^plugins\/([^/]+)\//u.exec(normalized);
-    const packageName = match
-      ? publishableByDirectory.get(match[1])
+    const pluginPath = parsePluginPath(normalized);
+    const packageName = pluginPath
+      ? packageByDirectory.get(pluginPath.directory)
       : undefined;
 
     if (packageName) affected.add(packageName);

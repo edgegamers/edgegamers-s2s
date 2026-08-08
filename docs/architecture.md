@@ -13,7 +13,7 @@ edgegamers-s2/
 └── packages/         Reserved for proven shared source packages
 ```
 
-`plugins/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
+`plugins/*/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
 
 `packages/*` belongs only to npm. Do not create a package for a one-off helper. A shared package should represent a coherent implementation boundary with more than one real consumer.
 
@@ -37,7 +37,7 @@ The repository owns:
 - formatting an immutable development-artifact manifest;
 - EdgeGamers contributor documentation.
 
-There is deliberately no custom loop over `plugins/*` for building, versioning, or publishing.
+There is deliberately no custom loop over individual plugin folders for building, versioning, or publishing.
 
 ## Shared source versus runtime interfaces
 
@@ -66,8 +66,19 @@ lint → typecheck → unit tests → s2s build
                     development manifest generation
 ```
 
-Production follows a separate Changeset and registry path described in [Changesets and releases](./releases.md).
+Production follows the Changeset and GitHub release asset path described in
+[Changesets and releases](./releases.md). Registry publication is only for
+plugins that opt in.
 
-## Deferred infrastructure
+## GitHub and deployment state
 
-The foundation does not configure GitHub Actions, branch rules, environments, artifact transport, or server reconciliation. Those concerns require EdgeGamers infrastructure decisions and will be implemented as later milestones.
+The repository includes GitHub Actions for validation, development artifact builds, Source2Script registry deploys, and hotfix synchronization.
+
+Branch rules, environments, secrets, labels, team bindings, and required checks still require maintainer setup in GitHub. Follow [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).
+
+The development workflow uploads immutable artifacts and a manifest, then
+reconciles the development server. For production, `edgegamers-s2s/main`
+creates GitHub release assets for all released plugins. Server repositories
+resolve those assets into `server-release-manifest.json` at their own
+`YY.MM.DD` or `YY.MM.DD-HOTPATCH-N` tag time, and production servers adopt
+plugin changes only when their server repository is tagged.
