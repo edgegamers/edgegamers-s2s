@@ -35,6 +35,7 @@
     "changeset:status": "changeset status",
     "changeset:check": "node scripts/check-changeset.mjs",
     "manifest:dev": "node scripts/create-dev-manifest.mjs",
+    "bundles:servers": "node scripts/build-server-bundles.mjs",
     "artifacts:local": "npm run build && npm run manifest:dev && node scripts/collect-local-artifacts.mjs",
     "deploy:dev": "node scripts/deploy-development-artifacts.mjs",
     "version": "s2s version",
