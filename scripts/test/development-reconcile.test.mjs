@@ -17,6 +17,8 @@ const manifest = (fileNames) => ({
     fileName: `${fileName}.s2sp`,
     revision: "dev.abcdef1",
     sha256: "0".repeat(64),
+    enabled: true,
+    installPath: "enabled",
   })),
 });
 
@@ -28,8 +30,11 @@ describe("planManagedReconcile", () => {
         nextManifest: manifest(["keep", "new"]),
       }),
     ).toEqual({
-      deleteFileNames: ["old.s2sp"],
-      copyFileNames: ["keep.s2sp", "new.s2sp"],
+      deletePaths: ["old.s2sp"],
+      copyEntries: [
+        { fileName: "keep.s2sp", installPath: "enabled" },
+        { fileName: "new.s2sp", installPath: "enabled" },
+      ],
     });
   });
 
@@ -40,9 +45,37 @@ describe("planManagedReconcile", () => {
         nextManifest: manifest(["new"]),
       }),
     ).toEqual({
-      deleteFileNames: [],
-      copyFileNames: ["new.s2sp"],
+      deletePaths: [],
+      copyEntries: [{ fileName: "new.s2sp", installPath: "enabled" }],
     });
+  });
+
+  it("moves disabled plugins into the disabled directory", () => {
+    const next = manifest(["alpha"]);
+    next.plugins[0].enabled = false;
+    next.plugins[0].installPath = "disabled";
+
+    expect(
+      planManagedReconcile({
+        previousManifest: undefined,
+        nextManifest: next,
+      }),
+    ).toEqual({
+      deletePaths: [],
+      copyEntries: [{ fileName: "alpha.s2sp", installPath: "disabled" }],
+    });
+  });
+
+  it("deletes stale managed files from enabled and disabled paths", () => {
+    const previous = manifest(["old"]);
+    previous.plugins[0].installPath = "disabled";
+
+    expect(
+      planManagedReconcile({
+        previousManifest: previous,
+        nextManifest: manifest(["new"]),
+      }).deletePaths,
+    ).toEqual(["disabled/old.s2sp"]);
   });
 });
 

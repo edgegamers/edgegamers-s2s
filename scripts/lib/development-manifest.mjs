@@ -29,6 +29,8 @@ export function createDevelopmentManifest({
     return {
       artifact: normalizedPath,
       fileName,
+      enabled: true,
+      installPath: "enabled",
       revision: `dev.${commit.slice(0, 7)}`,
       sha256: createHash("sha256").update(artifact.bytes).digest("hex"),
     };

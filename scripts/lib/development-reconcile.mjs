@@ -31,14 +31,47 @@ export function listManagedFileNames(manifest) {
   return [...new Set(fileNames)].sort();
 }
 
+function managedRelativePath(plugin) {
+  const installPath = plugin.installPath ?? (plugin.enabled === false ? "disabled" : "enabled");
+  if (installPath === "enabled") return plugin.fileName;
+  if (installPath === "disabled") return `disabled/${plugin.fileName}`;
+  throw new Error(`Unsupported plugin install path: ${installPath}`);
+}
+
+function listManagedPlugins(manifest) {
+  const managedManifest = ensureManagedManifest(manifest);
+  if (!managedManifest) return [];
+
+  return managedManifest.plugins.map((plugin) => {
+    if (typeof plugin.fileName !== "string" || !plugin.fileName.endsWith(".s2sp")) {
+      throw new Error("Development manifest plugin fileName must be a .s2sp file");
+    }
+    if (plugin.fileName.includes("/") || plugin.fileName.includes("\\")) {
+      throw new Error(`Unsafe plugin file name: ${plugin.fileName}`);
+    }
+
+    const relativePath = managedRelativePath(plugin);
+    return {
+      fileName: plugin.fileName,
+      installPath: relativePath === plugin.fileName ? "enabled" : "disabled",
+      relativePath,
+    };
+  });
+}
+
 export function planManagedReconcile({ previousManifest, nextManifest }) {
-  const previous = new Set(listManagedFileNames(previousManifest));
-  const next = listManagedFileNames(nextManifest);
-  const nextSet = new Set(next);
+  const previous = new Set(
+    listManagedPlugins(previousManifest).map((plugin) => plugin.relativePath),
+  );
+  const next = listManagedPlugins(nextManifest);
+  const nextPaths = new Set(next.map((plugin) => plugin.relativePath));
 
   return {
-    deleteFileNames: [...previous].filter((fileName) => !nextSet.has(fileName)).sort(),
-    copyFileNames: next,
+    deletePaths: [...previous].filter((path) => !nextPaths.has(path)).sort(),
+    copyEntries: next.map(({ fileName, installPath }) => ({
+      fileName,
+      installPath,
+    })),
   };
 }
 

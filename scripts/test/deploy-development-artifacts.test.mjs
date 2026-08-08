@@ -14,18 +14,19 @@ describe("remoteManifestPath", () => {
 });
 
 describe("buildRemoteScript", () => {
-  it("validates managed manifests and copies only listed plugins", () => {
+  it("reconciles enabled and disabled managed plugin paths", () => {
     const script = buildRemoteScript({
       remoteStagingDirectory: "/tmp/edgegamers-s2s-development/123",
       remotePluginDirectory: "/srv/cs2/game/csgo/addons/s2script/plugins",
     });
 
-    expect(script).toContain("function listManagedFileNames(manifest)");
+    expect(script).toContain("function managedRelativePath(plugin)");
+    expect(script).toContain('mkdir -p "$plugin_dir/disabled"');
     expect(script).toContain(
-      "const previousFileNames = listManagedFileNames(previous);",
+      "rmSync(join(pluginDir, relativePath), { force: true });",
     );
     expect(script).toContain(
-      "cpSync(join(staging, fileName), join(pluginDir, fileName), { force: true });",
+      "cpSync(join(staging, plugin.fileName), join(pluginDir, managedRelativePath(plugin)), { force: true });",
     );
     expect(script).not.toContain('find "$staging"');
   });

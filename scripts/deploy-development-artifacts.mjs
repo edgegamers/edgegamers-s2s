@@ -81,6 +81,7 @@ manifest_path=${manifest}
 test -d "$staging"
 test -f "$staging/development-manifest.json"
 mkdir -p "$plugin_dir"
+mkdir -p "$plugin_dir/disabled"
 cd "$staging"
 previous="$(mktemp)"
 if [ -f "$manifest_path" ]; then cp "$manifest_path" "$previous"; else printf '{"schemaVersion":1,"managedBy":"edgegamers-s2s","plugins":[]}' > "$previous"; fi
@@ -91,30 +92,36 @@ const { join } = require("node:path");
 const [previousPath, nextPath, staging, pluginDir] = process.argv.slice(2);
 const previous = JSON.parse(readFileSync(previousPath, "utf8"));
 const next = JSON.parse(readFileSync(nextPath, "utf8"));
-function listManagedFileNames(manifest) {
+function managedRelativePath(plugin) {
+  const installPath = plugin.installPath ?? (plugin.enabled === false ? "disabled" : "enabled");
+  if (installPath === "enabled") return plugin.fileName;
+  if (installPath === "disabled") return "disabled/" + plugin.fileName;
+  throw new Error("unsupported plugin install path");
+}
+function listManagedPlugins(manifest) {
   if (manifest.schemaVersion !== 1 || manifest.managedBy !== "edgegamers-s2s" || !Array.isArray(manifest.plugins)) {
     throw new Error("unsupported manifest");
   }
-  const fileNames = manifest.plugins.map((plugin) => {
+  return manifest.plugins.map((plugin) => {
     if (!plugin || typeof plugin.fileName !== "string" || !plugin.fileName.endsWith(".s2sp") || plugin.fileName.includes("/") || plugin.fileName.includes("\\\\")) {
       throw new Error("unsafe plugin file name");
     }
-    return plugin.fileName;
+    return plugin;
   });
-  return [...new Set(fileNames)].sort();
 }
-const previousFileNames = listManagedFileNames(previous);
-const nextFileNames = listManagedFileNames(next);
-const nextNames = new Set(nextFileNames);
+const previousPlugins = listManagedPlugins(previous);
+const nextPlugins = listManagedPlugins(next);
+const nextPaths = new Set(nextPlugins.map(managedRelativePath));
 for (const plugin of next.plugins) {
   const digest = createHash("sha256").update(readFileSync(join(staging, plugin.fileName))).digest("hex");
   if (digest !== plugin.sha256) throw new Error("digest mismatch for " + plugin.fileName);
 }
-for (const fileName of previousFileNames) {
-  if (!nextNames.has(fileName)) rmSync(join(pluginDir, fileName), { force: true });
+for (const plugin of previousPlugins) {
+  const relativePath = managedRelativePath(plugin);
+  if (!nextPaths.has(relativePath)) rmSync(join(pluginDir, relativePath), { force: true });
 }
-for (const fileName of nextFileNames) {
-  cpSync(join(staging, fileName), join(pluginDir, fileName), { force: true });
+for (const plugin of nextPlugins) {
+  cpSync(join(staging, plugin.fileName), join(pluginDir, managedRelativePath(plugin)), { force: true });
 }
 NODE
 cp -f "$staging/development-manifest.json" "$manifest_path"

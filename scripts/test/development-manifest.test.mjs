@@ -56,6 +56,8 @@ describe("createDevelopmentManifest", () => {
         {
           artifact: "plugins/alpha/dist/alpha.s2sp",
           fileName: "alpha.s2sp",
+          enabled: true,
+          installPath: "enabled",
           revision: "dev.abcdef1",
           sha256:
             "8ed3f6ad685b959ead7022518e1af76cd816f8e8ec7ccdda1ed4018e8f2223f8",
@@ -63,6 +65,8 @@ describe("createDevelopmentManifest", () => {
         expect.objectContaining({
           artifact: "plugins/zeta/dist/zeta.s2sp",
           fileName: "zeta.s2sp",
+          enabled: true,
+          installPath: "enabled",
           revision: "dev.abcdef1",
         }),
       ],
