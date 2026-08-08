@@ -44,9 +44,6 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Repository policy
-        run: npm run policy:check
-
       - name: Build Source2Script workspace
         run: npm run build
 

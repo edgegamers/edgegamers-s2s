@@ -1,8 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { discoverPluginManifests } from "./lib/repository-policy.mjs";
 import {
   evaluateChangesetCoverage,
   parseChangesetPackages,
@@ -17,12 +16,19 @@ function defaultGit(root, args) {
 }
 
 function readPlugins(root) {
-  return discoverPluginManifests(root).map((plugin) =>
-    parsePluginMetadata(
-      relative(join(root, "plugins"), plugin.packageDir).replaceAll("\\", "/"),
-      readFileSync(plugin.path, "utf8"),
-    ),
-  );
+  const pluginsDirectory = join(root, "plugins");
+  if (!existsSync(pluginsDirectory)) return [];
+
+  return readdirSync(pluginsDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const packagePath = join(pluginsDirectory, entry.name, "package.json");
+      if (!existsSync(packagePath)) {
+        throw new Error(`plugins/${entry.name}/package.json: file is missing`);
+      }
+
+      return parsePluginMetadata(entry.name, readFileSync(packagePath, "utf8"));
+    });
 }
 
 function readChangesets(root) {

@@ -90,20 +90,17 @@ the next promotion.
 The development deployment target is a user account on the server box. CI uses
 SSH credentials stored as GitHub environment secrets.
 
-Required GitHub development secrets:
+Required secrets:
 
 - `DEV_SSH_HOST`
+- `DEV_SSH_PORT`
 - `DEV_SSH_USER`
 - `DEV_SSH_KEY`
+- `DEV_S2SCRIPT_PLUGIN_DIR`
+- `S2SCRIPT_TOKEN` for production only
 
-Required GitHub production secrets:
-
-- `S2SCRIPT_TOKEN`
-
-Each development server records its live Source2Script plugin directory in
-`servers/games/<game>/<server>/server.json` as
-`development.pluginDirectory`. For CS2 Docker volumes this is normally the
-host path ending in `_data/s2script/plugins`.
+`DEV_S2SCRIPT_PLUGIN_DIR` points at the live Source2Script plugin directory,
+normally `addons/s2script/plugins/` under the running CS2 install.
 
 The deploy script must:
 
@@ -219,12 +216,12 @@ environment.
 
 Development SSH credentials live only in the GitHub development environment.
 The SSH user should have the smallest practical access: write to a staging
-directory and the Source2Script plugin directories listed by server metadata,
-and no broad sudo rights.
+directory and the configured Source2Script plugin directory, and no broad sudo
+rights.
 
 The deploy script must quote paths, reject empty destination variables, reject
 root-like destinations, and fail when digest verification fails. It must not
-delete files outside the resolved target server plugin directory.
+delete files outside `DEV_S2SCRIPT_PLUGIN_DIR`.
 
 GitLab image builds must avoid baking deploy tokens, SSH keys, database
 credentials, or Steam tokens into images.

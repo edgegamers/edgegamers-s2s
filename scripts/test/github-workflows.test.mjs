@@ -18,7 +18,6 @@ describe("GitHub workflows", () => {
       "npm run lint",
       "npm run typecheck",
       "npm test",
-      "npm run policy:check",
       "npm run build",
       "npm run changeset:check",
       "node scripts/verify-main-source.mjs",
@@ -46,17 +45,14 @@ describe("GitHub workflows", () => {
     for (const required of [
       "environment: development",
       "DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}",
+      "DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}",
       "DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}",
       "DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}",
-      "DEV_SERVER_TARGETS: ${{ vars.DEV_SERVER_TARGETS }}",
-      "DEV_SERVER_GAME: ${{ vars.DEV_SERVER_GAME }}",
-      "DEV_SERVER_NAME: ${{ vars.DEV_SERVER_NAME }}",
+      "DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}",
       "npm run deploy:dev",
     ]) {
       expect(deployDev).toContain(required);
     }
-
-    expect(deployDev).not.toContain("DEV_S2SCRIPT_PLUGIN_DIR");
   });
 
   it("validates main and only runs Source2Script deploy when Changesets exist", () => {
@@ -68,7 +64,6 @@ describe("GitHub workflows", () => {
       "npm run lint",
       "npm run typecheck",
       "npm test",
-      "npm run policy:check",
       "npm run build",
       "has-changesets",
       "npm run deploy -- --ci",

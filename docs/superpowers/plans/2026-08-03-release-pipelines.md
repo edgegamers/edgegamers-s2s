@@ -559,10 +559,11 @@ export function main({
   const keyPath = env.DEV_SSH_KEY_PATH;
   const plan = buildDeployPlan({
     host: env.DEV_SSH_HOST,
+    port: env.DEV_SSH_PORT || "22",
     user: env.DEV_SSH_USER,
     keyPath,
     localArtifactDirectory: artifactDirectory,
-    remotePluginDirectory: server.developmentPluginDirectory,
+    remotePluginDirectory: env.DEV_S2SCRIPT_PLUGIN_DIR,
     runId: env.GITHUB_RUN_ID || String(Date.now()),
   });
 
@@ -644,8 +645,10 @@ with:
 for (const required of [
   "environment: development",
   "DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}",
+  "DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}",
   "DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}",
   "DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}",
+  "DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}",
   "npm run deploy:dev",
 ]) {
   expect(deployDev).toContain(required);
@@ -695,11 +698,10 @@ Replace the final skip step with:
       - name: Deploy development plugins
         env:
           DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}
+          DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}
           DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}
           DEV_SSH_KEY_PATH: ~/.ssh/edgegamers-development
-          DEV_SERVER_TARGETS: ${{ vars.DEV_SERVER_TARGETS }}
-          DEV_SERVER_GAME: ${{ vars.DEV_SERVER_GAME }}
-          DEV_SERVER_NAME: ${{ vars.DEV_SERVER_NAME }}
+          DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}
         run: npm run deploy:dev
 ```
 
@@ -768,9 +770,11 @@ Create `development`.
 
 1. Limit deployment branches to `dev`.
 2. Add `DEV_SSH_HOST`.
-3. Add `DEV_SSH_USER`.
-4. Add `DEV_SSH_KEY`.
-5. Scope the SSH user to the remote staging path and each server's `development.pluginDirectory`.
+3. Add `DEV_SSH_PORT`.
+4. Add `DEV_SSH_USER`.
+5. Add `DEV_SSH_KEY`.
+6. Add `DEV_S2SCRIPT_PLUGIN_DIR`.
+7. Scope the SSH user to the remote staging path and Source2Script plugin directory.
 ```
 
 In production setup, keep:
@@ -1587,8 +1591,9 @@ git -C C:\Users\reece\VSCodeProjects\edgegamers-s2s commit -m "docs: record rele
 
 Final handoff must list:
 
-- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_USER`, `DEV_SSH_KEY`.
+- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_PORT`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
 - GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
 - Server box must schedule 10:00 UTC rebuild/restart outside CI.
 - Development SSH user must write to staging and Source2Script plugin directory only.
+

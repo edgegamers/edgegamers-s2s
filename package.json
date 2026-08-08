@@ -10,29 +10,25 @@
   },
   "packageManager": "npm@11.16.0",
   "workspaces": [
-    "plugins/global/*",
-    "plugins/games/*/*",
-    "packages/global/*",
-    "packages/games/*/*"
+    "plugins/*",
+    "packages/*"
   ],
   "s2script": {
     "workspace": {
       "plugins": [
-        "plugins/global/*",
-        "plugins/games/*/*"
+        "plugins/*"
       ]
     }
   },
   "scripts": {
     "license:check": "node scripts/check-licenses.mjs",
     "license:artifacts": "node scripts/check-license-artifacts.mjs",
-    "policy:check": "node scripts/check-repository-policy.mjs",
     "create:plugin": "s2s create",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "test": "vitest run --globals",
     "test:watch": "vitest --globals",
-    "prebuild": "npm run license:check && npm run policy:check",
+    "prebuild": "npm run license:check",
     "build": "s2s build",
     "postbuild": "npm run license:artifacts",
     "changeset": "changeset",

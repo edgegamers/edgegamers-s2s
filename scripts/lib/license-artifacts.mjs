@@ -28,7 +28,7 @@ export function validateBuiltArtifacts({ rootDir }) {
   const mitText = readFileSync(mitPath, "utf8").trim();
   const artifacts = findS2spFiles(join(rootDir, "plugins"))
     .filter((path) => isWorkspaceArtifact(relative(rootDir, path)));
-  if (artifacts.length === 0) return ["plugins/{global/*,games/*/*}/dist/*.s2sp: no built plugin artifacts found"];
+  if (artifacts.length === 0) return ["plugins/*/dist/*.s2sp: no built plugin artifacts found"];
   return artifacts.flatMap((path) => validateArtifact({
     artifactPath: relative(rootDir, path).replaceAll("\\", "/"),
     bytes: readFileSync(path),

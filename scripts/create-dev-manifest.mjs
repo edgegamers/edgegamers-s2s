@@ -14,7 +14,6 @@ import {
   findS2spFiles,
   isWorkspaceArtifact,
 } from "./lib/development-manifest.mjs";
-import { discoverPluginManifests } from "./lib/repository-policy.mjs";
 
 function currentCommit(root) {
   return execFileSync("git", ["rev-parse", "HEAD"], {
@@ -24,12 +23,6 @@ function currentCommit(root) {
 }
 
 export function writeDevelopmentManifest({ root, commit, generatedAt }) {
-  const pluginsByDirectory = new Map(
-    discoverPluginManifests(root).map((plugin) => [
-      relative(root, plugin.packageDir).replaceAll("\\", "/"),
-      plugin.manifest,
-    ]),
-  );
   const artifacts = findS2spFiles(join(root, "plugins"))
     .map((absolutePath) => ({
       absolutePath,
@@ -39,10 +32,6 @@ export function writeDevelopmentManifest({ root, commit, generatedAt }) {
     .map((artifact) => ({
       path: artifact.path,
       bytes: readFileSync(artifact.absolutePath),
-      metadata: metadataForArtifact({
-        artifactPath: artifact.path,
-        pluginsByDirectory,
-      }),
     }));
   const manifest = createDevelopmentManifest({
     artifacts,
@@ -63,21 +52,6 @@ export function writeDevelopmentManifest({ root, commit, generatedAt }) {
   }
 
   return { manifest, outputPath };
-}
-
-function metadataForArtifact({ artifactPath, pluginsByDirectory }) {
-  const normalized = artifactPath.replaceAll("\\", "/");
-  const packageDirectory = normalized.replace(/\/dist\/[^/]+\.s2sp$/u, "");
-  const manifest = pluginsByDirectory.get(packageDirectory);
-  if (!manifest) {
-    throw new Error(`${normalized}: missing plugin package metadata`);
-  }
-  return {
-    name: manifest.name,
-    scope: manifest.edgegamers?.scope,
-    game: manifest.edgegamers?.game,
-    publicRegistry: manifest.edgegamers?.publicRegistry === true,
-  };
 }
 
 export function main({

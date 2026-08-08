@@ -2,7 +2,6 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
-  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -110,35 +109,6 @@ describe("repository license policy", () => {
       "root",
       "@edgegamers/example",
     ]);
-  });
-
-  it("discovers nested global and game workspace plugin patterns", () => {
-    const root = createFixture();
-    const rootPath = join(root, "package.json");
-    const rootManifest = JSON.parse(readFileSync(rootPath, "utf8"));
-    rootManifest.workspaces = ["plugins/global/*", "plugins/games/*/*"];
-    rootManifest.s2script.workspace.plugins = ["plugins/global/*", "plugins/games/*/*"];
-    writeFileSync(rootPath, JSON.stringify(rootManifest));
-
-    mkdirSync(join(root, "plugins", "global"), { recursive: true });
-    renameSync(
-      join(root, "plugins", "example"),
-      join(root, "plugins", "global", "example"),
-    );
-    write(root, "plugins/games/cs2/api/package.json", JSON.stringify({
-      name: "@edgegamers/cs2-api",
-      private: true,
-      license: LICENSE_EXPRESSION,
-      main: "src/plugin.ts",
-    }));
-    write(root, "plugins/games/cs2/api/src/plugin.ts", `/*!\n${mitText}\n*/\nexport {};\n`);
-
-    expect(discoverWorkspaceManifests(root).map(({ manifest: found }) => found.name)).toEqual([
-      "root",
-      "@edgegamers/cs2-api",
-      "@edgegamers/example",
-    ]);
-    expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
   it("rejects a truncated MIT license text", () => {
