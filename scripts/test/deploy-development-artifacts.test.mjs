@@ -1,8 +1,21 @@
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildDeployPlan,
   buildRemoteScript,
+  findChangedPluginPackages,
+  readDevelopmentTargets,
   remoteManifestPath,
+  selectAffectedTargets,
+  writeTargetArtifacts,
 } from "../deploy-development-artifacts.mjs";
 
 describe("remoteManifestPath", () => {
@@ -64,5 +77,208 @@ describe("buildDeployPlan", () => {
         runId: "123; rm -rf /",
       }),
     ).toThrow("Unsafe run ID");
+  });
+});
+
+describe("readDevelopmentTargets", () => {
+  it("merges inherited common plugins into child server targets", () => {
+    const root = mkdtempSync(join(tmpdir(), "edgegamers-dev-targets-"));
+
+    try {
+      mkdirSync(join(root, "config"), { recursive: true });
+      writeFileSync(
+        join(root, "config", "development-servers.json"),
+        JSON.stringify({
+          servers: [
+            {
+              name: "empty-s2s",
+              pluginDir: "/var/lib/docker/volumes/empty/_data/s2script/plugins",
+              plugins: ["@edgegamers/common"],
+            },
+            {
+              name: "ttt-s2s",
+              pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
+              inherits: "empty-s2s",
+              plugins: ["@edgegamers/ttt"],
+              disabledPlugins: ["@edgegamers/common"],
+            },
+          ],
+        }),
+      );
+
+      expect(readDevelopmentTargets({ root })).toEqual([
+        {
+          name: "empty-s2s",
+          pluginDir: "/var/lib/docker/volumes/empty/_data/s2script/plugins",
+          plugins: ["@edgegamers/common"],
+          disabledPlugins: [],
+        },
+        {
+          name: "ttt-s2s",
+          pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
+          plugins: ["@edgegamers/common", "@edgegamers/ttt"],
+          disabledPlugins: ["@edgegamers/common"],
+        },
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the old single-directory fallback for manual deployments", () => {
+    expect(
+      readDevelopmentTargets({
+        root: mkdtempSync(join(tmpdir(), "edgegamers-dev-targets-")),
+        env: {
+          DEV_S2SCRIPT_PLUGIN_DIR:
+            "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
+        },
+      }),
+    ).toEqual([
+      {
+        name: "default",
+        pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
+        plugins: ["*"],
+        disabledPlugins: [],
+      },
+    ]);
+  });
+});
+
+describe("selectAffectedTargets", () => {
+  it("selects only targets that consume a changed plugin", () => {
+    const targets = [
+      {
+        name: "empty-s2s",
+        pluginDir: "/plugins/empty",
+        plugins: ["@edgegamers/common"],
+        disabledPlugins: [],
+      },
+      {
+        name: "ttt-s2s",
+        pluginDir: "/plugins/ttt",
+        plugins: ["@edgegamers/common", "@edgegamers/ttt"],
+        disabledPlugins: [],
+      },
+    ];
+
+    expect(
+      selectAffectedTargets({
+        targets,
+        changedPluginPackages: new Set(["@edgegamers/ttt"]),
+      }).map((target) => target.name),
+    ).toEqual(["ttt-s2s"]);
+  });
+
+  it("treats disabled-only plugins as managed target membership", () => {
+    const targets = [
+      {
+        name: "disabled-target",
+        pluginDir: "/plugins/disabled-target",
+        plugins: [],
+        disabledPlugins: ["@edgegamers/disabled"],
+      },
+    ];
+
+    expect(
+      selectAffectedTargets({
+        targets,
+        changedPluginPackages: new Set(["@edgegamers/disabled"]),
+      }).map((target) => target.name),
+    ).toEqual(["disabled-target"]);
+  });
+});
+
+describe("findChangedPluginPackages", () => {
+  it("returns plugin packages changed by a git diff", () => {
+    const packages = new Map([["ttt", "@edgegamers/ttt"]]);
+    const changed = findChangedPluginPackages({
+      root: "/repo",
+      base: "before",
+      head: "after",
+      pluginPackageByDirectory: packages,
+      execFile: () => "plugins/ttt/src/index.ts\nREADME.md\n",
+    });
+
+    expect(changed).toEqual(new Set(["@edgegamers/ttt"]));
+  });
+
+  it("treats shared package changes as unknown server impact", () => {
+    expect(
+      findChangedPluginPackages({
+        root: "/repo",
+        base: "before",
+        head: "after",
+        execFile: () => "packages/shared/index.ts\n",
+      }),
+    ).toBeUndefined();
+  });
+});
+
+describe("writeTargetArtifacts", () => {
+  it("writes a target-specific manifest and disabled plugin path intent", () => {
+    const root = mkdtempSync(join(tmpdir(), "edgegamers-target-artifacts-"));
+    const source = join(root, "artifacts", "local-development");
+
+    try {
+      mkdirSync(source, { recursive: true });
+      writeFileSync(join(source, "common.s2sp"), "common");
+      writeFileSync(join(source, "ttt.s2sp"), "ttt");
+      writeFileSync(
+        join(source, "development-manifest.json"),
+        JSON.stringify({
+          schemaVersion: 1,
+          managedBy: "edgegamers-s2s",
+          environment: "development",
+          plugins: [
+            {
+              artifact: "plugins/common/dist/common.s2sp",
+              packageName: "@edgegamers/common",
+              fileName: "common.s2sp",
+              enabled: true,
+              installPath: "enabled",
+              sha256: "a".repeat(64),
+            },
+            {
+              artifact: "plugins/ttt/dist/ttt.s2sp",
+              packageName: "@edgegamers/ttt",
+              fileName: "ttt.s2sp",
+              enabled: true,
+              installPath: "enabled",
+              sha256: "b".repeat(64),
+            },
+          ],
+        }),
+      );
+
+      const targetDirectory = writeTargetArtifacts({
+        root,
+        sourceArtifactDirectory: source,
+        target: {
+          name: "ttt-s2s",
+          pluginDir: "/plugins/ttt",
+          plugins: ["@edgegamers/common", "@edgegamers/ttt"],
+          disabledPlugins: ["@edgegamers/common"],
+        },
+      });
+      const manifest = JSON.parse(
+        readFileSync(join(targetDirectory, "development-manifest.json"), "utf8"),
+      );
+
+      expect(manifest.plugins).toEqual([
+        expect.objectContaining({
+          packageName: "@edgegamers/common",
+          enabled: false,
+          installPath: "disabled",
+        }),
+        expect.objectContaining({
+          packageName: "@edgegamers/ttt",
+          enabled: true,
+          installPath: "enabled",
+        }),
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

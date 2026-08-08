@@ -1,0 +1,17 @@
+{
+  "servers": [
+    {
+      "name": "empty-s2s",
+      "pluginDir": "/var/lib/docker/volumes/empty-s2s-addons/_data/s2script/plugins",
+      "plugins": [],
+      "disabledPlugins": []
+    },
+    {
+      "name": "ttt-s2s",
+      "pluginDir": "/var/lib/docker/volumes/ttt-s2s-addons/_data/s2script/plugins",
+      "inherits": "empty-s2s",
+      "plugins": [],
+      "disabledPlugins": []
+    }
+  ]
+}

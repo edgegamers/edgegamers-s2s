@@ -67,7 +67,15 @@ npm.cmd run manifest:dev
 
 The manifest is written to `artifacts/development-manifest.json`. Entries are sorted by artifact path and contain the commit-derived `dev.<short-sha>` revision plus a SHA-256 digest.
 
-Development deployment builds `.s2sp` files, writes `artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and reconciles the managed files on the development server over SSH. The remote manifest `.edgegamers-development-manifest.json` is the ownership boundary: automation deletes only stale files listed by the previous managed manifest and leaves unmanaged files alone.
+Development deployment builds `.s2sp` files, writes
+`artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and
+reconciles the managed files on affected development servers over SSH. Server
+targets and their live plugin directories are defined in
+`config/development-servers.json`; GitHub secrets only hold the SSH host, user,
+key, and optional port. The remote manifest
+`.edgegamers-development-manifest.json` is the ownership boundary: automation
+deletes only stale files listed by the previous managed manifest and leaves
+unmanaged files alone.
 
 The SSH host must provide Node.js 20 or newer on the deploy user's
 non-interactive `PATH`. Remote digest verification and manifest reconciliation
@@ -76,6 +84,11 @@ run with that `node` executable.
 Disabled development plugins are still managed. They install under
 `plugins/disabled/<plugin-name>.s2sp`, receive updates from the generated
 manifest, and remain part of stale-file cleanup.
+
+Each development target lists the plugin packages it consumes. A `dev` push
+deploys only to targets whose plugin set intersects the changed plugin
+packages. Shared package or workspace-level changes are treated as unknown
+impact and reconcile every configured target with plugins.
 
 ## Operator release order
 

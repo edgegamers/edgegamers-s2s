@@ -23,6 +23,10 @@ describe("create-dev-manifest CLI", () => {
       );
       mkdirSync(distDirectory, { recursive: true });
       writeFileSync(
+        join(root, "plugins", "reference-api", "package.json"),
+        JSON.stringify({ name: "@edgegamers/reference-api" }),
+      );
+      writeFileSync(
         join(distDirectory, "reference-api.s2sp"),
         "reference artifact",
       );
@@ -45,6 +49,7 @@ describe("create-dev-manifest CLI", () => {
         expect.objectContaining({
           artifact:
             "plugins/reference-api/dist/reference-api.s2sp",
+          packageName: "@edgegamers/reference-api",
           revision: "dev.abcdef1",
         }),
       ]);

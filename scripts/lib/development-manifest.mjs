@@ -28,6 +28,7 @@ export function createDevelopmentManifest({
 
     return {
       artifact: normalizedPath,
+      ...(artifact.packageName ? { packageName: artifact.packageName } : {}),
       fileName,
       enabled: true,
       installPath: "enabled",

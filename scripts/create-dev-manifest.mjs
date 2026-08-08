@@ -22,6 +22,20 @@ function currentCommit(root) {
   }).trim();
 }
 
+function pluginPackageName({ root, artifactPath }) {
+  const normalizedPath = artifactPath.replaceAll("\\", "/");
+  const match = /^plugins\/([^/]+)\//u.exec(normalizedPath);
+  if (!match) throw new Error(`Cannot resolve plugin package for ${artifactPath}`);
+
+  const packageJson = JSON.parse(
+    readFileSync(join(root, "plugins", match[1], "package.json"), "utf8"),
+  );
+  if (typeof packageJson.name !== "string" || !packageJson.name) {
+    throw new Error(`Missing package name for plugins/${match[1]}`);
+  }
+  return packageJson.name;
+}
+
 export function writeDevelopmentManifest({ root, commit, generatedAt }) {
   const artifacts = findS2spFiles(join(root, "plugins"))
     .map((absolutePath) => ({
@@ -31,6 +45,7 @@ export function writeDevelopmentManifest({ root, commit, generatedAt }) {
     .filter((artifact) => isWorkspaceArtifact(artifact.path))
     .map((artifact) => ({
       path: artifact.path,
+      packageName: pluginPackageName({ root, artifactPath: artifact.path }),
       bytes: readFileSync(artifact.absolutePath),
     }));
   const manifest = createDevelopmentManifest({

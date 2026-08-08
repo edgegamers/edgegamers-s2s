@@ -40,7 +40,11 @@ describe("createDevelopmentManifest", () => {
     const manifest = createDevelopmentManifest({
       artifacts: [
         { path: "plugins\\zeta\\dist\\zeta.s2sp", bytes: Buffer.from("zeta") },
-        { path: "plugins/alpha/dist/alpha.s2sp", bytes: Buffer.from("alpha") },
+        {
+          path: "plugins/alpha/dist/alpha.s2sp",
+          packageName: "@edgegamers/alpha",
+          bytes: Buffer.from("alpha"),
+        },
       ],
       commit: "abcdef1234567890",
       generatedAt: "2026-07-31T12:00:00.000Z",
@@ -55,6 +59,7 @@ describe("createDevelopmentManifest", () => {
       plugins: [
         {
           artifact: "plugins/alpha/dist/alpha.s2sp",
+          packageName: "@edgegamers/alpha",
           fileName: "alpha.s2sp",
           enabled: true,
           installPath: "enabled",

@@ -40,11 +40,13 @@ Create `development`.
 
 1. Limit deployment branches to `dev`.
 2. Add `DEV_SSH_HOST`.
-3. Add `DEV_SSH_PORT`.
+3. Optionally add `DEV_SSH_PORT`; it defaults to `22`.
 4. Add `DEV_SSH_USER`.
 5. Add `DEV_SSH_KEY`.
-6. Add `DEV_S2SCRIPT_PLUGIN_DIR`.
-7. Scope the SSH user to the remote staging path and Source2Script plugin directory.
+6. Keep development server plugin directories in
+   `config/development-servers.json`, not GitHub secrets.
+7. Scope the SSH user to the remote staging path and configured Source2Script
+   plugin directories.
 8. Install Node.js 20 or newer on the SSH host and ensure `node` is available in
    the deploy user's non-interactive `PATH`. The remote reconciliation script uses
    Node.js for digest verification and manifest-scoped file operations.
@@ -103,7 +105,8 @@ Required checks:
 
 ## 7. Release Paths
 
-Development releases build and reconcile managed plugin files over SSH.
+Development releases build and reconcile managed plugin files over SSH to each
+affected server target in `config/development-servers.json`.
 Disabled plugins are still managed and install under
 `plugins/disabled/<plugin-name>.s2sp`.
 
