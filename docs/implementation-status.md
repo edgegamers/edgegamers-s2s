@@ -120,8 +120,8 @@ Required remote setup:
 
 - GitHub GitLab trigger secrets: `GITLAB_URL`, `GITLAB_PROJECT_ID_EMPTY_S2S`, `GITLAB_TRIGGER_TOKEN_EMPTY_S2S`, `GITLAB_PROJECT_ID_TTT_S2S`, and `GITLAB_TRIGGER_TOKEN_TTT_S2S`.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
-- GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
-- TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.
+- GitLab runners need Docker-in-Docker support for `base-s2s`, `empty-s2s`, and `ttt-s2s`.
+- The `empty-s2s` and `ttt-s2s` GitLab projects need a masked `GITHUB_PLUGIN_BUNDLE_TOKEN` with read access to the private GitHub Actions artifacts.
 
 ## Plugin bundle server pipeline overhaul
 
