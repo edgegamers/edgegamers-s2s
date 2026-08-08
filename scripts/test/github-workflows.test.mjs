@@ -65,6 +65,11 @@ describe("GitHub workflows", () => {
       "npm run typecheck",
       "npm test",
       "npm run build",
+      "npm run release:plan",
+      "npm run release:github-plugins",
+      "GH_TOKEN: ${{ github.token }}",
+      "permissions:",
+      "contents: write",
       "has-changesets",
       "npm run deploy -- --ci",
       "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",
@@ -84,6 +89,9 @@ describe("GitHub workflows", () => {
     expect(jobConfiguration).not.toContain("S2SCRIPT_TOKEN");
     expect(deployStep).toContain(
       "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",
+    );
+    expect(release.slice(0, deployIndex) + release.slice(skipIndex)).not.toContain(
+      "S2SCRIPT_TOKEN",
     );
   });
 

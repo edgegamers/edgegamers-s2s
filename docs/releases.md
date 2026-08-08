@@ -95,9 +95,14 @@ npm.cmd run deploy -- --ci
 
 `s2s deploy` builds the workspace, creates a deployment plan, skips private plugins, skips versions already present in the registry, and publishes eligible plugins in dependency order. Automated deployment uses `S2SCRIPT_TOKEN` and the CLI's `--ci` flag.
 
-Production publication stops at the Source2Script registry. Server images consume registry versions with `s2s install`; GitHub Actions does not copy production `.s2sp` files to servers.
+On `main`, the repository builds `.s2sp` files and creates GitHub release
+assets for every released plugin. The asset file name is stable:
+`<plugin-name>.s2sp`. Server repositories resolve those GitHub releases at
+tag time.
 
-This repository does not need a second production upload system, production server manifest, installation command, or server-reconciliation layer. Registry deployment is the production boundary requested for this project.
+Plugins with `edgegamers.release.publishToRegistry: true` may also publish to
+the Source2Script registry. EdgeGamers servers still install EdgeGamers plugins
+from GitHub release assets.
 
 ## Rollback boundary
 

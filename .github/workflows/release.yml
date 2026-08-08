@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: main-s2s-deploy-${{ github.ref }}
@@ -46,6 +46,14 @@ jobs:
 
       - name: Build Source2Script workspace
         run: npm run build
+
+      - name: Create plugin release plan
+        run: npm run release:plan
+
+      - name: Publish GitHub plugin releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run release:github-plugins
 
       - name: Detect pending Changesets
         id: detect
