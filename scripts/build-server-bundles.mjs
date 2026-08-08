@@ -115,6 +115,10 @@ export function writeServerBundles({
   }
 
   bundles.sort((left, right) => left.server.localeCompare(right.server));
+  writeFileSync(
+    join(outputRoot, "bundles.json"),
+    `${JSON.stringify({ schemaVersion: 1, bundles }, null, 2)}\n`,
+  );
   return { bundles };
 }
 

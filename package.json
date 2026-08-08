@@ -36,6 +36,7 @@
     "changeset:check": "node scripts/check-changeset.mjs",
     "manifest:dev": "node scripts/create-dev-manifest.mjs",
     "bundles:servers": "node scripts/build-server-bundles.mjs",
+    "trigger:servers": "node scripts/trigger-gitlab-server-pipelines.mjs",
     "artifacts:local": "npm run build && npm run manifest:dev && node scripts/collect-local-artifacts.mjs",
     "deploy:dev": "node scripts/deploy-development-artifacts.mjs",
     "version": "s2s version",
