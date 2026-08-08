@@ -123,3 +123,20 @@ Required remote setup:
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
 - GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
 - TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.
+
+## Plugin bundle server pipeline overhaul
+
+Status: implemented.
+
+Verification:
+
+- `s2script-runtime-image`: `bash scripts/validate.sh` exited 0.
+- `edgegamers-s2s`: lint, typecheck, tests, build, development bundle build,
+  and production bundle build exited 0.
+- `empty-s2s`: `bash scripts/validate.sh` exited 0.
+- `ttt-s2s`: `bash scripts/validate.sh` exited 0.
+- Docker image builds: unavailable locally. `docker version --format '{{.Server.Version}}'`
+  exited 1 with `failed to connect to the docker API at npipe:////./pipe/docker_engine; check if the path is correct and if the daemon is running: open //./pipe/docker_engine: The system cannot find the file specified.`
+- Removed systems grep: no active direct dev SSH deploy, Watchtower,
+  development reconcile, or server-release-manifest pipeline remains. Matches
+  were historical plan/spec text and negative workflow-test fixtures.
