@@ -39,13 +39,15 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Build a local Source2Script artifact bundle with:
+Build development bundles with:
 
 ```powershell
-npm.cmd run artifacts:local
+npm.cmd run bundles:servers -- --environment development
 ```
 
-See [local development](./docs/local-development.md) for server copy steps and current release-path stubs.
+The workflow sends bundles to affected server repositories through GitLab
+trigger-token pipelines. Those repositories build and deploy the runnable
+server images.
 
 ## License
 

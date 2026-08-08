@@ -48,11 +48,12 @@ GitHub Actions artifact upload
     ↓
 GitLab server pipeline trigger
     ↓
-server repository image build and SSH dev deploy
+server repository image build and SSH development deploy
 ```
 
 `edgegamers-s2s` does not SSH to game servers. Server repositories own compose,
-host paths, image deployment, and restart behavior.
+host paths, image deployment, and restart behavior. Development deploys pull
+the rebuilt image and restart the development container immediately.
 
 Build server bundles with:
 
@@ -92,9 +93,9 @@ npm.cmd run deploy -- --ci
 
 Production bundles are immutable CI artifacts created from `main`. Server
 repositories choose when to consume a production bundle, build a production
-image, and update production runtime selection. Production deploys do not force
-restart unless the server repository's production deploy command explicitly
-does so.
+image, and update production image and compose selection. Production deploys
+do not force a live restart; the production host's 10:00 restart applies the
+selected image.
 
 ## Rollback boundary
 

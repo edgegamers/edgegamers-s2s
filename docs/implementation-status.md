@@ -155,3 +155,21 @@ Verification:
 - Removed systems grep: no active direct dev SSH deploy, Watchtower,
   development reconcile, or server-release-manifest pipeline remains. Matches
   were historical plan/spec text and negative workflow-test fixtures.
+
+## Old-model server image rollback
+
+- `edgegamers-s2s` keeps Source2Script package/bundle builds and GitLab trigger-token fanout for affected development servers.
+- `base-s2s` is game-agnostic and no longer packages a payload addon tree.
+- `empty-s2s` is the runnable CS2 base image and keeps the existing `cs2-data` shared install.
+- `ttt-s2s` is a runnable child image based on `empty-s2s:main`.
+- Server compose files no longer use `ghcr.io/s2script/s2script-runtime-image`.
+- Development SSH deploys pull the rebuilt image and restart containers.
+- Production deploys update compose/image selection without forcing live restarts; the host 10:00 restart applies the image.
+
+Validation:
+
+- `edgegamers-s2s`: `npm.cmd test` exited 0.
+- `base-s2s`: Git Bash `bash scripts/validate.sh` exited 0.
+- `empty-s2s`: Git Bash `bash scripts/validate.sh` exited 0.
+- `ttt-s2s`: Git Bash `bash scripts/validate.sh` exited 0.
+- Docker builds: local Docker daemon unavailable; GitLab CI must validate image builds. `docker version --format '{{.Server.Version}}'` exited 1 because `//./pipe/docker_engine` does not exist; Docker also warned that `C:\Users\reece\.docker\config.json` was denied.

@@ -46,14 +46,18 @@ npm.cmd run create:plugin -- my-plugin
 
 Use an `@edgegamers/` package name. Keep SDK-required fields in the plugin `package.json`.
 
-## Build Artifacts For A Local Server
+## Build A Development Server Bundle
 
-Run `npm.cmd run build`, then copy `.s2sp` files from each plugin's `dist/`
-directory into your local Source2Script plugin directory:
+Build the workspace and its development server bundles:
 
-```text
-addons/s2script/plugins/
+```powershell
+npm.cmd run build
+npm.cmd run bundles:servers -- --environment development
 ```
+
+`edgegamers-s2s` sends the bundle to affected server repositories through their
+GitLab trigger-token pipelines. Those repositories build runnable images and
+restart development containers; this repository does not connect to game hosts.
 
 ## GitHub Setup
 

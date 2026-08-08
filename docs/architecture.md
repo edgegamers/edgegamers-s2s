@@ -19,7 +19,8 @@ edgegamers-s2/
 
 `scripts/lib/*` contains focused logic that can be tested with explicit inputs. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
 
-`artifacts/` contains generated local-development files and server bundles. Plugin `dist/` directories contain generated `.s2sp` packages. Both are ignored by Git.
+`artifacts/server-bundles/` contains generated server bundles. Plugin `dist/`
+directories contain generated `.s2sp` packages. Both are ignored by Git.
 
 ## Which tool owns what?
 
@@ -75,6 +76,7 @@ The repository includes GitHub Actions for validation, server bundle builds, Sou
 Branch rules, environments, secrets, labels, team bindings, and required checks still require maintainer setup in GitHub. Follow [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).
 
 Server deployment is intentionally outside this repository. This repository
-builds server-scoped plugin bundles and triggers server repository pipelines.
-The server repositories own image builds, SSH deploys, compose files, and
-restart policy.
+builds server-scoped plugin bundles and uses GitLab trigger tokens to start
+affected development server pipelines. Server repositories own runnable image
+builds, SSH deploys, compose files, and restart policy; this repository never
+SSHes to game servers.

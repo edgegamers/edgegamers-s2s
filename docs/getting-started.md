@@ -61,9 +61,18 @@ Vite is pinned to 6.4.3 because Vitest's broad dependency range otherwise select
 
 ## Local server testing
 
-Run `npm.cmd run build`, then copy the generated `.s2sp` files from each
-plugin's `dist/` directory into a local Source2Script server under
-`addons/s2script/plugins/`.
+Build the workspace and development bundles with:
+
+```powershell
+npm.cmd run build
+npm.cmd run bundles:servers -- --environment development
+```
+
+Development delivery triggers the affected server repositories, which build
+their runnable images, pull them on the development hosts, and restart their
+development containers. Production delivery updates the selected image and
+compose configuration without a live restart; the host restart at 10:00 applies
+the selected image.
 
 See [Local development](./local-development.md) for the full local setup and current release-path stubs.
 
