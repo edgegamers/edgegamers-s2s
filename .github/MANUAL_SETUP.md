@@ -39,15 +39,6 @@ Only maintainers should apply `no-changeset` and `release:hotfix`.
 Create `development`.
 
 1. Limit deployment branches to `dev`.
-2. Add `DEV_SSH_HOST`.
-3. Add `DEV_SSH_PORT`.
-4. Add `DEV_SSH_USER`.
-5. Add `DEV_SSH_KEY`.
-6. Add `DEV_S2SCRIPT_PLUGIN_DIR`.
-7. Scope the SSH user to the remote staging path and Source2Script plugin directory.
-8. Install Node.js 20 or newer on the SSH host and ensure `node` is available in
-   the deploy user's non-interactive `PATH`. The remote reconciliation script uses
-   Node.js for digest verification and manifest-scoped file operations.
 
 Create `production`.
 
@@ -55,7 +46,18 @@ Create `production`.
 2. Require production reviewers.
 3. Prevent self-review when the team size allows it.
 4. Add `S2SCRIPT_TOKEN`.
-5. Do not add production server SSH credentials. Production plugin delivery stops at the Source2Script registry.
+
+## GitLab trigger secrets
+
+`edgegamers-s2s` needs these GitHub secrets:
+
+- `GITLAB_URL`
+- `GITLAB_PROJECT_ID_EMPTY_S2S`
+- `GITLAB_TRIGGER_TOKEN_EMPTY_S2S`
+- `GITLAB_PROJECT_ID_TTT_S2S`
+- `GITLAB_TRIGGER_TOKEN_TTT_S2S`
+
+Each server repository keeps its own GitLab SSH deployment secrets.
 
 ## 5. dev Ruleset
 
@@ -99,4 +101,7 @@ Required checks:
 
 ## 7. Release Paths
 
-Development releases build and reconcile managed plugin files over SSH. Production plugin delivery stops at the Source2Script registry.
+Development releases build server-scoped plugin bundles, upload them as GitHub
+Actions artifacts, and trigger server repository pipelines. Production bundles
+are immutable CI artifacts; server repositories choose when to consume them and
+deploy their production images.

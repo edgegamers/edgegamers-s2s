@@ -9,7 +9,7 @@ edgegamers-s2/
 ├── .changeset/       Release intent for publishable plugins
 ├── docs/             Contributor and release documentation
 ├── plugins/          Source2Script runtime plugins
-├── scripts/          Repository-specific policy and manifest tools
+├── scripts/          Repository-specific policy and bundle tools
 └── packages/         Reserved for proven shared source packages
 ```
 
@@ -19,7 +19,7 @@ edgegamers-s2/
 
 `scripts/lib/*` contains focused logic that can be tested with explicit inputs. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
 
-`artifacts/` contains generated development manifests. Plugin `dist/` directories contain generated `.s2sp` packages. Both are ignored by Git.
+`artifacts/` contains generated local-development files and server bundles. Plugin `dist/` directories contain generated `.s2sp` packages. Both are ignored by Git.
 
 ## Which tool owns what?
 
@@ -34,7 +34,7 @@ Source2Script owns:
 The repository owns:
 
 - deciding when a changed publishable plugin needs a Changeset;
-- formatting an immutable development-artifact manifest;
+- building server-scoped plugin bundles and triggering server pipelines;
 - EdgeGamers contributor documentation.
 
 There is deliberately no custom loop over `plugins/*` for building, versioning, or publishing.
@@ -63,15 +63,18 @@ lint → typecheck → unit tests → s2s build
                                   ↓
                         plugin dist/*.s2sp files
                                   ↓
-                    development manifest generation
+                    server bundle generation
 ```
 
 Production follows a separate Changeset and registry path described in [Changesets and releases](./releases.md).
 
 ## GitHub and deployment state
 
-The repository includes GitHub Actions for validation, development artifact builds, Source2Script registry deploys, and hotfix synchronization.
+The repository includes GitHub Actions for validation, server bundle builds, Source2Script registry deploys, and hotfix synchronization.
 
 Branch rules, environments, secrets, labels, team bindings, and required checks still require maintainer setup in GitHub. Follow [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).
 
-Server deployment remains intentionally stubbed. The development workflow uploads immutable artifacts and a manifest, then stops. The release workflow can publish through Source2Script, then stops before server rollout because EdgeGamers has not finalized the production server install path or reconcile command.
+Server deployment is intentionally outside this repository. This repository
+builds server-scoped plugin bundles and triggers server repository pipelines.
+The server repositories own image builds, SSH deploys, compose files, and
+restart policy.

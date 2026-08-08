@@ -52,7 +52,11 @@ The command runs the Source2Script build, writes `artifacts/development-manifest
 
 Use `artifacts/local-development/README.txt` as the file list for a manual local server copy.
 
-`npm.cmd run artifacts:local` still supports manual local server copies. The CI development path uses the same files, then runs `npm run deploy:dev` with GitHub environment secrets. Do not run `deploy:dev` locally unless `DEV_SSH_*` variables point at a development server account.
+`npm.cmd run artifacts:local` supports manual local server copies only.
+
+CI server deployment does not use `artifacts/local-development/`. CI uses
+server bundles under `artifacts/server-bundles/` and hands deployment to the
+server repositories.
 
 ## Load On A Local Server
 
@@ -64,7 +68,7 @@ addons/s2script/plugins/
 
 Copy each `.s2sp` from `artifacts/local-development/` into that directory on your local development server. Re-copy the file after rebuilding. Delete it to unload.
 
-Do not use this manual copy process as the production release path. Production plugin delivery stops at the Source2Script registry.
+Do not use this manual copy process as the production release path. Server repositories select production bundles and deploy their server images.
 
 ## Environment Setup
 

@@ -32,12 +32,8 @@ The coverage check compares changed plugin paths with package metadata. It ignor
 
 Before deployment:
 
-- Run `npm run build`; its repository license gate and postbuild artifact-notice
-  gate must both pass.
-- Audit the code that will be bundled and its license terms and required
-  notices when introducing or changing an `s2script.libraries` dependency.
-  The repository checker rejects libraries that do not have an explicit
-  first-party compliance path.
+- Run `npm run build`; its repository license gate and postbuild artifact-notice gate must both pass.
+- Audit the code that will be bundled and its license terms and required notices when introducing or changing an `s2script.libraries` dependency. The repository checker rejects libraries that do not have an explicit first-party compliance path.
 
 ## Development builds
 
@@ -46,31 +42,30 @@ Development builds do not publish permanent registry releases for every commit:
 ```text
 s2s build
     ↓
-immutable .s2sp artifacts
+server bundle zip files
     ↓
-development-manifest.json
+GitHub Actions artifact upload
     ↓
-development server SSH deployment and manifest-scoped reconciliation
+GitLab server pipeline trigger
+    ↓
+server repository image build and SSH dev deploy
 ```
 
-Build and generate the manifest:
+`edgegamers-s2s` does not SSH to game servers. Server repositories own compose,
+host paths, image deployment, and restart behavior.
+
+Build server bundles with:
 
 ```powershell
 npm.cmd run build
-npm.cmd run manifest:dev
+npm.cmd run bundles:servers -- --environment development
 ```
 
-The manifest is written to `artifacts/development-manifest.json`. Entries are sorted by artifact path and contain the commit-derived `dev.<short-sha>` revision plus a SHA-256 digest.
-
-Development deployment builds `.s2sp` files, writes `artifacts/development-manifest.json`, uploads a GitHub Actions artifact, and reconciles the managed files on the development server over SSH. The remote manifest `.edgegamers-development-manifest.json` is the ownership boundary: automation deletes only stale files listed by the previous managed manifest and leaves unmanaged files alone.
-
-The SSH host must provide Node.js 20 or newer on the deploy user's
-non-interactive `PATH`. Remote digest verification and manifest reconciliation
-run with that `node` executable.
+The development workflow uploads bundles from `artifacts/server-bundles/` and triggers the associated server repository pipelines.
 
 ## Production releases
 
-Production publication stops at the Source2Script registry:
+Production release intent is recorded with Changesets:
 
 ```text
 pending Changesets
@@ -95,10 +90,15 @@ npm.cmd run deploy -- --ci
 
 `s2s deploy` builds the workspace, creates a deployment plan, skips private plugins, skips versions already present in the registry, and publishes eligible plugins in dependency order. Automated deployment uses `S2SCRIPT_TOKEN` and the CLI's `--ci` flag.
 
-Production publication stops at the Source2Script registry. Server images consume registry versions with `s2s install`; GitHub Actions does not copy production `.s2sp` files to servers.
-
-This repository does not need a second production upload system, production server manifest, installation command, or server-reconciliation layer. Registry deployment is the production boundary requested for this project.
+Production bundles are immutable CI artifacts created from `main`. Server
+repositories choose when to consume a production bundle, build a production
+image, and update production runtime selection. Production deploys do not force
+restart unless the server repository's production deploy command explicitly
+does so.
 
 ## Rollback boundary
 
-Development rollout uses SSH deployment and manifest-scoped reconciliation. The remote manifest is the ownership boundary: reconciliation deletes only stale files listed by the previous managed manifest and leaves unmanaged files untouched. Automated rollback is not provided; recovery requires manually redeploying the desired development artifact and manifest. Registry versions are immutable; never overwrite or delete a published version as a rollback mechanism. Any production server selection policy belongs to the system that consumes the registry, outside this repository milestone.
+Server repositories own development rollback and restart behavior. Registry
+versions and CI bundle artifacts are immutable; never overwrite or delete a
+published version as a rollback mechanism. Any production server selection
+policy belongs to the system that consumes the bundle, outside this repository.

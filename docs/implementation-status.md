@@ -33,13 +33,13 @@ Status: complete locally.
 
 ## Phase 4: CI
 
-Status: implemented with development deployment and registry publication.
+Status: implemented with server bundle workflows and registry publication.
 
 - Pull request validation runs lint, typecheck, tests, Source2Script build, and Changeset coverage.
-- Development workflow builds artifacts and uploads a development bundle.
+- Development workflow builds server-scoped plugin bundles, uploads them, and triggers server repository pipelines.
 - Release workflow validates `main` and can run Source2Script registry deploy.
 - Hotfix workflow opens a `main` to `dev` sync PR.
-- Development server deployment and reconciliation run over SSH using GitHub environment secrets.
+- Server repositories own image builds, SSH deployment, compose files, and restart behavior.
 
 ## Phase 5: GitHub
 
@@ -72,10 +72,10 @@ Status: complete locally.
 
 Status: implemented locally.
 
-- Development artifacts deploy over SSH to the configured development server plugin directory.
-- Reconciliation is manifest-scoped and leaves unmanaged files untouched.
-- Production releases publish to the Source2Script registry only.
-- Server images live in `base-s2s` and `ttt-s2s`.
+- Development builds produce server-scoped plugin bundles and trigger server repository pipelines.
+- Production bundles are immutable CI artifacts created from `main`.
+- Server repositories own image builds, SSH deploys, compose files, runtime selection, and restart policy.
+- Server repositories remain small and own their server image definitions.
 
 ## Phase 9: Documentation
 
@@ -115,14 +115,11 @@ npm.cmd run artifacts:local
 
 `npm.cmd run build` and `npm.cmd run artifacts:local` may need to run outside the Codex sandbox because Source2Script's build process reads plugin entry files through paths the sandbox denies.
 
-Development deployment, production release, and hotfix flow still need GitHub environment setup before end-to-end validation.
+Server bundle pipeline triggers, production release, and hotfix flow still need GitHub and GitLab environment setup before end-to-end validation.
 
 Required remote setup:
 
-- GitHub development environment secrets: `DEV_SSH_HOST`, `DEV_SSH_PORT`, `DEV_SSH_USER`, `DEV_SSH_KEY`, `DEV_S2SCRIPT_PLUGIN_DIR`.
+- GitHub GitLab trigger secrets: `GITLAB_URL`, `GITLAB_PROJECT_ID_EMPTY_S2S`, `GITLAB_TRIGGER_TOKEN_EMPTY_S2S`, `GITLAB_PROJECT_ID_TTT_S2S`, and `GITLAB_TRIGGER_TOKEN_TTT_S2S`.
 - GitHub production environment secret: `S2SCRIPT_TOKEN`.
-- The development SSH host needs Node.js 20 or newer in the deploy user's non-interactive `PATH`.
 - GitLab runners need Docker-in-Docker support for `base-s2s` and `ttt-s2s`.
-- The server box must schedule a 10:00 UTC rebuild/restart outside CI.
-- The development SSH user must write only to staging and the Source2Script plugin directory; `DEV_S2SCRIPT_PLUGIN_DIR` must be the same host bind path used by `compose-dev.yml` and be writable by UID/GID `1000:1000`.
 - TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.
