@@ -77,7 +77,7 @@ The changeset release job turns merged changes on `main` into plugin releases. E
 Disabled development plugins still update, but reconcile installs them under:
 
 ```text
-addons/s2script/plugins/disabled/<plugin-name>.s2sp
+addons/s2script/plugins/disabled/<artifact-file>.s2sp
 ```
 
 ## Production Releases

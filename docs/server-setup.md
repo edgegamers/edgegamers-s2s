@@ -104,10 +104,18 @@ If the compose file uses a bind mount instead of a named addon volume, use the b
 In `edgegamers-s2s` GitHub development environment:
 
 - `DEV_GITLAB_TOKEN`: can clone development server repos from GitLab.
+- `DEV_GITLAB_USER`: optional. Leave unset for a personal or project access
+  token, which uses GitLab's `oauth2` username. Set it for a GitLab deploy
+  token.
 - `DEV_SSH_HOST`: development server host.
 - `DEV_SSH_PORT`: optional; defaults to `22`.
 - `DEV_SSH_USER`: SSH user for plugin reconcile.
 - `DEV_SSH_KEY`: private key for plugin reconcile.
+
+`DEV_GITLAB_TOKEN` must have `read_repository` access to every server repo that
+the development workflow clones, including `empty-s2s` and each child server
+repo. In GitLab, give the token at least Reporter access to those projects or
+create a group/project deploy token with repository read permission.
 
 In `edgegamers-s2s` GitHub production environment:
 
@@ -151,7 +159,7 @@ Common/base plugins go in `empty-s2s/server-plugins.json`. Child-server-only plu
 Development reconcile removes no-longer-listed managed plugins and keeps disabled plugins updated under:
 
 ```text
-addons/s2script/plugins/disabled/<plugin-name>.s2sp
+addons/s2script/plugins/disabled/<artifact-file>.s2sp
 ```
 
 ## Production Release Flow

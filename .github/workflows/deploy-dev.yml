@@ -53,12 +53,18 @@ jobs:
 
       - name: Check out development server intents
         env:
+          DEV_GITLAB_USER: ${{ secrets.DEV_GITLAB_USER }}
           DEV_GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}
         run: |
           test -n "$DEV_GITLAB_TOKEN"
+          gitlab_user="${DEV_GITLAB_USER:-oauth2}"
+          test -n "$gitlab_user"
+          printf 'machine gitlab.edgegamers.io\nlogin %s\npassword %s\n' "$gitlab_user" "$DEV_GITLAB_TOKEN" > ~/.netrc
+          chmod 600 ~/.netrc
+          trap 'rm -f ~/.netrc' EXIT
           rm -rf .dev-server-repos
-          git clone --depth 1 --branch dev "https://oauth2:${DEV_GITLAB_TOKEN}@gitlab.edgegamers.io/source2/cs2/servers/empty-s2s.git" .dev-server-repos/empty-s2s
-          git clone --depth 1 --branch dev "https://oauth2:${DEV_GITLAB_TOKEN}@gitlab.edgegamers.io/source2/cs2/servers/ttt-s2s.git" .dev-server-repos/ttt-s2s
+          GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch dev "https://gitlab.edgegamers.io/source2/cs2/servers/empty-s2s.git" .dev-server-repos/empty-s2s
+          GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch dev "https://gitlab.edgegamers.io/source2/cs2/servers/ttt-s2s.git" .dev-server-repos/ttt-s2s
 
       - name: Upload development artifacts
         uses: actions/upload-artifact@v4
