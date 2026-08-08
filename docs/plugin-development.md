@@ -8,7 +8,13 @@ Run the pinned Source2Script generator from the repository root:
 npm.cmd run create:plugin -- my-plugin
 ```
 
-Workspace detection places the plugin beneath `plugins/my-plugin`. Use an `@edgegamers/` package name, keep the generated Source2Script metadata, and decide explicitly whether the plugin is private.
+Place plugins under a scope directory:
+
+- `plugins/global/<plugin>` for game-agnostic services and shared APIs.
+- `plugins/cs2/<plugin>` for Counter-Strike 2 plugins.
+- Future games should use their own `plugins/<game>/<plugin>` scope.
+
+Use an `@edgegamers/` package name, keep the generated Source2Script metadata, and decide explicitly whether the plugin is private.
 
 The generator should reuse the root toolchain. If a future SDK version generates plugin-local lint or compiler configuration that merely duplicates the root, merge required SDK-specific behavior into the root configuration before removing the duplicate.
 
@@ -17,7 +23,7 @@ The generator should reuse the root toolchain. If a future SDK version generates
 Keep portable behavior separate from the runtime adapter. Test portable functions with Vitest; let the Source2Script build validate plugin entry points, capabilities, manifests, and runtime-interface contracts.
 
 ```powershell
-npm.cmd test -- plugins/my-plugin/test
+npm.cmd test -- plugins/global/my-plugin/test
 npm.cmd run typecheck
 npm.cmd run build
 ```
@@ -30,7 +36,7 @@ npm.cmd run build -- --filter @edgegamers/my-plugin
 
 ## Publish a runtime interface
 
-The private `reference-api` plugin demonstrates the producer pattern. Its `package.json` identifies one type contract and publishes the package's own name and version:
+The private `reference-api` plugin under `plugins/global/reference-api` demonstrates the producer pattern. Its `package.json` identifies one type contract and publishes the package's own name and version:
 
 ```json
 {
@@ -92,3 +98,12 @@ Use `optionalPluginDependencies` and `ctx.tryUse` only when the plugin remains u
 ## Reference plugins
 
 `reference-api` and `reference-consumer` are private verification fixtures. They prove that npm linking, published types, runtime dependency ranges, SDK build ordering, and `ctx.use` agree. Remove them only after a real producer and consumer provide equivalent workspace coverage.
+
+## Scope boundaries
+
+Run `npm.cmd run plugins:check` before opening a PR. The organization check enforces these boundaries:
+
+- Global plugins can reference other global plugins.
+- Game plugins can reference global plugins and plugins in the same game scope.
+- A game plugin cannot reference another game's plugin package.
+- Unknown `@edgegamers/*` plugin references fail until the referenced plugin exists in this workspace.

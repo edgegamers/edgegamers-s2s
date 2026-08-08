@@ -6,8 +6,8 @@ import {
 } from "../lib/changeset-policy.mjs";
 
 const plugins = [
-  { directory: "public-plugin", name: "@edgegamers/public-plugin", private: false },
-  { directory: "private-plugin", name: "@edgegamers/private-plugin", private: true },
+  { directory: "global/public-plugin", name: "@edgegamers/public-plugin", private: false },
+  { directory: "global/private-plugin", name: "@edgegamers/private-plugin", private: true },
 ];
 
 describe("evaluateChangesetCoverage", () => {
@@ -24,7 +24,7 @@ describe("evaluateChangesetCoverage", () => {
   it("reports every changed publishable plugin without a Changeset", () => {
     expect(
       evaluateChangesetCoverage({
-        changedFiles: ["plugins/public-plugin/src/plugin.ts"],
+        changedFiles: ["plugins/global/public-plugin/src/plugin.ts"],
         plugins,
         coveredPackages: new Set(),
       }),
@@ -36,10 +36,10 @@ describe("evaluateChangesetCoverage", () => {
 
   it("requires Changesets for private plugin source changes", () => {
     const result = evaluateChangesetCoverage({
-      changedFiles: ["plugins/private-tool/src/plugin.ts"],
+      changedFiles: ["plugins/global/private-tool/src/plugin.ts"],
       plugins: [
         {
-          directory: "private-tool",
+          directory: "global/private-tool",
           name: "@edgegamers/private-tool",
           private: true,
           publishToRegistry: false,
@@ -55,7 +55,7 @@ describe("evaluateChangesetCoverage", () => {
   it("accepts a covered publishable plugin and normalizes Windows paths", () => {
     expect(
       evaluateChangesetCoverage({
-        changedFiles: ["plugins\\public-plugin\\src\\plugin.ts"],
+        changedFiles: ["plugins\\global\\public-plugin\\src\\plugin.ts"],
         plugins,
         coveredPackages: new Set(["@edgegamers/public-plugin"]),
       }),
@@ -94,7 +94,7 @@ describe("parsePluginMetadata", () => {
   it("parses registry publication metadata separately from private", () => {
     expect(
       parsePluginMetadata(
-        "karma",
+        "global/karma",
         JSON.stringify({
           name: "@edgegamers/karma",
           private: true,
@@ -102,7 +102,7 @@ describe("parsePluginMetadata", () => {
         }),
       ),
     ).toEqual({
-      directory: "karma",
+      directory: "global/karma",
       name: "@edgegamers/karma",
       private: true,
       publishToRegistry: true,
@@ -110,8 +110,8 @@ describe("parsePluginMetadata", () => {
   });
 
   it("rejects a package without a name and identifies its directory", () => {
-    expect(() => parsePluginMetadata("broken", '{"private":false}')).toThrow(
-      "plugins/broken/package.json",
+    expect(() => parsePluginMetadata("global/broken", '{"private":false}')).toThrow(
+      "plugins/global/broken/package.json",
     );
   });
 });

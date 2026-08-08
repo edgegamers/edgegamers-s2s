@@ -18,12 +18,13 @@ describe("create-dev-manifest CLI", () => {
       const distDirectory = join(
         root,
         "plugins",
+        "global",
         "reference-api",
         "dist",
       );
       mkdirSync(distDirectory, { recursive: true });
       writeFileSync(
-        join(root, "plugins", "reference-api", "package.json"),
+        join(root, "plugins", "global", "reference-api", "package.json"),
         JSON.stringify({ name: "@edgegamers/reference-api" }),
       );
       writeFileSync(
@@ -48,7 +49,7 @@ describe("create-dev-manifest CLI", () => {
       expect(manifest.plugins).toEqual([
         expect.objectContaining({
           artifact:
-            "plugins/reference-api/dist/reference-api.s2sp",
+            "plugins/global/reference-api/dist/reference-api.s2sp",
           packageName: "@edgegamers/reference-api",
           revision: "dev.abcdef1",
         }),

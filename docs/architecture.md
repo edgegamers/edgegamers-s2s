@@ -13,7 +13,7 @@ edgegamers-s2/
 └── packages/         Reserved for proven shared source packages
 ```
 
-`plugins/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
+`plugins/*/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
 
 `packages/*` belongs only to npm. Do not create a package for a one-off helper. A shared package should represent a coherent implementation boundary with more than one real consumer.
 
@@ -37,7 +37,7 @@ The repository owns:
 - formatting an immutable development-artifact manifest;
 - EdgeGamers contributor documentation.
 
-There is deliberately no custom loop over `plugins/*` for building, versioning, or publishing.
+There is deliberately no custom loop over individual plugin folders for building, versioning, or publishing.
 
 ## Shared source versus runtime interfaces
 

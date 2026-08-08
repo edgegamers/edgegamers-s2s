@@ -10,21 +10,22 @@
   },
   "packageManager": "npm@11.16.0",
   "workspaces": [
-    "plugins/*",
+    "plugins/*/*",
     "packages/*"
   ],
   "s2script": {
     "workspace": {
       "plugins": [
-        "plugins/*"
+        "plugins/*/*"
       ]
     }
   },
   "scripts": {
     "license:check": "node scripts/check-licenses.mjs",
     "license:artifacts": "node scripts/check-license-artifacts.mjs",
+    "plugins:check": "node scripts/check-plugin-organization.mjs",
     "create:plugin": "s2s create",
-    "lint": "eslint .",
+    "lint": "eslint . && npm run plugins:check",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "test": "vitest run --globals",
     "test:watch": "vitest --globals",

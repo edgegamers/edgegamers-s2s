@@ -13,7 +13,7 @@ const manifest = (fileNames) => ({
   commit: "abcdef1234567890",
   generatedAt: "2026-08-03T12:00:00.000Z",
   plugins: fileNames.map((fileName) => ({
-    artifact: `plugins/${fileName}/dist/${fileName}.s2sp`,
+    artifact: `plugins/global/${fileName}/dist/${fileName}.s2sp`,
     fileName: `${fileName}.s2sp`,
     revision: "dev.abcdef1",
     sha256: "0".repeat(64),

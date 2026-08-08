@@ -7,33 +7,39 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   parseChangesetPackages,
   parsePluginMetadata,
 } from "./lib/changeset-policy.mjs";
 import { createPluginReleasePlan } from "./lib/plugin-release-plan.mjs";
+import { readPluginPackages } from "./lib/plugin-workspace.mjs";
 
 export function writePluginReleasePlan({
   root = process.cwd(),
   generatedAt = new Date().toISOString(),
 } = {}) {
-  const pluginsDirectory = join(root, "plugins");
   const pendingPackages = readPendingChangesetPackages(root);
-  const plugins = readdirSync(pluginsDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const packagePath = join(pluginsDirectory, entry.name, "package.json");
-      const packageContent = readFileSync(packagePath, "utf8");
-      const metadata = parsePluginMetadata(entry.name, packageContent);
+  const plugins = readPluginPackages(root)
+    .map((pluginPackage) => {
+      const packageContent = readFileSync(pluginPackage.packagePath, "utf8");
+      const metadata = parsePluginMetadata(
+        pluginPackage.directory,
+        packageContent,
+        pluginPackage.relativePackagePath,
+      );
       const packageJson = JSON.parse(packageContent);
 
-      return { ...metadata, version: packageJson.version };
+      return {
+        ...metadata,
+        packageDirectory: dirname(pluginPackage.packagePath),
+        version: packageJson.version,
+      };
     })
     .filter((plugin) => pendingPackages.has(plugin.name));
   const artifacts = plugins.map((plugin) => {
-    const directory = join(pluginsDirectory, plugin.directory, "dist");
+    const directory = join(plugin.packageDirectory, "dist");
     const artifactNames = readdirSync(directory).filter((name) =>
       name.endsWith(".s2sp"),
     );

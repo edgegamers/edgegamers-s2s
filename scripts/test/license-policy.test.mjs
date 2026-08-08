@@ -55,16 +55,16 @@ function createFixture() {
     name: "root",
     private: true,
     license: LICENSE_EXPRESSION,
-    workspaces: ["plugins/*", "packages/*"],
-    s2script: { workspace: { plugins: ["plugins/*"] } },
+    workspaces: ["plugins/global/*", "plugins/cs2/*", "packages/*"],
+    s2script: { workspace: { plugins: ["plugins/global/*", "plugins/cs2/*"] } },
   }));
-  write(root, "plugins/example/package.json", JSON.stringify({
+  write(root, "plugins/global/example/package.json", JSON.stringify({
     name: "@edgegamers/example",
     private: true,
     license: LICENSE_EXPRESSION,
     main: "src/plugin.ts",
   }));
-  write(root, "plugins/example/src/plugin.ts", `/*!\n${mitText}\n*/\nexport {};\n`);
+  write(root, "plugins/global/example/src/plugin.ts", `/*!\n${mitText}\n*/\nexport {};\n`);
   write(root, "LICENSE", "Copyright (c) 2026 EdgeGamers, LLC\nSPDX-License-Identifier: MIT OR Apache-2.0\nlicenses/MIT.txt\nlicenses/Apache-2.0.txt\ncontribution intentionally submitted\n");
   write(root, "licenses/MIT.txt", mitText);
   write(root, "licenses/Apache-2.0.txt", apacheText);
@@ -90,12 +90,12 @@ describe("repository license policy", () => {
 
   it("rejects missing SPDX metadata", () => {
     const root = createFixture();
-    const path = join(root, "plugins/example/package.json");
+    const path = join(root, "plugins", "global", "example", "package.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     delete manifest.license;
     writeFileSync(path, JSON.stringify(manifest));
     expect(validateRepositoryLicensing(root)).toContain(
-      `plugins${sep}example${sep}package.json: license must be "MIT OR Apache-2.0"`,
+      `plugins${sep}global${sep}example${sep}package.json: license must be "MIT OR Apache-2.0"`,
     );
   });
 
@@ -103,12 +103,26 @@ describe("repository license policy", () => {
     const root = createFixture();
     const path = join(root, "package.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
-    manifest.workspaces = ["plugins\\*", "packages\\*"];
+    manifest.workspaces = ["plugins\\global\\*", "plugins\\cs2\\*", "packages\\*"];
     writeFileSync(path, JSON.stringify(manifest));
     expect(discoverWorkspaceManifests(root).map(({ manifest: found }) => found.name)).toEqual([
       "root",
       "@edgegamers/example",
     ]);
+  });
+
+  it("discovers nested workspace wildcard patterns", () => {
+    const root = createFixture();
+    const path = join(root, "package.json");
+    const manifest = JSON.parse(readFileSync(path, "utf8"));
+    manifest.workspaces = ["plugins/*/*", "packages/*"];
+    manifest.s2script.workspace.plugins = ["plugins/*/*"];
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(discoverWorkspaceManifests(root).map(({ manifest: found }) => found.name)).toEqual([
+      "root",
+      "@edgegamers/example",
+    ]);
+    expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
   it("rejects a truncated MIT license text", () => {
@@ -140,15 +154,15 @@ describe("repository license policy", () => {
 
   it("rejects a plugin entry without the complete MIT notice", () => {
     const root = createFixture();
-    write(root, "plugins/example/src/plugin.ts", "export {};\n");
+    write(root, "plugins/global/example/src/plugin.ts", "export {};\n");
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
-      "plugins/example/src/plugin.ts: complete MIT notice is missing",
+      "plugins/global/example/src/plugin.ts: complete MIT notice is missing",
     );
   });
 
   it("rejects a bundled library outside the licensed workspace", () => {
     const root = createFixture();
-    const path = join(root, "plugins/example/package.json");
+    const path = join(root, "plugins", "global", "example", "package.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     manifest.s2script = { libraries: { "third-party-lib": "1.0.0" } };
     writeFileSync(path, JSON.stringify(manifest));
@@ -166,7 +180,7 @@ describe("repository license policy", () => {
     ["require", 'require("third-party-lib");'],
   ])("rejects an undeclared third-party %s", (_label, statement) => {
     const root = createFixture();
-    write(root, "plugins/example/src/extra.ts", statement);
+    write(root, "plugins/global/example/src/extra.ts", statement);
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
     );
@@ -174,7 +188,7 @@ describe("repository license policy", () => {
 
   it("scans TypeScript ESM source extensions", () => {
     const root = createFixture();
-    write(root, "plugins/example/src/extra.mts", 'import "third-party-lib";');
+    write(root, "plugins/global/example/src/extra.mts", 'import "third-party-lib";');
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
     );
@@ -183,7 +197,7 @@ describe("repository license policy", () => {
   it("rejects a relative runtime import that enters node_modules", () => {
     const root = createFixture();
     write(root, "node_modules/third-party-lib/index.ts", "export {};\n");
-    write(root, "plugins/example/src/extra.ts", 'import "../../../node_modules/third-party-lib/index.ts";');
+    write(root, "plugins/global/example/src/extra.ts", 'import "../../../../node_modules/third-party-lib/index.ts";');
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "relative runtime import must not enter node_modules or generated output",
     );
@@ -191,7 +205,7 @@ describe("repository license policy", () => {
 
   it("rejects an undeclared bare runtime import under a test directory", () => {
     const root = createFixture();
-    write(root, "plugins/example/test/extra.test.ts", 'import "third-party-lib";');
+    write(root, "plugins/global/example/test/extra.test.ts", 'import "third-party-lib";');
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "third-party-lib: bare runtime import is not an approved plugin dependency or licensed first-party bundled library",
     );
@@ -199,7 +213,7 @@ describe("repository license policy", () => {
 
   it("rejects a missing relative runtime module", () => {
     const root = createFixture();
-    write(root, "plugins/example/src/extra.ts", 'import "./missing.ts";');
+    write(root, "plugins/global/example/src/extra.ts", 'import "./missing.ts";');
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "./missing.ts: relative runtime import does not resolve to a scanned source file in a licensed workspace package",
     );
@@ -211,16 +225,16 @@ describe("repository license policy", () => {
     ["directory index", "./local", "local/index.ts"],
   ])("resolves a common %s module form", (_label, specifier, target) => {
     const root = createFixture();
-    write(root, `plugins/example/src/${target}`, "export {};\n");
-    write(root, "plugins/example/src/extra.ts", `import ${JSON.stringify(specifier)};`);
+    write(root, `plugins/global/example/src/${target}`, "export {};\n");
+    write(root, "plugins/global/example/src/extra.ts", `import ${JSON.stringify(specifier)};`);
     expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
   it("rejects an ambiguous relative runtime module", () => {
     const root = createFixture();
-    write(root, "plugins/example/src/local.ts", "export {};\n");
-    write(root, "plugins/example/src/local.js", "export {};\n");
-    write(root, "plugins/example/src/extra.ts", 'import "./local.js";');
+    write(root, "plugins/global/example/src/local.ts", "export {};\n");
+    write(root, "plugins/global/example/src/local.js", "export {};\n");
+    write(root, "plugins/global/example/src/extra.ts", 'import "./local.js";');
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "./local.js: relative runtime import resolves ambiguously to multiple scanned source files",
     );
@@ -231,7 +245,7 @@ describe("repository license policy", () => {
     "require(packageName);",
   ])("rejects a nonliteral package-loading call: %s", (statement) => {
     const root = createFixture();
-    write(root, "plugins/example/src/extra.ts", `const packageName = "./local.ts";\n${statement}`);
+    write(root, "plugins/global/example/src/extra.ts", `const packageName = "./local.ts";\n${statement}`);
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
       "package-loading call must use a string literal so licensing can be validated",
     );
@@ -239,17 +253,17 @@ describe("repository license policy", () => {
 
   it("allows Source2Script imports", () => {
     const root = createFixture();
-    write(root, "plugins/example/src/extra.ts", 'import { plugin } from "@s2script/sdk/plugin";\nvoid plugin;');
+    write(root, "plugins/global/example/src/extra.ts", 'import { plugin } from "@s2script/sdk/plugin";\nvoid plugin;');
     expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
   it("allows declared plugin dependency imports and subpaths", () => {
     const root = createFixture();
-    const path = join(root, "plugins/example/package.json");
+    const path = join(root, "plugins", "global", "example", "package.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     manifest.s2script = { pluginDependencies: { "@edgegamers/api": "1.0.0" } };
     writeFileSync(path, JSON.stringify(manifest));
-    write(root, "plugins/example/src/extra.ts", 'import { value } from "@edgegamers/api/runtime";\nvoid value;');
+    write(root, "plugins/global/example/src/extra.ts", 'import { value } from "@edgegamers/api/runtime";\nvoid value;');
     expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
@@ -260,11 +274,11 @@ describe("repository license policy", () => {
       private: true,
       license: LICENSE_EXPRESSION,
     }));
-    const path = join(root, "plugins/example/package.json");
+    const path = join(root, "plugins", "global", "example", "package.json");
     const manifest = JSON.parse(readFileSync(path, "utf8"));
     manifest.s2script = { libraries: { "@edgegamers/shared": "1.0.0" } };
     writeFileSync(path, JSON.stringify(manifest));
-    write(root, "plugins/example/src/extra.ts", 'import "@edgegamers/shared/runtime";');
+    write(root, "plugins/global/example/src/extra.ts", 'import "@edgegamers/shared/runtime";');
     expect(validateRepositoryLicensing(root)).toEqual([]);
   });
 
@@ -275,7 +289,7 @@ describe("repository license policy", () => {
     manifest.s2script.workspace.plugins = [];
     writeFileSync(path, JSON.stringify(manifest));
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
-      "plugins/example/package.json: npm workspace plugin is not selected by s2script.workspace.plugins",
+      "plugins/global/example/package.json: npm workspace plugin is not selected by s2script.workspace.plugins",
     );
   });
 
@@ -286,7 +300,7 @@ describe("repository license policy", () => {
     manifest.workspaces = ["packages/*"];
     writeFileSync(path, JSON.stringify(manifest));
     expect(validateRepositoryLicensing(root).join("\n")).toContain(
-      "plugins/example/package.json: Source2Script plugin is not selected by npm workspaces",
+      "plugins/global/example/package.json: Source2Script plugin is not selected by npm workspaces",
     );
   });
 

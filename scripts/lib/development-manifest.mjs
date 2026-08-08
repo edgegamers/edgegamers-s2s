@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
+import { isWorkspaceArtifactPath } from "./plugin-workspace.mjs";
 
 export function createDevelopmentManifest({
   artifacts,
@@ -50,8 +51,7 @@ export function createDevelopmentManifest({
 }
 
 export function isWorkspaceArtifact(path) {
-  const normalizedPath = path.replaceAll("\\", "/");
-  return /^plugins\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(normalizedPath);
+  return isWorkspaceArtifactPath(path);
 }
 
 export function findS2spFiles(root) {

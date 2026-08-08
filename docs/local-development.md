@@ -40,7 +40,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-`npm.cmd run build` delegates plugin discovery, dependency order, interface checks, and package output to Source2Script. Current SDK output is `plugins/<plugin>/dist/<plugin>.s2sp`.
+`npm.cmd run build` delegates plugin discovery, dependency order, interface checks, and package output to Source2Script. Current SDK output is `plugins/<scope>/<plugin>/dist/<plugin>.s2sp`.
 
 ## Build Local Artifacts
 

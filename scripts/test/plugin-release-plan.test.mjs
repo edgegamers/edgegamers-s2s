@@ -40,7 +40,7 @@ describe("createPluginReleasePlan", () => {
       generatedAt: "2026-08-08T12:00:00.000Z",
       plugins: [
         {
-          directory: "reference-api",
+          directory: "global/reference-api",
           name: "@edgegamers/reference-api",
           version: "1.2.3",
           publishToRegistry: true,
@@ -49,7 +49,7 @@ describe("createPluginReleasePlan", () => {
       artifacts: [
         {
           packageName: "@edgegamers/reference-api",
-          path: "plugins/reference-api/dist/reference-api.s2sp",
+          path: "plugins/global/reference-api/dist/reference-api.s2sp",
           bytes: Buffer.from("plugin"),
         },
       ],
@@ -61,7 +61,7 @@ describe("createPluginReleasePlan", () => {
         version: "1.2.3",
         releaseTag: "plugin/reference-api/v1.2.3",
         assetName: "reference-api.s2sp",
-        artifactPath: "plugins/reference-api/dist/reference-api.s2sp",
+        artifactPath: "plugins/global/reference-api/dist/reference-api.s2sp",
         sha256:
           "5e689e2b01672bf33996e75d5e372ff60c536ce1599a1458e867cd8f4bef5160",
         publishToRegistry: true,
@@ -77,6 +77,7 @@ describe("writePluginReleasePlan", () => {
     try {
       writePluginFixture({
         root,
+        scope: "global",
         directory: "reference-api",
         name: "@edgegamers/reference-api",
         version: "1.2.3",
@@ -84,6 +85,7 @@ describe("writePluginReleasePlan", () => {
       });
       writePluginFixture({
         root,
+        scope: "global",
         directory: "reference-consumer",
         name: "@edgegamers/reference-consumer",
         version: "4.5.6",
@@ -112,10 +114,10 @@ describe("writePluginReleasePlan", () => {
     const root = mkdtempSync(join(tmpdir(), "edgegamers-release-plan-"));
 
     try {
-      mkdirSync(join(root, "plugins", "reference-api"), { recursive: true });
+      mkdirSync(join(root, "plugins", "global", "reference-api"), { recursive: true });
       mkdirSync(join(root, ".changeset"), { recursive: true });
       writeFileSync(
-        join(root, "plugins", "reference-api", "package.json"),
+        join(root, "plugins", "global", "reference-api", "package.json"),
         JSON.stringify({
           name: "@edgegamers/reference-api",
           version: "1.2.3",
@@ -137,12 +139,13 @@ describe("writePluginReleasePlan", () => {
 
 function writePluginFixture({
   root,
+  scope,
   directory,
   name,
   version,
   publishToRegistry,
 }) {
-  const pluginDirectory = join(root, "plugins", directory);
+  const pluginDirectory = join(root, "plugins", scope, directory);
   mkdirSync(join(pluginDirectory, "dist"), { recursive: true });
   writeFileSync(
     join(pluginDirectory, "package.json"),

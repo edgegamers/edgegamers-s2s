@@ -1,12 +1,8 @@
 import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { readPluginPackages } from "./lib/plugin-workspace.mjs";
 
 export function deployRegistryOptIns({
   root = process.cwd(),
@@ -67,18 +63,14 @@ export function deployRegistryOptIns({
 }
 
 function readPluginDirectoryByPackage(root) {
-  const pluginsRoot = join(root, "plugins");
   const result = new Map();
 
-  for (const entry of readdirSync(pluginsRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-
-    const packageJsonPath = join(pluginsRoot, entry.name, "package.json");
-    if (!existsSync(packageJsonPath)) continue;
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-    if (typeof packageJson.name === "string" && packageJson.name) {
-      result.set(packageJson.name, `plugins/${entry.name}`);
+  for (const pluginPackage of readPluginPackages(root)) {
+    if (
+      typeof pluginPackage.packageJson.name === "string" &&
+      pluginPackage.packageJson.name
+    ) {
+      result.set(pluginPackage.packageJson.name, `plugins/${pluginPackage.directory}`);
     }
   }
 

@@ -14,6 +14,7 @@ import {
   findS2spFiles,
   isWorkspaceArtifact,
 } from "./lib/development-manifest.mjs";
+import { parsePluginPath } from "./lib/plugin-workspace.mjs";
 
 function currentCommit(root) {
   return execFileSync("git", ["rev-parse", "HEAD"], {
@@ -24,14 +25,14 @@ function currentCommit(root) {
 
 function pluginPackageName({ root, artifactPath }) {
   const normalizedPath = artifactPath.replaceAll("\\", "/");
-  const match = /^plugins\/([^/]+)\//u.exec(normalizedPath);
-  if (!match) throw new Error(`Cannot resolve plugin package for ${artifactPath}`);
+  const pluginPath = parsePluginPath(normalizedPath);
+  if (!pluginPath) throw new Error(`Cannot resolve plugin package for ${artifactPath}`);
 
   const packageJson = JSON.parse(
-    readFileSync(join(root, "plugins", match[1], "package.json"), "utf8"),
+    readFileSync(join(root, "plugins", pluginPath.directory, "package.json"), "utf8"),
   );
   if (typeof packageJson.name !== "string" || !packageJson.name) {
-    throw new Error(`Missing package name for plugins/${match[1]}`);
+    throw new Error(`Missing package name for plugins/${pluginPath.directory}`);
   }
   return packageJson.name;
 }

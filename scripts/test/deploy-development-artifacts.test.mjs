@@ -163,6 +163,38 @@ describe("readDevelopmentTargets", () => {
       },
     ]);
   });
+
+  it("rejects intent files that use non-production plugin fields", () => {
+    const root = mkdtempSync(join(tmpdir(), "edgegamers-dev-targets-"));
+
+    try {
+      mkdirSync(join(root, "config"), { recursive: true });
+      writeFileSync(
+        join(root, "server-plugins.json"),
+        JSON.stringify({
+          plugins: [{ package: "@edgegamers/ttt" }],
+        }),
+      );
+      writeFileSync(
+        join(root, "config", "development-servers.json"),
+        JSON.stringify({
+          servers: [
+            {
+              name: "ttt-s2s",
+              pluginDir: "/var/lib/docker/volumes/ttt/_data/s2script/plugins",
+              intentFile: "server-plugins.json",
+            },
+          ],
+        }),
+      );
+
+      expect(() => readDevelopmentTargets({ root })).toThrow(
+        "ttt-s2s.intentFile.plugins entries must have non-empty plugin names",
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("selectAffectedTargets", () => {
@@ -211,13 +243,13 @@ describe("selectAffectedTargets", () => {
 
 describe("findChangedPluginPackages", () => {
   it("returns plugin packages changed by a git diff", () => {
-    const packages = new Map([["ttt", "@edgegamers/ttt"]]);
+    const packages = new Map([["cs2/ttt", "@edgegamers/ttt"]]);
     const changed = findChangedPluginPackages({
       root: "/repo",
       base: "before",
       head: "after",
       pluginPackageByDirectory: packages,
-      execFile: () => "plugins/ttt/src/index.ts\nREADME.md\n",
+      execFile: () => "plugins/cs2/ttt/src/index.ts\nREADME.md\n",
     });
 
     expect(changed).toEqual(new Set(["@edgegamers/ttt"]));
@@ -252,7 +284,7 @@ describe("writeTargetArtifacts", () => {
           environment: "development",
           plugins: [
             {
-              artifact: "plugins/common/dist/common.s2sp",
+              artifact: "plugins/global/common/dist/common.s2sp",
               packageName: "@edgegamers/common",
               fileName: "common.s2sp",
               enabled: true,
@@ -260,7 +292,7 @@ describe("writeTargetArtifacts", () => {
               sha256: "a".repeat(64),
             },
             {
-              artifact: "plugins/ttt/dist/ttt.s2sp",
+              artifact: "plugins/cs2/ttt/dist/ttt.s2sp",
               packageName: "@edgegamers/ttt",
               fileName: "ttt.s2sp",
               enabled: true,

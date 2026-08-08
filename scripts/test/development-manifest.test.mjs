@@ -12,7 +12,7 @@ describe("createDevelopmentManifest", () => {
   it("marks the manifest as EdgeGamers managed", () => {
     const manifest = createDevelopmentManifest({
       artifacts: [
-        { path: "plugins/api/dist/api.s2sp", bytes: Buffer.from("api") },
+        { path: "plugins/global/api/dist/api.s2sp", bytes: Buffer.from("api") },
       ],
       commit: "abcdef1234567890",
       generatedAt: "2026-08-03T12:00:00.000Z",
@@ -27,8 +27,8 @@ describe("createDevelopmentManifest", () => {
     expect(() =>
       createDevelopmentManifest({
         artifacts: [
-          { path: "plugins/one/dist/shared.s2sp", bytes: Buffer.from("one") },
-          { path: "plugins/two/dist/shared.s2sp", bytes: Buffer.from("two") },
+          { path: "plugins/global/one/dist/shared.s2sp", bytes: Buffer.from("one") },
+          { path: "plugins/global/two/dist/shared.s2sp", bytes: Buffer.from("two") },
         ],
         commit: "abcdef1234567890",
         generatedAt: "2026-08-03T12:00:00.000Z",
@@ -39,9 +39,9 @@ describe("createDevelopmentManifest", () => {
   it("sorts artifacts, normalizes paths, and records immutable identity", () => {
     const manifest = createDevelopmentManifest({
       artifacts: [
-        { path: "plugins\\zeta\\dist\\zeta.s2sp", bytes: Buffer.from("zeta") },
+        { path: "plugins\\global\\zeta\\dist\\zeta.s2sp", bytes: Buffer.from("zeta") },
         {
-          path: "plugins/alpha/dist/alpha.s2sp",
+          path: "plugins/global/alpha/dist/alpha.s2sp",
           packageName: "@edgegamers/alpha",
           bytes: Buffer.from("alpha"),
         },
@@ -58,7 +58,7 @@ describe("createDevelopmentManifest", () => {
       generatedAt: "2026-07-31T12:00:00.000Z",
       plugins: [
         {
-          artifact: "plugins/alpha/dist/alpha.s2sp",
+          artifact: "plugins/global/alpha/dist/alpha.s2sp",
           packageName: "@edgegamers/alpha",
           fileName: "alpha.s2sp",
           enabled: true,
@@ -68,7 +68,7 @@ describe("createDevelopmentManifest", () => {
             "8ed3f6ad685b959ead7022518e1af76cd816f8e8ec7ccdda1ed4018e8f2223f8",
         },
         expect.objectContaining({
-          artifact: "plugins/zeta/dist/zeta.s2sp",
+          artifact: "plugins/global/zeta/dist/zeta.s2sp",
           fileName: "zeta.s2sp",
           enabled: true,
           installPath: "enabled",
@@ -92,8 +92,8 @@ describe("createDevelopmentManifest", () => {
     expect(() =>
       createDevelopmentManifest({
         artifacts: [
-          { path: "plugins\\api\\dist\\api.s2sp", bytes: Buffer.from("one") },
-          { path: "plugins/api/dist/api.s2sp", bytes: Buffer.from("two") },
+          { path: "plugins\\global\\api\\dist\\api.s2sp", bytes: Buffer.from("one") },
+          { path: "plugins/global/api/dist/api.s2sp", bytes: Buffer.from("two") },
         ],
         commit: "abcdef1234567890",
         generatedAt: "2026-07-31T12:00:00.000Z",
@@ -124,13 +124,13 @@ describe("findS2spFiles", () => {
 describe("isWorkspaceArtifact", () => {
   it("accepts only direct SDK dist artifacts on either path separator", () => {
     expect(
-      isWorkspaceArtifact("plugins/reference-api/dist/reference-api.s2sp"),
+      isWorkspaceArtifact("plugins/global/reference-api/dist/reference-api.s2sp"),
     ).toBe(true);
     expect(
-      isWorkspaceArtifact("plugins\\reference-api\\dist\\reference-api.s2sp"),
+      isWorkspaceArtifact("plugins\\global\\reference-api\\dist\\reference-api.s2sp"),
     ).toBe(true);
     expect(
-      isWorkspaceArtifact("plugins/reference-api/output/reference-api.s2sp"),
+      isWorkspaceArtifact("plugins/global/reference-api/output/reference-api.s2sp"),
     ).toBe(false);
   });
 });

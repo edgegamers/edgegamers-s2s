@@ -3,7 +3,6 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -14,6 +13,7 @@ import {
   quotePosix,
   validateRemotePluginDirectory,
 } from "./lib/development-reconcile.mjs";
+import { parsePluginPath, readPluginPackages } from "./lib/plugin-workspace.mjs";
 
 const MANIFEST_FILE = ".edgegamers-development-manifest.json";
 const DEFAULT_TARGETS_FILE = "config/development-servers.json";
@@ -161,20 +161,14 @@ function targetListsFromState(state) {
 }
 
 function readPluginPackageByDirectory(root) {
-  const pluginsRoot = join(root, "plugins");
   const result = new Map();
 
-  if (!existsSync(pluginsRoot)) return result;
-
-  for (const entry of readdirSync(pluginsRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-
-    const packageJsonPath = join(pluginsRoot, entry.name, "package.json");
-    if (!existsSync(packageJsonPath)) continue;
-
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-    if (typeof packageJson.name === "string" && packageJson.name) {
-      result.set(entry.name, packageJson.name);
+  for (const pluginPackage of readPluginPackages(root)) {
+    if (
+      typeof pluginPackage.packageJson.name === "string" &&
+      pluginPackage.packageJson.name
+    ) {
+      result.set(pluginPackage.directory, pluginPackage.packageJson.name);
     }
   }
 
@@ -182,11 +176,9 @@ function readPluginPackageByDirectory(root) {
 }
 
 function pluginPackageFromArtifact({ artifact, pluginPackageByDirectory }) {
-  const match = /^plugins\/([^/]+)\/dist\/[^/]+[.]s2sp$/u.exec(
-    artifact.replaceAll("\\", "/"),
-  );
-  if (!match) return undefined;
-  return pluginPackageByDirectory.get(match[1]);
+  const pluginPath = parsePluginPath(artifact);
+  if (!pluginPath) return undefined;
+  return pluginPackageByDirectory.get(pluginPath.directory);
 }
 
 export function readDevelopmentTargets({
@@ -308,9 +300,9 @@ export function findChangedPluginPackages({
 
   for (const path of output.split(/\r?\n/u).filter(Boolean)) {
     const normalized = path.replaceAll("\\", "/");
-    const pluginMatch = /^plugins\/([^/]+)\//u.exec(normalized);
-    if (pluginMatch) {
-      const packageName = pluginPackageByDirectory.get(pluginMatch[1]);
+    const pluginPath = parsePluginPath(normalized);
+    if (pluginPath) {
+      const packageName = pluginPackageByDirectory.get(pluginPath.directory);
       if (packageName) changed.add(packageName);
       else unknownServerImpact = true;
       continue;

@@ -5,4 +5,4 @@
 /licenses/                @edgegamers/s2s-platform
 
 # Add plugin-specific ownership as real teams form:
-# /plugins/reference-api/   @edgegamers/s2s-platform
+# /plugins/global/reference-api/   @edgegamers/s2s-platform

@@ -5,14 +5,14 @@ This repository is a Source2Script plugin monorepo for EdgeGamers.
 ## Goals
 
 1. Keep Source2Script workspace behavior authoritative for plugin creation, builds, versioning, and registry deployment.
-2. Let npm manage workspace linking for `plugins/*` and future `packages/*`.
+2. Let npm manage workspace linking for `plugins/*/*` and future `packages/*`.
 3. Keep each publishable plugin independently versioned with Changesets.
 4. Prove sibling runtime interfaces without copied declaration files.
 5. Keep release and server deployment paths explicit, even where EdgeGamers infrastructure is still undecided.
 
 ## Workspace Boundary
 
-`plugins/*` are Source2Script runtime plugins and npm workspace members.
+`plugins/*/*` are Source2Script runtime plugins and npm workspace members. Future games should add their own `plugins/<game>/<plugin>` directories under the same nested glob.
 
 `packages/*` are private npm workspace packages for shared source code. They are not deployable plugins unless the root `s2script.workspace.plugins` glob includes them.
 

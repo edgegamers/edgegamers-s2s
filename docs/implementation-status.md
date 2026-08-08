@@ -7,7 +7,7 @@ This status verifies the first five stages and records remaining stubs.
 Status: complete locally.
 
 - Root npm workspace exists.
-- Source2Script workspace plugin glob is `plugins/*`.
+- Source2Script workspace plugin glob is `plugins/*/*`.
 - Node and npm versions are pinned.
 - Lockfile exists.
 - Current branch is `dev`.

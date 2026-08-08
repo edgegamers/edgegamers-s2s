@@ -1,7 +1,8 @@
+import { parsePluginPath } from "./plugin-workspace.mjs";
+
 const RELEASE_LINE = /^(["'])(.+)\1:\s+(patch|minor|major)$/u;
 
-export function parsePluginMetadata(directory, content) {
-  const source = `plugins/${directory}/package.json`;
+export function parsePluginMetadata(directory, content, source = `plugins/${directory}/package.json`) {
   let packageJson;
 
   try {
@@ -62,8 +63,10 @@ export function evaluateChangesetCoverage({
 
   for (const changedFile of changedFiles) {
     const normalized = changedFile.replaceAll("\\", "/");
-    const match = /^plugins\/([^/]+)\//u.exec(normalized);
-    const packageName = match ? packageByDirectory.get(match[1]) : undefined;
+    const pluginPath = parsePluginPath(normalized);
+    const packageName = pluginPath
+      ? packageByDirectory.get(pluginPath.directory)
+      : undefined;
 
     if (packageName) affected.add(packageName);
   }

@@ -8,10 +8,10 @@ The root package is private and uses npm workspaces:
 
 ```json
 {
-  "workspaces": ["plugins/*", "packages/*"],
+  "workspaces": ["plugins/*/*", "packages/*"],
   "s2script": {
     "workspace": {
-      "plugins": ["plugins/*"]
+      "plugins": ["plugins/*/*"]
     }
   }
 }
@@ -44,7 +44,7 @@ Run this gate before opening a pull request.
 npm.cmd run create:plugin -- my-plugin
 ```
 
-Use an `@edgegamers/` package name. Keep SDK-required fields in the plugin `package.json`.
+Move generated plugins under the correct scope, such as `plugins/global/my-plugin` or `plugins/cs2/my-plugin`. Use an `@edgegamers/` package name and keep SDK-required fields in the plugin `package.json`.
 
 ## Build Artifacts For A Local Server
 

@@ -75,7 +75,7 @@ describe("deployRegistryOptIns", () => {
             readFileSync(join(root, "package.json"), "utf8"),
           );
           expect(packageJson.s2script.workspace.plugins).toEqual([
-            "plugins/reference-api",
+            "plugins/global/reference-api",
           ]);
         },
       });
@@ -97,7 +97,7 @@ function writeWorkspace(root) {
     {
       name: "@edgegamers/s2script-plugins",
       private: true,
-      s2script: { workspace: { plugins: ["plugins/*"] } },
+      s2script: { workspace: { plugins: ["plugins/global/*", "plugins/cs2/*"] } },
     },
     null,
     2,
@@ -107,9 +107,9 @@ function writeWorkspace(root) {
 }
 
 function writePluginPackage(root, directory, name) {
-  mkdirSync(join(root, "plugins", directory), { recursive: true });
+  mkdirSync(join(root, "plugins", "global", directory), { recursive: true });
   writeFileSync(
-    join(root, "plugins", directory, "package.json"),
+    join(root, "plugins", "global", directory, "package.json"),
     JSON.stringify({ name, version: "1.0.0" }),
   );
 }
