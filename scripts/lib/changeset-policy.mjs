@@ -18,6 +18,8 @@ export function parsePluginMetadata(directory, content) {
     directory,
     name: packageJson.name,
     private: packageJson.private === true,
+    publishToRegistry:
+      packageJson.edgegamers?.release?.publishToRegistry === true,
   };
 }
 
@@ -53,19 +55,15 @@ export function evaluateChangesetCoverage({
   plugins,
   coveredPackages,
 }) {
-  const publishableByDirectory = new Map(
-    plugins
-      .filter((plugin) => !plugin.private)
-      .map((plugin) => [plugin.directory, plugin.name]),
+  const packageByDirectory = new Map(
+    plugins.map((plugin) => [plugin.directory, plugin.name]),
   );
   const affected = new Set();
 
   for (const changedFile of changedFiles) {
     const normalized = changedFile.replaceAll("\\", "/");
     const match = /^plugins\/([^/]+)\//u.exec(normalized);
-    const packageName = match
-      ? publishableByDirectory.get(match[1])
-      : undefined;
+    const packageName = match ? packageByDirectory.get(match[1]) : undefined;
 
     if (packageName) affected.add(packageName);
   }

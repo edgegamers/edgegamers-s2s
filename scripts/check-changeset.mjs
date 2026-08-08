@@ -72,7 +72,7 @@ export function main({
     });
 
     if (result.affectedPackages.length === 0) {
-      write("No publishable plugin changes detected.");
+      write("No server-affecting plugin changes detected.");
       return 0;
     }
 
@@ -88,7 +88,7 @@ export function main({
       return 0;
     }
 
-    error("A Changeset is required for changed publishable plugins:");
+    error("A Changeset is required for changed server-affecting plugins:");
     for (const packageName of result.missingPackages) {
       error(`- ${packageName}`);
     }

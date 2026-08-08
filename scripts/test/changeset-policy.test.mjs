@@ -11,10 +11,10 @@ const plugins = [
 ];
 
 describe("evaluateChangesetCoverage", () => {
-  it("does not require a Changeset when no publishable plugin changed", () => {
+  it("does not require a Changeset when no plugin changed", () => {
     expect(
       evaluateChangesetCoverage({
-        changedFiles: ["README.md", "plugins/private-plugin/src/plugin.ts"],
+        changedFiles: ["README.md"],
         plugins,
         coveredPackages: new Set(),
       }),
@@ -32,6 +32,24 @@ describe("evaluateChangesetCoverage", () => {
       affectedPackages: ["@edgegamers/public-plugin"],
       missingPackages: ["@edgegamers/public-plugin"],
     });
+  });
+
+  it("requires Changesets for private plugin source changes", () => {
+    const result = evaluateChangesetCoverage({
+      changedFiles: ["plugins/private-tool/src/plugin.ts"],
+      plugins: [
+        {
+          directory: "private-tool",
+          name: "@edgegamers/private-tool",
+          private: true,
+          publishToRegistry: false,
+        },
+      ],
+      coveredPackages: new Set(),
+    });
+
+    expect(result.affectedPackages).toEqual(["@edgegamers/private-tool"]);
+    expect(result.missingPackages).toEqual(["@edgegamers/private-tool"]);
   });
 
   it("accepts a covered publishable plugin and normalizes Windows paths", () => {
@@ -73,6 +91,24 @@ describe("parseChangesetPackages", () => {
 });
 
 describe("parsePluginMetadata", () => {
+  it("parses registry publication metadata separately from private", () => {
+    expect(
+      parsePluginMetadata(
+        "karma",
+        JSON.stringify({
+          name: "@edgegamers/karma",
+          private: true,
+          edgegamers: { release: { publishToRegistry: true } },
+        }),
+      ),
+    ).toEqual({
+      directory: "karma",
+      name: "@edgegamers/karma",
+      private: true,
+      publishToRegistry: true,
+    });
+  });
+
   it("rejects a package without a name and identifies its directory", () => {
     expect(() => parsePluginMetadata("broken", '{"private":false}')).toThrow(
       "plugins/broken/package.json",
