@@ -27,31 +27,35 @@ describe("GitHub workflows", () => {
     }
   });
 
-  it("builds, manifests, uploads, and deploys development artifacts", () => {
+  it("builds server bundles and triggers server pipelines for development", () => {
     const deployDev = workflow("deploy-dev.yml");
 
     for (const required of [
       "branches:",
       "- dev",
+      "npm run lint",
+      "npm run typecheck",
+      "npm test",
       "npm run build",
-      "npm run manifest:dev",
-      "npm run artifacts:local",
-      "development-manifest.json",
+      "npm run bundles:servers -- --environment development",
+      "artifacts/server-bundles/",
       "actions/upload-artifact@v4",
+      "npm run trigger:servers -- --environment development --ref dev",
+      "GITLAB_URL: ${{ secrets.GITLAB_URL }}",
+      "GITLAB_PROJECT_ID_TTT_S2S: ${{ secrets.GITLAB_PROJECT_ID_TTT_S2S }}",
+      "GITLAB_TRIGGER_TOKEN_TTT_S2S: ${{ secrets.GITLAB_TRIGGER_TOKEN_TTT_S2S }}",
     ]) {
       expect(deployDev).toContain(required);
     }
 
-    for (const required of [
-      "environment: development",
-      "DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}",
-      "DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}",
-      "DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}",
-      "DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}",
-      "DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}",
+    for (const removed of [
+      "DEV_SSH_HOST",
+      "DEV_SSH_KEY",
+      "DEV_S2SCRIPT_PLUGIN_DIR",
       "npm run deploy:dev",
+      "rsync",
     ]) {
-      expect(deployDev).toContain(required);
+      expect(deployDev).not.toContain(removed);
     }
   });
 
@@ -65,6 +69,9 @@ describe("GitHub workflows", () => {
       "npm run typecheck",
       "npm test",
       "npm run build",
+      "npm run bundles:servers -- --environment production",
+      "server-bundles-${{ github.sha }}",
+      "artifacts/server-bundles/",
       "has-changesets",
       "npm run deploy -- --ci",
       "S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}",

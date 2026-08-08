@@ -45,35 +45,23 @@ jobs:
       - name: Build Source2Script workspace
         run: npm run build
 
-      - name: Generate development manifest
-        run: npm run manifest:dev
+      - name: Build development server bundles
+        run: npm run bundles:servers -- --environment development
 
-      - name: Collect local development artifacts
-        run: npm run artifacts:local
-
-      - name: Upload development artifacts
+      - name: Upload development server bundles
         uses: actions/upload-artifact@v4
         with:
-          name: local-development-${{ github.sha }}
+          name: server-bundles-${{ github.sha }}
           path: |
-            artifacts/development-manifest.json
-            artifacts/local-development/
+            artifacts/server-bundles/
           if-no-files-found: error
           retention-days: 14
 
-      - name: Write development SSH key
+      - name: Trigger development server pipelines
         env:
-          DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEV_SSH_KEY" > ~/.ssh/edgegamers-development
-          chmod 600 ~/.ssh/edgegamers-development
-
-      - name: Deploy development plugins
-        env:
-          DEV_SSH_HOST: ${{ secrets.DEV_SSH_HOST }}
-          DEV_SSH_PORT: ${{ secrets.DEV_SSH_PORT }}
-          DEV_SSH_USER: ${{ secrets.DEV_SSH_USER }}
-          DEV_SSH_KEY_PATH: ~/.ssh/edgegamers-development
-          DEV_S2SCRIPT_PLUGIN_DIR: ${{ secrets.DEV_S2SCRIPT_PLUGIN_DIR }}
-        run: npm run deploy:dev
+          GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          GITLAB_PROJECT_ID_EMPTY_S2S: ${{ secrets.GITLAB_PROJECT_ID_EMPTY_S2S }}
+          GITLAB_TRIGGER_TOKEN_EMPTY_S2S: ${{ secrets.GITLAB_TRIGGER_TOKEN_EMPTY_S2S }}
+          GITLAB_PROJECT_ID_TTT_S2S: ${{ secrets.GITLAB_PROJECT_ID_TTT_S2S }}
+          GITLAB_TRIGGER_TOKEN_TTT_S2S: ${{ secrets.GITLAB_TRIGGER_TOKEN_TTT_S2S }}
+        run: npm run trigger:servers -- --environment development --ref dev
