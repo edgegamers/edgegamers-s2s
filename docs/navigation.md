@@ -8,6 +8,7 @@
 - [Repository architecture](./architecture.md)
 - [Plugin development](./plugin-development.md)
 - [Plugin workflows](./plugin-workflows.md)
+- [Server setup](./server-setup.md)
 - [Changesets and releases](./releases.md)
 - [Release pipelines design](./superpowers/specs/2026-08-03-release-pipelines-design.md)
 - [GitHub repository setup](../.github/README.md)

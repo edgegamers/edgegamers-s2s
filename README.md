@@ -45,7 +45,7 @@ Build a local Source2Script artifact bundle with:
 npm.cmd run artifacts:local
 ```
 
-See [local development](./docs/local-development.md) for server copy steps and [plugin workflows](./docs/plugin-workflows.md) for plugin layout, changesets, and release rules.
+See [local development](./docs/local-development.md) for server copy steps, [plugin workflows](./docs/plugin-workflows.md) for plugin layout, and [server setup](./docs/server-setup.md) for infrastructure rollout.
 
 ## License
 

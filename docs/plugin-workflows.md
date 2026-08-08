@@ -51,7 +51,7 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Use focused tests while iterating:
+Use focused tests while iterating when the plugin has local tests:
 
 ```powershell
 npm.cmd test -- plugins/cs2/ttt/test
