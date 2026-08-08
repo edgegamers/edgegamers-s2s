@@ -97,7 +97,7 @@ Status: local gate verified.
 
 ### Release Pipeline Verification (2026-08-03)
 
-- `edgegamers-s2s`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (13 files and 74 tests), `npm.cmd run build`, and `npm.cmd run artifacts:local` all passed.
+- `edgegamers-s2s`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test` (13 files and 74 tests), and `npm.cmd run build` all passed.
 - `base-s2s`: Git Bash `scripts/validate.sh` passed its representative Valve `SearchPaths` fixture, and `docker build --pull --progress plain -t base-s2s:local .` passed.
 - `ttt-s2s`: Git Bash `scripts/validate.sh`, both `docker compose ... config --quiet --no-interpolate` checks, and `docker build --pull --progress plain --build-arg BASE_S2S_IMAGE=base-s2s:local -t ttt-s2s:local .` passed.
 - Built `ttt-s2s:local` metadata reported `ENTRYPOINT=["/docker-entrypoint.sh"]`, `CMD=["bash","entry.sh"]`, and user `1000:1000`; temporary-container checks found Node v20.19.0, executable `s2s`, and the copied upstream CS2 startup script.
@@ -110,10 +110,9 @@ npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd test
 npm.cmd run build
-npm.cmd run artifacts:local
 ```
 
-`npm.cmd run build` and `npm.cmd run artifacts:local` may need to run outside the Codex sandbox because Source2Script's build process reads plugin entry files through paths the sandbox denies.
+`npm.cmd run build` may need to run outside the Codex sandbox because Source2Script's build process reads plugin entry files through paths the sandbox denies.
 
 Server bundle pipeline triggers, production release, and hotfix flow still need GitHub and GitLab environment setup before end-to-end validation.
 

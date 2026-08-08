@@ -45,14 +45,8 @@ npm.cmd run build
 ## Build Local Artifacts
 
 ```powershell
-npm.cmd run artifacts:local
+npm.cmd run build
 ```
-
-The command runs the Source2Script build, writes `artifacts/development-manifest.json`, and copies built packages into `artifacts/local-development/`.
-
-Use `artifacts/local-development/README.txt` as the file list for a manual local server copy.
-
-`npm.cmd run artifacts:local` supports manual local server copies only.
 
 CI server deployment does not use `artifacts/local-development/`. CI uses
 server bundles under `artifacts/server-bundles/` and hands deployment to the
@@ -66,7 +60,7 @@ The installed Source2Script SDK documents the runtime plugin directory as:
 addons/s2script/plugins/
 ```
 
-Copy each `.s2sp` from `artifacts/local-development/` into that directory on your local development server. Re-copy the file after rebuilding. Delete it to unload.
+Copy each `.s2sp` from a plugin's `dist/` directory into that directory on your local development server. Re-copy the file after rebuilding. Delete it to unload.
 
 Do not use this manual copy process as the production release path. Server repositories select production bundles and deploy their server images.
 

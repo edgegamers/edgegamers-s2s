@@ -48,11 +48,8 @@ Use an `@edgegamers/` package name. Keep SDK-required fields in the plugin `pack
 
 ## Build Artifacts For A Local Server
 
-```powershell
-npm.cmd run artifacts:local
-```
-
-Copy `.s2sp` files from `artifacts/local-development/` into your local Source2Script plugin directory:
+Run `npm.cmd run build`, then copy `.s2sp` files from each plugin's `dist/`
+directory into your local Source2Script plugin directory:
 
 ```text
 addons/s2script/plugins/

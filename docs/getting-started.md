@@ -61,17 +61,9 @@ Vite is pinned to 6.4.3 because Vitest's broad dependency range otherwise select
 
 ## Local server testing
 
-Build a local artifact bundle:
-
-```powershell
-npm.cmd run artifacts:local
-```
-
-Copy the generated `.s2sp` files from `artifacts/local-development/` into a local Source2Script server:
-
-```text
-addons/s2script/plugins/
-```
+Run `npm.cmd run build`, then copy the generated `.s2sp` files from each
+plugin's `dist/` directory into a local Source2Script server under
+`addons/s2script/plugins/`.
 
 See [Local development](./local-development.md) for the full local setup and current release-path stubs.
 

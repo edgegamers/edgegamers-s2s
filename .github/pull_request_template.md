@@ -13,7 +13,6 @@ Describe what changed and why.
 - [ ] `npm run typecheck`
 - [ ] `npm test`
 - [ ] `npm run build`
-- [ ] `npm run manifest:dev`, when artifact manifest behavior changed
 - [ ] Tested on a local development artifact bundle, when applicable
 
 ## Release

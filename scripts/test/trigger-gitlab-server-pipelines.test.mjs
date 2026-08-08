@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildGitLabTriggerRequests } from "../trigger-gitlab-server-pipelines.mjs";
 
 describe("buildGitLabTriggerRequests", () => {
-  it("creates one GitLab trigger request per configured server bundle", () => {
+  it("creates one dev image-rebuild GitLab trigger request per configured server bundle", () => {
     const requests = buildGitLabTriggerRequests({
       gitlabUrl: "https://gitlab.example.test",
       ref: "dev",
