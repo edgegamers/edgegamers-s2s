@@ -130,3 +130,28 @@ Required remote setup:
 - The server box must schedule a 10:00 UTC rebuild/restart outside CI.
 - The development SSH user must write only to staging and the Source2Script plugin directory; `DEV_S2SCRIPT_PLUGIN_DIR` must be the same host bind path used by `compose-dev.yml` and be writable by UID/GID `1000:1000`.
 - TTT compose environments must provide `APP_SERVER_RCON_PASSWORD`, a versioned `METAMOD_SOURCE_URL`, and `S2SCRIPT_RUNTIME_ZIP_URL`; no archive URL or credential is committed.
+
+## Server release tags
+
+Status: final verification recorded locally on 2026-08-08.
+
+Required commands and observed outcomes:
+
+- `edgegamers-s2s`: `npm.cmd run lint` exited 0.
+- `edgegamers-s2s`: `npm.cmd run typecheck` exited 0.
+- `edgegamers-s2s`: `npm.cmd test` exited 0; Vitest reported 15 test files passed and 82 tests passed.
+- `edgegamers-s2s`: `npm.cmd run build` first failed inside the Codex sandbox with `Cannot read directory "../../../..": Access is denied.` and unresolved plugin entry paths; rerunning the same command outside the sandbox exited 0, produced `_edgegamers_reference-api.s2sp` and `_edgegamers_reference-consumer.s2sp`, and the artifact license check passed.
+- `edgegamers-s2s`: `npm.cmd run changeset:check` exited 0 with `No server-affecting plugin changes detected.`
+- `s2script-runtime-image`: `& 'C:\Program Files\Git\bin\bash.exe' scripts/validate.sh` exited 1 because `grep` was not on that direct invocation PATH; `& 'C:\Program Files\Git\bin\bash.exe' --login -lc 'cd /c/Users/reece/VSCodeProjects/s2script-runtime-image/.worktrees/server-release-tags && ./scripts/validate.sh'` exited 0 with handshake, gameinfo, and release manifest reconcile checks passed.
+- `empty-s2s`: `& 'C:\Program Files\Git\bin\bash.exe' scripts/validate.sh` exited 1 because `grep` was not on that direct invocation PATH; `& 'C:\Program Files\Git\bin\bash.exe' --login -lc 'cd /c/Users/reece/VSCodeProjects/empty-s2s/.worktrees/server-release-tags && ./scripts/validate.sh'` exited 0; Vitest reported 3 test files passed and 9 tests passed.
+- `ttt-s2s`: `npm.cmd install` was needed because `node_modules` was absent; it exited 0 with `added 44 packages in 1s`. The generated `node_modules` directory was removed after validation so the worktree returned to clean.
+- `ttt-s2s`: `& 'C:\Program Files\Git\bin\bash.exe' scripts/validate.sh` exited 1 because `grep` was not on that direct invocation PATH; `& 'C:\Program Files\Git\bin\bash.exe' --login -lc 'cd /c/Users/reece/VSCodeProjects/ttt-s2s/.worktrees/server-release-tags && ./scripts/validate.sh'` exited 0; Vitest reported 3 test files passed and 15 tests passed.
+- Docker: `docker build --pull --progress plain -t s2script-runtime-image:release-manifest 'C:\Users\reece\VSCodeProjects\s2script-runtime-image\.worktrees\server-release-tags'` first failed inside the Codex sandbox with `ERROR: CreateFile C:\Users\reece\.docker\buildx\instances: Access is denied.`; rerunning outside the sandbox reported Docker unavailable: `ERROR: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.`
+- Docker: `docker build --pull --progress plain -t empty-s2s:release-tags C:\Users\reece\VSCodeProjects\empty-s2s\.worktrees\server-release-tags` was skipped because Docker was unavailable with the exact daemon error recorded above.
+- Docker: `docker build --pull --progress plain --build-arg EMPTY_S2S_IMAGE=empty-s2s:release-tags -t ttt-s2s:release-tags C:\Users\reece\VSCodeProjects\ttt-s2s\.worktrees\server-release-tags` was skipped because Docker was unavailable with the exact daemon error recorded above.
+- Old `base`: `git -C C:\Users\reece\VSCodeProjects\base status --short` was blocked in the Codex sandbox by Git dubious-ownership checks; rerunning the same read-only command outside the sandbox exited 0 with empty output.
+- Old `ttt`: `git -C C:\Users\reece\VSCodeProjects\ttt status --short` was blocked in the Codex sandbox by Git dubious-ownership checks; rerunning the same read-only command outside the sandbox exited 0 with empty output.
+
+Skipped checks:
+
+- Docker image builds were skipped because Docker Desktop's Linux daemon was unavailable. Do not claim Docker builds passed for this verification run.
