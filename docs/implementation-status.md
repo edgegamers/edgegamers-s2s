@@ -74,7 +74,11 @@ Status: implemented locally.
 
 - Development artifacts deploy over SSH to the configured development server plugin directory.
 - Reconciliation is manifest-scoped and leaves unmanaged files untouched.
-- Production releases publish to the Source2Script registry only.
+- Production releases create GitHub release assets for all released plugins.
+- Source2Script registry publishing is limited to opt-in plugins.
+- Server repositories resolve GitHub release assets at their own `YY.MM.DD` or
+  `YY.MM.DD-HOTPATCH-N` tag time into `server-release-manifest.json`.
+- Production servers adopt changes only when their server repository is tagged.
 - Server images live in `base-s2s` and `ttt-s2s`.
 
 ## Phase 9: Documentation

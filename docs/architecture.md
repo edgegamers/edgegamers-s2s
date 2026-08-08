@@ -66,7 +66,9 @@ lint → typecheck → unit tests → s2s build
                     development manifest generation
 ```
 
-Production follows a separate Changeset and registry path described in [Changesets and releases](./releases.md).
+Production follows the Changeset and GitHub release asset path described in
+[Changesets and releases](./releases.md). Registry publication is only for
+plugins that opt in.
 
 ## GitHub and deployment state
 
@@ -74,4 +76,9 @@ The repository includes GitHub Actions for validation, development artifact buil
 
 Branch rules, environments, secrets, labels, team bindings, and required checks still require maintainer setup in GitHub. Follow [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).
 
-Server deployment remains intentionally stubbed. The development workflow uploads immutable artifacts and a manifest, then stops. The release workflow can publish through Source2Script, then stops before server rollout because EdgeGamers has not finalized the production server install path or reconcile command.
+The development workflow uploads immutable artifacts and a manifest, then
+reconciles the development server. For production, `edgegamers-s2s/main`
+creates GitHub release assets for all released plugins. Server repositories
+resolve those assets into `server-release-manifest.json` at their own
+`YY.MM.DD` or `YY.MM.DD-HOTPATCH-N` tag time, and production servers adopt
+plugin changes only when their server repository is tagged.

@@ -37,6 +37,13 @@ The repository owns:
 
 ## Release Boundary
 
-Development builds produce immutable `.s2sp` artifacts and a development manifest. Server upload and reconciliation remain stubbed until EdgeGamers chooses the transport.
+Development builds produce immutable `.s2sp` artifacts and a development
+manifest. The development workflow uploads managed artifacts and reconciles the
+development server from that manifest.
 
-Production release currently stops at Source2Script registry deployment. Production server manifest and install commands remain stubbed until the final S2S release path is known.
+Production plugin release starts on `edgegamers-s2s/main`, which creates GitHub
+release assets for all released plugins. Only plugins with registry opt-in
+metadata publish to the Source2Script registry. Server repositories resolve the
+GitHub release assets at their own `YY.MM.DD` or `YY.MM.DD-HOTPATCH-N` tag time
+into `server-release-manifest.json`; production servers adopt the frozen
+manifest only when their own server repository is tagged.

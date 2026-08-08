@@ -64,7 +64,13 @@ addons/s2script/plugins/
 
 Copy each `.s2sp` from `artifacts/local-development/` into that directory on your local development server. Re-copy the file after rebuilding. Delete it to unload.
 
-Do not use this manual copy process as the production release path. Production plugin delivery stops at the Source2Script registry.
+Do not use this manual copy process as the production release path.
+`edgegamers-s2s/main` creates GitHub release assets for all released plugins;
+the Source2Script registry is used only by plugins that opt in. Server
+repositories resolve those GitHub release assets into
+`server-release-manifest.json` at their own `YY.MM.DD` or
+`YY.MM.DD-HOTPATCH-N` tag time, and production servers adopt changes only when
+their server repository is tagged.
 
 ## Environment Setup
 
