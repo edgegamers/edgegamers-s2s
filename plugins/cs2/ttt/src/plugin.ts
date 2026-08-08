@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import type { MaulApi } from "@edgegamers/maul";
-import { plugin } from "@s2script/sdk/plugin";
-import { formatTttRoundState } from "./round-state.ts";
+import { plugin, CtxServer } from "@s2script/sdk/plugin";
+import { Chat } from "@s2script/sdk/chat"
 
 export default plugin((ctx) => {
-  const maul = ctx.use<MaulApi>("@edgegamers/maul");
-  console.log(formatTttRoundState(1, 0));
-  console.log(`TTT MAUL ready: ${maul.hasPermission("system", "ttt.ready")}`);
+  console.log("TTT plugin loaded!");
+  Chat.toAll("TTT plugin loaded!");
 });
