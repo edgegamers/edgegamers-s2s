@@ -43,8 +43,11 @@ Create `development`.
 3. Optionally add `DEV_SSH_PORT`; it defaults to `22`.
 4. Add `DEV_SSH_USER`.
 5. Add `DEV_SSH_KEY`.
-6. Add `DEV_GITLAB_TOKEN` with read access to the `empty-s2s` and child server
-   repositories so the workflow can clone their `dev` branch intent files.
+6. Add `DEV_GITLAB_TOKEN` with `read_repository` access to the `empty-s2s` and
+   child server repositories so the workflow can clone their `dev` branch intent
+   files. For a personal/project access token, omit `DEV_GITLAB_USER`; the
+   workflow uses GitLab's `oauth2` username. For a deploy token, set
+   `DEV_GITLAB_USER` to the deploy token username.
 7. Keep development server plugin directories in
    `config/development-servers.json`, not GitHub secrets.
 8. Scope the SSH user to the remote staging path and configured Source2Script

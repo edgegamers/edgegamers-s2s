@@ -171,8 +171,10 @@ Required operator credentials:
 
 - `edgegamers-s2s` GitHub Actions needs `contents: write` to create GitHub
   release assets and `S2SCRIPT_TOKEN` for registry opt-ins.
-- The development workflow needs `DEV_GITLAB_TOKEN` to read server repo
-  `server-plugins.json` intent files from GitLab.
+- The development workflow needs `DEV_GITLAB_TOKEN` with `read_repository`
+  access to clone server repo `server-plugins.json` intent files from GitLab.
+  Set `DEV_GITLAB_USER` only when using a GitLab deploy token; personal and
+  project access tokens use the default `oauth2` username.
 - Server GitLab tag resolvers need GitHub access for EdgeGamers plugin releases;
   configure `GH_TOKEN` when the releases are private or rate-limited.
 - Child server GitLab tag resolvers need `GITLAB_API_TOKEN` that can read
