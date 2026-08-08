@@ -24,6 +24,7 @@ export function buildGitLabTriggerRequests({ gitlabUrl, ref, bundles, env }) {
         "variables[PLUGIN_BUNDLE_COMMIT]": env.GITHUB_SHA,
         "variables[PLUGIN_BUNDLE_GITHUB_REPOSITORY]": env.GITHUB_REPOSITORY,
         "variables[PLUGIN_BUNDLE_GITHUB_RUN_ID]": env.GITHUB_RUN_ID,
+        "variables[PLUGIN_BUNDLE_ACTIONS_ARTIFACT_NAME]": `server-bundles-${env.GITHUB_SHA}`,
         "variables[PLUGIN_BUNDLE_ARTIFACT_NAME]": bundle.artifactName,
         "variables[PLUGIN_BUNDLE_SHA256]": bundle.sha256,
       },

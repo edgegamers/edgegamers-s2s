@@ -128,6 +128,22 @@ Required remote setup:
 
 Status: implemented.
 
+Final whole-branch review fix verification (2026-08-08):
+
+- GitHub/GitLab artifact handoff now carries distinct outer Actions artifact
+  and inner server bundle names.
+- `edgegamers-s2s`: targeted trigger/workflow tests passed (2 files, 5 tests),
+  the full suite passed (29 files, 167 tests), and lint exited 0.
+- `s2script-runtime-image`: Git Bash `bash scripts/validate.sh` exited 0,
+  including successive-bundle removal and unmanaged-plugin retention coverage.
+- `empty-s2s`: Git Bash `bash scripts/validate.sh` exited 0, including the
+  downloader artifact-layer regression test and deployable-job rule checks.
+- `ttt-s2s`: Git Bash `bash scripts/validate.sh` exited 0, including the
+  downloader regression, deployable-job rules, and inherited-plugin reset.
+- Docker remains unavailable. `docker version --format '{{.Server.Version}}'`
+  exited 1 after warning that `C:\Users\reece\.docker\config.json` was denied;
+  the engine connection failed because `//./pipe/docker_engine` does not exist.
+
 Verification:
 
 - `s2script-runtime-image`: `bash scripts/validate.sh` exited 0.

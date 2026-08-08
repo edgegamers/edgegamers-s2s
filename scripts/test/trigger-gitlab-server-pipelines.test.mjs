@@ -35,6 +35,7 @@ describe("buildGitLabTriggerRequests", () => {
           "variables[PLUGIN_BUNDLE_COMMIT]": "abcdef",
           "variables[PLUGIN_BUNDLE_GITHUB_REPOSITORY]": "edgegamers/edgegamers-s2s",
           "variables[PLUGIN_BUNDLE_GITHUB_RUN_ID]": "12345",
+          "variables[PLUGIN_BUNDLE_ACTIONS_ARTIFACT_NAME]": "server-bundles-abcdef",
           "variables[PLUGIN_BUNDLE_ARTIFACT_NAME]": "ttt-s2s-development",
           "variables[PLUGIN_BUNDLE_SHA256]": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },

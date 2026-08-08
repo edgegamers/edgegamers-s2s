@@ -38,6 +38,7 @@ describe("GitHub workflows", () => {
       "npm test",
       "npm run build",
       "npm run bundles:servers -- --environment development",
+      "server-bundles-${{ github.sha }}",
       "artifacts/server-bundles/",
       "actions/upload-artifact@v4",
       "npm run trigger:servers -- --environment development --ref dev",
