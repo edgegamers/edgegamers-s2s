@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: main-s2s-deploy-${{ github.ref }}
@@ -50,14 +50,31 @@ jobs:
       - name: Build production server bundles
         run: npm run bundles:servers -- --environment production
 
-      - name: Upload production server bundles
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-bundles-${{ github.sha }}
-          path: |
-            artifacts/server-bundles/
-          if-no-files-found: error
-          retention-days: 30
+      - name: Publish production server bundle release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SERVER_BUNDLE_RELEASE_TAG=latest
+          git tag -f "$SERVER_BUNDLE_RELEASE_TAG" "$GITHUB_SHA"
+          git push --force origin "refs/tags/$SERVER_BUNDLE_RELEASE_TAG"
+          if gh release view "$SERVER_BUNDLE_RELEASE_TAG" > /dev/null 2>&1; then
+            gh release edit "$SERVER_BUNDLE_RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Latest server bundles" \
+              --notes "Latest released server bundles." \
+              --latest
+          else
+            gh release create "$SERVER_BUNDLE_RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Latest server bundles" \
+              --notes "Latest released server bundles." \
+              --latest
+          fi
+          gh release upload "$SERVER_BUNDLE_RELEASE_TAG" \
+            artifacts/server-bundles/bundles.json \
+            artifacts/server-bundles/*/*/*.zip \
+            artifacts/server-bundles/*/*/*.zip.sha256 \
+            --clobber
 
       - name: Detect pending Changesets
         id: detect

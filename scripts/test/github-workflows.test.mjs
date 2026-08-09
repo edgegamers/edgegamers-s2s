@@ -32,6 +32,10 @@ describe("GitHub workflows", () => {
 
     expect(deployDev).toContain("npm run build");
     expect(deployDev).toContain("npm run bundles:servers -- --environment development");
+    expect(deployDev).toContain("cron: '30 9 * * *'");
+    expect(deployDev).toContain("contents: write");
+    expect(deployDev).toContain("SERVER_BUNDLE_RELEASE_TAG=dev-latest");
+    expect(deployDev).toContain("gh release upload \"$SERVER_BUNDLE_RELEASE_TAG\"");
     expect(deployDev).toContain("npm run trigger:servers -- --environment development --ref dev");
 
     for (const forbidden of [
@@ -41,6 +45,7 @@ describe("GitHub workflows", () => {
       "DEV_SSH",
       "manifest:dev",
       "artifacts:local",
+      "actions/upload-artifact@v4",
       "ghcr.io/s2script/s2script-runtime-image",
       "SOURCE2_UPDATE_ON_START",
       "payload",
@@ -54,6 +59,9 @@ describe("GitHub workflows", () => {
 
     expect(release).toContain("npm run build");
     expect(release).toContain("npm run bundles:servers -- --environment production");
+    expect(release).toContain("contents: write");
+    expect(release).toContain("SERVER_BUNDLE_RELEASE_TAG=latest");
+    expect(release).toContain("gh release upload \"$SERVER_BUNDLE_RELEASE_TAG\"");
     expect(release).toContain("npm run deploy -- --ci");
 
     for (const forbidden of [
@@ -61,6 +69,7 @@ describe("GitHub workflows", () => {
       "scp ",
       "rsync",
       "docker compose",
+      "actions/upload-artifact@v4",
       "SOURCE2_UPDATE_ON_START",
       "ghcr.io/s2script/s2script-runtime-image",
     ]) {

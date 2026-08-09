@@ -44,7 +44,7 @@ s2s build
     ↓
 server bundle zip files
     ↓
-GitHub Actions artifact upload
+GitHub release assets (`dev-latest`)
     ↓
 GitLab server pipeline trigger
     ↓
@@ -62,7 +62,12 @@ npm.cmd run build
 npm.cmd run bundles:servers -- --environment development
 ```
 
-The development workflow uploads bundles from `artifacts/server-bundles/` and triggers the associated server repository pipelines.
+The development workflow uploads bundles from `artifacts/server-bundles/` to
+the moving `dev-latest` release, triggers the associated server repository
+pipelines, and rebuilds the release assets every day at 09:30 UTC.
+
+Production server bundles are uploaded to the moving `latest` release during
+the main release workflow.
 
 ## Production releases
 

@@ -4,8 +4,9 @@ import { buildGitLabTriggerRequests } from "../trigger-gitlab-server-pipelines.m
 describe("buildGitLabTriggerRequests", () => {
   it("creates one dev image-rebuild GitLab trigger request per configured server bundle", () => {
     const requests = buildGitLabTriggerRequests({
-      gitlabUrl: "https://gitlab.example.test",
+      gitlabUrl: "gitlab.example.test",
       ref: "dev",
+      releaseTag: "dev-latest",
       bundles: [
         {
           server: "ttt-s2s",
@@ -16,7 +17,7 @@ describe("buildGitLabTriggerRequests", () => {
       ],
       env: {
         GITHUB_REPOSITORY: "edgegamers/edgegamers-s2s",
-        GITHUB_RUN_ID: "12345",
+        GITHUB_SERVER_URL: "https://github.example.test",
         GITHUB_SHA: "abcdef",
         GITLAB_PROJECT_ID_TTT_S2S: "42",
         GITLAB_TRIGGER_TOKEN_TTT_S2S: "secret",
@@ -33,9 +34,7 @@ describe("buildGitLabTriggerRequests", () => {
           "variables[PLUGIN_BUNDLE_SERVER]": "ttt-s2s",
           "variables[PLUGIN_BUNDLE_ENV]": "development",
           "variables[PLUGIN_BUNDLE_COMMIT]": "abcdef",
-          "variables[PLUGIN_BUNDLE_GITHUB_REPOSITORY]": "edgegamers/edgegamers-s2s",
-          "variables[PLUGIN_BUNDLE_GITHUB_RUN_ID]": "12345",
-          "variables[PLUGIN_BUNDLE_ACTIONS_ARTIFACT_NAME]": "server-bundles-abcdef",
+          "variables[PLUGIN_BUNDLE_URL]": "https://github.example.test/edgegamers/edgegamers-s2s/releases/download/dev-latest/ttt-s2s-development.zip",
           "variables[PLUGIN_BUNDLE_ARTIFACT_NAME]": "ttt-s2s-development",
           "variables[PLUGIN_BUNDLE_SHA256]": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         },

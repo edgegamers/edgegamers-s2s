@@ -5,9 +5,11 @@ on:
     branches:
       - dev
   workflow_dispatch:
+  schedule:
+    - cron: '30 9 * * *'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: development-artifacts-${{ github.ref }}
@@ -48,18 +50,38 @@ jobs:
       - name: Build development server bundles
         run: npm run bundles:servers -- --environment development
 
-      - name: Upload development server bundles
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-bundles-${{ github.sha }}
-          path: |
-            artifacts/server-bundles/
-          if-no-files-found: error
-          retention-days: 14
+      - name: Publish development server bundle release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SERVER_BUNDLE_RELEASE_TAG=dev-latest
+          git tag -f "$SERVER_BUNDLE_RELEASE_TAG" "$GITHUB_SHA"
+          git push --force origin "refs/tags/$SERVER_BUNDLE_RELEASE_TAG"
+          if gh release view "$SERVER_BUNDLE_RELEASE_TAG" > /dev/null 2>&1; then
+            gh release edit "$SERVER_BUNDLE_RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Development server bundles" \
+              --notes "Latest development server bundles." \
+              --prerelease \
+              --latest=false
+          else
+            gh release create "$SERVER_BUNDLE_RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Development server bundles" \
+              --notes "Latest development server bundles." \
+              --prerelease \
+              --latest=false
+          fi
+          gh release upload "$SERVER_BUNDLE_RELEASE_TAG" \
+            artifacts/server-bundles/bundles.json \
+            artifacts/server-bundles/*/*/*.zip \
+            artifacts/server-bundles/*/*/*.zip.sha256 \
+            --clobber
 
       - name: Trigger development server pipelines
         env:
           GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          PLUGIN_BUNDLE_RELEASE_TAG: dev-latest
           GITLAB_PROJECT_ID_EMPTY_S2S: ${{ secrets.GITLAB_PROJECT_ID_EMPTY_S2S }}
           GITLAB_TRIGGER_TOKEN_EMPTY_S2S: ${{ secrets.GITLAB_TRIGGER_TOKEN_EMPTY_S2S }}
           GITLAB_PROJECT_ID_TTT_S2S: ${{ secrets.GITLAB_PROJECT_ID_TTT_S2S }}
