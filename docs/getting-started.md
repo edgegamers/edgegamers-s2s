@@ -29,7 +29,7 @@ From the repository root:
 npm.cmd install
 ```
 
-The committed `package-lock.json` is the source of truth for dependency versions. CI should use `npm ci` once validation workflows are added.
+The committed `package-lock.json` is the source of truth for dependency versions. CI uses `npm ci`.
 
 ## Validate the workspace
 
@@ -38,7 +38,6 @@ Run the complete local validation sequence:
 ```powershell
 npm.cmd run lint
 npm.cmd run typecheck
-npm.cmd test
 npm.cmd run build
 ```
 
@@ -46,7 +45,6 @@ These commands check different boundaries:
 
 - `lint` applies the same Source2Script rules used by the SDK build;
 - `typecheck` runs strict repository-wide TypeScript validation;
-- `test` runs portable unit and repository-policy tests with Vitest;
 - `build` delegates plugin discovery, dependency ordering, contract checks, and `.s2sp` packaging to Source2Script.
 
 Built packages appear beneath each plugin's `dist/` directory and are ignored by Git.
@@ -56,8 +54,6 @@ Built packages appear beneath each plugin's `dist/` directory and are ignored by
 TypeScript is pinned to 5.9.3. TypeScript 7.0.2 is stable, but the current official Source2Script lint stack uses `@typescript-eslint/parser@8.65.0`, which rejects TypeScript 7 at startup.
 
 Upgrade to TypeScript 7 only after the official Source2Script ESLint dependency graph supports it without peer overrides, install warnings, or runtime warnings. Keeping one supported compiler version is more valuable than forcing a split compiler/linter setup.
-
-Vite is pinned to 6.4.3 because Vitest's broad dependency range otherwise selects a newer Vite line that requires a different esbuild version than Source2Script SDK 0.14.0. The explicit pin keeps the npm tree valid and on a patched Vite release.
 
 ## Local server testing
 

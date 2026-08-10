@@ -101,7 +101,8 @@ Required checks:
 
 ## 7. Release Paths
 
-Development releases build server-scoped plugin bundles, upload them as GitHub
-Actions artifacts, and trigger server repository pipelines. Production bundles
-are immutable CI artifacts; server repositories choose when to consume them and
-deploy their production images.
+Development releases build server-scoped plugin bundles, upload them to the
+moving `dev-latest` GitHub release, and trigger server repository pipelines.
+The development workflow also rebuilds those bundles every day at 09:30 UTC.
+Production bundles are uploaded to the moving `latest` GitHub release; server
+repositories choose when to consume them and deploy their production images.

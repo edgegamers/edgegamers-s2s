@@ -21,12 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-import type { ReferenceGreetingApi } from "@edgegamers/reference-api";
 import { plugin } from "@s2script/sdk/plugin";
+import { Chat } from "@s2script/sdk/chat";
 
 export default plugin((ctx) => {
-  const greetingApi = ctx.use<ReferenceGreetingApi>(
-    "@edgegamers/reference-api",
-  );
-  console.log(greetingApi.greet("EdgeGamers"));
+  console.log("TTT plugin loaded!");
 });

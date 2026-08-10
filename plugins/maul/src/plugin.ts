@@ -22,11 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import { plugin } from "@s2script/sdk/plugin";
-import type { ReferenceGreetingApi } from "../api";
-import { formatGreeting } from "./greeting.ts";
+import { delay } from "@s2script/sdk/timers";
 
 export default plugin((ctx) => {
-  ctx.publish<ReferenceGreetingApi>("@edgegamers/reference-api", {
-    greet: formatGreeting,
-  });
+  console.log("Maul plugin loaded!");
 });

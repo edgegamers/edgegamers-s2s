@@ -16,7 +16,6 @@
   },
   "include": [
     "plugins/*/src/**/*.ts",
-    "plugins/*/test/**/*.ts",
     "plugins/*/*.d.ts"
   ],
   "exclude": ["**/dist/**", "**/node_modules/**", "**/.s2script/**"]

@@ -11,7 +11,6 @@ validation sequence from the repository root:
 npm install
 npm run lint
 npm run typecheck
-npm test
 npm run build
 ```
 

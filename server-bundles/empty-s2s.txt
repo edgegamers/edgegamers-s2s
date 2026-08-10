@@ -1,1 +1,2 @@
 # One shared EdgeGamers plugin package per line.
+@edgegamers/maul

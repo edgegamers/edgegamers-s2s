@@ -11,7 +11,6 @@ Describe what changed and why.
 
 - [ ] `npm run lint`
 - [ ] `npm run typecheck`
-- [ ] `npm test`
 - [ ] `npm run build`
 - [ ] Tested on a local development artifact bundle, when applicable
 
