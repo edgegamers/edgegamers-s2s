@@ -17,7 +17,7 @@ edgegamers-s2/
 
 `packages/*` belongs only to npm. Do not create a package for a one-off helper. A shared package should represent a coherent implementation boundary with more than one real consumer.
 
-`scripts/lib/*` contains focused logic that can be tested with explicit inputs. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
+`scripts/lib/*` contains focused logic shared by repository-specific CLI scripts. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
 
 `artifacts/server-bundles/` contains generated server bundles. Plugin `dist/`
 directories contain generated `.s2sp` packages. Both are ignored by Git.
@@ -42,7 +42,7 @@ There is deliberately no custom loop over `plugins/*` for building, versioning, 
 
 ## Shared source versus runtime interfaces
 
-Use a private package under `packages/` when consumers need the same bundled implementation but do not share runtime state. Formatting helpers, configuration parsers, and test fixtures are typical examples.
+Use a private package under `packages/` when consumers need the same bundled implementation but do not share runtime state. Formatting helpers and configuration parsers are typical examples.
 
 Use a plugin interface when one loaded plugin owns a runtime service or authoritative state. Permissions, player data, menus, and economies are typical examples. The producer publishes the interface; consumers declare it in `s2script.pluginDependencies` and resolve it with `ctx.use`.
 
@@ -53,14 +53,14 @@ Shared implementation -> private npm package
 Shared runtime service -> Source2Script plugin interface
 ```
 
-See [Plugin development](./plugin-development.md) for the working producer and consumer.
+See [Plugin development](./plugin-development.md) for runtime interface guidance.
 
 ## Command flow
 
 ```text
 npm install
     ↓
-lint → typecheck → unit tests → s2s build
+lint → typecheck → s2s build
                                   ↓
                         plugin dist/*.s2sp files
                                   ↓

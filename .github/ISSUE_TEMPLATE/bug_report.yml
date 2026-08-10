@@ -16,7 +16,7 @@ body:
     attributes:
       label: Affected plugin or package
       description: Use the package name or path when you know it.
-      placeholder: "@edgegamers/reference-api"
+      placeholder: "@edgegamers/ttt"
     validations:
       required: false
   - type: textarea
@@ -34,7 +34,7 @@ body:
     id: validation
     attributes:
       label: Local validation
-      description: Paste relevant command output, such as npm test or npm run build.
+      description: Paste relevant command output, such as npm run build.
       render: shell
     validations:
       required: false

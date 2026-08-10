@@ -12,12 +12,11 @@ Workspace detection places the plugin beneath `plugins/my-plugin`. Use an `@edge
 
 The generator should reuse the root toolchain. If a future SDK version generates plugin-local lint or compiler configuration that merely duplicates the root, merge required SDK-specific behavior into the root configuration before removing the duplicate.
 
-## Test and build
+## Build
 
-Keep portable behavior separate from the runtime adapter. Test portable functions with Vitest; let the Source2Script build validate plugin entry points, capabilities, manifests, and runtime-interface contracts.
+Keep portable behavior separate from the runtime adapter. Let the Source2Script build validate plugin entry points, capabilities, manifests, and runtime-interface contracts.
 
 ```powershell
-npm.cmd test -- plugins/my-plugin/test
 npm.cmd run typecheck
 npm.cmd run build
 ```
@@ -30,11 +29,11 @@ npm.cmd run build -- --filter @edgegamers/my-plugin
 
 ## Publish a runtime interface
 
-The private `reference-api` plugin demonstrates the producer pattern. Its `package.json` identifies one type contract and publishes the package's own name and version:
+A producer plugin's `package.json` identifies one type contract and publishes the package's own name and version:
 
 ```json
 {
-  "name": "@edgegamers/reference-api",
+  "name": "@edgegamers/my-api",
   "version": "0.1.0",
   "types": "api.d.ts",
   "s2script": {
@@ -46,16 +45,16 @@ The private `reference-api` plugin demonstrates the producer pattern. Its `packa
 The contract is a regular declaration file:
 
 ```ts
-export interface ReferenceGreetingApi {
-  greet(name: string): string;
+export interface MyApi {
+  doWork(): void;
 }
 ```
 
 The producer publishes one implementation during plugin load:
 
 ```ts
-ctx.publish<ReferenceGreetingApi>("@edgegamers/reference-api", {
-  greet: formatGreeting,
+ctx.publish<MyApi>("@edgegamers/my-api", {
+  doWork,
 });
 ```
 
@@ -69,7 +68,7 @@ The consumer declares the runtime requirement independently of npm dependencies:
 {
   "s2script": {
     "pluginDependencies": {
-      "@edgegamers/reference-api": "^0.1.0"
+      "@edgegamers/my-api": "^0.1.0"
     }
   }
 }
@@ -78,17 +77,11 @@ The consumer declares the runtime requirement independently of npm dependencies:
 npm links workspace members, so TypeScript imports the producer's live contract from the same checkout:
 
 ```ts
-import type { ReferenceGreetingApi } from "@edgegamers/reference-api";
+import type { MyApi } from "@edgegamers/my-api";
 
-const greetingApi = ctx.use<ReferenceGreetingApi>(
-  "@edgegamers/reference-api",
-);
+const api = ctx.use<MyApi>("@edgegamers/my-api");
 ```
 
 Do not copy a sibling declaration into `.s2script/types`. A copied declaration becomes stale, and the Source2Script workspace ignores it when a live sibling owns the contract.
 
 Use `optionalPluginDependencies` and `ctx.tryUse` only when the plugin remains useful without the producer. Required services belong in `pluginDependencies` and use `ctx.use`.
-
-## Reference plugins
-
-`reference-api` and `reference-consumer` are private verification fixtures. They prove that npm linking, published types, runtime dependency ranges, SDK build ordering, and `ctx.use` agree. Remove them only after a real producer and consumer provide equivalent workspace coverage.

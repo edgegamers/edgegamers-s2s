@@ -22,7 +22,7 @@ body:
     id: affected-plugin
     attributes:
       label: Affected plugin or package
-      placeholder: "@edgegamers/reference-api"
+      placeholder: "@edgegamers/ttt"
     validations:
       required: false
   - type: checkboxes

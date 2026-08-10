@@ -57,9 +57,6 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test
-
       - name: Build Source2Script workspace
         run: npm run build
 

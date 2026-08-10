@@ -33,14 +33,13 @@ Run the local gate from the repository root:
 ```powershell
 npm.cmd run lint
 npm.cmd run typecheck
-npm.cmd test
 npm.cmd run build
 ```
 
-Build a local Source2Script artifact bundle with:
+Build server plugin bundles with:
 
 ```powershell
-npm.cmd run artifacts:local
+npm.cmd run bundles:servers -- --environment development
 ```
 
 See [local development](./docs/local-development.md) for server copy steps and current release-path stubs.
