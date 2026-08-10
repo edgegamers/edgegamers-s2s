@@ -1,4 +1,4 @@
-<p align="left">
+<p align="center">
   <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/header/graph.svg?title=edgegamers-s2s&amp;subtitle=the+s2script+plugins+and+apis+maintained+by+EdgeGamers&amp;logo=tsnode&amp;logoColor=848484&amp;mode=dark&amp;align=left&amp;font=geist-mono&amp;border=false" /><img alt="s2script" src="https://shieldcn.dev/header/graph.svg?title=edgegamers-s2s&amp;subtitle=the+s2script+plugins+and+apis+maintained+by+EdgeGamers&amp;logo=tsnode&amp;logoColor=848484&amp;mode=light&amp;align=left&amp;font=geist-mono&amp;border=false" /></picture>
 </p>
 
