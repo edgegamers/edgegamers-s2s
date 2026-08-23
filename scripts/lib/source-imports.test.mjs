@@ -48,6 +48,34 @@ test("reports nonliteral dynamic and require package loads", (t) => {
   assert.deepEqual(result.references, []);
 });
 
+test("treats empty named imports and exports as runtime module references", (t) => {
+  const root = makeWorkspace(t, {
+    "sample.ts": [
+      'import {} from "@edgegamers/import-side-effect";',
+      'export {} from "@edgegamers/export-side-effect";',
+      "",
+    ].join("\n"),
+  });
+  const result = collectModuleReferences(join(root, "sample.ts"));
+  assert.deepEqual(result.references.map(({ specifier, runtime }) => ({ specifier, runtime })), [
+    { specifier: "@edgegamers/import-side-effect", runtime: true },
+    { specifier: "@edgegamers/export-side-effect", runtime: true },
+  ]);
+});
+
+test("collects literal dynamic imports with options", (t) => {
+  const root = makeWorkspace(t, {
+    "sample.ts": 'await import("./data.json", { with: { type: "json" } });\n',
+  });
+  const result = collectModuleReferences(join(root, "sample.ts"));
+  assert.equal(result.hasNonliteralPackageLoad, false);
+  assert.deepEqual(result.references.map(({ specifier, runtime, line, column }) => ({
+    specifier, runtime, line, column,
+  })), [
+    { specifier: "./data.json", runtime: true, line: 1, column: 7 },
+  ]);
+});
+
 test("discovers supported source files while excluding generated output and declarations by default", (t) => {
   const root = makeWorkspace(t, {
     "src/index.ts": "",

@@ -37,6 +37,7 @@ function isTypeOnlyImport(node) {
   if (clause.isTypeOnly) return true;
   return !clause.name
     && ts.isNamedImports(clause.namedBindings)
+    && clause.namedBindings.elements.length > 0
     && clause.namedBindings.elements.every((element) => element.isTypeOnly);
 }
 
@@ -44,6 +45,7 @@ function isTypeOnlyExport(node) {
   if (node.isTypeOnly) return true;
   return node.exportClause
     && ts.isNamedExports(node.exportClause)
+    && node.exportClause.elements.length > 0
     && node.exportClause.elements.every((element) => element.isTypeOnly);
 }
 
@@ -82,9 +84,14 @@ function scanModuleReferences(sourcePath) {
     } else if (ts.isImportTypeNode(node)) {
       const argument = node.argument;
       addLiteral(ts.isLiteralTypeNode(argument) ? argument.literal : undefined, false, node);
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      if (node.arguments.length >= 1) addLiteral(node.arguments[0], true, node);
+      else {
+        hasNonliteralPackageLoad = true;
+        nonliteralPackageLoadLocations.push(location(source, node));
+      }
     } else if (ts.isCallExpression(node)
-      && (node.expression.kind === ts.SyntaxKind.ImportKeyword
-        || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+      && ts.isIdentifier(node.expression) && node.expression.text === "require") {
       if (node.arguments.length === 1) addLiteral(node.arguments[0], true, node);
       else {
         hasNonliteralPackageLoad = true;
