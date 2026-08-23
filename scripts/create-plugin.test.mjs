@@ -1,5 +1,13 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { tmpdir } from "node:os";
@@ -223,4 +231,29 @@ test("removes only its new destination when workspace validation fails", (t) => 
   assert.equal(existsSync(join(root, "plugins", "global", "new-plugin")), false);
   assert.equal(existsSync(join(root, "plugins", "global", "invalid", "package.json")), true);
   assert.equal(existsSync(temporaryRoot), false);
+});
+
+test("removes a partially copied owned destination when copying fails", (t) => {
+  const root = makeWorkspace(t, {
+    "plugins/global/sentinel/package.json": { name: "@edgegamers/sentinel" },
+  });
+  const target = join(root, "plugins", "global", "partial-plugin");
+  let copyCalls = 0;
+  assert.throws(() => createPlugin({
+    root,
+    destination: "global/partial-plugin",
+    generate: generatedPlugin,
+    copy(source, destination, options) {
+      copyCalls += 1;
+      if (copyCalls === 1) {
+        cpSync(source, destination, options);
+        assert.equal(existsSync(destination), true);
+        return;
+      }
+      throw new Error("injected copy failure");
+    },
+  }), /injected copy failure/);
+  assert.ok(copyCalls > 1);
+  assert.equal(existsSync(target), false);
+  assert.equal(existsSync(join(root, "plugins", "global", "sentinel", "package.json")), true);
 });

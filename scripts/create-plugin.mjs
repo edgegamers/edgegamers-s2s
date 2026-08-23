@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -85,7 +86,7 @@ function rewriteTsconfig({ destination, root }) {
   writeFileSync(tsconfigPath, `${JSON.stringify(parsed.config, null, 2)}\n`);
 }
 
-export function createPlugin({ root, destination, generate = defaultGenerate }) {
+export function createPlugin({ root, destination, generate = defaultGenerate, copy = cpSync }) {
   const workspaceRoot = resolve(root);
   const policy = loadWorkspacePolicy(workspaceRoot);
   const parsed = parsePluginDestination(destination, policy);
@@ -111,8 +112,15 @@ export function createPlugin({ root, destination, generate = defaultGenerate }) 
     }
 
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(generatedRoot, target, { recursive: true, errorOnExist: true, force: false });
+    mkdirSync(target);
     destinationCreated = true;
+    for (const entry of readdirSync(generatedRoot)) {
+      copy(join(generatedRoot, entry), join(target, entry), {
+        recursive: true,
+        errorOnExist: true,
+        force: false,
+      });
+    }
     rewriteTsconfig({ destination: target, root: workspaceRoot });
 
     const errors = validateWorkspaceBoundaries(workspaceRoot);
