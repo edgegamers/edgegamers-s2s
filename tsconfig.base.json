@@ -15,8 +15,8 @@
     "types": ["node"]
   },
   "include": [
-    "plugins/*/src/**/*.ts",
-    "plugins/*/*.d.ts"
+    "plugins/**/*.ts",
+    "packages/**/*.ts"
   ],
   "exclude": ["**/dist/**", "**/node_modules/**", "**/.s2script/**"]
 }
