@@ -1,5 +1,29 @@
-/.github/                 @edgegamers/s2s-maintainers
-/.changeset/              @edgegamers/s2s-maintainers
-/scripts/                 @edgegamers/s2s-maintainers
-/packages/                @edgegamers/s2s-platform
-/licenses/                @edgegamers/s2s-platform
+# Maintainers review ordinary code, tests, documentation, and Changesets.
+*                                      @edgegamers/s2s-maintainers
+
+# Platform owns repository security, ownership, and automation.
+/.github/CODEOWNERS                    @edgegamers/s2s-platform
+/.github/SECURITY.md                   @edgegamers/s2s-platform
+/.github/workflows/                    @edgegamers/s2s-platform
+/.changeset/config.json                @edgegamers/s2s-platform
+/package.json                          @edgegamers/s2s-platform
+/package-lock.json                     @edgegamers/s2s-platform
+/workspace-policy.json                 @edgegamers/s2s-platform
+
+# Platform owns release and workspace policy implementations.
+/scripts/check-changeset.mjs           @edgegamers/s2s-platform
+/scripts/check-changeset.test.mjs      @edgegamers/s2s-platform
+/scripts/create-plugin.mjs             @edgegamers/s2s-platform
+/scripts/create-plugin.test.mjs        @edgegamers/s2s-platform
+/scripts/check-workspace-boundaries.mjs @edgegamers/s2s-platform
+/scripts/lib/changeset-policy.mjs      @edgegamers/s2s-platform
+/scripts/lib/changeset-policy.test.mjs @edgegamers/s2s-platform
+/scripts/lib/workspace-layout.mjs      @edgegamers/s2s-platform
+/scripts/lib/workspace-layout.test.mjs @edgegamers/s2s-platform
+/scripts/lib/workspace-boundary-policy.mjs @edgegamers/s2s-platform
+/scripts/lib/workspace-boundary-policy.test.mjs @edgegamers/s2s-platform
+
+# Manifests control public identity, versions, dependencies, and interfaces.
+/plugins/**/package.json               @edgegamers/s2s-platform
+/packages/                             @edgegamers/s2s-platform
+/licenses/                             @edgegamers/s2s-platform
