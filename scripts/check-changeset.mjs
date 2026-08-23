@@ -5,8 +5,8 @@ import { pathToFileURL } from "node:url";
 import {
   evaluateChangesetCoverage,
   parseChangesetPackages,
-  parsePluginMetadata,
 } from "./lib/changeset-policy.mjs";
+import { requireValidWorkspaceLayout } from "./lib/workspace-layout.mjs";
 
 function defaultGit(root, args) {
   return execFileSync("git", args, {
@@ -16,19 +16,8 @@ function defaultGit(root, args) {
 }
 
 function readPlugins(root) {
-  const pluginsDirectory = join(root, "plugins");
-  if (!existsSync(pluginsDirectory)) return [];
-
-  return readdirSync(pluginsDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const packagePath = join(pluginsDirectory, entry.name, "package.json");
-      if (!existsSync(packagePath)) {
-        throw new Error(`plugins/${entry.name}/package.json: file is missing`);
-      }
-
-      return parsePluginMetadata(entry.name, readFileSync(packagePath, "utf8"));
-    });
+  return requireValidWorkspaceLayout(root).packages
+    .filter(({ kind }) => kind === "plugin");
 }
 
 function readChangesets(root) {

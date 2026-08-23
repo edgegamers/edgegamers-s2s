@@ -1,26 +1,5 @@
 const RELEASE_LINE = /^(["'])(.+)\1:\s+(patch|minor|major)$/u;
 
-export function parsePluginMetadata(directory, content) {
-  const source = `plugins/${directory}/package.json`;
-  let packageJson;
-
-  try {
-    packageJson = JSON.parse(content);
-  } catch (error) {
-    throw new Error(`${source}: invalid JSON`, { cause: error });
-  }
-
-  if (typeof packageJson.name !== "string" || !packageJson.name) {
-    throw new Error(`${source}: name must be a non-empty string`);
-  }
-
-  return {
-    directory,
-    name: packageJson.name,
-    private: packageJson.private === true,
-  };
-}
-
 export function parseChangesetPackages(changesets) {
   const packages = new Set();
 
@@ -53,19 +32,15 @@ export function evaluateChangesetCoverage({
   plugins,
   coveredPackages,
 }) {
-  const publishableByDirectory = new Map(
-    plugins
-      .filter((plugin) => !plugin.private)
-      .map((plugin) => [plugin.directory, plugin.name]),
-  );
+  const publishablePlugins = plugins.filter((plugin) => !plugin.private);
   const affected = new Set();
 
   for (const changedFile of changedFiles) {
     const normalized = changedFile.replaceAll("\\", "/");
-    const match = /^plugins\/([^/]+)\//u.exec(normalized);
-    const packageName = match
-      ? publishableByDirectory.get(match[1])
-      : undefined;
+    const packageName = publishablePlugins
+      .filter(({ directory }) => normalized === directory
+        || normalized.startsWith(`${directory}/`))
+      .sort((left, right) => right.directory.length - left.directory.length)[0]?.name;
 
     if (packageName) affected.add(packageName);
   }
