@@ -73,6 +73,16 @@ export function defaultGenerate({ root, temporaryRoot, name, game, execFile = ex
   renameSync(join(temporaryRoot, "plugins", name), join(temporaryRoot, name));
 }
 
+function rewriteManifest({ destination }) {
+  const manifestPath = join(destination, "package.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("Generated package manifest must be a JSON object");
+  }
+  manifest.private = true;
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
 function rewriteTsconfig({ destination, root }) {
   const tsconfigPath = join(destination, "tsconfig.json");
   const parsed = ts.parseConfigFileTextToJson(tsconfigPath, readFileSync(tsconfigPath, "utf8"));
@@ -121,6 +131,7 @@ export function createPlugin({ root, destination, generate = defaultGenerate, co
         force: false,
       });
     }
+    rewriteManifest({ destination: target });
     rewriteTsconfig({ destination: target, root: workspaceRoot });
 
     const errors = validateWorkspaceBoundaries(workspaceRoot);

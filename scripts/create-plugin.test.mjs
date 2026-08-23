@@ -173,6 +173,8 @@ test("creates a global plugin, normalizes its tsconfig, and cleans its temporary
   const destination = join(root, "plugins", "global", "maul-helper");
   assert.equal(receivedGame, undefined);
   assert.equal(existsSync(join(destination, "package.json")), true);
+  const manifest = JSON.parse(readFileSync(join(destination, "package.json"), "utf8"));
+  assert.equal(manifest.private, true);
   assert.equal(existsSync(join(destination, "src", "plugin.ts")), true);
   assert.deepEqual(JSON.parse(readFileSync(join(destination, "tsconfig.json"), "utf8")), {
     extends: "../../../tsconfig.base.json",
@@ -201,7 +203,7 @@ test("creates a game-scoped nested plugin", (t) => {
 
 test("refuses an existing plugin destination before generating", (t) => {
   const root = makeWorkspace(t, {
-    "plugins/global/existing/package.json": { name: "@edgegamers/existing" },
+    "plugins/global/existing/package.json": { name: "@edgegamers/existing", private: true },
   });
   let generated = false;
   assert.throws(() => createPlugin({
@@ -216,7 +218,7 @@ test("refuses an existing plugin destination before generating", (t) => {
 
 test("removes only its new destination when workspace validation fails", (t) => {
   const root = makeWorkspace(t, {
-    "plugins/global/invalid/package.json": { name: "@edgegamers/invalid" },
+    "plugins/global/invalid/package.json": { name: "@edgegamers/invalid", private: true },
     "plugins/global/invalid/src/plugin.ts": "import '@s2script/cs2';\n",
   });
   let temporaryRoot;
@@ -235,7 +237,7 @@ test("removes only its new destination when workspace validation fails", (t) => 
 
 test("removes a partially copied owned destination when copying fails", (t) => {
   const root = makeWorkspace(t, {
-    "plugins/global/sentinel/package.json": { name: "@edgegamers/sentinel" },
+    "plugins/global/sentinel/package.json": { name: "@edgegamers/sentinel", private: true },
   });
   const target = join(root, "plugins", "global", "partial-plugin");
   let copyCalls = 0;

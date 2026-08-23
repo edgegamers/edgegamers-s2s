@@ -5,8 +5,14 @@ import { validateWorkspaceBoundaries } from "./workspace-boundary-policy.mjs";
 import { BASE_POLICY, makeWorkspace } from "./test-workspace.mjs";
 
 function packageFiles({ directory, name, dependencies, source = "", extraManifest = {} }) {
+  const publication = directory.startsWith("plugins/") ? { private: true } : {};
   return {
-    [`${directory}/package.json`]: { name, dependencies, ...extraManifest },
+    [`${directory}/package.json`]: {
+      name,
+      ...publication,
+      dependencies,
+      ...extraManifest,
+    },
     [`${directory}/src/index.ts`]: source,
   };
 }
@@ -136,9 +142,9 @@ test("reports nonliteral loads and sorts diagnostics by source location and targ
 test("reports multiple layout errors for one manifest deterministically", (t) => {
   const root = makeWorkspace(t, {
     "workspace-policy.json": BASE_POLICY,
-    "plugins/cs2/outer/package.json": { name: "@edgegamers/outer" },
-    "plugins/cs2/outer/inner/package.json": { name: "@edgegamers/inner" },
-    "plugins/cs2/outer/inner/leaf/package.json": { name: "@edgegamers/leaf" },
+    "plugins/cs2/outer/package.json": { name: "@edgegamers/outer", private: true },
+    "plugins/cs2/outer/inner/package.json": { name: "@edgegamers/inner", private: true },
+    "plugins/cs2/outer/inner/leaf/package.json": { name: "@edgegamers/leaf", private: true },
   });
   assert.deepEqual(validateWorkspaceBoundaries(root), [
     "plugins/cs2/outer/inner/leaf/package.json: package root is nested inside plugins/cs2/outer",

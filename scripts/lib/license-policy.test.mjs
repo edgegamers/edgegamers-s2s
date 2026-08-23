@@ -19,8 +19,8 @@ test("discovers recursive workspace and Source2Script plugin manifests", (t) => 
       workspaces: ["plugins/*/**", "packages/*/**"],
       s2script: { workspace: { plugins: ["plugins/*/**"] } },
     },
-    "plugins/global/maul/package.json": { name: "@edgegamers/maul" },
-    "plugins/cs2/servers/ttt/package.json": { name: "@edgegamers/ttt" },
+    "plugins/global/maul/package.json": { name: "@edgegamers/maul", private: true },
+    "plugins/cs2/servers/ttt/package.json": { name: "@edgegamers/ttt", private: true },
     "packages/global/config/package.json": { name: "@edgegamers/config" },
   });
 

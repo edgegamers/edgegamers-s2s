@@ -125,6 +125,11 @@ export function inspectWorkspaceLayout(rootDir) {
       errors.push(`${manifestLabel}: package manifest requires a non-empty name`);
       continue;
     }
+    if (entry.kind === "plugin" && typeof manifest.private !== "boolean") {
+      errors.push(
+        `${manifestLabel}: plugin manifest requires an explicit boolean private field`,
+      );
+    }
     const item = { ...entry, scope, name: manifest.name, manifest };
     packages.push(item);
   }
