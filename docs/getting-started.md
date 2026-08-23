@@ -38,16 +38,26 @@ Run the complete local validation sequence:
 ```powershell
 npm.cmd run lint
 npm.cmd run typecheck
+npm.cmd test
 npm.cmd run build
 ```
 
 These commands check different boundaries:
 
-- `lint` applies the same Source2Script rules used by the SDK build;
+- `lint` runs `workspace:check` before applying the same Source2Script rules
+  used by the SDK build;
+- `workspace:check` reports scope and dependency-boundary violations directly;
 - `typecheck` runs strict repository-wide TypeScript validation;
+- `test` runs the layout, scanner, boundary, consumer, and creator tests;
 - `build` delegates plugin discovery, dependency ordering, contract checks, and `.s2sp` packaging to Source2Script.
 
 Built packages appear beneath each plugin's `dist/` directory and are ignored by Git.
+
+The first segment below `plugins/` or `packages/` is the only policy segment:
+`global` is game-agnostic and a game name must be listed in
+`workspace-policy.json`; directories after it are free-form. The current
+plugins are `plugins/global/maul` and `plugins/cs2/ttt`. Global code may use
+global code only; game code may also use code in its own game scope.
 
 ## TypeScript version
 

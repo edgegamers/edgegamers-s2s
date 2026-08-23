@@ -5,16 +5,27 @@ This repository is a Source2Script plugin monorepo for EdgeGamers.
 ## Goals
 
 1. Keep Source2Script workspace behavior authoritative for plugin creation, builds, versioning, and registry deployment.
-2. Let npm manage workspace linking for `plugins/*` and future `packages/*`.
+2. Let npm manage workspace linking for scoped plugin and package directories.
 3. Keep each publishable plugin independently versioned with Changesets.
 4. Prove sibling runtime interfaces without copied declaration files.
 5. Keep release and server deployment paths explicit, even where EdgeGamers infrastructure is still undecided.
 
 ## Workspace Boundary
 
-`plugins/*` are Source2Script runtime plugins and npm workspace members.
+`plugins/global/**` are game-agnostic Source2Script runtime plugins and npm
+workspace members. `plugins/<game>/**` are scoped to games listed in
+`workspace-policy.json`; below that first segment, layout is free-form. The
+migrated plugins are `plugins/global/maul` and `plugins/cs2/ttt`.
 
-`packages/*` are private npm workspace packages for shared source code. They are not deployable plugins unless the root `s2script.workspace.plugins` glob includes them.
+`packages/global/**` are game-agnostic private npm workspace packages for
+shared source code. `packages/<game>/**` are game-scoped packages using the
+same first-segment policy and free-form deeper layout. They are not deployable
+plugins unless the root `s2script.workspace.plugins` glob includes them.
+
+Global code may use global code only. Game code may use global code and
+same-game code. `npm.cmd run workspace:check` reports this focused policy;
+`npm.cmd run lint` includes it automatically. Create a plugin with
+`npm.cmd run create:plugin -- <scope>/<optional folders>/<plugin-name>`.
 
 ## Source2Script Ownership
 

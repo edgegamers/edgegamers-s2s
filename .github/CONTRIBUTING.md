@@ -8,13 +8,21 @@ Before opening a contribution, install dependencies and run the local
 validation sequence from the repository root:
 
 ```powershell
-npm install
-npm run lint
-npm run typecheck
-npm run build
+npm.cmd install
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
 ```
 
-`npm run build` runs the repository licensing policy before the build and
+Workspace scope is determined only by the first directory below `plugins/` or
+`packages/`: `global` is game-agnostic, while a game name must appear in
+`workspace-policy.json`. Directories after that first segment are free-form.
+For example, the migrated plugins live at `plugins/global/maul` and
+`plugins/cs2/ttt`. Run `npm.cmd run workspace:check` for a focused scope and
+dependency-boundary result; `npm.cmd run lint` includes that check automatically.
+
+`npm.cmd run build` runs the repository licensing policy before the build and
 checks the generated plugin artifacts afterward.
 
 ## Contribution licensing

@@ -40,7 +40,17 @@ npm.cmd test
 npm.cmd run build
 ```
 
-`npm.cmd run build` delegates plugin discovery, dependency order, interface checks, and package output to Source2Script. Current SDK output is `plugins/<plugin>/dist/<plugin>.s2sp`.
+`npm.cmd run workspace:check` is the focused scope and dependency-boundary
+check, and `npm.cmd run lint` runs it automatically. `npm.cmd run build`
+delegates plugin discovery, dependency order, interface checks, and package
+output to Source2Script. Current SDK output is a plugin's
+`dist/<plugin>.s2sp` file.
+
+The first segment below `plugins/` or `packages/` is policy: `global` is
+game-agnostic; another value must be a game in `workspace-policy.json`; deeper
+directories are free-form. Global code may use global code only. Game code may
+use global code and same-game code. For example, plugins live at
+`plugins/global/maul` and `plugins/cs2/ttt`.
 
 ## Build Local Artifacts
 

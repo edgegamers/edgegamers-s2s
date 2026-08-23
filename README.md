@@ -33,8 +33,17 @@ Run the local gate from the repository root:
 ```powershell
 npm.cmd run lint
 npm.cmd run typecheck
+npm.cmd test
 npm.cmd run build
 ```
+
+Workspace layout is scope-aware: `plugins/global/**` and `packages/global/**`
+are game-agnostic, while `plugins/<game>/**` and `packages/<game>/**` use a
+game listed in `workspace-policy.json`. Only that first segment is policy;
+deeper directories are free-form. The current plugins are
+`plugins/global/maul` and `plugins/cs2/ttt`. Use
+`npm.cmd run workspace:check` for the focused scope and dependency check;
+`npm.cmd run lint` runs it automatically.
 
 Build server plugin bundles with:
 

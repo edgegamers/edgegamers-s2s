@@ -13,9 +13,25 @@ edgegamers-s2/
 └── packages/         Reserved for proven shared source packages
 ```
 
-`plugins/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
+`plugins/global/**` belongs to both npm and the Source2Script workspace for
+game-agnostic plugins. `plugins/<game>/**` holds plugins scoped to a game
+listed in `workspace-policy.json`. Only this first segment is policy; deeper
+directories are free-form. For example, the migrated plugins are
+`plugins/global/maul` and `plugins/cs2/ttt`. Each plugin has its own version
+and package metadata. Private plugins build normally but cannot be published
+by `s2s deploy`.
 
-`packages/*` belongs only to npm. Do not create a package for a one-off helper. A shared package should represent a coherent implementation boundary with more than one real consumer.
+`packages/global/**` is game-agnostic shared source, while
+`packages/<game>/**` is shared source scoped to a game listed in
+`workspace-policy.json`; directories below the scope are free-form.
+`packages/` belongs only to npm. Do not create a package for a one-off helper.
+A shared package should represent a coherent implementation boundary with more
+than one real consumer.
+
+Dependency boundaries follow the same matrix: global code may use global code
+only; game code may use global code and code in the same game scope. Run
+`npm.cmd run workspace:check` for a focused result. `npm.cmd run lint` invokes
+the same check automatically before ESLint.
 
 `scripts/lib/*` contains focused logic shared by repository-specific CLI scripts. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
 
@@ -38,7 +54,8 @@ The repository owns:
 - building server-scoped plugin bundles and triggering server pipelines;
 - EdgeGamers contributor documentation.
 
-There is deliberately no custom loop over `plugins/*` for building, versioning, or publishing.
+There is deliberately no custom loop over plugin directories for building,
+versioning, or publishing.
 
 ## Shared source versus runtime interfaces
 
@@ -60,7 +77,7 @@ See [Plugin development](./plugin-development.md) for runtime interface guidance
 ```text
 npm install
     ↓
-lint → typecheck → s2s build
+lint → typecheck → test → s2s build
                                   ↓
                         plugin dist/*.s2sp files
                                   ↓

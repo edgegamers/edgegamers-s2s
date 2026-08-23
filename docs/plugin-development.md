@@ -2,13 +2,22 @@
 
 ## Create a plugin
 
-Run the pinned Source2Script generator from the repository root:
+Run the scoped generator from the repository root. The first segment is either
+`global` for game-agnostic code or a game listed in `workspace-policy.json`;
+any later folders are free-form:
 
 ```powershell
-npm.cmd run create:plugin -- my-plugin
+npm.cmd run create:plugin -- <scope>/<optional folders>/<plugin-name>
 ```
 
-Workspace detection places the plugin beneath `plugins/my-plugin`. Use an `@edgegamers/` package name, keep the generated Source2Script metadata, and decide explicitly whether the plugin is private.
+For example, the existing plugins are `plugins/global/maul` and
+`plugins/cs2/ttt`. Workspace detection places the generated plugin beneath
+`plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
+Source2Script metadata, and decide explicitly whether the plugin is private.
+
+Global code may use global code only. Game-scoped code may use global code and
+same-game code. Run `npm.cmd run workspace:check` for this focused boundary
+check; `npm.cmd run lint` includes it automatically.
 
 The generator should reuse the root toolchain. If a future SDK version generates plugin-local lint or compiler configuration that merely duplicates the root, merge required SDK-specific behavior into the root configuration before removing the duplicate.
 
@@ -17,7 +26,9 @@ The generator should reuse the root toolchain. If a future SDK version generates
 Keep portable behavior separate from the runtime adapter. Let the Source2Script build validate plugin entry points, capabilities, manifests, and runtime-interface contracts.
 
 ```powershell
+npm.cmd run lint
 npm.cmd run typecheck
+npm.cmd test
 npm.cmd run build
 ```
 
