@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   evaluateChangesetCoverage,
+  isTrustedVersionPullRequest,
   parseChangesetPackages,
 } from "./lib/changeset-policy.mjs";
 import { requireValidWorkspaceLayout } from "./lib/workspace-layout.mjs";
@@ -36,13 +37,19 @@ function readChangesets(root) {
 export function main({
   root = process.cwd(),
   baseRef = process.env.CHANGESET_BASE_REF ?? "origin/dev",
-  allowMissing = process.env.ALLOW_MISSING_CHANGESET === "true",
+  releaseContext = {
+    eventName: process.env.GITHUB_EVENT_NAME,
+    baseRef: process.env.GITHUB_BASE_REF,
+    headRef: process.env.GITHUB_HEAD_REF,
+    author: process.env.CHANGESET_PR_AUTHOR,
+  },
   git = (args) => defaultGit(root, args),
   write = console.log,
   warn = console.warn,
   error = console.error,
 } = {}) {
   try {
+    const trustedVersionPullRequest = isTrustedVersionPullRequest(releaseContext);
     const mergeBase = git(["merge-base", "HEAD", baseRef]);
     const changedOutput = git([
       "diff",
@@ -70,17 +77,18 @@ export function main({
       return 0;
     }
 
-    if (allowMissing) {
+    if (trustedVersionPullRequest) {
       warn(
-        `Missing Changesets allowed by override for: ${result.missingPackages.join(", ")}`,
+        `Trusted version pull request may consume Changesets for: ${result.missingPackages.join(", ")}`,
       );
       return 0;
     }
 
-    error("A Changeset is required for changed publishable plugins:");
+    error("A Changeset is required for changed public plugins:");
     for (const packageName of result.missingPackages) {
       error(`- ${packageName}`);
     }
+    error("Run `npm run changeset` and commit the generated .changeset file.");
     return 1;
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : String(caught);

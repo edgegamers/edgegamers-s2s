@@ -32,7 +32,9 @@ export function evaluateChangesetCoverage({
   plugins,
   coveredPackages,
 }) {
-  const publishablePlugins = plugins.filter((plugin) => plugin.manifest.private !== true);
+  const publishablePlugins = plugins.filter(
+    (plugin) => plugin.manifest.private === false,
+  );
   const affected = new Set();
 
   for (const changedFile of changedFiles) {
@@ -53,4 +55,16 @@ export function evaluateChangesetCoverage({
       (name) => !coveredPackages.has(name),
     ),
   };
+}
+
+export function isTrustedVersionPullRequest({
+  eventName,
+  baseRef,
+  headRef,
+  author,
+}) {
+  return eventName === "pull_request"
+    && baseRef === "dev"
+    && headRef === "changeset-release/dev"
+    && author === "github-actions[bot]";
 }

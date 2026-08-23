@@ -97,5 +97,5 @@ jobs:
       - name: Check Changeset coverage
         env:
           CHANGESET_BASE_REF: origin/${{ github.base_ref }}
-          ALLOW_MISSING_CHANGESET: "false"
+          CHANGESET_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: npm run changeset:check
