@@ -18,8 +18,6 @@ jobs:
     name: Validate and deploy changed packages
     runs-on: ubuntu-latest
     environment: production
-    outputs:
-      has-changesets: ${{ steps.detect.outputs.has-changesets }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -73,21 +71,7 @@ jobs:
             artifacts/server-bundles/*/*/*.zip.sha256 \
             --clobber
 
-      - name: Detect pending Changesets
-        id: detect
-        run: |
-          if find .changeset -type f -name '*.md' ! -name README.md | grep -q .; then
-            echo "has-changesets=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-changesets=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Deploy Source2Script packages
-        if: steps.detect.outputs.has-changesets == 'true'
         env:
           S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
         run: npm run deploy -- --ci
-
-      - name: Skip Source2Script deploy
-        if: steps.detect.outputs.has-changesets != 'true'
-        run: echo "No pending Changesets; skipping s2s deploy."
