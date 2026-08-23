@@ -1,9 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   evaluateChangesetCoverage,
+  findUnsupportedPublicRetirements,
   isTrustedVersionPullRequest,
   parseChangesetPackages,
 } from "./lib/changeset-policy.mjs";
@@ -21,17 +22,57 @@ function readPlugins(root) {
     .filter(({ kind }) => kind === "plugin");
 }
 
-function readChangesets(root) {
-  const changesetDirectory = join(root, ".changeset");
-  if (!existsSync(changesetDirectory)) return [];
+function parseChangedFiles(output) {
+  if (!output) return [];
+  return output.split(/\r?\n/u).filter(Boolean).flatMap((line) => {
+    const [status, ...paths] = line.split("\t");
+    return paths.map((path) => ({ status, path }));
+  });
+}
 
-  return readdirSync(changesetDirectory)
-    .filter((file) => file.endsWith(".md") && file !== "README.md")
-    .sort()
-    .map((file) => ({
-      path: `.changeset/${file}`,
-      content: readFileSync(join(changesetDirectory, file), "utf8"),
-    }));
+function readPullRequestChangesets(root, changes) {
+  return changes
+    .filter(({ status, path }) => (status === "A" || status === "M")
+      && /^\.changeset\/[^/]+\.md$/iu.test(path)
+      && !/^\.changeset\/readme\.md$/iu.test(path))
+    .sort((left, right) => left.path.localeCompare(right.path))
+    .map(({ path }) => {
+      const absolutePath = join(root, ...path.split("/"));
+      if (!existsSync(absolutePath)) {
+        throw new Error(`${path}: changed Changeset is missing from HEAD`);
+      }
+      return { path, content: readFileSync(absolutePath, "utf8") };
+    });
+}
+
+function readPluginsAtRevision(git, revision) {
+  const manifestOutput = git([
+    "ls-tree",
+    "-r",
+    "--name-only",
+    revision,
+    "--",
+    "plugins",
+  ]);
+  const manifestPaths = manifestOutput
+    ? manifestOutput.split(/\r?\n/u).filter((path) => path.endsWith("/package.json"))
+    : [];
+
+  return manifestPaths.map((manifestPath) => {
+    let manifest;
+    try {
+      manifest = JSON.parse(git(["show", `${revision}:${manifestPath}`]));
+    } catch (error) {
+      throw new Error(`Unable to read ${manifestPath} at ${revision}: ${error.message}`, {
+        cause: error,
+      });
+    }
+    return {
+      directory: manifestPath.slice(0, -"/package.json".length),
+      name: manifest.name,
+      manifest,
+    };
+  });
 }
 
 export function main({
@@ -42,6 +83,9 @@ export function main({
     baseRef: process.env.GITHUB_BASE_REF,
     headRef: process.env.GITHUB_HEAD_REF,
     author: process.env.CHANGESET_PR_AUTHOR,
+    actor: process.env.GITHUB_ACTOR,
+    headRepository: process.env.CHANGESET_HEAD_REPOSITORY,
+    repository: process.env.GITHUB_REPOSITORY,
   },
   git = (args) => defaultGit(root, args),
   write = console.log,
@@ -49,18 +93,44 @@ export function main({
   error = console.error,
 } = {}) {
   try {
-    const trustedVersionPullRequest = isTrustedVersionPullRequest(releaseContext);
     const mergeBase = git(["merge-base", "HEAD", baseRef]);
     const changedOutput = git([
       "diff",
-      "--name-only",
+      "--name-status",
+      "--find-renames",
       `${mergeBase}...HEAD`,
     ]);
-    const changedFiles = changedOutput
-      ? changedOutput.split(/\r?\n/u).filter(Boolean)
-      : [];
+    const changes = parseChangedFiles(changedOutput);
+    const changedFiles = changes.map(({ path }) => path);
     const plugins = readPlugins(root);
-    const coveredPackages = parseChangesetPackages(readChangesets(root));
+    const basePlugins = readPluginsAtRevision(git, mergeBase);
+    const retirements = findUnsupportedPublicRetirements({
+      basePlugins,
+      headPlugins: plugins,
+    });
+    if (retirements.length > 0) {
+      error("Direct deletion or de-publication of public plugins is not supported:");
+      for (const retirement of retirements) {
+        error(`- ${retirement.name} (${retirement.directory}): ${retirement.reason}`);
+      }
+      error(
+        "Publish a deprecation release, then request a platform-reviewed registry yank before deleting or privatizing the plugin.",
+      );
+      return 1;
+    }
+
+    const pluginDirectories = new Set([
+      ...basePlugins.map(({ directory }) => directory),
+      ...plugins.map(({ directory }) => directory),
+    ]);
+    const trustedVersionPullRequest = isTrustedVersionPullRequest({
+      ...releaseContext,
+      changes,
+      pluginDirectories,
+    });
+    const coveredPackages = parseChangesetPackages(
+      readPullRequestChangesets(root, changes),
+    );
     const result = evaluateChangesetCoverage({
       changedFiles,
       plugins,

@@ -15,8 +15,13 @@ Complete these steps in GitHub after the repository has `main` and `dev` branche
 2. Create or confirm `@edgegamers/s2s-maintainers` for default review.
 3. Create or confirm `@edgegamers/s2s-platform` for critical ownership.
 4. Give both CODEOWNER teams, `s2s-maintainers` and `s2s-platform`, explicit repository write access and ensure they are visible to the repository.
-5. Update [.github/CODEOWNERS](./CODEOWNERS) if the real team slugs differ.
-6. Add plugin-specific teams only after real plugin ownership exists.
+5. Keep `s2s-developer` as a contributor group, not a CODEOWNER; its members
+   may author code and Changesets, but their approval does not replace a
+   required maintainer or platform review.
+6. Treat `private: true` to `private: false` as a separate platform-reviewed
+   public-promotion change. Generated plugins always start private.
+7. Update [.github/CODEOWNERS](./CODEOWNERS) if the real team slugs differ.
+8. Add plugin-specific teams only after real plugin ownership exists.
 
 ## 3. Labels
 
@@ -88,6 +93,11 @@ The version workflow opens or updates `changeset-release/dev` -> `dev`; it
 runs `s2s version`, consumes Changesets, and never publishes. Bot pull-request
 workflow runs enter an approval-required state; a user with write access must
 choose **Approve workflows to run** before required checks execute.
+
+The Changeset-policy exception also requires the original PR author and current
+workflow actor to be `github-actions[bot]`, a same-repository head, and only
+generated Changeset removal, plugin manifest, and changelog paths. Do not push
+human fixes to the bot branch; let the version workflow update it.
 
 After reviewing and merging the version pull request, normal promotion targets
 `main` from `dev`. The `main` workflow invokes `s2s deploy --ci` with the

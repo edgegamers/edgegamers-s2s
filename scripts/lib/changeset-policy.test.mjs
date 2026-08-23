@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   evaluateChangesetCoverage,
+  findUnsupportedPublicRetirements,
   isTrustedVersionPullRequest,
   parseChangesetPackages,
 } from "./changeset-policy.mjs";
@@ -73,6 +74,15 @@ test("trusts only the exact bot-authored dev version pull request", () => {
     baseRef: "dev",
     headRef: "changeset-release/dev",
     author: "github-actions[bot]",
+    actor: "github-actions[bot]",
+    headRepository: "edgegamers/edgegamers-s2s",
+    repository: "edgegamers/edgegamers-s2s",
+    changes: [
+      { status: "D", path: ".changeset/public-fix.md" },
+      { status: "M", path: "plugins/global/public/package.json" },
+      { status: "A", path: "plugins/global/public/CHANGELOG.md" },
+    ],
+    pluginDirectories: new Set(["plugins/global/public"]),
   };
   assert.equal(isTrustedVersionPullRequest(expected), true);
   for (const [field, value] of [
@@ -80,9 +90,129 @@ test("trusts only the exact bot-authored dev version pull request", () => {
     ["baseRef", "main"],
     ["headRef", "changeset-release/lookalike"],
     ["author", "developer"],
+    ["actor", "developer"],
+    ["headRepository", "developer/edgegamers-s2s"],
+    ["repository", "edgegamers/lookalike"],
   ]) {
     assert.equal(isTrustedVersionPullRequest({ ...expected, [field]: value }), false);
   }
+});
+
+test("rejects version pull requests containing non-generated or lookalike paths", () => {
+  const expected = {
+    eventName: "pull_request",
+    baseRef: "dev",
+    headRef: "changeset-release/dev",
+    author: "github-actions[bot]",
+    actor: "github-actions[bot]",
+    headRepository: "edgegamers/edgegamers-s2s",
+    repository: "edgegamers/edgegamers-s2s",
+    pluginDirectories: new Set(["plugins/global/public"]),
+  };
+  for (const change of [
+    { status: "M", path: ".changeset/config.json" },
+    { status: "M", path: ".changeset/README.md" },
+    { status: "A", path: ".changeset/not-a-release.txt" },
+    { status: "M", path: "plugins/global/public/src/plugin.ts" },
+    { status: "M", path: "plugins/global/public/package.json.bak" },
+    { status: "M", path: "plugins/global/public/CHANGELOG.md/extra" },
+    { status: "M", path: ".github/workflows/validate.yml" },
+    { status: "M", path: "scripts/check-changeset.mjs" },
+  ]) {
+    assert.equal(isTrustedVersionPullRequest({
+      ...expected,
+      changes: [change],
+    }), false, `${change.status} ${change.path}`);
+  }
+});
+
+test("ignores clearly non-runtime plugin files but still requires runtime coverage", () => {
+  const plugins = [{
+    directory: "plugins/global/public",
+    name: "@edgegamers/public",
+    manifest: { private: false },
+  }];
+  const nonRuntimeFiles = [
+    "plugins/global/public/README",
+    "plugins/global/public/readme.md",
+    "plugins/global/public/README.development.md",
+    "plugins/global/public/docs/configuration.md",
+    "plugins/global/public/test/plugin.ts",
+    "plugins/global/public/tests/plugin.ts",
+    "plugins/global/public/src/plugin.test.ts",
+    "plugins/global/public/src/plugin.spec.mts",
+    "plugins/global/public/.github/workflows/test.yml",
+    "plugins/global/public/.gitlab-ci.yml",
+  ];
+
+  assert.deepEqual(evaluateChangesetCoverage({
+    changedFiles: nonRuntimeFiles,
+    plugins,
+    coveredPackages: new Set(),
+  }), {
+    affectedPackages: [],
+    missingPackages: [],
+  });
+  assert.deepEqual(evaluateChangesetCoverage({
+    changedFiles: [
+      ...nonRuntimeFiles,
+      "plugins/global/public/src/plugin.ts",
+      "plugins/global/public/package.json",
+    ],
+    plugins,
+    coveredPackages: new Set(),
+  }), {
+    affectedPackages: ["@edgegamers/public"],
+    missingPackages: ["@edgegamers/public"],
+  });
+});
+
+test("reports direct deletion and de-publication of base-public plugins", () => {
+  const basePlugins = [
+    {
+      directory: "plugins/global/deleted",
+      name: "@edgegamers/deleted",
+      manifest: { private: false },
+    },
+    {
+      directory: "plugins/global/private-now",
+      name: "@edgegamers/private-now",
+      manifest: { private: false },
+    },
+    {
+      directory: "plugins/global/still-public",
+      name: "@edgegamers/still-public",
+      manifest: { private: false },
+    },
+  ];
+  const headPlugins = [
+    {
+      directory: "plugins/global/private-now",
+      name: "@edgegamers/private-now",
+      manifest: { private: true },
+    },
+    {
+      directory: "plugins/global/still-public",
+      name: "@edgegamers/still-public",
+      manifest: { private: false },
+    },
+  ];
+
+  assert.deepEqual(findUnsupportedPublicRetirements({
+    basePlugins,
+    headPlugins,
+  }), [
+    {
+      directory: "plugins/global/deleted",
+      name: "@edgegamers/deleted",
+      reason: "deleted",
+    },
+    {
+      directory: "plugins/global/private-now",
+      name: "@edgegamers/private-now",
+      reason: "changed to private",
+    },
+  ]);
 });
 
 test("ignores private plugins from recursive workspace-layout records", (t) => {

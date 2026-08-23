@@ -19,7 +19,8 @@ Describe what changed and why.
 - [ ] No public plugin behavior or contract changed
 - [ ] Added a patch, minor, or major Changeset for every affected public plugin
 - [ ] Breaking behavior, configuration, and interfaces are documented
-- [ ] Any `private: true` -> `private: false` transition is intentional
+- [ ] Any `private: true` -> `private: false` transition is a separate public-promotion change with a Changeset and platform review
+- [ ] No public plugin is directly deleted or changed to `private: true`; retirement is staged through deprecation and a platform-reviewed yank
 
 ## Deployment
 

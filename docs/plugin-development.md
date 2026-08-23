@@ -13,7 +13,11 @@ npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>
 For example, the existing plugins are `plugins/global/maul` and
 `plugins/cs2/ttt`. Workspace detection places the generated plugin beneath
 `plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
-Source2Script metadata, and decide explicitly whether the plugin is private.
+Source2Script metadata, and keep the generated `private: true` state while the
+plugin is developed internally. Generators always start plugins as private.
+Publishing is a separate `private: true` to `private: false` manifest change
+with platform review and release intent; see
+[Changesets, ownership, and releases](releases.md).
 
 Global code may use global code only; game-scoped code may use global and
 same-game code. Run `npm.cmd run workspace:check` for this focused boundary
