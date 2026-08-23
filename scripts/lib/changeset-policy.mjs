@@ -32,7 +32,7 @@ export function evaluateChangesetCoverage({
   plugins,
   coveredPackages,
 }) {
-  const publishablePlugins = plugins.filter((plugin) => !plugin.private);
+  const publishablePlugins = plugins.filter((plugin) => plugin.manifest.private !== true);
   const affected = new Set();
 
   for (const changedFile of changedFiles) {
