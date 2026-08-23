@@ -13,6 +13,7 @@ npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd test
 npm.cmd run build
+npm.cmd run changeset:check
 ```
 
 Workspace scope is determined only by the first directory below `plugins/` or
@@ -27,6 +28,9 @@ same-game code. Create plugins with
 
 `npm.cmd run build` runs the repository licensing policy before the build and
 checks the generated plugin artifacts afterward.
+
+For ownership, Changeset, and promotion guidance, see
+[Changesets, ownership, and releases](../docs/releases.md).
 
 ## Contribution licensing
 

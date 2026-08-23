@@ -14,15 +14,15 @@ Describe what changed and why.
 - [ ] `npm run build`
 - [ ] Tested on a local development artifact bundle, when applicable
 
-## Release
+## Release intent
 
-- [ ] Added a Changeset
-- [ ] Changeset is not required because:
-- [ ] Breaking changes are documented
-- [ ] Plugin interface compatibility was considered
+- [ ] No public plugin behavior or contract changed
+- [ ] Added a patch, minor, or major Changeset for every affected public plugin
+- [ ] Breaking behavior, configuration, and interfaces are documented
+- [ ] Any `private: true` -> `private: false` transition is intentional
 
 ## Deployment
 
-- [ ] No server deployment is required for this change
-- [ ] Development deployment is intentionally stubbed until EdgeGamers transport is finalized
-- [ ] Production deployment is intentionally stubbed until final Source2Script deployment state is known
+- [ ] No server deployment is required
+- [ ] Development bundle testing is complete when applicable
+- [ ] Registry publication will occur through the reviewed version PR and `main` promotion

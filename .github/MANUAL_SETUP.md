@@ -2,64 +2,47 @@
 
 Complete these steps in GitHub after the repository has `main` and `dev` branches.
 
-## 1. Repository Basics
+## 1. Repository basics
 
-1. Open repository settings.
-2. Set the default branch to `main`.
-3. Keep GitHub Actions enabled.
-4. Set default workflow permissions to read-only.
-5. Allow workflows to create pull requests if the hotfix sync workflow or future release PR automation needs it.
-6. Do not enable `pull_request_target` workflows that run branch code with secrets.
+1. Open repository settings and set the default branch to `main`.
+2. Keep GitHub Actions enabled with default workflow permissions set to read-only.
+3. Keep **Allow GitHub Actions to create and approve pull requests** enabled.
+4. Do not enable `pull_request_target` workflows that run branch code with secrets.
 
-## 2. Teams And CODEOWNERS
+## 2. Teams and CODEOWNERS
 
-1. Create or confirm `@edgegamers/s2s-maintainers`.
-2. Create or confirm `@edgegamers/s2s-platform`.
-3. Update [.github/CODEOWNERS](./CODEOWNERS) if the real team slugs differ.
-4. Add plugin-specific teams only after real plugin ownership exists.
+1. Create or confirm `@edgegamers/s2s-developer` for contributor access.
+2. Create or confirm `@edgegamers/s2s-maintainers` for default review.
+3. Create or confirm `@edgegamers/s2s-platform` for critical ownership.
+4. Give both CODEOWNER teams, `s2s-maintainers` and `s2s-platform`, explicit repository write access and ensure they are visible to the repository.
+5. Update [.github/CODEOWNERS](./CODEOWNERS) if the real team slugs differ.
+6. Add plugin-specific teams only after real plugin ownership exists.
 
 ## 3. Labels
 
 Create labels from [.github/labels.yml](./labels.yml):
 
-1. `no-changeset`
-2. `release`
-3. `release:hotfix`
-4. `sync-required`
-5. `breaking-change`
-6. `plugin`
-7. `shared-package`
-8. `ci`
-9. `documentation`
-
-Only maintainers should apply `no-changeset` and `release:hotfix`.
+1. `release`
+2. `release:hotfix`
+3. `sync-required`
+4. `breaking-change`
+5. `plugin`
+6. `shared-package`
+7. `ci`
+8. `documentation`
 
 ## 4. Environments
 
-Create `development`.
+Create `development` and limit deployment branches to `dev`.
 
-1. Limit deployment branches to `dev`.
+Create `production`:
 
-Create `production`.
+1. Restrict deployment branches to `main`.
+2. Assign `s2s-platform` as the production environment reviewer.
+3. Prevent self-review when team size permits.
+4. Store `S2SCRIPT_TOKEN` in the environment.
 
-1. Limit deployment branches to `main`.
-2. Require production reviewers.
-3. Prevent self-review when the team size allows it.
-4. Add `S2SCRIPT_TOKEN`.
-
-## GitLab trigger secrets
-
-`edgegamers-s2s` needs these GitHub secrets:
-
-- `GITLAB_URL`
-- `GITLAB_PROJECT_ID_EMPTY_S2S`
-- `GITLAB_TRIGGER_TOKEN_EMPTY_S2S`
-- `GITLAB_PROJECT_ID_TTT_S2S`
-- `GITLAB_TRIGGER_TOKEN_TTT_S2S`
-
-Each server repository keeps its own GitLab SSH deployment secrets.
-
-## 5. dev Ruleset
+## 5. dev ruleset
 
 Target branch: `dev`.
 
@@ -81,7 +64,7 @@ Required checks:
 2. `Lint, typecheck, test, and build`
 3. `Changeset policy`
 
-## 6. main Ruleset
+## 6. main ruleset
 
 Target branch: `main`.
 
@@ -91,7 +74,7 @@ Enable the `dev` rules, then add:
 2. Restrict bypass to emergency maintainers.
 3. Require the source branch policy check.
 4. Allow normal promotion only from `dev`.
-5. Allow direct hotfix PRs only from `hotfix/*` with maintainer approval.
+5. Allow direct hotfix pull requests only from `hotfix/*` with maintainer approval.
 
 Required checks:
 
@@ -99,10 +82,26 @@ Required checks:
 2. `Lint, typecheck, test, and build`
 3. `Changeset policy`
 
-## 7. Release Paths
+## 7. Release paths
 
-Development releases build server-scoped plugin bundles, upload them to the
-moving `dev-latest` GitHub release, and trigger server repository pipelines.
-The development workflow also rebuilds those bundles every day at 09:30 UTC.
-Production bundles are uploaded to the moving `latest` GitHub release; server
-repositories choose when to consume them and deploy their production images.
+The version workflow opens or updates `changeset-release/dev` -> `dev`; it
+runs `s2s version`, consumes Changesets, and never publishes. Bot pull-request
+workflow runs enter an approval-required state; a user with write access must
+choose **Approve workflows to run** before required checks execute.
+
+After reviewing and merging the version pull request, normal promotion targets
+`main` from `dev`. The `main` workflow invokes `s2s deploy --ci` with the
+production `S2SCRIPT_TOKEN`, while server repositories choose when to consume
+the bundles and deploy their production images.
+
+## GitLab trigger secrets
+
+`edgegamers-s2s` needs these GitHub secrets:
+
+- `GITLAB_URL`
+- `GITLAB_PROJECT_ID_EMPTY_S2S`
+- `GITLAB_TRIGGER_TOKEN_EMPTY_S2S`
+- `GITLAB_PROJECT_ID_TTT_S2S`
+- `GITLAB_TRIGGER_TOKEN_TTT_S2S`
+
+Each server repository keeps its own GitLab SSH deployment secrets.

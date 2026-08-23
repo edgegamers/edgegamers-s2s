@@ -40,18 +40,27 @@ npm.cmd run build -- --filter @edgegamers/my-plugin
 
 ## Publish a runtime interface
 
-A producer plugin's `package.json` identifies one type contract and publishes the package's own name and version:
+A public producer plugin's `package.json` identifies one type contract and
+publishes its package name and version:
 
 ```json
 {
   "name": "@edgegamers/my-api",
   "version": "0.1.0",
+  "private": false,
   "types": "api.d.ts",
   "s2script": {
-    "publishes": "self"
+    "apiVersion": "1.x",
+    "publishes": {
+      "@edgegamers/my-api": "0.1.0"
+    }
   }
 }
 ```
+
+Runtime-only public plugins omit `publishes` and `types`. Interface publishers
+must keep the published interface version aligned through `s2s version` and
+ship the declaration file referenced by `types`.
 
 The contract is a regular declaration file:
 

@@ -1,5 +1,7 @@
 # Changesets
 
-See [Changesets and releases](../docs/releases.md) for the repository policy and workflow.
+See [Changesets, ownership, and releases](../docs/releases.md) for the
+repository policy and workflow. Any developer may add Changesets; private
+plugins do not receive them.
 
-The private reference plugins are workspace verification fixtures and do not receive Changesets.
+The private reference plugins are workspace verification fixtures.

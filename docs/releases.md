@@ -1,89 +1,63 @@
-# Changesets and releases
+# Changesets, ownership, and releases
 
-Each publishable plugin is versioned independently. Contributors record release intent with Changesets; Source2Script applies the workspace-aware version changes and publishes eligible plugins.
+This is the canonical guide for contributing release intent and administering
+the release path for EdgeGamers Source2Script plugins.
+
+## Team review responsibilities
+
+Developers author Changesets. Maintainers review ordinary code and release
+intent. The platform team reviews critical manifests, repository ownership, and
+automation, as defined by [CODEOWNERS](../.github/CODEOWNERS).
+
+## Private and public plugins
+
+Every plugin manifest must declare an explicit boolean `private` value:
+
+- `private: true` is internal and exempt from Changeset coverage and registry publication.
+- `private: false` is public and enforced by Changeset coverage.
+- Omitting `private` is invalid.
+
+Documentation-only and private-only changes pass policy because the policy
+classifies them correctly, not because a label overrides CI. No label or local
+environment variable bypasses public-plugin Changeset coverage.
 
 ## When a Changeset is required
 
-| Change | Changeset? |
-|---|---|
-| Publishable runtime behavior or public contract | Yes |
-| Compatible bug fix | Yes, patch |
-| Backward-compatible feature | Yes, minor |
-| Breaking contract or configuration | Yes, major |
-| Documentation, tests, CI, or formatting | Normally no |
-| Private-only tooling or private plugin | Normally no |
+Add a Changeset for every affected public plugin when its behavior,
+configuration, or interface changes. Use a patch for a compatible fix, a minor
+for backward-compatible behavior, and a major for a behavior, configuration,
+or interface break.
 
-Add release intent from the repository root:
+## Create and validate a Changeset
+
+From the repository root, create and validate release intent with:
 
 ```powershell
 npm.cmd run changeset
-```
-
-Validate pending Changesets with:
-
-```powershell
 npm.cmd run changeset:status
 npm.cmd run changeset:check
 ```
 
-The coverage check compares changed plugin paths with package metadata. It ignores private plugins and fails when a changed publishable plugin is missing from pending Changeset frontmatter. Local overrides use `ALLOW_MISSING_CHANGESET=true`; a future CI integration must derive any override from trusted pull-request metadata rather than arbitrary branch input.
+Any developer may add a Changeset. Include every affected public plugin in its
+frontmatter before opening the pull request.
 
-## Licensing release checks
+## Version-packages pull requests
 
-Before deployment:
+After changes merge to `dev`, the version workflow opens or updates the bot
+pull request `changeset-release/dev` -> `dev`. It runs `s2s version`, consumes
+pending Changesets, and never publishes packages. Review its version,
+dependency-range, and changelog changes as release intent.
 
-- Run `npm run build`; its repository license gate and postbuild artifact-notice gate must both pass.
-- Audit the code that will be bundled and its license terms and required notices when introducing or changing an `s2script.libraries` dependency. The repository checker rejects libraries that do not have an explicit first-party compliance path.
+GitHub may show **Approve workflows to run** for this bot pull request. A user
+with write access must approve the run before required checks execute.
 
-## Development builds
+## Promote and deploy
 
-Development builds do not publish permanent registry releases for every commit:
-
-```text
-s2s build
-    ↓
-server bundle zip files
-    ↓
-GitHub release assets (`dev-latest`)
-    ↓
-GitLab server pipeline trigger
-    ↓
-server repository image build and SSH development deploy
-```
-
-`edgegamers-s2s` does not SSH to game servers. Server repositories own compose,
-host paths, image deployment, and restart behavior. Development deploys pull
-the rebuilt image and restart the development container immediately.
-
-Build server bundles with:
-
-```powershell
-npm.cmd run build
-npm.cmd run bundles:servers -- --environment development
-```
-
-The development workflow uploads bundles from `artifacts/server-bundles/` to
-the moving `dev-latest` release, triggers the associated server repository
-pipelines, and rebuilds the release assets every day at 09:30 UTC.
-
-Production server bundles are uploaded to the moving `latest` release during
-the main release workflow.
-
-## Production releases
-
-Production release intent is recorded with Changesets:
-
-```text
-pending Changesets
-    ↓
-s2s version
-    ↓
-review version, dependency-range, and changelog changes
-    ↓
-s2s deploy
-    ↓
-Source2Script registry
-```
+The normal production promotion is `dev` -> `main`. Every push to `main`
+invokes `s2s deploy --ci` using the production `S2SCRIPT_TOKEN` secret.
+Source2Script skips private plugins and versions already present in the
+registry. Read [Publishing to the registry](https://www.s2script.com/docs/publishing)
+for registry behavior and publication requirements.
 
 The corresponding root commands are:
 
@@ -92,19 +66,21 @@ npm.cmd run version
 npm.cmd run deploy -- --ci
 ```
 
-`s2s version` applies Changesets and updates sibling interface ranges where required. Review its output before committing the release change.
+## Typed interface publication
 
-`s2s deploy` builds the workspace, creates a deployment plan, skips private plugins, skips versions already present in the registry, and publishes eligible plugins in dependency order. Automated deployment uses `S2SCRIPT_TOKEN` and the CLI's `--ci` flag.
+Public runtime-only plugins omit `publishes` and `types`. Interface publishers
+must keep the published interface version aligned through `s2s version` and
+ship the declaration file referenced by `types`.
 
-Production bundles are immutable CI artifacts created from `main`. Server
-repositories choose when to consume a production bundle, build a production
-image, and update production image and compose selection. Production deploys
-do not force a live restart; the production host's 10:00 restart applies the
-selected image.
+## Failure recovery
 
-## Rollback boundary
+Missing tokens, declaration types, or versions fail the release without a
+partial overwrite. Recover with a patch, minor, or major follow-up release as
+appropriate, or yank the affected registry version when that is the supported
+registry recovery path. Do not overwrite a published version.
 
-Server repositories own development rollback and restart behavior. Registry
-versions and CI bundle artifacts are immutable; never overwrite or delete a
-published version as a rollback mechanism. Any production server selection
-policy belongs to the system that consumes the bundle, outside this repository.
+## Server bundle boundary
+
+This repository builds production server bundles from `main`; server
+repositories decide when to consume a bundle, build an image, and deploy it.
+They own host paths, compose configuration, restart behavior, and rollback.
