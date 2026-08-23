@@ -7,7 +7,12 @@ export function main({
   write = console.log,
   error = console.error,
 } = {}) {
-  const errors = validateWorkspaceBoundaries(root);
+  let errors;
+  try {
+    errors = validateWorkspaceBoundaries(root);
+  } catch (exception) {
+    errors = [exception instanceof Error ? exception.message : String(exception)];
+  }
   if (errors.length === 0) {
     write("Workspace boundaries are valid.");
     return 0;

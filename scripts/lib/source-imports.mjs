@@ -122,10 +122,10 @@ function relativeModuleCandidates(basePath) {
   const extension = extname(basePath).toLowerCase();
   const stem = extension ? basePath.slice(0, -extension.length) : basePath;
   const substitutions = {
-    ".cjs": [".cts", ".cjs"],
-    ".js": [".ts", ".tsx", ".js", ".jsx"],
-    ".jsx": [".tsx", ".jsx"],
-    ".mjs": [".mts", ".mjs"],
+    ".cjs": [".cts", ".d.cts", ".cjs"],
+    ".js": [".ts", ".tsx", ".d.ts", ".js", ".jsx"],
+    ".jsx": [".tsx", ".d.ts", ".jsx"],
+    ".mjs": [".mts", ".d.mts", ".mjs"],
   };
   if (substitutions[extension]) {
     return substitutions[extension].map((candidateExtension) => `${stem}${candidateExtension}`);

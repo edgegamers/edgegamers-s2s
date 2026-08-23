@@ -133,6 +133,57 @@ test("reports nonliteral loads and sorts diagnostics by source location and targ
   ]);
 });
 
+test("reports multiple layout errors for one manifest deterministically", (t) => {
+  const root = makeWorkspace(t, {
+    "workspace-policy.json": BASE_POLICY,
+    "plugins/cs2/outer/package.json": { name: "@edgegamers/outer" },
+    "plugins/cs2/outer/inner/package.json": { name: "@edgegamers/inner" },
+    "plugins/cs2/outer/inner/leaf/package.json": { name: "@edgegamers/leaf" },
+  });
+  assert.deepEqual(validateWorkspaceBoundaries(root), [
+    "plugins/cs2/outer/inner/leaf/package.json: package root is nested inside plugins/cs2/outer",
+    "plugins/cs2/outer/inner/leaf/package.json: package root is nested inside plugins/cs2/outer/inner",
+    "plugins/cs2/outer/inner/package.json: package root is nested inside plugins/cs2/outer",
+  ]);
+});
+
+const malformedManifestContainers = [
+  ["dependencies", (value) => ({ dependencies: value })],
+  ["devDependencies", (value) => ({ devDependencies: value })],
+  ["optionalDependencies", (value) => ({ optionalDependencies: value })],
+  ["peerDependencies", (value) => ({ peerDependencies: value })],
+  ["s2script", (value) => ({ s2script: value })],
+  ["s2script.pluginDependencies", (value) => ({
+    s2script: { pluginDependencies: value },
+  })],
+  ["s2script.optionalPluginDependencies", (value) => ({
+    s2script: { optionalPluginDependencies: value },
+  })],
+  ["s2script.libraries", (value) => ({ s2script: { libraries: value } })],
+];
+
+for (const [field, manifestFields] of malformedManifestContainers) {
+  test(`rejects malformed ${field} containers`, (t) => {
+    for (const [shape, value] of [
+      ["string", "@edgegamers/cs2-b"],
+      ["array", ["@edgegamers/cs2-b"]],
+      ["null", null],
+    ]) {
+      const root = makeWorkspace(t, {
+        "workspace-policy.json": BASE_POLICY,
+        ...packageFiles({
+          directory: "plugins/global/a",
+          name: "@edgegamers/a",
+          extraManifest: manifestFields(value),
+        }),
+      });
+      assert.deepEqual(validateWorkspaceBoundaries(root), [
+        `plugins/global/a/package.json: ${field} must be a plain object`,
+      ], `${shape} ${field}`);
+    }
+  });
+}
+
 test("boundary CLI reports failures and successes through injected writers", (t) => {
   const invalidRoot = makeWorkspace(t, {
     "workspace-policy.json": BASE_POLICY,
@@ -154,4 +205,21 @@ test("boundary CLI reports failures and successes through injected writers", (t)
   });
   assert.equal(checkWorkspaceBoundaries({ root: validRoot, write: (line) => output.push(line), error: (line) => errors.push(line) }), 0);
   assert.equal(output.at(-1), "Workspace boundaries are valid.");
+});
+
+test("boundary CLI reports validation exceptions through its error writer", (t) => {
+  const root = makeWorkspace(t, {
+    "workspace-policy.json": "{ invalid",
+  });
+  const output = [];
+  const errors = [];
+  assert.equal(checkWorkspaceBoundaries({
+    root,
+    write: (line) => output.push(line),
+    error: (line) => errors.push(line),
+  }), 1);
+  assert.deepEqual(output, []);
+  assert.equal(errors[0], "Workspace boundary check failed:");
+  assert.match(errors[1], /^- Unable to read workspace policy:/u);
+  assert.equal(errors.length, 2);
 });

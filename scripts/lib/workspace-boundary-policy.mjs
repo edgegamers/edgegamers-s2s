@@ -45,6 +45,12 @@ function addRecord(records, message, { path = "", line = 0, column = 0, target =
   records.push({ message, path, line, column, target });
 }
 
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 function addBoundaryDiagnostic(records, { sourcePackage, path, line, column, targetName, targetScope }) {
   if (!scopeAllows(sourcePackage.scope, targetScope)) {
     addRecord(records,
@@ -73,27 +79,44 @@ function validatePackageReference(records, { sourcePackage, layout, path, line, 
   });
 }
 
-function manifestDependencyNames(manifest) {
+function appendDependencyNames({ container, field, label = field, names, path, records }) {
+  if (!Object.hasOwn(container, field)) return;
+  if (!isPlainObject(container[field])) {
+    addRecord(records, `${path}: ${label} must be a plain object`, { path });
+    return;
+  }
+  names.push(...Object.keys(container[field]));
+}
+
+function manifestDependencyNames(manifest, { path, records }) {
   const names = [];
   for (const field of MANIFEST_DEPENDENCY_FIELDS) {
-    if (manifest[field] && typeof manifest[field] === "object" && !Array.isArray(manifest[field])) {
-      names.push(...Object.keys(manifest[field]));
-    }
+    appendDependencyNames({ container: manifest, field, names, path, records });
+  }
+  if (!Object.hasOwn(manifest, "s2script")) {
+    return [...new Set(names)].sort((left, right) => left.localeCompare(right));
   }
   const s2script = manifest.s2script;
-  if (s2script && typeof s2script === "object" && !Array.isArray(s2script)) {
-    for (const field of S2SCRIPT_DEPENDENCY_FIELDS) {
-      if (s2script[field] && typeof s2script[field] === "object" && !Array.isArray(s2script[field])) {
-        names.push(...Object.keys(s2script[field]));
-      }
-    }
+  if (!isPlainObject(s2script)) {
+    addRecord(records, `${path}: s2script must be a plain object`, { path });
+    return [...new Set(names)].sort((left, right) => left.localeCompare(right));
+  }
+  for (const field of S2SCRIPT_DEPENDENCY_FIELDS) {
+    appendDependencyNames({
+      container: s2script,
+      field,
+      label: `s2script.${field}`,
+      names,
+      path,
+      records,
+    });
   }
   return [...new Set(names)].sort((left, right) => left.localeCompare(right));
 }
 
 function validateManifestReferences({ sourcePackage, layout, records, rootDir }) {
   const path = repositoryPath(rootDir, sourcePackage.manifestPath);
-  for (const specifier of manifestDependencyNames(sourcePackage.manifest)) {
+  for (const specifier of manifestDependencyNames(sourcePackage.manifest, { path, records })) {
     validatePackageReference(records, { sourcePackage, layout, path, specifier });
   }
 }
@@ -159,7 +182,13 @@ function compareDiagnostics(left, right) {
 
 export function validateWorkspaceBoundaries(rootDir) {
   const layout = inspectWorkspaceLayout(rootDir);
-  const records = layout.errors.map((message) => ({ message, path: message.split(":")[0] }));
+  const records = layout.errors.map((message) => ({
+    message,
+    path: message.split(":")[0],
+    line: 0,
+    column: 0,
+    target: "",
+  }));
   const sourceFiles = new Set(layout.packages.flatMap(({ absoluteDirectory }) =>
     findSourceFiles(absoluteDirectory, { includeDeclarations: true })));
 

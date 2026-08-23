@@ -121,3 +121,24 @@ test("resolves TypeScript substitutions, declarations, and index modules", (t) =
     assert.equal(result.error, undefined);
   }
 });
+
+for (const [specifier, declaration] of [
+  ["./contracts.js", "src/contracts.d.ts"],
+  ["./component.jsx", "src/component.d.ts"],
+  ["./module.mjs", "src/module.d.mts"],
+  ["./common.cjs", "src/common.d.cts"],
+]) {
+  test(`resolves ${specifier} to its declaration counterpart`, (t) => {
+    const root = makeWorkspace(t, {
+      "src/consumer.ts": "",
+      [declaration]: "",
+    });
+    const result = resolveRelativeSourceImport({
+      sourcePath: join(root, "src/consumer.ts"),
+      specifier,
+      sourceFiles: new Set(findSourceFiles(root, { includeDeclarations: true })),
+    });
+    assert.equal(result.target, join(root, declaration));
+    assert.equal(result.error, undefined);
+  });
+}
