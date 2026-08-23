@@ -86,7 +86,18 @@ export function inspectWorkspaceLayout(rootDir) {
   const packages = [];
   const byName = new Map();
   const manifests = walkManifests(absoluteRoot);
-  const seenRoots = [];
+  for (let index = 0; index < manifests.length; index += 1) {
+    const entry = manifests[index];
+    const manifestLabel = `${entry.directory}/package.json`;
+    if (entry.directory.split("/").length < 3) continue;
+    for (const parent of manifests.slice(0, index)) {
+      if (parent.directory.split("/").length < 3) continue;
+      const remainder = relative(parent.absoluteDirectory, entry.absoluteDirectory);
+      if (remainder !== "" && !remainder.startsWith(`..${sep}`) && !isAbsolute(remainder)) {
+        errors.push(`${manifestLabel}: package root is nested inside ${parent.directory}`);
+      }
+    }
+  }
 
   for (const entry of manifests) {
     const manifestLabel = `${entry.directory}/package.json`;
@@ -115,15 +126,6 @@ export function inspectWorkspaceLayout(rootDir) {
       continue;
     }
     const item = { ...entry, scope, name: manifest.name, manifest };
-    for (const parent of seenRoots) {
-      if (relative(parent.absoluteDirectory, item.absoluteDirectory)
-        && !relative(parent.absoluteDirectory, item.absoluteDirectory).startsWith(`..${sep}`)
-        && !isAbsolute(relative(parent.absoluteDirectory, item.absoluteDirectory))) {
-        errors.push(`${manifestLabel}: package root is nested inside ${parent.directory}`);
-        break;
-      }
-    }
-    seenRoots.push(item);
     packages.push(item);
   }
   const groupedNames = new Map();

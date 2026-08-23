@@ -53,3 +53,15 @@ test("allows only global or same-game targets", () => {
   assert.equal(scopeAllows("cs2", "cs2"), true);
   assert.equal(scopeAllows("cs2", "dota2"), false);
 });
+
+test("reports nesting beneath an invalid outer manifest", (t) => {
+  const root = makeWorkspace(t, {
+    "workspace-policy.json": BASE_POLICY,
+    "plugins/cs2/outer/package.json": "{ invalid",
+    "plugins/cs2/outer/inner/package.json": { name: "@edgegamers/inner" },
+  });
+  assert.deepEqual(inspectWorkspaceLayout(root).errors, [
+    "plugins/cs2/outer/inner/package.json: package root is nested inside plugins/cs2/outer",
+    "plugins/cs2/outer/package.json: invalid package manifest",
+  ]);
+});
