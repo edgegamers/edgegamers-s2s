@@ -41,7 +41,7 @@ Run this gate before opening a pull request.
 Only the first directory segment below `plugins/` or `packages/` is policy:
 `global` is game-agnostic, and a game segment must appear in
 `workspace-policy.json`. Directories below that segment are free-form. Global
-code may use global code only; game code may use global code and same-game
+code may use global code only; game-scoped code may use global and same-game
 code. Run `npm.cmd run workspace:check` for that focused result; lint runs it
 automatically. The migrated plugins are `plugins/global/maul` and
 `plugins/cs2/ttt`.
@@ -49,7 +49,7 @@ automatically. The migrated plugins are `plugins/global/maul` and
 ## Create A Plugin
 
 ```powershell
-npm.cmd run create:plugin -- <scope>/<optional folders>/<plugin-name>
+npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>
 ```
 
 Use `global` or a game from `workspace-policy.json` as the scope, an

@@ -2,12 +2,12 @@
 
 ## Create a plugin
 
-Run the scoped generator from the repository root. The first segment is either
-`global` for game-agnostic code or a game listed in `workspace-policy.json`;
-any later folders are free-form:
+Run the scoped generator from the repository root. Only the first segment is
+policy: it is either `global` for game-agnostic code or a game listed in
+`workspace-policy.json`; any later folders are free-form:
 
 ```powershell
-npm.cmd run create:plugin -- <scope>/<optional folders>/<plugin-name>
+npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>
 ```
 
 For example, the existing plugins are `plugins/global/maul` and
@@ -15,7 +15,7 @@ For example, the existing plugins are `plugins/global/maul` and
 `plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
 Source2Script metadata, and decide explicitly whether the plugin is private.
 
-Global code may use global code only. Game-scoped code may use global code and
+Global code may use global code only; game-scoped code may use global and
 same-game code. Run `npm.cmd run workspace:check` for this focused boundary
 check; `npm.cmd run lint` includes it automatically.
 

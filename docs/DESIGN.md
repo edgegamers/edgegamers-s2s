@@ -22,10 +22,10 @@ shared source code. `packages/<game>/**` are game-scoped packages using the
 same first-segment policy and free-form deeper layout. They are not deployable
 plugins unless the root `s2script.workspace.plugins` glob includes them.
 
-Global code may use global code only. Game code may use global code and
+Global code may use global code only; game-scoped code may use global and
 same-game code. `npm.cmd run workspace:check` reports this focused policy;
 `npm.cmd run lint` includes it automatically. Create a plugin with
-`npm.cmd run create:plugin -- <scope>/<optional folders>/<plugin-name>`.
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 ## Source2Script Ownership
 

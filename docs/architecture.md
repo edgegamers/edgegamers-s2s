@@ -29,9 +29,10 @@ A shared package should represent a coherent implementation boundary with more
 than one real consumer.
 
 Dependency boundaries follow the same matrix: global code may use global code
-only; game code may use global code and code in the same game scope. Run
+only; game-scoped code may use global and same-game code. Run
 `npm.cmd run workspace:check` for a focused result. `npm.cmd run lint` invokes
-the same check automatically before ESLint.
+the same check automatically before ESLint. Create plugins with
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 `scripts/lib/*` contains focused logic shared by repository-specific CLI scripts. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
 

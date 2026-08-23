@@ -21,6 +21,9 @@ Workspace scope is determined only by the first directory below `plugins/` or
 For example, the migrated plugins live at `plugins/global/maul` and
 `plugins/cs2/ttt`. Run `npm.cmd run workspace:check` for a focused scope and
 dependency-boundary result; `npm.cmd run lint` includes that check automatically.
+Global code may use global code only; game-scoped code may use global and
+same-game code. Create plugins with
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 `npm.cmd run build` runs the repository licensing policy before the build and
 checks the generated plugin artifacts afterward.

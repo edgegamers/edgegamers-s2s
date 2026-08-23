@@ -48,9 +48,11 @@ output to Source2Script. Current SDK output is a plugin's
 
 The first segment below `plugins/` or `packages/` is policy: `global` is
 game-agnostic; another value must be a game in `workspace-policy.json`; deeper
-directories are free-form. Global code may use global code only. Game code may
-use global code and same-game code. For example, plugins live at
+directories are free-form. Global code may use global code only; game-scoped
+code may use global and same-game code. For example, plugins live at
 `plugins/global/maul` and `plugins/cs2/ttt`.
+Create plugins with
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 ## Build Local Artifacts
 

@@ -44,8 +44,8 @@ npm.cmd run build
 
 These commands check different boundaries:
 
-- `lint` runs `workspace:check` before applying the same Source2Script rules
-  used by the SDK build;
+- `lint` includes `workspace:check` automatically before applying the same
+  Source2Script rules used by the SDK build;
 - `workspace:check` reports scope and dependency-boundary violations directly;
 - `typecheck` runs strict repository-wide TypeScript validation;
 - `test` runs the layout, scanner, boundary, consumer, and creator tests;
@@ -57,7 +57,9 @@ The first segment below `plugins/` or `packages/` is the only policy segment:
 `global` is game-agnostic and a game name must be listed in
 `workspace-policy.json`; directories after it are free-form. The current
 plugins are `plugins/global/maul` and `plugins/cs2/ttt`. Global code may use
-global code only; game code may also use code in its own game scope.
+global code only; game-scoped code may use global and same-game code.
+Create plugins with
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 ## TypeScript version
 

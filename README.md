@@ -43,7 +43,9 @@ game listed in `workspace-policy.json`. Only that first segment is policy;
 deeper directories are free-form. The current plugins are
 `plugins/global/maul` and `plugins/cs2/ttt`. Use
 `npm.cmd run workspace:check` for the focused scope and dependency check;
-`npm.cmd run lint` runs it automatically.
+`npm.cmd run lint` runs it automatically. Global code may use global code
+only; game-scoped code may use global and same-game code. Create plugins with
+`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
 
 Build server plugin bundles with:
 
