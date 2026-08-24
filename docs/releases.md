@@ -92,11 +92,11 @@ with write access must approve the run before required checks execute.
 
 After a pull request merges to `dev`, the development workflow installs the
 locked dependencies, runs lint and typechecking, builds the Source2Script
-workspace, and creates development server bundles. It moves the `dev-latest`
-tag and prerelease to that commit, uploads the bundle index and archives, and
-triggers the affected development server repositories through their GitLab
-pipelines. Those repositories build and deploy their runnable development
-images.
+workspace, and creates development server bundles for every configured server
+list. It moves the `dev-latest` tag and prerelease to that commit, uploads the
+bundle index and archives, and triggers the development server repository
+pipeline for every entry in the bundle index. Those repositories build and
+deploy their runnable development images.
 
 The version workflow also runs on pushes to `dev`. When pending Changesets
 exist, it opens or updates the bot-owned version pull request described above.

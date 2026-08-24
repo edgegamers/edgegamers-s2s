@@ -89,7 +89,8 @@ the [repository setup guide](./repository-setup.md).
 
 ## Server-repository deployment ownership
 
-This repository builds server-scoped plugin bundles and uses GitLab trigger
-tokens to start affected development server pipelines. Server repositories own
-runnable image builds, bundle selection, SSH deployment, compose files,
-restart policy, and rollback. This repository never SSHes to game servers.
+This repository builds server-scoped plugin bundles for every configured server
+list and uses GitLab trigger tokens to start the development server pipeline
+for every entry in the generated bundle index. Server repositories own runnable
+image builds, bundle selection, SSH deployment, compose files, restart policy,
+and rollback. This repository never SSHes to game servers.

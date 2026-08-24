@@ -122,9 +122,9 @@ ruleset, or enforcement settings are active.
 ## Test the merged change on development servers
 
 After a merge to `dev`, automation validates and builds the workspace,
-publishes `dev-latest` server bundles, and triggers affected development server
-pipelines. Test the merged behavior on the development servers before a
-production promotion.
+publishes `dev-latest` server bundles, and triggers the development server
+pipeline for every entry in the generated bundle index. Test the merged
+behavior on the development servers before a production promotion.
 
 ## Version packages
 

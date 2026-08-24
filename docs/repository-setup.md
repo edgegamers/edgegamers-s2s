@@ -15,10 +15,10 @@ Use Node.js `>=24 <25` (the committed `.nvmrc` selects Node 24) and npm
 `>=11`; `package.json` declares `npm@11.16.0`. Keeping those toolchain bounds
 and the npm version explicit makes local and CI installs reproducible.
 
-The root package is `private: true`, so the repository itself cannot be
-published as an npm package accidentally. Treat a change from `private: true`
-to `private: false` as a separate, platform-reviewed public-promotion change.
-Generated plugins also begin private. Commit `package-lock.json` whenever
+The root workspace package must remain `private: true` and has no supported
+publication path. Generated plugin manifests also begin `private: true`; only
+those manifests may be promoted to `private: false` in a separate,
+platform-reviewed public-promotion change. Commit `package-lock.json` whenever
 dependencies change so CI and contributors resolve the same dependency tree.
 
 The npm workspace globs are `plugins/*/**` and `packages/*/**`. They link
@@ -200,9 +200,9 @@ meant to protect:
    access can approve the workflow run, after which the required checks report
    the exact display names above.
 4. Merge a safe `dev` change and confirm the development workflow builds the
-   bundle release tagged `dev-latest`. Confirm only affected GitLab server
-   pipelines receive the development trigger and that no secret value appears
-   in logs.
+   bundle release tagged `dev-latest`. Confirm every GitLab server pipeline
+   represented in the generated `bundles.json` receives the development trigger
+   and that no secret value appears in logs.
 5. Promote a reviewed `dev` change to `main` and confirm the production
    environment requires `s2s-platform` approval without self-review where
    available. Confirm registry authentication succeeds through
