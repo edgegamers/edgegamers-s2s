@@ -6,11 +6,11 @@
   
 This repository contains the Source2Script plugins and runtime interfaces
 maintained by EdgeGamers in one npm workspace.
-
+</div>
 <div align="center">
   
 [EdgeGamers Forums](https://edgm.rs) · [Repo Docs](./docs/navigation.md) · [s2s Docs](https://s2script.com)
-
+</div>
 <p align="center">
   <img alt="Info" src="https://shieldcn.dev/group/github/edgegamers/edgegamers-s2s/stars+github/edgegamers/edgegamers-s2s/contributors+github/edgegamers/edgegamers-s2s/ci+github/edgegamers/edgegamers-s2s/last-commit.svg?variant=branded&amp;size=xs" />
 </p>
