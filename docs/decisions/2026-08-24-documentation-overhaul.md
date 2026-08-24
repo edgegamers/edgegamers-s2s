@@ -79,8 +79,8 @@ Normal work follows the current integration path:
 4. Push the branch and open a pull request targeting `dev`.
 5. Required checks and CODEOWNERS review protect the merge.
 6. A merge to `dev` builds development bundles, publishes the moving
-   `dev-latest` development release, and triggers affected development-server
-   pipelines.
+   `dev-latest` development release, and triggers every development-server
+   pipeline represented in the generated bundle index.
 7. The version workflow opens or updates the bot-owned
    `changeset-release/dev` pull request targeting `dev` when Changesets exist.
 8. After development validation and any version PR merge, maintainers promote
