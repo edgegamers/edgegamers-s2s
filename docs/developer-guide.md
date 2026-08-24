@@ -24,6 +24,8 @@ repository as an `upstream` remote so they can update their topic branch from
 `upstream/dev`. Contributors with access may push their topic branch directly
 to the repository.
 
+The examples use Windows `npm.cmd`; on macOS and Linux, use `npm` instead.
+
 ## Clone and install
 
 Clone the repository, start from the current `dev`, and install dependencies:
@@ -44,6 +46,12 @@ before switching to or updating from `upstream/dev`.
 Choose a focused issue or repository change, read the relevant plugin and
 documentation, and keep tests with behavior changes. For a new plugin, use
 the repository's plugin generator and follow the workspace scope rules.
+
+New plugins start with `private: true`. To intentionally promote one to public,
+use a separate pull request that changes its manifest to `private: false` and
+includes that public plugin's PR-local Changeset. The plugin manifest is in a
+platform-owned `CODEOWNERS` path, so request both normal maintainer and
+platform review for the promotion.
 
 ## Create a topic branch from dev
 
@@ -106,8 +114,10 @@ you have that access. Ordinary feature PRs target `dev`, not `main`.
 
 The pull request validation runs linting, typechecking, tests, a build, and
 the Changeset policy. Address failures and review feedback on the topic branch.
-Maintainers review ordinary work, while platform review is required for
-critical paths owned in `CODEOWNERS`.
+Maintainers review ordinary work. The repository's `CODEOWNERS` policy requests
+platform review for critical paths such as workflows, manifests, repository
+policy, and automation; it does not establish that remote GitHub team,
+ruleset, or enforcement settings are active.
 
 ## Test the merged change on development servers
 
