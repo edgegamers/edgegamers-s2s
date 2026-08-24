@@ -12,22 +12,17 @@ import { pathToFileURL } from "node:url";
 import { zipSync } from "fflate";
 import { parseServerBundleList } from "./lib/server-bundle-list.mjs";
 import { createServerBundlePlan } from "./lib/server-bundle-plan.mjs";
+import { requireValidWorkspaceLayout } from "./lib/workspace-layout.mjs";
 
 function normalize(path) {
   return path.replaceAll("\\", "/");
 }
 
 export function discoverWorkspacePlugins(root) {
-  const pluginsRoot = join(root, "plugins");
-  if (!existsSync(pluginsRoot)) return [];
-
-  return readdirSync(pluginsRoot, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const directory = join("plugins", entry.name);
-      const manifest = JSON.parse(readFileSync(join(root, directory, "package.json"), "utf8"));
-      return { packageName: manifest.name, directory: normalize(directory) };
-    })
+  const { packages } = requireValidWorkspaceLayout(root);
+  return packages
+    .filter(({ kind }) => kind === "plugin")
+    .map(({ name, directory }) => ({ packageName: name, directory }))
     .sort((left, right) => left.packageName.localeCompare(right.packageName));
 }
 

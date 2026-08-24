@@ -1,13 +1,4 @@
-# Licensing guide
-
-## Rationale
-
-EdgeGamers licenses its first-party Source2Script plugin work under the
-dual-license expression `MIT OR Apache-2.0`. Recipients may choose either
-license. The repository keeps canonical license terms and the attribution-only
-NOTICE together so that the applicable terms are easy to find.
-
-## File map
+# Legal file map
 
 - [../LICENSE](../LICENSE) is the authoritative statement of the dual-license
   choice, repository scope, and exclusions.
@@ -16,26 +7,6 @@ NOTICE together so that the applicable terms are easy to find.
 - [NOTICE](NOTICE) is an informational, attribution-only notice; it does not
   add conditions to either license.
 
-## Scope and exclusions
-
-The dual license covers first-party material in this repository. Installed npm
-dependencies, Source2Script packages and runtime components, and any future
-third-party bundled code retain their own terms. Nothing here grants rights to
-third-party names, logos, game assets, or Valve software.
-
-## Published plugin artifacts
-
-Published `.s2sp` plugin artifacts use the MIT option. Each plugin's entry
-source MUST carry the complete MIT notice so it can be preserved in the
-generated artifact. The source repository remains available under either MIT
-or Apache-2.0.
-
-## Bundled libraries
-
-There are currently no bundled third-party libraries in the plugin artifacts.
-The license check keeps npm and Source2Script plugin discovery aligned and
-rejects undeclared bare runtime imports. A bundled first-party workspace
-library must be declared in `s2script.libraries`; plugin API imports must be
-declared as plugin dependencies. Before distributing any third-party bundled
-code, audit its terms and required notices, then update the artifact notice
-mechanism to carry those obligations.
+For contributor requirements, Source2Script artifact obligations, validation,
+and bundled third-party-material procedures, see the
+[licensing guide](../docs/licensing.md).

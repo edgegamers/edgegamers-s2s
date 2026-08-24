@@ -5,7 +5,7 @@ The repository keeps Source2Script-native behavior at the center. It adds only t
 ## Directory responsibilities
 
 ```text
-edgegamers-s2/
+edgegamers-s2s/
 ├── .changeset/       Release intent for publishable plugins
 ├── docs/             Contributor and release documentation
 ├── plugins/          Source2Script runtime plugins
@@ -13,14 +13,29 @@ edgegamers-s2/
 └── packages/         Reserved for proven shared source packages
 ```
 
-`plugins/*` belongs to both npm and the Source2Script workspace. Each plugin has its own version and package metadata. Private plugins build normally but cannot be published by `s2s deploy`.
+`plugins/global/**` belongs to both npm and the Source2Script workspace for
+game-agnostic plugins. `plugins/<game>/**` holds plugins scoped to a game
+listed in `workspace-policy.json`. Only this first segment is policy; deeper
+directories are free-form. For example, the migrated plugins are
+`plugins/global/maul` and `plugins/cs2/ttt`. Each plugin has its own version
+and package metadata. Private plugins build normally but cannot be published
+by `s2s deploy`.
 
-`packages/*` belongs only to npm. Do not create a package for a one-off helper. A shared package should represent a coherent implementation boundary with more than one real consumer.
+`packages/global/**` is game-agnostic shared source, while
+`packages/<game>/**` is shared source scoped to a game listed in
+`workspace-policy.json`; directories below the scope are free-form.
+`packages/` belongs only to npm. Do not create a package for a one-off helper.
+A shared package should represent a coherent implementation boundary with more
+than one real consumer.
+
+Dependency boundaries follow the same matrix: global code may use global code
+only; game-scoped code may use global and same-game code. Run
+`npm.cmd run workspace:check` for a focused result. `npm.cmd run lint` invokes
+the same check automatically before ESLint. Follow
+[Plugin development](./plugin-development.md) for generator usage and plugin
+placement.
 
 `scripts/lib/*` contains focused logic shared by repository-specific CLI scripts. The neighboring CLI files handle Git, filesystem access, console output, and exit codes.
-
-`artifacts/server-bundles/` contains generated server bundles. Plugin `dist/`
-directories contain generated `.s2sp` packages. Both are ignored by Git.
 
 ## Which tool owns what?
 
@@ -38,7 +53,8 @@ The repository owns:
 - building server-scoped plugin bundles and triggering server pipelines;
 - EdgeGamers contributor documentation.
 
-There is deliberately no custom loop over `plugins/*` for building, versioning, or publishing.
+There is deliberately no custom loop over plugin directories for building,
+versioning, or publishing.
 
 ## Shared source versus runtime interfaces
 
@@ -55,28 +71,26 @@ Shared runtime service -> Source2Script plugin interface
 
 See [Plugin development](./plugin-development.md) for runtime interface guidance.
 
-## Command flow
+## Generated artifacts
 
-```text
-npm install
-    ↓
-lint → typecheck → s2s build
-                                  ↓
-                        plugin dist/*.s2sp files
-                                  ↓
-                    server bundle generation
-```
+Source2Script writes each built plugin's `.s2sp` package beneath that plugin's
+`dist/` directory. The repository bundle tool writes server-scoped bundles and
+their index beneath `artifacts/server-bundles/`. These paths are generated and
+ignored by Git; source and manifests remain the reviewable inputs.
 
-Production follows a separate Changeset and registry path described in [Changesets and releases](./releases.md).
+## Development and release routes
 
-## GitHub and deployment state
+Use the [developer guide](./developer-guide.md) for installation, validation,
+branch, and pull-request steps. Use
+[Changesets, ownership, and releases](./releases.md) for versioning,
+development delivery, production promotion, registry publication, and
+hotfixes. Repository administrators configure the remote controls described in
+the [repository setup guide](./repository-setup.md).
 
-The repository includes GitHub Actions for validation, server bundle builds, Source2Script registry deploys, and hotfix synchronization.
+## Server-repository deployment ownership
 
-Branch rules, environments, secrets, labels, team bindings, and required checks still require maintainer setup in GitHub. Follow [.github/MANUAL_SETUP.md](../.github/MANUAL_SETUP.md).
-
-Server deployment is intentionally outside this repository. This repository
-builds server-scoped plugin bundles and uses GitLab trigger tokens to start
-affected development server pipelines. Server repositories own runnable image
-builds, SSH deploys, compose files, and restart policy; this repository never
-SSHes to game servers.
+This repository builds server-scoped plugin bundles for every configured server
+list and uses GitLab trigger tokens to start the development server pipeline
+for every entry in the generated bundle index. Server repositories own runnable
+image builds, bundle selection, SSH deployment, compose files, restart policy,
+and rollback. This repository never SSHes to game servers.

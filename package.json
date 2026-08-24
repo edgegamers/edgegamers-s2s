@@ -10,22 +10,24 @@
   },
   "packageManager": "npm@11.16.0",
   "workspaces": [
-    "plugins/*",
-    "packages/*"
+    "plugins/*/**",
+    "packages/*/**"
   ],
   "s2script": {
     "workspace": {
       "plugins": [
-        "plugins/*"
+        "plugins/*/**"
       ]
     }
   },
   "scripts": {
+    "workspace:check": "node scripts/check-workspace-boundaries.mjs",
+    "create:plugin": "node scripts/create-plugin.mjs",
     "license:check": "node scripts/check-licenses.mjs",
     "license:artifacts": "node scripts/check-license-artifacts.mjs",
-    "create:plugin": "s2s create",
-    "lint": "eslint .",
+    "lint": "npm run workspace:check && eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "test": "node --test",
     "prebuild": "npm run license:check",
     "build": "s2s build",
     "postbuild": "npm run license:artifacts",

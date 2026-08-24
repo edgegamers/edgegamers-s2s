@@ -1,0 +1,7 @@
+{
+  "games": ["cs2"],
+  "externalScopes": {
+    "@s2script/sdk": "global",
+    "@s2script/cs2": "cs2"
+  }
+}

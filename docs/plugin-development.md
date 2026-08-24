@@ -1,14 +1,36 @@
 # Plugin development
 
+Use the [developer guide](./developer-guide.md) to install the repository,
+create a topic branch, run the complete local gate, and open a pull request to
+`dev`. This guide covers the plugin-specific choices made inside that journey.
+
 ## Create a plugin
 
-Run the pinned Source2Script generator from the repository root:
+Run the scoped generator from the repository root. Only the first segment is
+policy: it is either `global` for game-agnostic code or a game listed in
+`workspace-policy.json`; any later folders are free-form:
 
 ```powershell
-npm.cmd run create:plugin -- my-plugin
+npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>
 ```
 
-Workspace detection places the plugin beneath `plugins/my-plugin`. Use an `@edgegamers/` package name, keep the generated Source2Script metadata, and decide explicitly whether the plugin is private.
+For example, the existing plugins are `plugins/global/maul` and
+`plugins/cs2/ttt`. Workspace detection places the generated plugin beneath
+`plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
+Source2Script metadata, and keep the generated `private: true` state while the
+plugin is developed internally. Generators always start plugins as private.
+Public promotion is a separate `private: true` to `private: false` manifest
+change in its own pull request. Follow the
+[developer guide](./developer-guide.md#choose-or-create-work) for the required
+Changeset and maintainer/platform review path, and see
+[Changesets, ownership, and releases](./releases.md) for the publication path.
+Plugin source and distributed artifacts must also follow the
+[licensing guide](./licensing.md), including the complete MIT notice required
+in generated `.s2sp` artifacts.
+
+Global code may use global code only; game-scoped code may use global and
+same-game code. Run `npm.cmd run workspace:check` for this focused boundary
+check; `npm.cmd run lint` includes it automatically.
 
 The generator should reuse the root toolchain. If a future SDK version generates plugin-local lint or compiler configuration that merely duplicates the root, merge required SDK-specific behavior into the root configuration before removing the duplicate.
 
@@ -17,7 +39,9 @@ The generator should reuse the root toolchain. If a future SDK version generates
 Keep portable behavior separate from the runtime adapter. Let the Source2Script build validate plugin entry points, capabilities, manifests, and runtime-interface contracts.
 
 ```powershell
+npm.cmd run lint
 npm.cmd run typecheck
+npm.cmd test
 npm.cmd run build
 ```
 
@@ -27,20 +51,41 @@ To narrow an SDK build while iterating, use its workspace filter rather than wri
 npm.cmd run build -- --filter @edgegamers/my-plugin
 ```
 
+Use the root-pinned TypeScript version rather than introducing a plugin-local
+compiler. The repository currently pins TypeScript 5.9.3 because the official
+Source2Script lint stack uses `@typescript-eslint/parser@8.65.0`, which rejects
+TypeScript 7 at startup. Upgrade the root compiler only after the official
+stack supports it without peer, install, or runtime warnings.
+
+For a local runtime smoke test, copy the plugin's built `.s2sp` file from its
+`dist/` directory into the local server's `addons/s2script/plugins/` directory.
+Re-copy it after rebuilding and delete it to unload. This manual copy path is
+only for local testing; production servers consume bundles through their own
+server repositories.
+
 ## Publish a runtime interface
 
-A producer plugin's `package.json` identifies one type contract and publishes the package's own name and version:
+A public producer plugin's `package.json` identifies one type contract and
+publishes its package name and version:
 
 ```json
 {
   "name": "@edgegamers/my-api",
   "version": "0.1.0",
+  "private": false,
   "types": "api.d.ts",
   "s2script": {
-    "publishes": "self"
+    "apiVersion": "1.x",
+    "publishes": {
+      "@edgegamers/my-api": "0.1.0"
+    }
   }
 }
 ```
+
+Runtime-only public plugins omit `publishes` and `types`. Interface publishers
+must keep the published interface version aligned through `s2s version` and
+ship the declaration file referenced by `types`.
 
 The contract is a regular declaration file:
 

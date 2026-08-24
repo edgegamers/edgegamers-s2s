@@ -1,12 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   evaluateChangesetCoverage,
+  findUnsupportedPublicRetirements,
+  isTrustedVersionPullRequest,
   parseChangesetPackages,
-  parsePluginMetadata,
 } from "./lib/changeset-policy.mjs";
+import { requireValidWorkspaceLayout } from "./lib/workspace-layout.mjs";
 
 function defaultGit(root, args) {
   return execFileSync("git", args, {
@@ -16,38 +18,75 @@ function defaultGit(root, args) {
 }
 
 function readPlugins(root) {
-  const pluginsDirectory = join(root, "plugins");
-  if (!existsSync(pluginsDirectory)) return [];
+  return requireValidWorkspaceLayout(root).packages
+    .filter(({ kind }) => kind === "plugin");
+}
 
-  return readdirSync(pluginsDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const packagePath = join(pluginsDirectory, entry.name, "package.json");
-      if (!existsSync(packagePath)) {
-        throw new Error(`plugins/${entry.name}/package.json: file is missing`);
+function parseChangedFiles(output) {
+  if (!output) return [];
+  return output.split(/\r?\n/u).filter(Boolean).flatMap((line) => {
+    const [status, ...paths] = line.split("\t");
+    return paths.map((path) => ({ status, path }));
+  });
+}
+
+function readPullRequestChangesets(root, changes) {
+  return changes
+    .filter(({ status, path }) => (status === "A" || status === "M")
+      && /^\.changeset\/[^/]+\.md$/iu.test(path)
+      && !/^\.changeset\/readme\.md$/iu.test(path))
+    .sort((left, right) => left.path.localeCompare(right.path))
+    .map(({ path }) => {
+      const absolutePath = join(root, ...path.split("/"));
+      if (!existsSync(absolutePath)) {
+        throw new Error(`${path}: changed Changeset is missing from HEAD`);
       }
-
-      return parsePluginMetadata(entry.name, readFileSync(packagePath, "utf8"));
+      return { path, content: readFileSync(absolutePath, "utf8") };
     });
 }
 
-function readChangesets(root) {
-  const changesetDirectory = join(root, ".changeset");
-  if (!existsSync(changesetDirectory)) return [];
+function readPluginsAtRevision(git, revision) {
+  const manifestOutput = git([
+    "ls-tree",
+    "-r",
+    "--name-only",
+    revision,
+    "--",
+    "plugins",
+  ]);
+  const manifestPaths = manifestOutput
+    ? manifestOutput.split(/\r?\n/u).filter((path) => path.endsWith("/package.json"))
+    : [];
 
-  return readdirSync(changesetDirectory)
-    .filter((file) => file.endsWith(".md") && file !== "README.md")
-    .sort()
-    .map((file) => ({
-      path: `.changeset/${file}`,
-      content: readFileSync(join(changesetDirectory, file), "utf8"),
-    }));
+  return manifestPaths.map((manifestPath) => {
+    let manifest;
+    try {
+      manifest = JSON.parse(git(["show", `${revision}:${manifestPath}`]));
+    } catch (error) {
+      throw new Error(`Unable to read ${manifestPath} at ${revision}: ${error.message}`, {
+        cause: error,
+      });
+    }
+    return {
+      directory: manifestPath.slice(0, -"/package.json".length),
+      name: manifest.name,
+      manifest,
+    };
+  });
 }
 
 export function main({
   root = process.cwd(),
   baseRef = process.env.CHANGESET_BASE_REF ?? "origin/dev",
-  allowMissing = process.env.ALLOW_MISSING_CHANGESET === "true",
+  releaseContext = {
+    eventName: process.env.GITHUB_EVENT_NAME,
+    baseRef: process.env.GITHUB_BASE_REF,
+    headRef: process.env.GITHUB_HEAD_REF,
+    author: process.env.CHANGESET_PR_AUTHOR,
+    actor: process.env.GITHUB_ACTOR,
+    headRepository: process.env.CHANGESET_HEAD_REPOSITORY,
+    repository: process.env.GITHUB_REPOSITORY,
+  },
   git = (args) => defaultGit(root, args),
   write = console.log,
   warn = console.warn,
@@ -57,14 +96,41 @@ export function main({
     const mergeBase = git(["merge-base", "HEAD", baseRef]);
     const changedOutput = git([
       "diff",
-      "--name-only",
+      "--name-status",
+      "--find-renames",
       `${mergeBase}...HEAD`,
     ]);
-    const changedFiles = changedOutput
-      ? changedOutput.split(/\r?\n/u).filter(Boolean)
-      : [];
+    const changes = parseChangedFiles(changedOutput);
+    const changedFiles = changes.map(({ path }) => path);
     const plugins = readPlugins(root);
-    const coveredPackages = parseChangesetPackages(readChangesets(root));
+    const basePlugins = readPluginsAtRevision(git, mergeBase);
+    const retirements = findUnsupportedPublicRetirements({
+      basePlugins,
+      headPlugins: plugins,
+    });
+    if (retirements.length > 0) {
+      error("Direct deletion or de-publication of public plugins is not supported:");
+      for (const retirement of retirements) {
+        error(`- ${retirement.name} (${retirement.directory}): ${retirement.reason}`);
+      }
+      error(
+        "Publish a deprecation release, then request a platform-reviewed registry yank before deleting or privatizing the plugin.",
+      );
+      return 1;
+    }
+
+    const pluginDirectories = new Set([
+      ...basePlugins.map(({ directory }) => directory),
+      ...plugins.map(({ directory }) => directory),
+    ]);
+    const trustedVersionPullRequest = isTrustedVersionPullRequest({
+      ...releaseContext,
+      changes,
+      pluginDirectories,
+    });
+    const coveredPackages = parseChangesetPackages(
+      readPullRequestChangesets(root, changes),
+    );
     const result = evaluateChangesetCoverage({
       changedFiles,
       plugins,
@@ -81,17 +147,18 @@ export function main({
       return 0;
     }
 
-    if (allowMissing) {
+    if (trustedVersionPullRequest) {
       warn(
-        `Missing Changesets allowed by override for: ${result.missingPackages.join(", ")}`,
+        `Trusted version pull request may consume Changesets for: ${result.missingPackages.join(", ")}`,
       );
       return 0;
     }
 
-    error("A Changeset is required for changed publishable plugins:");
+    error("A Changeset is required for changed public plugins:");
     for (const packageName of result.missingPackages) {
       error(`- ${packageName}`);
     }
+    error("Run `npm run changeset` and commit the generated .changeset file.");
     return 1;
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : String(caught);

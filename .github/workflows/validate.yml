@@ -57,6 +57,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Test
+        run: npm test
+
       - name: Build Source2Script workspace
         run: npm run build
 
@@ -94,5 +97,6 @@ jobs:
       - name: Check Changeset coverage
         env:
           CHANGESET_BASE_REF: origin/${{ github.base_ref }}
-          ALLOW_MISSING_CHANGESET: "false"
+          CHANGESET_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          CHANGESET_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: npm run changeset:check

@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { unzipSync } from "fflate";
 
-function isWorkspaceArtifact(path) {
-  return /^plugins\/[^/]+\/dist\/[^/]+\.s2sp$/u.test(path.replaceAll("\\", "/"));
+export function isPluginArtifactPath(path) {
+  return /^plugins\/[^/]+\/(?:[^/]+\/)+dist\/[^/]+\.s2sp$/u.test(path.replaceAll("\\", "/"));
 }
 
 function findS2spFiles(root) {
@@ -42,8 +42,8 @@ export function validateBuiltArtifacts({ rootDir }) {
   if (!existsSync(mitPath)) return ["licenses/MIT.txt: required licensing file is missing"];
   const mitText = readFileSync(mitPath, "utf8").trim();
   const artifacts = findS2spFiles(join(rootDir, "plugins"))
-    .filter((path) => isWorkspaceArtifact(relative(rootDir, path)));
-  if (artifacts.length === 0) return ["plugins/*/dist/*.s2sp: no built plugin artifacts found"];
+    .filter((path) => isPluginArtifactPath(relative(rootDir, path)));
+  if (artifacts.length === 0) return ["plugins/**/dist/*.s2sp: no built plugin artifacts found"];
   return artifacts.flatMap((path) => validateArtifact({
     artifactPath: relative(rootDir, path).replaceAll("\\", "/"),
     bytes: readFileSync(path),

@@ -1,7 +1,3 @@
-- name: no-changeset
-  color: "6a737d"
-  description: Maintainer-approved override for changes that do not need a Changeset.
-
 - name: release
   color: "0e8a16"
   description: Release planning or release automation work.
