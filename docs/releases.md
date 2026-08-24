@@ -108,9 +108,13 @@ registry.
 After the merged change has been validated on development servers, and after
 any required version-packages pull request has been reviewed and merged,
 maintainers open the repository promotion pull request from `dev` to `main`.
-Normal feature branches do not target `main`. The promotion remains subject to
-the `main` branch checks, CODEOWNERS review, and the protected production
-environment configured by repository administrators.
+Normal feature branches do not target `main`. The checked-in source-policy
+validation accepts `dev` as the normal pull-request source for `main` and
+rejects an ordinary topic branch. If administrators have applied and verified
+the [documented repository setup](./repository-setup.md), the remote `main`
+ruleset additionally requires its configured checks and CODEOWNERS review, and
+the production workflow uses the configured protected environment. Tracked
+policy and workflow files do not prove those remote protections are active.
 
 ## Production registry deployment
 
@@ -134,9 +138,12 @@ npm.cmd run deploy -- --ci
 For an urgent production correction, branch `hotfix/<topic>` from the current
 `main`, make the smallest focused fix, and add a PR-local Changeset when a
 public plugin's behavior, configuration, or interface changes. Open this pull
-request directly against `main`. The audited `hotfix/*` source exception still
-requires the normal validation, maintainer review, and applicable CODEOWNERS
-review.
+request directly against `main`. The checked-in source-policy validation
+accepts `hotfix/*` as the exception to the normal `dev` source requirement and
+rejects other topic branches. If administrators have applied and verified the
+documented `main` ruleset, its configured maintainer and applicable CODEOWNERS
+review requirements also protect the hotfix pull request; tracked policy files
+alone do not establish that remote enforcement.
 
 Merging the hotfix pushes directly to `main`, so it runs the same production
 bundle and registry workflow as a normal `dev` to `main` promotion.
