@@ -4,7 +4,8 @@
 
 <div align="center">
   
-This repository is an npm workspace for the Source2Script plugins maintained by EdgeGamers. All common development commands run from the repository root.
+This repository contains the Source2Script plugins and runtime interfaces
+maintained by EdgeGamers in one npm workspace.
 
 <div align="center">
   
@@ -21,12 +22,15 @@ This repository is an npm workspace for the Source2Script plugins maintained by 
   <img alt="badge" src="https://shieldcn.dev/badge/Changesets.svg?size=xs&amp;label=Releases&amp;color=8b5cf6" />
 </p>
 
-## Contributing
+## Documentation
 
-EdgeGamers plugins are designed with public use in mind.
-If you want to contribute to something EdgeGamers maintains, read the [contributing guide](./.github/CONTRIBUTING.md).
+Start with the [documentation navigator](./docs/navigation.md) or go directly
+to the [developer guide](./docs/developer-guide.md). Maintainers and
+administrators can use the [repository setup guide](./docs/repository-setup.md)
+and [release guide](./docs/releases.md). Source and artifact obligations are in
+the [licensing guide](./docs/licensing.md).
 
-## Local development
+## Quick local validation
 
 Run the local gate from the repository root:
 
@@ -37,28 +41,13 @@ npm.cmd test
 npm.cmd run build
 ```
 
-Workspace layout is scope-aware: `plugins/global/**` and `packages/global/**`
-are game-agnostic, while `plugins/<game>/**` and `packages/<game>/**` use a
-game listed in `workspace-policy.json`. Only that first segment is policy;
-deeper directories are free-form. The current plugins are
-`plugins/global/maul` and `plugins/cs2/ttt`. Use
-`npm.cmd run workspace:check` for the focused scope and dependency check;
-`npm.cmd run lint` runs it automatically. Global code may use global code
-only; game-scoped code may use global and same-game code. Create plugins with
-`npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>`.
-
-Build server plugin bundles with:
-
-```powershell
-npm.cmd run bundles:servers -- --environment development
-```
-
-See [local development](./docs/local-development.md) for server copy steps and current release-path stubs.
+The [developer guide](./docs/developer-guide.md) covers prerequisites, install,
+Changesets, pull requests, and development-server validation.
 
 ## License
 
 First-party work in this repository is dual-licensed under [MIT OR
-Apache-2.0](./LICENSE). See the [licensing guide](./licenses/README.md) for
+Apache-2.0](./LICENSE). See the [licensing guide](./docs/licensing.md) for
 the covered work, artifact policy, and maintenance details. Distributed
 `.s2sp` plugin artifacts carry the complete MIT notice in `plugin.js`; the
 repository source remains available under either license at your option.

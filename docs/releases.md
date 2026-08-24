@@ -3,6 +3,12 @@
 This is the canonical guide for contributing release intent and administering
 the release path for EdgeGamers Source2Script plugins.
 
+Use the [developer guide](./developer-guide.md) for contributor setup, local
+commands, branches, and pull-request steps. Use the
+[repository setup guide](./repository-setup.md) to configure and verify the
+protected branches, environments, teams, and secrets that this release path
+depends on.
+
 ## Team review responsibilities
 
 The repository uses three organization teams:
@@ -82,13 +88,39 @@ file, workflow, or policy-file change is rejected.
 GitHub may show **Approve workflows to run** for this bot pull request. A user
 with write access must approve the run before required checks execute.
 
-## Promote and deploy
+## Development delivery after merge to dev
 
-The normal production promotion is `dev` -> `main`. Every push to `main`
-invokes `s2s deploy --ci` using the production `S2SCRIPT_TOKEN` secret.
-Source2Script skips private plugins and versions already present in the
-registry. Read [Publishing to the registry](https://www.s2script.com/docs/publishing)
-for registry behavior and publication requirements.
+After a pull request merges to `dev`, the development workflow installs the
+locked dependencies, runs lint and typechecking, builds the Source2Script
+workspace, and creates development server bundles. It moves the `dev-latest`
+tag and prerelease to that commit, uploads the bundle index and archives, and
+triggers the affected development server repositories through their GitLab
+pipelines. Those repositories build and deploy their runnable development
+images.
+
+The version workflow also runs on pushes to `dev`. When pending Changesets
+exist, it opens or updates the bot-owned version pull request described above.
+Development delivery does not publish plugin versions to the Source2Script
+registry.
+
+## Maintainer dev to main promotion
+
+After the merged change has been validated on development servers, and after
+any required version-packages pull request has been reviewed and merged,
+maintainers open the repository promotion pull request from `dev` to `main`.
+Normal feature branches do not target `main`. The promotion remains subject to
+the `main` branch checks, CODEOWNERS review, and the protected production
+environment configured by repository administrators.
+
+## Production registry deployment
+
+Every push to `main` validates and builds the workspace, creates production
+server bundles, and moves the `latest` tag and GitHub release to that commit.
+It then invokes `s2s deploy --ci` using the protected production
+`S2SCRIPT_TOKEN`. Source2Script skips private plugins and versions already
+present in the registry. Read
+[Publishing to the registry](https://www.s2script.com/docs/publishing) for
+registry behavior and publication requirements.
 
 The corresponding root commands are:
 
@@ -96,6 +128,45 @@ The corresponding root commands are:
 npm.cmd run version
 npm.cmd run deploy -- --ci
 ```
+
+## Hotfix from main directly to main
+
+For an urgent production correction, branch `hotfix/<topic>` from the current
+`main`, make the smallest focused fix, and add a PR-local Changeset when a
+public plugin's behavior, configuration, or interface changes. Open this pull
+request directly against `main`. The audited `hotfix/*` source exception still
+requires the normal validation, maintainer review, and applicable CODEOWNERS
+review.
+
+Merging the hotfix pushes directly to `main`, so it runs the same production
+bundle and registry workflow as a normal `dev` to `main` promotion.
+
+## Automatic post-hotfix main to dev synchronization
+
+After a `hotfix/*` pull request is merged into `main`, the synchronization
+workflow checks for an existing open `main` to `dev` pull request and opens one
+when needed. Review, resolve conflicts, and merge that synchronization pull
+request before the next production promotion so `dev` regains both the fix and
+its release intent.
+
+When the synchronized Changeset reaches `dev`, the normal version workflow can
+apply it through the bot-owned `changeset-release/dev` pull request.
+
+## Immediate hotfix bundles versus delayed registry versions
+
+A merged hotfix updates the production `latest` bundle output in its
+merge-triggered workflow, without waiting for a version pull request, even when
+the public plugin manifest still has its previously published version. The
+registry deployment step runs in that same workflow, but it does not turn a
+Changeset into a version: Source2Script skips a version already present in the
+registry.
+
+Therefore an unversioned public hotfix is available in the new production
+server bundle before it is available as a new public registry version. The new
+registry version is published only after the `main` to `dev` synchronization
+merges, the bot version pull request applies the Changeset on `dev`, and a
+later `dev` to `main` promotion runs the registry deployment again. Server
+repositories still decide when to consume the refreshed bundle and deploy it.
 
 ## Typed interface publication
 
@@ -141,3 +212,8 @@ Troubleshoot policy and automation failures as follows:
 This repository builds production server bundles from `main`; server
 repositories decide when to consume a bundle, build an image, and deploy it.
 They own host paths, compose configuration, restart behavior, and rollback.
+
+Development server pipelines build their runnable images and restart their
+development containers. Production server delivery updates the selected image
+and compose configuration without a live restart; the scheduled host restart
+at 10:00 applies the selected image.

@@ -1,5 +1,9 @@
 # Plugin development
 
+Use the [developer guide](./developer-guide.md) to install the repository,
+create a topic branch, run the complete local gate, and open a pull request to
+`dev`. This guide covers the plugin-specific choices made inside that journey.
+
 ## Create a plugin
 
 Run the scoped generator from the repository root. Only the first segment is
@@ -15,9 +19,14 @@ For example, the existing plugins are `plugins/global/maul` and
 `plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
 Source2Script metadata, and keep the generated `private: true` state while the
 plugin is developed internally. Generators always start plugins as private.
-Publishing is a separate `private: true` to `private: false` manifest change
-with platform review and release intent; see
-[Changesets, ownership, and releases](releases.md).
+Public promotion is a separate `private: true` to `private: false` manifest
+change in its own pull request. Follow the
+[developer guide](./developer-guide.md#choose-or-create-work) for the required
+Changeset and maintainer/platform review path, and see
+[Changesets, ownership, and releases](./releases.md) for the publication path.
+Plugin source and distributed artifacts must also follow the
+[licensing guide](./licensing.md), including the complete MIT notice required
+in generated `.s2sp` artifacts.
 
 Global code may use global code only; game-scoped code may use global and
 same-game code. Run `npm.cmd run workspace:check` for this focused boundary
@@ -41,6 +50,18 @@ To narrow an SDK build while iterating, use its workspace filter rather than wri
 ```powershell
 npm.cmd run build -- --filter @edgegamers/my-plugin
 ```
+
+Use the root-pinned TypeScript version rather than introducing a plugin-local
+compiler. The repository currently pins TypeScript 5.9.3 because the official
+Source2Script lint stack uses `@typescript-eslint/parser@8.65.0`, which rejects
+TypeScript 7 at startup. Upgrade the root compiler only after the official
+stack supports it without peer, install, or runtime warnings.
+
+For a local runtime smoke test, copy the plugin's built `.s2sp` file from its
+`dist/` directory into the local server's `addons/s2script/plugins/` directory.
+Re-copy it after rebuilding and delete it to unload. This manual copy path is
+only for local testing; production servers consume bundles through their own
+server repositories.
 
 ## Publish a runtime interface
 
