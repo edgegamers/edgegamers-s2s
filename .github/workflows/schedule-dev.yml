@@ -1,0 +1,27 @@
+name: Schedule Development Artifacts
+
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: schedule-development-artifacts
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch development artifacts on dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Dispatch development workflow
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/dispatch-development-workflow.mjs

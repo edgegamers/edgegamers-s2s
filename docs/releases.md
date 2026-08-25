@@ -23,8 +23,8 @@ The repository uses three organization teams:
 
 These exact team slugs are encoded in [CODEOWNERS](../.github/CODEOWNERS).
 GitHub teams, access, rulesets, and environments still need the administrator
-setup in [Manual GitHub Setup](../.github/MANUAL_SETUP.md); this guide does not
-claim those remote settings have been applied.
+setup in the [repository setup guide](./repository-setup.md); this guide does
+not claim those remote settings have been applied.
 
 ## Private and public plugins
 

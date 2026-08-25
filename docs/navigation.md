@@ -24,8 +24,6 @@
 
 - [Repository setup guide](./repository-setup.md) — configure and verify
   GitHub teams, rulesets, environments, secrets, and release controls.
-- [Manual setup checklist](../.github/MANUAL_SETUP.md) — use the concise
-  administrator entry point after reading the canonical setup guide.
 
 ## Project policies and help
 
@@ -34,8 +32,3 @@
 - [Support](../.github/SUPPORT.md)
 - [Code of Conduct](../.github/CODE_OF_CONDUCT.md)
 - [Authoritative legal file map](../licenses/README.md)
-
-## Design decisions
-
-- [Documentation overhaul](./decisions/2026-08-24-documentation-overhaul.md) —
-  records the canonical documentation map and consolidation rationale.
