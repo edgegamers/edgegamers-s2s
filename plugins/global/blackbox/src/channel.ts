@@ -33,7 +33,7 @@ class MemoryChannel implements BlackboxChannel {
   }
 
   entries(): readonly BlackboxEntry[] {
-    return this.log;
+    return this.log.slice();
   }
 
   render(options?: BlackboxRenderOptions): string[] {
@@ -47,7 +47,9 @@ export function createBlackboxApi(): BlackboxApi {
     createChannel(options: BlackboxChannelOptions): BlackboxChannel {
       const existing = channels.get(options.id);
       if (existing !== undefined) return existing;
-      const capacity = Math.max(1, Math.trunc(options.capacity));
+      const capacity = Number.isFinite(options.capacity)
+        ? Math.max(1, Math.trunc(options.capacity))
+        : 1;
       const channel = new MemoryChannel(capacity);
       channels.set(options.id, channel);
       return channel;

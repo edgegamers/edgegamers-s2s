@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import type { BlackboxEntry } from "../api";
 import { createBlackboxApi } from "../src/channel.ts";
 
 describe("Blackbox channels", () => {
@@ -10,6 +11,16 @@ describe("Blackbox channels", () => {
     channel.record({ at: 2, kind: "b", message: "second" });
     channel.record({ at: 3, kind: "c", message: "third" });
     assert.deepEqual(channel.entries().map((entry) => entry.message), ["second", "third"]);
+  });
+
+  it("uses a finite minimum capacity for non-finite values", () => {
+    for (const capacity of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      const api = createBlackboxApi();
+      const channel = api.createChannel({ id: `ttt.round.${capacity}`, capacity });
+      channel.record({ at: 1, kind: "a", message: "first" });
+      channel.record({ at: 2, kind: "b", message: "second" });
+      assert.deepEqual(channel.entries().map((entry) => entry.message), ["second"]);
+    }
   });
 
   it("reuses a channel with the same id", () => {
@@ -26,5 +37,31 @@ describe("Blackbox channels", () => {
     channel.record({ at: 2, kind: "damage", message: "Alice hit Bob for 9", coalesceKey: "a:b:ak" });
     assert.equal(channel.entries().length, 1);
     assert.equal(channel.entries()[0]!.data?.count, 2);
+  });
+
+  it("does not coalesce non-adjacent entries with the same coalesce key", () => {
+    const api = createBlackboxApi();
+    const channel = api.createChannel({ id: "ttt.round", capacity: 10 });
+    channel.record({ at: 1, kind: "damage", message: "Alice hit Bob for 12", coalesceKey: "a:b:ak" });
+    channel.record({ at: 2, kind: "death", message: "Carol died" });
+    channel.record({ at: 3, kind: "damage", message: "Alice hit Bob for 9", coalesceKey: "a:b:ak" });
+    assert.equal(channel.entries().length, 3);
+  });
+
+  it("clears every recorded entry", () => {
+    const api = createBlackboxApi();
+    const channel = api.createChannel({ id: "ttt.round", capacity: 10 });
+    channel.record({ at: 1, kind: "a", message: "first" });
+    channel.clear();
+    assert.deepEqual(channel.entries(), []);
+  });
+
+  it("returns a snapshot of recorded entries", () => {
+    const api = createBlackboxApi();
+    const channel = api.createChannel({ id: "ttt.round", capacity: 10 });
+    channel.record({ at: 1, kind: "a", message: "first" });
+    const entries = channel.entries() as BlackboxEntry[];
+    entries.pop();
+    assert.deepEqual(channel.entries().map((entry) => entry.message), ["first"]);
   });
 });

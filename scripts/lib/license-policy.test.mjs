@@ -16,6 +16,7 @@ function manifestPaths(root, manifests) {
 function makeLicensedPluginWorkspace(t, {
   main = "src/plugin.ts",
   withMain = true,
+  entryPath = main,
   entryBody = "export {};",
   sourceFiles = {},
 }) {
@@ -44,8 +45,10 @@ function makeLicensedPluginWorkspace(t, {
       s2script: { apiVersion: "1.x" },
     },
     ...sourceFiles,
-    [`plugins/global/example/${main}`]: sourceFiles[`plugins/global/example/${main}`]
-      ?? `/*!\n${normalizedMit}*/\n${entryBody}\n`,
+    ...(entryPath === undefined ? {} : {
+      [`plugins/global/example/${entryPath}`]: sourceFiles[`plugins/global/example/${entryPath}`]
+        ?? `/*!\n${normalizedMit}*/\n${entryBody}\n`,
+    }),
   });
 }
 
@@ -97,8 +100,8 @@ test("does not validate co-located test files as plugin runtime dependencies", (
 test("resolves an emitted JavaScript entry to source without validating co-located tests", (t) => {
   const root = makeLicensedPluginWorkspace(t, {
     main: "dist/plugin.js",
+    entryPath: "src/plugin.ts",
     sourceFiles: {
-      "plugins/global/example/src/plugin.ts": "export {};\n",
       "plugins/global/example/src/plugin.test.ts": 'import test from "node:test";\ntest("fixture", () => {});\n',
     },
   });

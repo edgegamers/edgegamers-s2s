@@ -244,10 +244,13 @@ export function validateRepositoryLicensing(rootDir) {
     if (!normalized.startsWith("plugins/") && !source2ScriptPluginPaths.has(normalized)) continue;
 
     const packageDir = dirname(path);
-    const entry = manifest.s2script?.main ?? manifest.main;
-    if (typeof entry === "string") {
-      const entryPath = join(packageDir, entry);
-      const source = existsSync(entryPath) ? readFileSync(entryPath, "utf8") : "";
+    const entryPath = resolvePluginSourceEntry(
+      packageDir,
+      manifestEntry(manifest),
+      findSourceFiles(packageDir),
+    );
+    if (entryPath !== undefined) {
+      const source = readFileSync(entryPath, "utf8");
       if (!source.includes(mitText)) {
         errors.push(`${relative(rootDir, entryPath).replaceAll("\\", "/")}: complete MIT notice is missing`);
       }
