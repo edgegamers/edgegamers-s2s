@@ -21,13 +21,37 @@ Copyright 2026 EdgeGamers, LLC
 
 This product includes software developed by EdgeGamers, LLC.
 `;
-const TEST_SOURCE_PATH = /(?:^|\/)(?:test|tests|__tests__)\//u;
+function sourcePathKey(path) {
+  const normalized = resolve(path);
+  return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+}
 
-function pluginRuntimeSourceFiles(packageDirectory) {
-  return findSourceFiles(packageDirectory).filter((path) => {
-    const normalizedPath = relative(packageDirectory, path).replaceAll("\\", "/");
-    return !TEST_SOURCE_PATH.test(normalizedPath);
-  });
+function manifestEntry(manifest) {
+  return manifest.s2script?.main ?? manifest.main;
+}
+
+function pluginRuntimeSourceFiles(packageDirectory, entry) {
+  const sourceFiles = findSourceFiles(packageDirectory);
+  if (typeof entry !== "string") return sourceFiles;
+
+  const sourceByKey = new Map(sourceFiles.map((path) => [sourcePathKey(path), path]));
+  const entryPath = sourceByKey.get(sourcePathKey(resolve(packageDirectory, entry)));
+  if (entryPath === undefined) return sourceFiles;
+
+  const runtimeFiles = new Set();
+  const pending = [entryPath];
+  while (pending.length > 0) {
+    const path = pending.pop();
+    if (path === undefined || runtimeFiles.has(path)) continue;
+    runtimeFiles.add(path);
+    const { references } = collectModuleReferences(path);
+    for (const { runtime, specifier } of references) {
+      if (!runtime || !specifier.startsWith(".")) continue;
+      const result = resolveRelativeSourceImport({ sourcePath: path, sourceFiles, specifier });
+      if (result.target !== undefined && !runtimeFiles.has(result.target)) pending.push(result.target);
+    }
+  }
+  return sourceFiles.filter((path) => runtimeFiles.has(path));
 }
 
 function readJson(path) {
@@ -99,7 +123,7 @@ function validatePluginSourceImports({
   const bundledLibraries = Object.keys(manifest.s2script?.libraries ?? {})
     .filter((name) => firstPartyNames.has(name));
 
-  for (const path of pluginRuntimeSourceFiles(packageDir)) {
+  for (const path of pluginRuntimeSourceFiles(packageDir, manifestEntry(manifest))) {
     const normalizedPath = relative(rootDir, path).replaceAll("\\", "/");
     const { hasNonliteralPackageLoad, references } = collectModuleReferences(path);
     if (hasNonliteralPackageLoad) {
@@ -194,7 +218,10 @@ export function validateRepositoryLicensing(rootDir) {
   const licensedWorkspacePackages = workspacePackages
     .filter(({ manifest }) => manifest.license === LICENSE_EXPRESSION);
   const licensedSourceFiles = new Set(licensedWorkspacePackages
-    .flatMap(({ absoluteDirectory }) => pluginRuntimeSourceFiles(absoluteDirectory)));
+    .flatMap(({ absoluteDirectory, manifest }) => pluginRuntimeSourceFiles(
+      absoluteDirectory,
+      manifestEntry(manifest),
+    )));
   const validationPackages = new Map(packages.map((item) => [normalizedManifestPath(rootDir, item.path), item]));
   for (const item of source2ScriptPlugins) {
     validationPackages.set(normalizedManifestPath(rootDir, item.path), item);
