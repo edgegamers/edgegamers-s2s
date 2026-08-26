@@ -13,7 +13,12 @@ function manifestPaths(root, manifests) {
   return manifests.map(({ path }) => relative(root, path).replaceAll("\\", "/"));
 }
 
-function makeLicensedPluginWorkspace(t, { main = "src/plugin.ts", entryBody = "export {};", sourceFiles = {} }) {
+function makeLicensedPluginWorkspace(t, {
+  main = "src/plugin.ts",
+  withMain = true,
+  entryBody = "export {};",
+  sourceFiles = {},
+}) {
   const repositoryRoot = process.cwd();
   const mit = readFileSync(join(repositoryRoot, "licenses/MIT.txt"), "utf8");
   const normalizedMit = mit.replaceAll("\r\n", "\n");
@@ -35,7 +40,7 @@ function makeLicensedPluginWorkspace(t, { main = "src/plugin.ts", entryBody = "e
       name: "@edgegamers/example",
       license: "MIT OR Apache-2.0",
       private: true,
-      main,
+      ...(withMain ? { main } : {}),
       s2script: { apiVersion: "1.x" },
     },
     ...sourceFiles,
@@ -83,6 +88,29 @@ test("does not validate co-located test files as plugin runtime dependencies", (
   const root = makeLicensedPluginWorkspace(t, {
     sourceFiles: {
       "plugins/global/example/src/channel.test.ts": 'import test from "node:test";\ntest("fixture", () => {});\n',
+    },
+  });
+
+  assert.deepEqual(validateRepositoryLicensing(root), []);
+});
+
+test("resolves an emitted JavaScript entry to source without validating co-located tests", (t) => {
+  const root = makeLicensedPluginWorkspace(t, {
+    main: "dist/plugin.js",
+    sourceFiles: {
+      "plugins/global/example/src/plugin.ts": "export {};\n",
+      "plugins/global/example/src/plugin.test.ts": 'import test from "node:test";\ntest("fixture", () => {});\n',
+    },
+  });
+
+  assert.deepEqual(validateRepositoryLicensing(root), []);
+});
+
+test("does not broaden runtime validation when a plugin has no entry", (t) => {
+  const root = makeLicensedPluginWorkspace(t, {
+    withMain: false,
+    sourceFiles: {
+      "plugins/global/example/src/plugin.test.ts": 'import test from "node:test";\ntest("fixture", () => {});\n',
     },
   });
 

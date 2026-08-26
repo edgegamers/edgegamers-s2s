@@ -21,22 +21,30 @@ Copyright 2026 EdgeGamers, LLC
 
 This product includes software developed by EdgeGamers, LLC.
 `;
-function sourcePathKey(path) {
-  const normalized = resolve(path);
-  return process.platform === "win32" ? normalized.toLowerCase() : normalized;
-}
-
 function manifestEntry(manifest) {
   return manifest.s2script?.main ?? manifest.main;
 }
 
+function resolvePluginSourceEntry(packageDirectory, entry, sourceFiles) {
+  if (typeof entry !== "string") return undefined;
+  const sourcePath = join(packageDirectory, "package.json");
+  const specifier = entry.startsWith(".") ? entry : `./${entry}`;
+  const direct = resolveRelativeSourceImport({ sourcePath, sourceFiles, specifier });
+  if (direct.target !== undefined) return direct.target;
+
+  const normalizedEntry = entry.replaceAll("\\", "/").replace(/^\.\/+/, "");
+  if (!normalizedEntry.startsWith("dist/")) return undefined;
+  return resolveRelativeSourceImport({
+    sourcePath,
+    sourceFiles,
+    specifier: `./src/${normalizedEntry.slice("dist/".length)}`,
+  }).target;
+}
+
 function pluginRuntimeSourceFiles(packageDirectory, entry) {
   const sourceFiles = findSourceFiles(packageDirectory);
-  if (typeof entry !== "string") return sourceFiles;
-
-  const sourceByKey = new Map(sourceFiles.map((path) => [sourcePathKey(path), path]));
-  const entryPath = sourceByKey.get(sourcePathKey(resolve(packageDirectory, entry)));
-  if (entryPath === undefined) return sourceFiles;
+  const entryPath = resolvePluginSourceEntry(packageDirectory, entry, sourceFiles);
+  if (entryPath === undefined) return [];
 
   const runtimeFiles = new Set();
   const pending = [entryPath];
