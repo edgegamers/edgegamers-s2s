@@ -45,7 +45,8 @@ export class TttEventBus<M extends TttEvents | object> {
     if (list === undefined) return payload;
 
     const snapshot = list.slice();
-    const cancelable = "canceled" in (payload as object);
+    const cancelable =
+      payload !== null && typeof payload === "object" && "canceled" in payload;
     for (const entry of snapshot) {
       if (cancelable && entry.ignoreCanceled && (payload as { canceled: boolean }).canceled) {
         continue;

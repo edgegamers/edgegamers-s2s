@@ -20,4 +20,19 @@ describe("TttEventBus", () => {
     bus.emit("ping", { canceled: false });
     assert.equal(ran, false);
   });
+
+  it("does not probe primitive payloads for cancellation", () => {
+    const bus = new TttEventBus<{ ping: string }>();
+    bus.on("ping", () => {});
+    assert.doesNotThrow(() => bus.emit("ping", "value"));
+  });
+
+  it("runs later handlers after an earlier handler throws", () => {
+    const bus = new TttEventBus<{ ping: { canceled: boolean } }>();
+    let ran = false;
+    bus.on("ping", () => { throw new Error("handler failure"); }, { priority: TttPriority.HIGH });
+    bus.on("ping", () => { ran = true; });
+    bus.emit("ping", { canceled: false });
+    assert.equal(ran, true);
+  });
 });
