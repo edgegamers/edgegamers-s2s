@@ -1,0 +1,24 @@
+{
+  "name": "@edgegamers/ttt-core",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@edgegamers/blackbox": "0.1.0"
+  },
+  "s2script": {
+    "apiVersion": "1.x",
+    "pluginDependencies": {
+      "@edgegamers/blackbox": "^0.1.0"
+    },
+    "publishes": {
+      "@edgegamers/ttt-core": "0.1.0"
+    }
+  }
+}
