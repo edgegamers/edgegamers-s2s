@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
+  "type": "module",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
   "scripts": {
@@ -13,7 +14,33 @@
     "@edgegamers/blackbox": "0.1.0"
   },
   "s2script": {
-    "apiVersion": "1.x",
+    "id": "ttt-core",
+    "game": "cs2",
+    "config": {
+      "round_countdown": { "type": "int", "default": 15, "min": 1, "max": 60 },
+      "round_min_players": { "type": "int", "default": 2, "min": 2, "max": 64 },
+      "round_duration_base": { "type": "int", "default": 60, "min": 30, "max": 600 },
+      "round_duration_per_player": { "type": "int", "default": 15, "min": 0, "max": 60 },
+      "round_duration_max": { "type": "int", "default": 300, "min": 60, "max": 600 },
+      "round_time_between": { "type": "int", "default": 1, "min": 1, "max": 60 },
+      "round_afk_seconds": { "type": "int", "default": 180, "min": 0, "max": 600 },
+      "role_innocent_health": { "type": "int", "default": 100, "min": 1, "max": 1000 },
+      "role_traitor_health": { "type": "int", "default": 100, "min": 1, "max": 1000 },
+      "role_detective_health": { "type": "int", "default": 100, "min": 1, "max": 1000 },
+      "role_innocent_armor": { "type": "int", "default": 0, "min": 0, "max": 1000 },
+      "role_traitor_armor": { "type": "int", "default": 0, "min": 0, "max": 1000 },
+      "role_detective_armor": { "type": "int", "default": 0, "min": 0, "max": 1000 },
+      "role_innocent_weapons": { "type": "string", "default": "" },
+      "role_traitor_weapons": { "type": "string", "default": "" },
+      "role_detective_weapons": { "type": "string", "default": "weapon_taser,weapon_m4a1_silencer,weapon_revolver" },
+      "role_strip_on_assign": { "type": "bool", "default": true },
+      "body_enabled": { "type": "bool", "default": true },
+      "body_hide_pawn": { "type": "bool", "default": true },
+      "body_settle": { "type": "bool", "default": true },
+      "body_prop_pickup": { "type": "bool", "default": true },
+      "visual_show_names": { "type": "bool", "default": true },
+      "visual_role_icons": { "type": "bool", "default": true }
+    },
     "pluginDependencies": {
       "@edgegamers/blackbox": "^0.1.0"
     },

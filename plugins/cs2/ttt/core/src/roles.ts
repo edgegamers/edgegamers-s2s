@@ -28,6 +28,15 @@ export function createRoleRegistry(): RoleRegistry {
     definitions.set(role.key, role);
   }
 
+  function roleQuota(role: TttRoleDefinition, players: number): number {
+    if (role.ratio === undefined || players < (role.minPlayers ?? 0)) return 0;
+    const raw = players * role.ratio.numerator / role.ratio.denominator;
+    const ratioCount = role.ratio.mode === "ceil" ? Math.ceil(raw)
+      : role.ratio.mode === "round" ? Math.round(raw)
+      : Math.floor(raw);
+    return Math.max(0, Math.min(ratioCount, role.maxCount ?? ratioCount));
+  }
+
   return {
     registerDefaults() {
       registerRole({ key: STOCK_ROLES.innocent, name: "Innocent", team: "innocent", assignmentOrder: 300 });
@@ -63,11 +72,20 @@ export function createRoleRegistry(): RoleRegistry {
         reserved.delete(slot);
         pool.splice(pool.indexOf(slot), 1);
       }
-      if (pool.length > 0 && ![...result.values()].includes(STOCK_ROLES.traitor)) {
-        const slot = pool.shift()!;
-        result.set(slot, STOCK_ROLES.traitor);
-        assigned.set(slot, STOCK_ROLES.traitor);
+
+      const assignable = [...definitions.values()]
+        .filter((role) => role.key !== STOCK_ROLES.innocent && role.key !== STOCK_ROLES.spectator)
+        .sort((left, right) => (left.assignmentOrder ?? 500) - (right.assignmentOrder ?? 500));
+      for (const role of assignable) {
+        const alreadyAssigned = [...result.values()].filter((key) => key === role.key).length;
+        const count = Math.min(pool.length, Math.max(0, roleQuota(role, slots.length) - alreadyAssigned));
+        for (let index = 0; index < count; index += 1) {
+          const slot = pool.shift()!;
+          result.set(slot, role.key);
+          assigned.set(slot, role.key);
+        }
       }
+
       for (const slot of pool) {
         result.set(slot, STOCK_ROLES.innocent);
         assigned.set(slot, STOCK_ROLES.innocent);

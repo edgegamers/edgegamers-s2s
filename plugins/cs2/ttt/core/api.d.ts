@@ -1,4 +1,9 @@
 export type TttRoleKey = string;
+export type StockTttRoleKey =
+  | "ttt:innocent"
+  | "ttt:traitor"
+  | "ttt:detective"
+  | "ttt:spectator";
 export type TttTeamKey = "innocent" | "traitor" | "spectator";
 export type TttRoundState = "waiting" | "countdown" | "in_progress" | "finished";
 

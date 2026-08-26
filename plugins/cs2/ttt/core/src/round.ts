@@ -6,6 +6,7 @@ export interface RoundController {
   startRound(participants: number): boolean;
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   checkEndConditions(): TttTeamKey | "";
+  resetRound(): void;
   snapshot(): TttGameStateSnapshot;
 }
 
@@ -47,6 +48,12 @@ export function createRoundController(roles: RoleRegistry): RoundController {
       if (traitorAlive === 0) return "innocent";
       if (innocentAlive === 0) return "traitor";
       return "";
+    },
+    resetRound() {
+      state = "waiting";
+      participants = 0;
+      winner = "";
+      alive.clear();
     },
     snapshot() {
       return { state, participants, roundsThisMap, winner };
