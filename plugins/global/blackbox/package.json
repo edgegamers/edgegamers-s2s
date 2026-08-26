@@ -1,6 +1,7 @@
 {
   "name": "@edgegamers/blackbox",
   "version": "0.1.0",
+  "type": "module",
   "license": "MIT OR Apache-2.0",
   "private": true,
   "main": "src/plugin.ts",
@@ -10,7 +11,6 @@
     "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "s2script": {
-    "apiVersion": "1.x",
     "publishes": {
       "@edgegamers/blackbox": "0.1.0"
     }

@@ -21,6 +21,14 @@ Copyright 2026 EdgeGamers, LLC
 
 This product includes software developed by EdgeGamers, LLC.
 `;
+const TEST_SOURCE_PATH = /(?:^|\/)(?:test|tests|__tests__)\//u;
+
+function pluginRuntimeSourceFiles(packageDirectory) {
+  return findSourceFiles(packageDirectory).filter((path) => {
+    const normalizedPath = relative(packageDirectory, path).replaceAll("\\", "/");
+    return !TEST_SOURCE_PATH.test(normalizedPath);
+  });
+}
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -91,7 +99,7 @@ function validatePluginSourceImports({
   const bundledLibraries = Object.keys(manifest.s2script?.libraries ?? {})
     .filter((name) => firstPartyNames.has(name));
 
-  for (const path of findSourceFiles(packageDir)) {
+  for (const path of pluginRuntimeSourceFiles(packageDir)) {
     const normalizedPath = relative(rootDir, path).replaceAll("\\", "/");
     const { hasNonliteralPackageLoad, references } = collectModuleReferences(path);
     if (hasNonliteralPackageLoad) {
@@ -186,7 +194,7 @@ export function validateRepositoryLicensing(rootDir) {
   const licensedWorkspacePackages = workspacePackages
     .filter(({ manifest }) => manifest.license === LICENSE_EXPRESSION);
   const licensedSourceFiles = new Set(licensedWorkspacePackages
-    .flatMap(({ absoluteDirectory }) => findSourceFiles(absoluteDirectory)));
+    .flatMap(({ absoluteDirectory }) => pluginRuntimeSourceFiles(absoluteDirectory)));
   const validationPackages = new Map(packages.map((item) => [normalizedManifestPath(rootDir, item.path), item]));
   for (const item of source2ScriptPlugins) {
     validationPackages.set(normalizedManifestPath(rootDir, item.path), item);
