@@ -97,6 +97,31 @@ test("allows only the trusted version pull request to consume Changesets", (t) =
   ]);
 });
 
+test("allows production promotion from dev after Changesets are consumed", (t) => {
+  const result = runCheck(t, {
+    releaseContext: {
+      eventName: "pull_request",
+      baseRef: "main",
+      headRef: "dev",
+      author: "developer",
+      actor: "developer",
+      headRepository: "edgegamers/edgegamers-s2s",
+      repository: "edgegamers/edgegamers-s2s",
+    },
+    changedOutput: [
+      "M\tplugins/global/public/src/plugin.ts",
+      "M\tplugins/global/public/package.json",
+      "A\tplugins/global/public/CHANGELOG.md",
+    ].join("\n"),
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.warnings, [
+    "Production promotion from dev may contain already-versioned public changes for: @edgegamers/public",
+  ]);
+});
+
 test("does not let a pre-existing base Changeset cover a later pull request", (t) => {
   const result = runCheck(t, {
     files: {

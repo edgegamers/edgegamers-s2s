@@ -22,8 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import { plugin } from "@s2script/sdk/plugin";
-import { Chat } from "@s2script/sdk/chat";
+import { config } from "@s2script/sdk/config";
+import { Clients } from "@s2script/sdk/clients";
+import { Server } from "@s2script/sdk/server";
+import type { TttCoreApi } from "@edgegamers/ttt-core";
+import type { TttKarmaApi } from "../api";
+import { registerKarmaCommands } from "./commands.ts";
+import { installKarmaEvents } from "./events.ts";
+import { createKarmaService } from "./karma.ts";
+import { createKarmaConfigSnapshot } from "./config.ts";
 
 export default plugin((ctx) => {
-  console.log("TTT plugin loaded!");
+  const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
+  let settings = createKarmaConfigSnapshot(config);
+  const karma = createKarmaService(() => settings, {
+    onLowKarma(slot, command) {
+      if (command === "") return;
+      const player = Clients.fromSlot(slot);
+      if (player === null) return;
+      Server.command(command.replace("{0}", String(player.userId)));
+    },
+  });
+
+  registerKarmaCommands(ctx.commands, core, karma);
+  installKarmaEvents(core, karma);
+
+  ctx.config.onChange(() => { settings = createKarmaConfigSnapshot(config); });
+  ctx.publish<TttKarmaApi>("@edgegamers/ttt-karma", karma);
+  console.log("[ttt-karma] loaded");
 });

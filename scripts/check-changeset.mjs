@@ -128,6 +128,12 @@ export function main({
       changes,
       pluginDirectories,
     });
+    const trustedProductionPromotion = releaseContext.eventName === "pull_request"
+      && releaseContext.baseRef === "main"
+      && releaseContext.headRef === "dev"
+      && releaseContext.headRepository === releaseContext.repository
+      && typeof releaseContext.repository === "string"
+      && releaseContext.repository.length > 0;
     const coveredPackages = parseChangesetPackages(
       readPullRequestChangesets(root, changes),
     );
@@ -150,6 +156,13 @@ export function main({
     if (trustedVersionPullRequest) {
       warn(
         `Trusted version pull request may consume Changesets for: ${result.missingPackages.join(", ")}`,
+      );
+      return 0;
+    }
+
+    if (trustedProductionPromotion) {
+      warn(
+        `Production promotion from dev may contain already-versioned public changes for: ${result.missingPackages.join(", ")}`,
       );
       return 0;
     }

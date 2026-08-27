@@ -1,0 +1,78 @@
+import type { PluginContext } from "@s2script/sdk/plugin";
+import type { TttEvents } from "../../api";
+import type { TttCoreConfig } from "../config.ts";
+import type { TttEventBus } from "../events.ts";
+import { createCoreFrameHandler } from "../frame.ts";
+import type { PlayerRegistry } from "../players.ts";
+import type { RoleRegistry } from "../roles.ts";
+import type { RoundController } from "../round.ts";
+import type { TttRuntime } from "../runtime.ts";
+import { removePlayerState, resetMapState } from "../lifecycle.ts";
+import type { BodyRegistry } from "./bodies.ts";
+import { createCombatRuntime } from "./combat.ts";
+import type { InventoryAdapter } from "./inventory.ts";
+import { applyServerSettings, seedPlayers } from "./pawn.ts";
+
+export function installCoreHandlers(ctx: PluginContext, deps: {
+  bus: TttEventBus<TttEvents>;
+  players: PlayerRegistry;
+  roles: RoleRegistry;
+  round: RoundController;
+  runtime: TttRuntime;
+  bodies: BodyRegistry;
+  inventory: InventoryAdapter;
+  config(): TttCoreConfig;
+  drainPreFrame(): void;
+}): void {
+  const combat = createCombatRuntime(deps);
+
+  ctx.clients.onActive((client) => {
+    deps.players.add(client.slot, client.steamId, client.name);
+    deps.bus.emit("join", { slot: client.slot });
+  });
+
+  ctx.clients.onDisconnect((client) => {
+    deps.bus.emit("leave", { slot: client.slot });
+    if (deps.players.isAlive(client.slot)) deps.runtime.handleDeath(client.slot);
+    removePlayerState(deps, client.slot);
+  });
+
+  ctx.events.on("player_spawn", (event) => {
+    const slot = event.getPlayerSlot("userid");
+    if (slot < 0) return;
+    deps.players.setAlive(slot, true);
+    if (deps.players.isParticipating(slot)) deps.round.setAlive(slot, true);
+  });
+
+  ctx.events.on("player_death", (event) => {
+    const slot = event.getPlayerSlot("userid");
+    if (slot < 0) return;
+    combat.death(
+      slot,
+      event.getPlayerSlot("attacker"),
+      event.getPlayerSlot("assister"),
+      event.getString("weapon"),
+      event.getBool("headshot"),
+    );
+  });
+
+  ctx.events.on("player_hurt", (event) => {
+    const slot = event.getPlayerSlot("userid");
+    if (slot < 0) return;
+    combat.damage(
+      slot,
+      event.getPlayerSlot("attacker"),
+      event.getInt("dmg_health"),
+      event.getString("weapon"),
+    );
+  });
+
+  ctx.events.on("round_start", applyServerSettings);
+  ctx.server.onMapStart(() => {
+    resetMapState(deps);
+    seedPlayers(deps.players);
+    applyServerSettings();
+  });
+
+  ctx.server.onGameFrame(createCoreFrameHandler(deps));
+}
