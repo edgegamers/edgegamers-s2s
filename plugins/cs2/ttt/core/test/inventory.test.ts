@@ -33,4 +33,15 @@ describe("TTT starting loadouts", () => {
     inventory.clear();
     assert.equal(inventory.loadoutOf(4), null);
   });
+
+  it("removes only the departing slot's intended loadout", () => {
+    const inventory = createInventoryAdapter();
+    inventory.applyStartingLoadout(4, { health: 125, armor: 25, weapons: ["weapon_taser"] });
+    inventory.applyStartingLoadout(7, { health: 100, armor: 0, weapons: [] });
+
+    inventory.remove(4);
+
+    assert.equal(inventory.loadoutOf(4), null);
+    assert.deepEqual(inventory.loadoutOf(7), { health: 100, armor: 0, weapons: [] });
+  });
 });

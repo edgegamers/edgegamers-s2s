@@ -5,6 +5,7 @@ import { STOCK_ROLES } from "../roles.ts";
 export interface InventoryAdapter {
   applyStartingLoadout(slot: number, loadout: TttStartingLoadoutSnapshot): void;
   loadoutOf(slot: number): TttStartingLoadoutSnapshot | null;
+  remove(slot: number): void;
   clear(): void;
 }
 
@@ -21,6 +22,9 @@ export function createInventoryAdapter(): InventoryAdapter {
     loadoutOf(slot) {
       const loadout = intendedLoadouts.get(slot);
       return loadout === undefined ? null : cloneLoadout(loadout);
+    },
+    remove(slot) {
+      intendedLoadouts.delete(slot);
     },
     clear() {
       intendedLoadouts.clear();

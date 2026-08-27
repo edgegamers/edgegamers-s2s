@@ -119,6 +119,7 @@ export default plugin((ctx) => {
     round,
     runtime,
     bodies,
+    inventory,
     config: () => settings,
     drainPreFrame: () => { preFrame.drain(); },
   });
