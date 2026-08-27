@@ -122,6 +122,7 @@ function createShop(overrides: Partial<TttShopApi> = {}): TttShopApi {
     setBalance() {},
     clearSlot() {},
     resetRound() {},
+    tryGrantItem: () => "success",
     grantItem: () => true,
     setPurchaseBlock() {},
     clearPurchaseBlock() {},
@@ -183,7 +184,7 @@ describe("TTT shop commands", () => {
     const armor = item("armor", "Armor");
     registerShopCommands(commands, createCore(), createShop({
       itemById: () => armor,
-      grantItem: () => { deliveries += 1; return true; },
+      tryGrantItem: () => { deliveries += 1; return "success"; },
       tryPurchase: () => { purchases += 1; return "success"; },
     }), { enabled: () => false });
 
@@ -259,10 +260,10 @@ describe("TTT shop commands", () => {
     const armor = item("armor", "Armor");
     registerShopCommands(commands, createCore({ players: [player(3, "Ada"), player(7, "Grace")] }), createShop({
       itemById: (id) => id === "armor" ? armor : null,
-      grantItem: (slot, id) => {
-        if (id !== "armor") return false;
+      tryGrantItem: (slot, id) => {
+        if (id !== "armor") return "not_found";
         grantedTo = slot;
-        return true;
+        return "success";
       },
     }));
     const invocation = command(-1, ["gra", "armor"]);
@@ -271,5 +272,21 @@ describe("TTT shop commands", () => {
 
     assert.equal(grantedTo, 7);
     assert.deepEqual(invocation.replies, ["[ttt] gave Armor to Grace"]);
+  });
+
+  it("does not claim admin grant success for externally delivered items", () => {
+    const commands = createCommands();
+    const armor = item("armor", "Armor");
+    registerShopCommands(commands, createCore({ players: [player(3, "Ada")] }), createShop({
+      itemById: (id) => id === "armor" ? armor : null,
+      tryGrantItem: () => "delivery_unavailable",
+    }));
+    const invocation = command(-1, ["Ada", "armor"]);
+
+    commands.admin.get("sm_ttt_give")!(invocation);
+
+    assert.deepEqual(invocation.replies, [
+      "[ttt] Armor cannot be granted because its owner module has no grant delivery handler.",
+    ]);
   });
 });

@@ -19,17 +19,17 @@ specials.registerRound({
 });
 specials.setPluginAvailable("example:lighting", true);
 
-specials.on("roundStarted", ({ id }: TttSpecialRoundsForwards["roundStarted"]) => {
+specials.on("roundStarted", ({ id }: TttSpecialRoundForwards["roundStarted"]) => {
   if (id === "example:lights-out") {
     // Apply this plugin's effect.
   }
 });
-specials.on("roundTick", ({ id, dt }: TttSpecialRoundsForwards["roundTick"]) => {
+specials.on("roundTick", ({ id, dt }: TttSpecialRoundForwards["roundTick"]) => {
   if (id === "example:lights-out") {
     // Advance this plugin's effect by dt seconds.
   }
 });
-specials.on("roundCleared", ({ id }: TttSpecialRoundsForwards["roundCleared"]) => {
+specials.on("roundCleared", ({ id }: TttSpecialRoundForwards["roundCleared"]) => {
   if (id === "example:lights-out") {
     // Restore all state owned by this plugin.
   }

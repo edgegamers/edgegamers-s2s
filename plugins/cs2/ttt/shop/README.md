@@ -20,6 +20,8 @@ Policy changes use named structured methods instead of mutable callback events. 
 
 A successful purchase validates the player, item, funds, limits, and active named blocks; debits the balance; performs package-internal delivery when one exists; commits the purchase count; emits the two observational forwards; and logs `shop.purchase.committed`. Failed internal delivery restores the exact pre-purchase balance and does not emit `purchaseCommitted`.
 
+Admin grants expose both `tryGrantItem`, which returns a `TttGrantResult`, and the boolean-compatible `grantItem` convenience wrapper. Data-only public descriptors without a package-local delivery handler return `delivery_unavailable`; commands must not report those grants as delivered. Purchases can still use `purchaseCommitted` for external effects because they have a committed transaction forward.
+
 ## Runtime Availability
 
 The current public Core/SDK surface does not expose inventory, armor, player-pawn mutation, or the world-effect operations required by the 21 stock items. Their configured descriptors remain registered, but the fallback delivery adapter makes `canPurchase` return `not_purchasable`; menus therefore show them as unavailable and no physical effect is reported as delivered. The plugin logs `shop.stock.delivery_unavailable` at startup.

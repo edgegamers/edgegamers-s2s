@@ -25,6 +25,7 @@ import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "@edgegamers/ttt-karma";
 import type {
   TttBalanceChangeSource,
+  TttGrantResult,
   TttPurchaseResult,
   TttShopApi,
   TttShopForwards,
@@ -140,13 +141,28 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
     return item.canPurchase?.(slot) ?? "success";
   }
 
-  function deliver(slot: number, item: TttShopItemDefinition): boolean {
-    if (item.onPurchase === undefined) return true;
+  function deliver(slot: number, item: TttShopItemDefinition): TttGrantResult {
+    if (item.onPurchase === undefined) return "delivery_unavailable";
     try {
-      return item.onPurchase(slot) !== false;
+      return item.onPurchase(slot) !== false ? "success" : "delivery_failed";
     } catch {
-      return false;
+      return "delivery_failed";
     }
+  }
+
+  function tryGrantItem(slot: number, itemId: string): TttGrantResult {
+    const item = items.get(itemId);
+    if (item === undefined) return "not_found";
+    const result = deliver(slot, item);
+    if (result === "delivery_unavailable") {
+      core.log({
+        kind: "shop.grant.delivery_unavailable",
+        message: `${item.name} cannot be granted because it has no package-local delivery handler.`,
+        actorSlot: slot,
+        data: { itemId, itemName: item.name },
+      });
+    }
+    return result;
   }
 
   return {
@@ -185,8 +201,8 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
       const balanceBeforePurchase = balanceOf(slot);
       changeBalance(slot, balanceBeforePurchase - item.price, item.name, "purchase");
 
-      const delivered = deliver(slot, item);
-      if (!delivered) {
+      const deliveryResult = deliver(slot, item);
+      if (deliveryResult === "delivery_failed") {
         changeBalance(slot, balanceBeforePurchase, `${item.name} refund`, "refund", false);
         core.log({
           kind: "shop.purchase.delivery_failed",
@@ -217,9 +233,9 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
       });
       return "success";
     },
+    tryGrantItem,
     grantItem(slot, itemId) {
-      const item = items.get(itemId);
-      return item !== undefined && deliver(slot, item);
+      return tryGrantItem(slot, itemId) === "success";
     },
     setPurchaseBlock(name, reason = "") {
       if (name.trim() === "") throw new Error("purchase block name must not be empty");

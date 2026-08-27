@@ -118,6 +118,7 @@ function fakeShop(initialBalances: Readonly<Record<number, number>> = {}): {
     resetRound: () => undefined,
     tryPurchase: () => "not_found" as const,
     canPurchase: () => "not_found" as const,
+    tryGrantItem: () => "not_found",
     grantItem: () => false,
     setPurchaseBlock: (name: string) => { purchaseBlocks.add(name); },
     clearPurchaseBlock: (name: string) => { purchaseBlocks.delete(name); },

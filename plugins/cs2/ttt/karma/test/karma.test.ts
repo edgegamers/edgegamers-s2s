@@ -596,7 +596,7 @@ describe("TttKarmaService", () => {
 });
 
 describe("TTT karma event wiring", () => {
-  it("reserves timed-out players as spectators from the countdown forward", () => {
+  it("reserves but does not consume timed-out players during an aborted countdown", () => {
     const fake = createFakeCore([player(1, "steam-1", "ttt:innocent", "innocent")]);
     const karma = createService({ timeoutRounds: 2 });
     installKarmaEvents(fake.core, karma);
@@ -613,6 +613,47 @@ describe("TTT karma event wiring", () => {
     });
 
     assert.deepEqual(fake.reservations, [[1, "ttt:spectator"]]);
+    assert.equal(karma.timeoutRemaining(1), 2);
+
+    fake.emit("gameState", {
+      state: "waiting",
+      previousState: "countdown",
+      participants: 0,
+      roundsThisMap: 0,
+      winner: "",
+      reason: "Not enough players",
+      quiet: false,
+    });
+
+    assert.deepEqual(fake.reservations, [[1, "ttt:spectator"], [1, ""]]);
+    assert.equal(karma.timeoutRemaining(1), 2);
+  });
+
+  it("reserves timed-out players at countdown and consumes only assigned spectator seats", () => {
+    const fake = createFakeCore([
+      player(1, "steam-1", "ttt:innocent", "innocent"),
+      player(2, "steam-2", "ttt:innocent", "innocent"),
+    ]);
+    const karma = createService({ timeoutRounds: 2 });
+    installKarmaEvents(fake.core, karma);
+    karma.setKarma(1, 10);
+
+    fake.emit("gameState", {
+      state: "countdown",
+      previousState: "waiting",
+      participants: 2,
+      roundsThisMap: 0,
+      winner: "",
+      reason: "",
+      quiet: false,
+    });
+    assert.deepEqual(fake.reservations, [[1, "ttt:spectator"]]);
+    assert.equal(karma.timeoutRemaining(1), 2);
+
+    fake.emit("roleAssigned", { slot: 2, role: "ttt:innocent" });
+    assert.equal(karma.timeoutRemaining(1), 2);
+    fake.emit("roleAssigned", { slot: 1, role: "ttt:spectator" });
+
     assert.equal(karma.timeoutRemaining(1), 1);
   });
 

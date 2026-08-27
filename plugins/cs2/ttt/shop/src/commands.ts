@@ -25,7 +25,7 @@ import type { CommandInvocation } from "@s2script/sdk/commands";
 import { Menu, MenuStyle } from "@s2script/sdk/menu";
 import type { CtxCommands } from "@s2script/sdk/plugin";
 import type { TttCoreApi, TttPlayerSnapshot } from "@edgegamers/ttt-core";
-import type { TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
+import type { TttGrantResult, TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
 
 const GENERIC_ADMIN_FLAG = 2;
 const PLAYER_ONLY = "This command can only be used by a player.";
@@ -179,11 +179,7 @@ export function registerShopCommands(
       cmd.reply(`[ttt] unknown item "${cmd.arg(1)}" - try sm_ttt_give with no arguments`);
       return;
     }
-    if (!shop.grantItem(target.slot, item.id)) {
-      cmd.reply(`[ttt] could not deliver ${item.name} to ${target.name}`);
-      return;
-    }
-    cmd.reply(`[ttt] gave ${item.name} to ${target.name}`);
+    replyGrantResult(cmd, shop.tryGrantItem(target.slot, item.id), item, target);
   });
 }
 
@@ -267,6 +263,27 @@ function replyPurchaseResult(
       return;
     case "not_purchasable":
       reply("You cannot purchase this item right now.");
+  }
+}
+
+function replyGrantResult(
+  cmd: CommandInvocation,
+  result: TttGrantResult,
+  item: TttShopItem,
+  target: TttPlayerSnapshot,
+): void {
+  switch (result) {
+    case "success":
+      cmd.reply(`[ttt] gave ${item.name} to ${target.name}`);
+      return;
+    case "delivery_unavailable":
+      cmd.reply(`[ttt] ${item.name} cannot be granted because its owner module has no grant delivery handler.`);
+      return;
+    case "delivery_failed":
+      cmd.reply(`[ttt] could not deliver ${item.name} to ${target.name}`);
+      return;
+    case "not_found":
+      cmd.reply(`[ttt] unknown item "${item.id}" - try sm_ttt_give with no arguments`);
   }
 }
 

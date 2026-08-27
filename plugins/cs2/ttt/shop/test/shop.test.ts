@@ -164,6 +164,37 @@ describe("TTT shop", () => {
     assert.equal(shop.balanceOf(3), 0);
   });
 
+  it("does not report public data-only grant delivery as successful", () => {
+    const core = fakeCore();
+    const shop = createShopApi(core);
+    shop.registerItem(descriptor("external"));
+
+    assert.equal(shop.tryGrantItem(1, "external"), "delivery_unavailable");
+    assert.equal(shop.tryGrantItem(1, "missing"), "not_found");
+    assert.deepEqual(core.logs, [{
+      kind: "shop.grant.delivery_unavailable",
+      message: "Armor cannot be granted because it has no package-local delivery handler.",
+      actorSlot: 1,
+      data: { itemId: "external", itemName: "Armor" },
+    }]);
+
+    assert.equal(shop.grantItem(1, "external"), false);
+    assert.equal(core.logs.length, 2);
+  });
+
+  it("reports package-local grant delivery failures separately from success", () => {
+    const shop = createShopApi(fakeCore());
+    shop.registerItemDefinition(item("armor"));
+    shop.registerItemDefinition(item("broken", () => false));
+    shop.registerItemDefinition(item("throwing", () => { throw new Error("delivery exploded"); }));
+
+    assert.equal(shop.tryGrantItem(1, "armor"), "success");
+    assert.equal(shop.grantItem(1, "armor"), true);
+    assert.equal(shop.tryGrantItem(1, "broken"), "delivery_failed");
+    assert.equal(shop.grantItem(1, "broken"), false);
+    assert.equal(shop.tryGrantItem(1, "throwing"), "delivery_failed");
+  });
+
   it("emits balance changes for set, reset, and per-slot clear paths", () => {
     const changes: string[] = [];
     const shop = createShopApi(fakeCore(), {

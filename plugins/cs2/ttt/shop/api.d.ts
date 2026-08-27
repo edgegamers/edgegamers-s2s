@@ -8,6 +8,12 @@ export type TttPurchaseResult =
   | "limit_reached"
   | "delivery_failed";
 
+export type TttGrantResult =
+  | "success"
+  | "not_found"
+  | "delivery_failed"
+  | "delivery_unavailable";
+
 export interface TttShopItem {
   id: string;
   name: string;
@@ -55,6 +61,7 @@ export interface TttShopApi {
   resetRound(): void;
   tryPurchase(slot: number, itemId: string, notify?: boolean): TttPurchaseResult;
   canPurchase(slot: number, itemId: string): TttPurchaseResult;
+  tryGrantItem(slot: number, itemId: string): TttGrantResult;
   grantItem(slot: number, itemId: string): boolean;
   setPurchaseBlock(name: string, reason?: string): void;
   clearPurchaseBlock(name: string): void;
