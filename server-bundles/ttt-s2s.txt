@@ -1,3 +1,6 @@
 # One TTT EdgeGamers plugin package per line.
 @edgegamers/blackbox
 @edgegamers/ttt-core
+@edgegamers/ttt-karma
+@edgegamers/ttt-shop
+@edgegamers/ttt-special-rounds

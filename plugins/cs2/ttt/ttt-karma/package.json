@@ -2,7 +2,7 @@
   "name": "@edgegamers/ttt-karma",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
