@@ -26,6 +26,7 @@ import { config } from "@s2script/sdk/config";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "@edgegamers/ttt-karma";
 import type { TttShopApi } from "../api.d.ts";
+import { registerShopCommands } from "./commands.ts";
 import { createShopConfigSnapshot } from "./config.ts";
 import { createStartingCredits, installEconomy } from "./economy.ts";
 import { registerStockItems } from "./items/index.ts";
@@ -38,6 +39,7 @@ export default plugin((ctx) => {
   const shop = createShopApi(core, { karma });
   registerStockItems({ core, shop, config: createShopConfigSnapshot(config) });
   installEconomy({ core, shop, karma, startingCredits: () => startingCredits });
+  registerShopCommands(ctx.commands, core, shop);
   ctx.config.onChange(() => {
     startingCredits = createStartingCredits(config);
     registerStockItems({ core, shop, config: createShopConfigSnapshot(config) });
