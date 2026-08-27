@@ -1,4 +1,5 @@
-import type { TttCoreApi } from "@edgegamers/ttt-core";
+import type { InterfaceHandle } from "@s2script/sdk/plugin";
+import type { TttCoreApi, TttCoreForwards } from "@edgegamers/ttt-core";
 import {
   createFirstDamageHistory,
   type FirstDamageHistory,
@@ -6,7 +7,7 @@ import {
 } from "./karma.ts";
 
 export function installKarmaEvents(
-  core: TttCoreApi,
+  core: InterfaceHandle<TttCoreApi>,
   karma: KarmaService,
   firstDamage: FirstDamageHistory = createFirstDamageHistory(),
 ): void {
@@ -15,11 +16,11 @@ export function installKarmaEvents(
     firstDamage.clearSlot(player.slot);
   }
 
-  core.on("damage", (event) => {
+  core.on("damage", (event: TttCoreForwards["damage"]) => {
     firstDamage.recordDamage(event.attacker, event.slot);
   });
 
-  core.on("death", (event) => {
+  core.on("death", (event: TttCoreForwards["death"]) => {
     const victimRole = core.roleOf(event.slot);
     const validKiller = event.killer >= 0 && event.killer !== event.slot;
     const killerRole = validKiller ? core.roleOf(event.killer) : "ttt:spectator";
@@ -35,7 +36,13 @@ export function installKarmaEvents(
     });
   });
 
-  core.on("gameState", (event) => {
+  core.on("gameState", (event: TttCoreForwards["gameState"]) => {
+    if (event.state === "countdown") {
+      for (const player of core.activePlayers()) {
+        if (karma.serveTimeout(player.slot)) core.reserveRole(player.slot, "ttt:spectator");
+      }
+      return;
+    }
     if (event.state === "in_progress") {
       firstDamage.clear();
       karma.resetRound();
@@ -50,17 +57,13 @@ export function installKarmaEvents(
     karma.flushKarma();
   });
 
-  core.on("roleAssigning", (event) => {
-    if (karma.serveTimeout(event.slot)) event.role = "ttt:spectator";
-  });
-
-  core.on("join", (event) => {
+  core.on("join", (event: TttCoreForwards["join"]) => {
     const player = core.player(event.slot);
     karma.join(event.slot, player?.steamId ?? "");
     firstDamage.clearSlot(event.slot);
   });
 
-  core.on("leave", (event) => {
+  core.on("leave", (event: TttCoreForwards["leave"]) => {
     const player = core.player(event.slot);
     karma.leave(event.slot, player?.steamId ?? "");
     firstDamage.clearSlot(event.slot);

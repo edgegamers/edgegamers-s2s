@@ -171,4 +171,32 @@ describe("createTttCoreApi", () => {
     assert.equal(api.identifyBody(4, 8), false);
     assert.equal(entries.length, 1);
   });
+
+  it("forwards copied observations without exposing mutable event payloads", () => {
+    const bus = new TttEventBus<TttEvents>();
+    const roles = createRoleRegistry();
+    const forwarded: Array<{ event: string; payload: unknown }> = [];
+    createTttCoreApi({
+      blackbox: {
+        createChannel: () => ({ clear() {}, record() {}, entries: () => [], render: () => [] }),
+      },
+      bus,
+      roles,
+      round: createRoundController(roles),
+      playerName: () => "",
+      emitForward(event: string, payload: unknown) {
+        forwarded.push({ event, payload: structuredClone(payload) });
+      },
+    });
+    bus.on("damage", (event) => { event.damage = 0; event.canceled = true; }, { priority: 10 });
+
+    bus.emit("roleAssigning", { slot: 3, role: "ttt:innocent", canceled: false });
+    bus.emit("damage", { slot: 3, attacker: 7, damage: 25, weapon: "ak47", canceled: false });
+    bus.emit("roleAssigned", { slot: 3, role: "ttt:innocent" });
+
+    assert.deepEqual(forwarded, [{
+      event: "roleAssigned",
+      payload: { slot: 3, role: "ttt:innocent" },
+    }]);
+  });
 });

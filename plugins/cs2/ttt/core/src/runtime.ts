@@ -19,6 +19,7 @@ export interface TttRuntime {
   startRound(options?: TttStartRoundOptions): boolean;
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline(seconds: number): void;
+  extendRoundDeadline(seconds: number, maxRemaining: number): number;
   tick(): boolean;
   markDead(slot: number): void;
   handleDeath(slot: number): TttTeamKey | "";
@@ -131,6 +132,17 @@ export function createTttRuntime(deps: {
     endRound,
     setRoundDeadline(seconds) {
       deadline = seconds > 0 ? now() + seconds : 0;
+    },
+    extendRoundDeadline(seconds, maxRemaining) {
+      if (deps.round.snapshot().state !== "in_progress" || deadline <= 0) return 0;
+      const currentTime = now();
+      const remaining = Math.max(0, deadline - currentTime);
+      if (!Number.isFinite(seconds) || !Number.isFinite(maxRemaining) || seconds <= 0) {
+        return remaining;
+      }
+      const extended = Math.min(remaining + seconds, Math.max(0, maxRemaining));
+      if (extended > remaining) deadline = currentTime + extended;
+      return extended > remaining ? extended : remaining;
     },
     tick() {
       const snapshot = deps.round.snapshot();

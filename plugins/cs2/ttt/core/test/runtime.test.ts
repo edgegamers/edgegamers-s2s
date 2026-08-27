@@ -215,6 +215,30 @@ describe("TTT runtime", () => {
     });
   });
 
+  it("extends the actual remaining deadline without exceeding the cap", () => {
+    const { players, runtime, setNow } = setup(100, 1);
+    players.add(1, "one", "One");
+    players.add(2, "two", "Two");
+    assert.equal(runtime.startRound(), true);
+    setNow(101);
+    assert.equal(runtime.tick(), true);
+    runtime.setRoundDeadline(40);
+
+    const extend = (runtime as unknown as {
+      extendRoundDeadline?: (seconds: number, maxRemaining: number) => number;
+    }).extendRoundDeadline;
+    assert.equal(typeof extend, "function");
+    if (extend === undefined) return;
+
+    setNow(111);
+    assert.equal(extend(8, 50), 38);
+    assert.equal(extend(20, 50), 50);
+    setNow(160.9);
+    assert.equal(runtime.tick(), false);
+    setNow(161);
+    assert.equal(runtime.tick(), true);
+  });
+
   it("returns a finished round to waiting after the intermission", () => {
     const { players, round, runtime, setNow } = setup(100, 1);
     players.add(1, "one", "One");

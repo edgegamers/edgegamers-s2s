@@ -106,6 +106,10 @@ export function createRoleRegistry(options: RoleRegistryOptions = {}): RoleRegis
         .sort((left, right) => (left.assignmentOrder ?? 500) - (right.assignmentOrder ?? 500));
 
       for (const slot of slots) {
+        if (requested.get(slot) === STOCK_ROLES.spectator) assign(slot, STOCK_ROLES.spectator);
+      }
+
+      for (const slot of slots) {
         if (requested.get(slot) === STOCK_ROLES.innocent) assign(slot, STOCK_ROLES.innocent);
       }
 

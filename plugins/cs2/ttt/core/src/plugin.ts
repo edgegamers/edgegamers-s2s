@@ -24,8 +24,9 @@ SOFTWARE.
 import { plugin } from "@s2script/sdk/plugin";
 import { config } from "@s2script/sdk/config";
 import { ADMFLAG } from "@s2script/sdk/admin";
+import type { PublishHandle } from "@s2script/sdk/interfaces";
 import type { BlackboxApi } from "@edgegamers/blackbox";
-import type { TttCoreApi, TttEvents } from "../api";
+import type { TttCoreApi, TttCoreForwards, TttEvents } from "../api";
 import { createTttCoreApi } from "./api.ts";
 import { createBodyRegistry } from "./cs2/bodies.ts";
 import { installCoreHandlers } from "./cs2/handlers.ts";
@@ -64,6 +65,7 @@ export default plugin((ctx) => {
     generation: players.generationOf(slot),
   }));
   const playerName = players.nameOf;
+  let published: PublishHandle | null = null;
   const api = createTttCoreApi({
     blackbox,
     bus,
@@ -77,8 +79,12 @@ export default plugin((ctx) => {
     startRound: runtime.startRound,
     endRound: runtime.endRound,
     setRoundDeadline: runtime.setRoundDeadline,
+    extendRoundDeadline: runtime.extendRoundDeadline,
+    emitForward<K extends keyof TttCoreForwards>(event: K, payload: TttCoreForwards[K]) {
+      published?.emit(event, payload);
+    },
   });
-  ctx.publish<TttCoreApi>("@edgegamers/ttt-core", api);
+  published = ctx.publish<TttCoreApi>("@edgegamers/ttt-core", api);
 
   seedPlayers(players);
   applyServerSettings();

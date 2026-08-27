@@ -22,23 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import type { TttShopApi, TttShopItem } from "../../api.d.ts";
+import type { TttShopItemDefinition, TttShopRuntime } from "../shop.ts";
 import type { ShopConfig } from "../config.ts";
 import type { ShopDeliveryRequest, ShopItemDelivery } from "../delivery.ts";
 
 export interface StockItemFamilyDependencies {
-  shop: TttShopApi;
+  shop: TttShopRuntime;
   config: ShopConfig;
   delivery: ShopItemDelivery;
 }
 
 export function registerDeliveredItem(
   deps: StockItemFamilyDependencies,
-  item: Omit<TttShopItem, "onPurchase">,
+  item: Omit<TttShopItemDefinition, "onPurchase">,
   request: ShopDeliveryRequest,
 ): void {
   const configuredGate = item.canPurchase;
-  deps.shop.registerItem({
+  deps.shop.registerItemDefinition({
     ...item,
     canPurchase(slot) {
       const configuredResult = configuredGate?.(slot) ?? "success";

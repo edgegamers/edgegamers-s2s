@@ -21,7 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-import type { TttCoreApi } from "@edgegamers/ttt-core";
+import type { InterfaceHandle } from "@s2script/sdk/plugin";
+import type { TttCoreApi, TttCoreForwards } from "@edgegamers/ttt-core";
 import type { TttShopApi } from "../api.d.ts";
 
 export interface KarmaReader {
@@ -39,7 +40,7 @@ export interface StartingCreditsReader {
 }
 
 export interface InstallEconomyOptions {
-  core: TttCoreApi;
+  core: InterfaceHandle<TttCoreApi>;
   shop: TttShopApi;
   karma?: KarmaReader | null;
   startingCredits?: () => StartingCredits;
@@ -112,14 +113,14 @@ export function installEconomy(options: InstallEconomyOptions): void {
   const enabled = options.enabled ?? (() => true);
   logExplorationAvailability(options.core, options.explorationIncomeEnabled ?? false);
 
-  options.core.on("roleAssigned", (event) => {
+  options.core.on("roleAssigned", (event: TttCoreForwards["roleAssigned"]) => {
     if (!enabled()) return;
     const credits = startingCreditForRole(event.role, startingCredits());
     if (credits === 0) return;
     options.shop.addBalance(event.slot, credits);
   });
 
-  options.core.on("death", (event) => {
+  options.core.on("death", (event: TttCoreForwards["death"]) => {
     if (!enabled() || options.core.gameState().state !== "in_progress") return;
     if (event.killer < 0 || event.killer === event.slot) return;
 
@@ -137,8 +138,8 @@ export function installEconomy(options: InstallEconomyOptions): void {
     if (victimBalance > 0) options.shop.addBalance(event.killer, Math.trunc(victimBalance / 2));
   });
 
-  options.core.on("bodyIdentify", (event) => {
-    if (!enabled() || options.core.gameState().state !== "in_progress" || event.canceled || event.identifier < 0) return;
+  options.core.on("bodyIdentify", (event: TttCoreForwards["bodyIdentify"]) => {
+    if (!enabled() || options.core.gameState().state !== "in_progress" || event.identifier < 0) return;
 
     const victimBalance = options.shop.balanceOf(event.body.ownerSlot);
     options.shop.addBalance(event.identifier, Math.trunc(victimBalance / 4));
@@ -157,15 +158,15 @@ export function installEconomy(options: InstallEconomyOptions): void {
     options.shop.addBalance(killer, -(Math.trunc(killerBalance / 3) + Math.trunc(victimBalance / 2)));
   });
 
-  options.core.on("gameState", (event) => {
+  options.core.on("gameState", (event: TttCoreForwards["gameState"]) => {
     if (event.state === "finished") options.shop.resetRound();
   });
 
-  options.core.on("leave", (event) => {
+  options.core.on("leave", (event: TttCoreForwards["leave"]) => {
     options.shop.clearSlot(event.slot, "player_leave");
   });
 
-  options.core.on("join", (event) => {
+  options.core.on("join", (event: TttCoreForwards["join"]) => {
     options.shop.clearSlot(event.slot, "player_join");
   });
 }

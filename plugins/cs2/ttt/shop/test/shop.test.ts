@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { TttCoreApi, TttLogEntry, TttPlayerSnapshot } from "@edgegamers/ttt-core";
-import { createShopApi } from "../src/shop.ts";
+import type { TttShopItem } from "../api.d.ts";
+import {
+  createShopApi,
+  type TttShopItemDefinition,
+} from "../src/shop.ts";
 
 interface FakeCoreOptions {
   role?: string;
@@ -40,20 +44,119 @@ function fakeCore(options: FakeCoreOptions = {}): TttCoreApi & { logs: TttLogEnt
   } as unknown as TttCoreApi & { logs: TttLogEntry[] };
 }
 
-function item(id = "armor", onPurchase: (slot: number) => void | boolean = () => undefined) {
-  return { id, name: "Armor", description: "", price: 5, enabled: true, onPurchase };
+function descriptor(id = "armor"): TttShopItem {
+  return { id, name: "Armor", description: "", price: 5, enabled: true };
+}
+
+function item(
+  id = "armor",
+  onPurchase: (slot: number) => void | boolean = () => undefined,
+): TttShopItemDefinition {
+  return { ...descriptor(id), onPurchase };
 }
 
 describe("TTT shop", () => {
+  it("keeps delivery callbacks internal while returning structured-copy-safe descriptors", () => {
+    const shop = createShopApi(fakeCore());
+    const runtime = shop as unknown as {
+      registerItemDefinition?: (definition: ReturnType<typeof item>) => void;
+    };
+
+    assert.equal(typeof runtime.registerItemDefinition, "function");
+    if (runtime.registerItemDefinition === undefined) return;
+    runtime.registerItemDefinition(item());
+
+    const descriptor = shop.itemById("armor");
+    assert.ok(descriptor);
+    assert.equal("onPurchase" in descriptor, false);
+    assert.equal("canPurchase" in descriptor, false);
+    assert.deepEqual(structuredClone(descriptor), descriptor);
+  });
+
+  it("applies and clears named purchase blocks without callback mutation", () => {
+    const shop = createShopApi(fakeCore());
+    let deliveries = 0;
+    shop.registerItemDefinition(item("armor", () => { deliveries += 1; }));
+    shop.setBalance(1, 10);
+    const controls = shop as unknown as {
+      setPurchaseBlock?: (name: string, reason?: string) => void;
+      clearPurchaseBlock?: (name: string) => void;
+    };
+
+    assert.equal(typeof controls.setPurchaseBlock, "function");
+    assert.equal(typeof controls.clearPurchaseBlock, "function");
+    if (controls.setPurchaseBlock === undefined || controls.clearPurchaseBlock === undefined) return;
+
+    controls.setPurchaseBlock("special:vanilla", "Vanilla round");
+    assert.equal(shop.tryPurchase(1, "armor"), "canceled");
+    assert.equal(shop.balanceOf(1), 10);
+    assert.equal(deliveries, 0);
+
+    controls.clearPurchaseBlock("special:vanilla");
+    assert.equal(shop.tryPurchase(1, "armor"), "success");
+    assert.equal(deliveries, 1);
+  });
+
+  it("applies named gain multipliers and emits copied committed observations", () => {
+    const forwarded: Array<{ event: string; payload: unknown }> = [];
+    const shop = createShopApi(fakeCore(), {
+      emitForward(event: string, payload: unknown) {
+        forwarded.push({ event, payload: structuredClone(payload) });
+      },
+    });
+    const controls = shop as unknown as {
+      setBalanceGainMultiplier?: (name: string, multiplier: number) => void;
+      clearBalanceGainMultiplier?: (name: string) => void;
+    };
+
+    assert.equal(typeof controls.setBalanceGainMultiplier, "function");
+    assert.equal(typeof controls.clearBalanceGainMultiplier, "function");
+    if (
+      controls.setBalanceGainMultiplier === undefined
+      || controls.clearBalanceGainMultiplier === undefined
+    ) return;
+
+    controls.setBalanceGainMultiplier("special:rich", 3);
+    shop.addBalance(1, 5, "round reward");
+    controls.clearBalanceGainMultiplier("special:rich");
+    shop.addBalance(1, 2, "ordinary reward");
+
+    assert.equal(shop.balanceOf(1), 17);
+    assert.deepEqual(forwarded, [
+      {
+        event: "balanceChanged",
+        payload: {
+          slot: 1,
+          previousBalance: 0,
+          newBalance: 15,
+          delta: 15,
+          reason: "round reward",
+          source: "add",
+        },
+      },
+      {
+        event: "balanceChanged",
+        payload: {
+          slot: 1,
+          previousBalance: 15,
+          newBalance: 17,
+          delta: 2,
+          reason: "ordinary reward",
+          source: "add",
+        },
+      },
+    ]);
+  });
+
   it("registers items and tracks balances by slot", () => {
     const shop = createShopApi(fakeCore());
-    const armor = item();
+    const armor = descriptor();
 
     shop.registerItem(armor);
     shop.addBalance(1, 10);
     shop.setBalance(2, 7);
 
-    assert.equal(shop.itemById("armor"), armor);
+    assert.deepEqual(shop.itemById("armor"), armor);
     assert.equal(shop.itemById("missing"), null);
     assert.deepEqual(shop.allItems(), [armor]);
     assert.equal(shop.balanceOf(1), 10);
@@ -61,27 +164,15 @@ describe("TTT shop", () => {
     assert.equal(shop.balanceOf(3), 0);
   });
 
-  it("publishes mutable balance changes before committed balance observations", () => {
-    const shop = createShopApi(fakeCore());
-    const order: string[] = [];
-    shop.on("balanceChanging", (event) => {
-      order.push(`changing:${event.previousBalance}:${event.newBalance}:${event.source}`);
-      event.newBalance *= 2;
-    }, { priority: 20 });
-    shop.on("balanceChanged", (event) => {
-      order.push(`changed:${event.previousBalance}:${event.newBalance}:${event.delta}:${event.reason}`);
-    });
-
-    shop.addBalance(1, 5, "exploration", false);
-
-    assert.equal(shop.balanceOf(1), 10);
-    assert.deepEqual(order, ["changing:0:5:add", "changed:0:10:10:exploration"]);
-  });
-
   it("emits balance changes for set, reset, and per-slot clear paths", () => {
-    const shop = createShopApi(fakeCore());
     const changes: string[] = [];
-    shop.on("balanceChanged", (event) => changes.push(`${event.slot}:${event.source}:${event.previousBalance}->${event.newBalance}`));
+    const shop = createShopApi(fakeCore(), {
+      emitForward(event: string, payload: any) {
+        if (event === "balanceChanged") {
+          changes.push(`${payload.slot}:${payload.source}:${payload.previousBalance}->${payload.newBalance}`);
+        }
+      },
+    });
 
     shop.setBalance(1, 8, "admin");
     shop.setBalance(2, 4, "admin");
@@ -94,18 +185,18 @@ describe("TTT shop", () => {
   it("refuses missing, disabled, globally disabled, and inactive-round items", () => {
     let enabled = true;
     const shop = createShopApi(fakeCore(), { enabled: () => enabled });
-    shop.registerItem({ ...item(), enabled: false });
+    shop.registerItemDefinition({ ...item(), enabled: false });
     shop.setBalance(1, 10);
 
     assert.equal(shop.canPurchase(1, "missing"), "not_found");
     assert.equal(shop.tryPurchase(1, "armor"), "not_purchasable");
 
-    shop.registerItem(item("radar"));
+    shop.registerItemDefinition(item("radar"));
     enabled = false;
     assert.equal(shop.canPurchase(1, "radar"), "not_purchasable");
 
     const inactiveShop = createShopApi(fakeCore({ state: "waiting" }));
-    inactiveShop.registerItem(item("radar"));
+    inactiveShop.registerItemDefinition(item("radar"));
     assert.equal(inactiveShop.canPurchase(1, "radar"), "not_purchasable");
   });
 
@@ -117,7 +208,7 @@ describe("TTT shop", () => {
       snapshot({ alive: false }),
     ]) {
       const shop = createShopApi(fakeCore({ player: currentPlayer }));
-      shop.registerItem(item());
+      shop.registerItemDefinition(item());
       shop.setBalance(1, 10);
 
       assert.equal(shop.canPurchase(1, "armor"), "not_purchasable");
@@ -127,45 +218,45 @@ describe("TTT shop", () => {
 
   it("enforces role and team gates", () => {
     const shop = createShopApi(fakeCore({ role: "ttt:innocent", player: snapshot({ role: "ttt:innocent", team: "innocent" }) }));
-    shop.registerItem({ ...item("c4"), allowedRoles: ["ttt:traitor"] });
-    shop.registerItem({ ...item("radio"), allowedTeams: ["traitor"] });
+    shop.registerItemDefinition({ ...item("c4"), allowedRoles: ["ttt:traitor"] });
+    shop.registerItemDefinition({ ...item("radio"), allowedTeams: ["traitor"] });
     shop.setBalance(1, 10);
 
     assert.equal(shop.tryPurchase(1, "c4"), "wrong_role");
     assert.equal(shop.tryPurchase(1, "radio"), "wrong_role");
   });
 
-  it("runs cancelable purchase attempts after validation and before charging or delivery", () => {
+  it("applies purchase blocks only after ordinary purchase validation", () => {
     const shop = createShopApi(fakeCore());
-    const order: string[] = [];
-    shop.registerItem(item("tripwire", () => { order.push("delivery"); }));
-    shop.setBalance(1, 10);
-    shop.on("purchaseAttempt", (event) => {
-      order.push(`attempt:${event.itemId}:${event.price}:${event.balance}`);
-      event.canceled = true;
-    });
-    shop.on("balanceChanged", () => order.push("balance"));
+    let deliveries = 0;
+    shop.registerItemDefinition(item("tripwire", () => { deliveries += 1; }));
+    shop.setPurchaseBlock("special:vanilla");
 
+    assert.equal(shop.tryPurchase(1, "tripwire"), "insufficient_funds");
+    shop.setBalance(1, 10);
     assert.equal(shop.tryPurchase(1, "tripwire"), "canceled");
-    assert.equal(shop.balanceOf(1), 10);
-    assert.deepEqual(order, ["attempt:tripwire:5:10"]);
+    assert.equal(deliveries, 0);
   });
 
   it("commits purchases after delivery and logs the committed transaction", () => {
     const core = fakeCore();
-    const shop = createShopApi(core);
-    const order: string[] = [];
-    shop.registerItem({ ...item("tripwire", () => { order.push("delivery"); }), limit: 1 });
-    shop.setBalance(1, 10);
-    shop.on("purchaseAttempt", () => order.push("attempt"));
-    shop.on("balanceChanged", (event) => {
-      if (event.source === "purchase") order.push(`balance:${event.newBalance}`);
+    const shop = createShopApi(core, {
+      emitForward(event: string, payload: any) {
+        if (event === "balanceChanged" && payload.source === "purchase") {
+          order.push(`balance:${payload.newBalance}`);
+        }
+        if (event === "purchaseCommitted") {
+          order.push(`committed:${payload.purchaseCount}:${payload.balance}`);
+        }
+      },
     });
-    shop.on("purchaseCommitted", (event) => order.push(`committed:${event.purchaseCount}:${event.balance}`));
+    const order: string[] = [];
+    shop.registerItemDefinition({ ...item("tripwire", () => { order.push("delivery"); }), limit: 1 });
+    shop.setBalance(1, 10);
 
     assert.equal(shop.tryPurchase(1, "tripwire"), "success");
 
-    assert.deepEqual(order, ["attempt", "balance:5", "delivery", "committed:1:5"]);
+    assert.deepEqual(order, ["balance:5", "delivery", "committed:1:5"]);
     assert.deepEqual(core.logs, [{
       kind: "shop.purchase.committed",
       message: "Player 1 purchased Armor for 5 credits.",
@@ -179,8 +270,8 @@ describe("TTT shop", () => {
     let deliveries = 0;
     const shopItem = { ...item("tripwire", () => { deliveries += 1; }), limit: 1 };
     const canceledItem = { ...item("canceled", () => { deliveries += 10; }), canPurchase: () => "canceled" as const };
-    shop.registerItem(shopItem);
-    shop.registerItem(canceledItem);
+    shop.registerItemDefinition(shopItem);
+    shop.registerItemDefinition(canceledItem);
     shop.setBalance(1, 5);
 
     assert.equal(shop.tryPurchase(1, "canceled"), "canceled");
@@ -192,7 +283,7 @@ describe("TTT shop", () => {
     assert.equal(deliveries, 1);
 
     const insufficientShop = createShopApi(fakeCore());
-    insufficientShop.registerItem(shopItem);
+    insufficientShop.registerItemDefinition(shopItem);
     insufficientShop.setBalance(1, 4);
     assert.equal(insufficientShop.tryPurchase(1, "tripwire"), "insufficient_funds");
   });
@@ -203,16 +294,15 @@ describe("TTT shop", () => {
       () => { throw new Error("delivery exploded"); },
     ]) {
       const core = fakeCore();
-      const shop = createShopApi(core);
       let commits = 0;
-      shop.on("purchaseCommitted", () => { commits += 1; });
-      shop.registerItem({ ...item("tripwire", onPurchase), limit: 1 });
-      shop.setBalance(1, 10);
-      shop.on("balanceChanging", (event) => {
-        if (event.newBalance > event.previousBalance) {
-          event.newBalance = event.previousBalance + (event.newBalance - event.previousBalance) * 2;
-        }
+      const shop = createShopApi(core, {
+        emitForward(event) {
+          if (event === "purchaseCommitted") commits += 1;
+        },
       });
+      shop.registerItemDefinition({ ...item("tripwire", onPurchase), limit: 1 });
+      shop.setBalance(1, 10);
+      shop.setBalanceGainMultiplier("special:rich", 2);
 
       assert.equal(shop.tryPurchase(1, "tripwire"), "delivery_failed");
       assert.equal(shop.balanceOf(1), 10);
@@ -224,7 +314,7 @@ describe("TTT shop", () => {
 
   it("clears a reused slot's balance and purchase count", () => {
     const shop = createShopApi(fakeCore());
-    shop.registerItem({ ...item("limited"), limit: 1 });
+    shop.registerItemDefinition({ ...item("limited"), limit: 1 });
     shop.setBalance(1, 10);
     assert.equal(shop.tryPurchase(1, "limited"), "success");
 

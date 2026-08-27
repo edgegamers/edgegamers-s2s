@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { TttCoreApi, TttEvents, TttLogEntry, TttPlayerSnapshot } from "@edgegamers/ttt-core";
+import type { InterfaceHandle } from "@s2script/sdk/plugin";
+import type {
+  TttCoreApi,
+  TttCoreForwards,
+  TttLogEntry,
+  TttPlayerSnapshot,
+} from "@edgegamers/ttt-core";
 import { createStartingCredits, installEconomy, scaleExplorationReward } from "../src/economy.ts";
 import { createShopApi } from "../src/shop.ts";
 
@@ -20,7 +26,7 @@ function player(slot: number, role: string, connected = true): TttPlayerSnapshot
 function createFakeCore(initialPlayers: readonly TttPlayerSnapshot[]) {
   let players = [...initialPlayers];
   let state: "waiting" | "countdown" | "in_progress" | "finished" = "in_progress";
-  const handlers = new Map<keyof TttEvents, Array<(event: never) => void>>();
+  const handlers = new Map<keyof TttCoreForwards, Array<(event: never) => void>>();
   const logs: TttLogEntry[] = [];
   const core = {
     roleOf: (slot: number) => players.find((candidate) => candidate.slot === slot)?.role ?? "ttt:spectator",
@@ -31,18 +37,19 @@ function createFakeCore(initialPlayers: readonly TttPlayerSnapshot[]) {
     isParticipating: (slot: number) => players.find((candidate) => candidate.slot === slot)?.participating ?? false,
     gameState: () => ({ state, participants: players.length, roundsThisMap: 1, winner: "", reason: "" }),
     log: (entry: TttLogEntry) => logs.push(entry),
-    on<K extends keyof TttEvents>(event: K, handler: (payload: TttEvents[K]) => void) {
+    on<K extends keyof TttCoreForwards>(event: K, handler: (payload: TttCoreForwards[K]) => void) {
       const registered = handlers.get(event) ?? [];
       registered.push(handler as (event: never) => void);
       handlers.set(event, registered);
     },
-  } as unknown as TttCoreApi;
+  } as unknown as InterfaceHandle<TttCoreApi>;
 
   return {
     core,
     logs,
-    emit<K extends keyof TttEvents>(event: K, payload: TttEvents[K]) {
-      for (const handler of handlers.get(event) ?? []) handler(payload as never);
+    emit<K extends keyof TttCoreForwards>(event: K, payload: TttCoreForwards[K]) {
+      const copied = structuredClone(payload);
+      for (const handler of handlers.get(event) ?? []) handler(copied as never);
     },
     setState(next: typeof state) { state = next; },
     setPlayers(next: readonly TttPlayerSnapshot[]) { players = [...next]; },
@@ -94,7 +101,6 @@ describe("shop economy", () => {
     fake.emit("roleAssigned", { slot: 1, role: "ttt:traitor" });
     fake.emit("death", { slot: 2, killer: 1, assister: -1, weapon: "weapon_ak47", headshot: false });
     fake.emit("bodyIdentify", {
-      canceled: false,
       identifier: 1,
       body: { ownerSlot: 2, ownerName: "Player 2", ownerRole: "ttt:innocent", identified: true, killerSlot: 1 },
     });
@@ -143,7 +149,6 @@ describe("shop economy", () => {
     shop.setBalance(2, 20);
 
     fake.emit("bodyIdentify", {
-      canceled: false,
       identifier: 1,
       body: {
         ownerSlot: 2,
@@ -170,7 +175,6 @@ describe("shop economy", () => {
     shop.setBalance(3, 30);
 
     fake.emit("bodyIdentify", {
-      canceled: false,
       identifier: 1,
       body: {
         ownerSlot: 2,
@@ -193,7 +197,6 @@ describe("shop economy", () => {
     fake.setState("finished");
 
     fake.emit("bodyIdentify", {
-      canceled: false,
       identifier: 1,
       body: { ownerSlot: 2, ownerName: "Player 2", ownerRole: "ttt:traitor", identified: true, killerSlot: -1 },
     });
@@ -206,7 +209,7 @@ describe("shop economy", () => {
     const fake = createFakeCore([original]);
     const shop = createShopApi(fake.core);
     installEconomy({ core: fake.core, shop });
-    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1, onPurchase: () => undefined });
+    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1 });
     shop.setBalance(1, 10);
     assert.equal(shop.tryPurchase(1, "limited"), "success");
 
@@ -222,7 +225,7 @@ describe("shop economy", () => {
     const fake = createFakeCore([player(1, "ttt:traitor")]);
     const shop = createShopApi(fake.core);
     installEconomy({ core: fake.core, shop });
-    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1, onPurchase: () => undefined });
+    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1 });
     shop.setBalance(1, 10);
     assert.equal(shop.tryPurchase(1, "limited"), "success");
 
@@ -251,7 +254,7 @@ describe("shop economy", () => {
     const fake = createFakeCore([player(1, "ttt:traitor")]);
     const shop = createShopApi(fake.core);
     installEconomy({ core: fake.core, shop });
-    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1, onPurchase: () => undefined });
+    shop.registerItem({ id: "limited", name: "Limited", description: "", price: 5, enabled: true, limit: 1 });
     shop.setBalance(1, 10);
     assert.equal(shop.tryPurchase(1, "limited"), "success");
 

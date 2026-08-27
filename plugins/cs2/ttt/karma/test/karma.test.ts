@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { CommandInvocation } from "@s2script/sdk/commands";
-import type { CtxCommands } from "@s2script/sdk/plugin";
-import type { TttCoreApi, TttEvents, TttPlayerSnapshot } from "@edgegamers/ttt-core";
+import type { CtxCommands, InterfaceHandle } from "@s2script/sdk/plugin";
+import type {
+  TttCoreApi,
+  TttCoreForwards,
+  TttPlayerSnapshot,
+} from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "../api.d.ts";
 import { registerKarmaCommands } from "../src/commands.ts";
 import { installKarmaEvents } from "../src/events.ts";
@@ -52,24 +56,28 @@ function player(
 
 function createFakeCore(initialPlayers: readonly TttPlayerSnapshot[]) {
   let players = [...initialPlayers];
-  const handlers = new Map<keyof TttEvents, Array<(event: never) => void>>();
+  const handlers = new Map<keyof TttCoreForwards, Array<(event: never) => void>>();
+  const reservations: Array<[number, string]> = [];
   const core = {
     activePlayers: () => players,
     player: (slot: number) => players.find((candidate) => candidate.slot === slot) ?? null,
     roleOf: (slot: number) => players.find((candidate) => candidate.slot === slot)?.role ?? "ttt:spectator",
     teamOfRole: (role: string) => players.find((candidate) => candidate.role === role)?.team ?? "spectator",
-    on<K extends keyof TttEvents>(event: K, handler: (payload: TttEvents[K]) => void) {
+    reserveRole(slot: number, role: string) { reservations.push([slot, role]); },
+    on<K extends keyof TttCoreForwards>(event: K, handler: (payload: TttCoreForwards[K]) => void) {
       const registered = handlers.get(event) ?? [];
       registered.push(handler as (event: never) => void);
       handlers.set(event, registered);
     },
-  } as unknown as TttCoreApi;
+  } as unknown as InterfaceHandle<TttCoreApi>;
 
   return {
     core,
+    reservations,
     setPlayers(next: readonly TttPlayerSnapshot[]) { players = [...next]; },
-    emit<K extends keyof TttEvents>(event: K, payload: TttEvents[K]) {
-      for (const handler of handlers.get(event) ?? []) handler(payload as never);
+    emit<K extends keyof TttCoreForwards>(event: K, payload: TttCoreForwards[K]) {
+      const copied = structuredClone(payload);
+      for (const handler of handlers.get(event) ?? []) handler(copied as never);
     },
   };
 }
@@ -588,20 +596,23 @@ describe("TttKarmaService", () => {
 });
 
 describe("TTT karma event wiring", () => {
-  it("rewrites timed-out role assignments to spectator", () => {
+  it("reserves timed-out players as spectators from the countdown forward", () => {
     const fake = createFakeCore([player(1, "steam-1", "ttt:innocent", "innocent")]);
     const karma = createService({ timeoutRounds: 2 });
     installKarmaEvents(fake.core, karma);
     karma.setKarma(1, 10);
-    const assigning: TttEvents["roleAssigning"] = {
-      slot: 1,
-      role: "ttt:innocent",
-      canceled: false,
-    };
 
-    fake.emit("roleAssigning", assigning);
+    fake.emit("gameState", {
+      state: "countdown",
+      previousState: "waiting",
+      participants: 1,
+      roundsThisMap: 0,
+      winner: "",
+      reason: "",
+      quiet: false,
+    });
 
-    assert.equal(assigning.role, "ttt:spectator");
+    assert.deepEqual(fake.reservations, [[1, "ttt:spectator"]]);
     assert.equal(karma.timeoutRemaining(1), 1);
   });
 

@@ -133,6 +133,18 @@ export interface TttEvents {
   bodyIdentify: TttBodyIdentifyEvent;
 }
 
+/** Copied observational events emitted through the interface handle's reserved `.on(...)`. */
+export interface TttCoreForwards {
+  gameState: TttGameStateEvent;
+  roleAssigned: TttRoleAssignedEvent;
+  death: TttDeathEvent;
+  damage: Omit<TttDamageEvent, "canceled">;
+  join: TttJoinEvent;
+  leave: TttLeaveEvent;
+  bodyCreate: Omit<TttBodyCreateEvent, "canceled">;
+  bodyIdentify: Omit<TttBodyIdentifyEvent, "canceled">;
+}
+
 export interface TttStartRoundOptions {
   quiet?: boolean;
 }
@@ -170,11 +182,7 @@ export interface TttCoreApi {
   startRound(options?: TttStartRoundOptions): boolean;
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline(seconds: number): void;
-  on<K extends keyof TttEvents>(
-    event: K,
-    handler: (event: TttEvents[K]) => void,
-    options?: TttListenerOptions,
-  ): void;
+  extendRoundDeadline(seconds: number, maxRemaining: number): number;
   log(entry: TttLogEntry): void;
   renderLogs(slot?: number): string[];
 }

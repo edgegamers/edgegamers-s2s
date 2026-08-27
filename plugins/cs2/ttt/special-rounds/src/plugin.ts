@@ -23,10 +23,11 @@ SOFTWARE.
 */
 import { plugin } from "@s2script/sdk/plugin";
 import { config } from "@s2script/sdk/config";
+import type { PublishHandle } from "@s2script/sdk/interfaces";
 import { Server } from "@s2script/sdk/server";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttShopApi } from "@edgegamers/ttt-shop";
-import type { TttSpecialRoundsApi } from "../api.d.ts";
+import type { TttSpecialRoundForwards, TttSpecialRoundsApi } from "../api.d.ts";
 import { registerSpecialRoundCommands } from "./commands.ts";
 import { createSpecialRoundsConfigSnapshot } from "./config.ts";
 import { createSpecialRoundLifecycle } from "./lifecycle.ts";
@@ -36,17 +37,32 @@ import { registerStockSpecialRounds } from "./stock.ts";
 export default plugin((ctx) => {
   const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
   const shop = ctx.tryUse<TttShopApi>("@edgegamers/ttt-shop");
-  const settings = createSpecialRoundsConfigSnapshot(config);
-  const lifecycle = createSpecialRoundLifecycle({ core, config: settings });
+  let settings = createSpecialRoundsConfigSnapshot(config);
+  let published: PublishHandle | null = null;
+  let previousGameTime: number | null = null;
+  const lifecycle = createSpecialRoundLifecycle({ core, config: () => settings });
   const specials = createSpecialRoundsApi({
     availablePlugins: new Set(shop === null ? [] : ["@edgegamers/ttt-shop"]),
     onRoundStarted: lifecycle.onRoundStarted,
+    onError(id, error) {
+      core.log({
+        kind: "special_round.callback_failed",
+        message: "Special round " + id + " callback failed: " + error,
+        data: { roundId: id, error },
+      });
+    },
+    emitForward<K extends keyof TttSpecialRoundForwards>(
+      event: K,
+      payload: TttSpecialRoundForwards[K],
+    ) {
+      published?.emit(event, payload);
+    },
   });
-  registerStockSpecialRounds({
+  const stock = registerStockSpecialRounds({
     specials,
     core,
     shop,
-    config: settings,
+    config: () => settings,
     runtime: {
       command: (command) => { Server.command(command); },
       getCvar: (name) => Server.getCvar(name),
@@ -55,11 +71,28 @@ export default plugin((ctx) => {
   });
   lifecycle.install(specials);
   registerSpecialRoundCommands(ctx.commands, specials);
-  ctx.server.onGameFrame(() => { specials.tickActiveRounds(0); });
-  ctx.publish<TttSpecialRoundsApi>("@edgegamers/ttt-special-rounds", specials);
+  ctx.config.onChange(() => {
+    specials.clearRounds("config_change");
+    settings = createSpecialRoundsConfigSnapshot(config);
+    stock.refresh();
+  });
+  ctx.server.onMapStart(() => {
+    specials.clearRounds("map_start");
+    lifecycle.onMapStart();
+    previousGameTime = null;
+  });
+  ctx.server.onGameFrame(() => {
+    const currentGameTime = Server.gameTime;
+    const dt = previousGameTime === null || currentGameTime < previousGameTime
+      ? 0
+      : currentGameTime - previousGameTime;
+    previousGameTime = currentGameTime;
+    specials.tickActiveRounds(dt);
+  });
+  published = ctx.publish<TttSpecialRoundsApi>("@edgegamers/ttt-special-rounds", specials);
   console.log("[ttt-special-rounds] loaded");
 
   return {
-    onUnload: () => { specials.clearRounds(); },
+    onUnload: () => { specials.clearRounds("unload"); },
   };
 });

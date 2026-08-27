@@ -1,18 +1,22 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { CommandInvocation } from "@s2script/sdk/commands";
-import type { CtxCommands } from "@s2script/sdk/plugin";
+import type { CtxCommands, InterfaceHandle } from "@s2script/sdk/plugin";
 import type {
   TttCoreApi,
-  TttEvents,
+  TttCoreForwards,
   TttGameStateSnapshot,
   TttRoleKey,
 } from "@edgegamers/ttt-core";
-import type { TttSpecialRoundDefinition, TttSpecialRoundsApi } from "../api.d.ts";
+import type { TttSpecialRoundsApi } from "../api.d.ts";
 import { registerSpecialRoundCommands } from "../src/commands.ts";
 import type { SpecialRoundsConfig } from "../src/config.ts";
 import { createSpecialRoundLifecycle } from "../src/lifecycle.ts";
-import { createSpecialRoundsApi } from "../src/special-rounds.ts";
+import {
+  createSpecialRoundsApi,
+  type LocalSpecialRoundDefinition,
+  type SpecialRoundsRuntime,
+} from "../src/special-rounds.ts";
 
 const BASE_CONFIG: SpecialRoundsConfig = {
   minRoundsBetween: 1,
@@ -43,8 +47,9 @@ const BASE_CONFIG: SpecialRoundsConfig = {
 };
 
 interface FakeCore {
-  api: TttCoreApi;
+  api: InterfaceHandle<TttCoreApi>;
   deadlines: number[];
+  extensions: Array<[number, number]>;
   emitGameState(state: TttGameStateSnapshot["state"]): void;
   emitDeath(slot: number, killer: number): void;
   setGameState(state: Partial<TttGameStateSnapshot>): void;
@@ -52,9 +57,10 @@ interface FakeCore {
 }
 
 function createCore(): FakeCore {
-  const gameStateHandlers: Array<(event: TttEvents["gameState"]) => void> = [];
-  const deathHandlers: Array<(event: TttEvents["death"]) => void> = [];
+  const gameStateHandlers: Array<(event: TttCoreForwards["gameState"]) => void> = [];
+  const deathHandlers: Array<(event: TttCoreForwards["death"]) => void> = [];
   const deadlines: number[] = [];
+  const extensions: Array<[number, number]> = [];
   const roles = new Map<number, TttRoleKey>();
   let state: TttGameStateSnapshot = {
     state: "waiting",
@@ -68,31 +74,36 @@ function createCore(): FakeCore {
     gameState: () => ({ ...state }),
     roleOf: (slot: number) => roles.get(slot) ?? "ttt:spectator",
     setRoundDeadline: (seconds: number) => { deadlines.push(seconds); },
-    on<K extends keyof TttEvents>(
+    extendRoundDeadline: (seconds: number, maxRemaining: number) => {
+      extensions.push([seconds, maxRemaining]);
+      return maxRemaining;
+    },
+    on<K extends keyof TttCoreForwards>(
       event: K,
-      handler: (payload: TttEvents[K]) => void,
+      handler: (payload: TttCoreForwards[K]) => void,
     ) {
       if (event === "gameState") {
-        gameStateHandlers.push(handler as (payload: TttEvents["gameState"]) => void);
+        gameStateHandlers.push(handler as (payload: TttCoreForwards["gameState"]) => void);
       } else if (event === "death") {
-        deathHandlers.push(handler as (payload: TttEvents["death"]) => void);
+        deathHandlers.push(handler as (payload: TttCoreForwards["death"]) => void);
       }
     },
-  } as unknown as TttCoreApi;
+  } as unknown as InterfaceHandle<TttCoreApi>;
 
   return {
     api,
     deadlines,
+    extensions,
     emitGameState(nextState) {
       const previousState = state.state;
       state = { ...state, state: nextState };
       for (const handler of gameStateHandlers) {
-        handler({ ...state, previousState, quiet: false });
+        handler(structuredClone({ ...state, previousState, quiet: false }));
       }
     },
     emitDeath(slot, killer) {
       for (const handler of deathHandlers) {
-        handler({ slot, killer, assister: -1, weapon: "ak47", headshot: false });
+        handler(structuredClone({ slot, killer, assister: -1, weapon: "ak47", headshot: false }));
       }
     },
     setGameState(update) { state = { ...state, ...update }; },
@@ -100,7 +111,9 @@ function createCore(): FakeCore {
   };
 }
 
-function definition(overrides: Partial<TttSpecialRoundDefinition> = {}): TttSpecialRoundDefinition {
+function definition(
+  overrides: Partial<LocalSpecialRoundDefinition> = {},
+): LocalSpecialRoundDefinition {
   return {
     id: "speed",
     name: "Speed",
@@ -179,7 +192,7 @@ describe("TTT special round lifecycle", () => {
   it("clears active rounds whenever Core finishes a round", () => {
     const { core, specials } = createLifecycleHarness();
     let clears = 0;
-    specials.registerRound(definition({ clear: () => { clears += 1; } }));
+    specials.registerLocalRound(definition({ clear: () => { clears += 1; } }));
     specials.startRounds(["speed"]);
 
     core.emitGameState("finished");
@@ -194,7 +207,7 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition());
+    specials.registerLocalRound(definition());
 
     core.emitGameState("in_progress");
     assert.deepEqual(specials.activeRounds(), []);
@@ -209,7 +222,7 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition());
+    specials.registerLocalRound(definition());
     core.setGameState({ participants: 1, roundsThisMap: 1 });
 
     core.emitGameState("in_progress");
@@ -225,7 +238,7 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition());
+    specials.registerLocalRound(definition());
     core.setGameState({ participants: 2, roundsThisMap: 0 });
 
     core.emitGameState("in_progress");
@@ -243,7 +256,7 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => randomValues.shift() ?? 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition());
+    specials.registerLocalRound(definition());
 
     core.emitGameState("in_progress");
     assert.deepEqual(specials.activeRounds(), []);
@@ -258,9 +271,9 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition({ id: "vanilla", conflicts: ["rich"] }));
-    specials.registerRound(definition({ id: "rich", conflicts: ["vanilla"] }));
-    specials.registerRound(definition({ id: "bhop" }));
+    specials.registerLocalRound(definition({ id: "vanilla", conflicts: ["rich"] }));
+    specials.registerLocalRound(definition({ id: "rich", conflicts: ["vanilla"] }));
+    specials.registerLocalRound(definition({ id: "bhop" }));
 
     core.emitGameState("in_progress");
 
@@ -273,7 +286,7 @@ describe("TTT special round lifecycle", () => {
       lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
-    specials.registerRound(definition());
+    specials.registerLocalRound(definition());
     core.emitGameState("in_progress");
     specials.startRounds(["speed"]);
     specials.clearRounds();
@@ -285,7 +298,7 @@ describe("TTT special round lifecycle", () => {
 
   it("extends Speed for valid innocent deaths up to the configured maximum", () => {
     const { core, specials } = createLifecycleHarness();
-    specials.registerRound(definition({
+    specials.registerLocalRound(definition({
       apply: () => { core.api.setRoundDeadline(BASE_CONFIG.speedInitialSeconds); },
     }));
     core.setRole(3, "ttt:innocent");
@@ -299,7 +312,8 @@ describe("TTT special round lifecycle", () => {
     core.emitDeath(3, 4);
     core.emitDeath(3, 4);
 
-    assert.deepEqual(core.deadlines, [40, 48, 50]);
+    assert.deepEqual(core.deadlines, [40]);
+    assert.deepEqual(core.extensions, [[8, 50], [8, 50], [8, 50]]);
   });
 });
 
@@ -307,8 +321,8 @@ describe("TTT special round commands", () => {
   it("registers generic-admin access, lists IDs, and starts a forced round", () => {
     const commands = createCommands();
     const specials = createSpecialRoundsApi({ availablePlugins: new Set() });
-    specials.registerRound(definition({ id: "speed" }));
-    specials.registerRound(definition({
+    specials.registerLocalRound(definition({ id: "speed" }));
+    specials.registerLocalRound(definition({
       id: "rich",
       requiresPlugins: ["@edgegamers/ttt-shop"],
     }));
@@ -329,51 +343,58 @@ describe("TTT special round commands", () => {
   const refusalCases: Array<{
     name: string;
     requestedId: string;
-    setup(specials: TttSpecialRoundsApi): void;
+    setup(specials: SpecialRoundsRuntime): void;
+    expected: RegExp;
   }> = [
     {
       name: "the ID is unknown",
       requestedId: "missing",
       setup() {},
+      expected: /unknown/i,
     },
     {
       name: "the round is disabled",
       requestedId: "disabled",
-      setup(specials) { specials.registerRound(definition({ id: "disabled", enabled: false })); },
+      setup(specials) { specials.registerLocalRound(definition({ id: "disabled", enabled: false })); },
+      expected: /disabled/i,
     },
     {
       name: "the optional Shop dependency is missing",
       requestedId: "rich",
       setup(specials) {
-        specials.registerRound(definition({
+        specials.registerLocalRound(definition({
           id: "rich",
           requiresPlugins: ["@edgegamers/ttt-shop"],
         }));
       },
+      expected: /missing dependenc/i,
     },
     {
       name: "an active round conflicts",
       requestedId: "rich",
       setup(specials) {
-        specials.registerRound(definition({ id: "vanilla", conflicts: ["rich"] }));
-        specials.registerRound(definition({ id: "rich" }));
+        specials.registerLocalRound(definition({ id: "vanilla", conflicts: ["rich"] }));
+        specials.registerLocalRound(definition({ id: "rich" }));
         specials.startRounds(["vanilla"]);
       },
+      expected: /conflict/i,
     },
     {
       name: "the round is already active",
       requestedId: "speed",
       setup(specials) {
-        specials.registerRound(definition());
+        specials.registerLocalRound(definition());
         specials.startRounds(["speed"]);
       },
+      expected: /already active/i,
     },
     {
       name: "canStart blocks the round",
       requestedId: "blocked",
       setup(specials) {
-        specials.registerRound(definition({ id: "blocked", canStart: () => false }));
+        specials.registerLocalRound(definition({ id: "blocked", canStart: () => false }));
       },
+      expected: /unavailable/i,
     },
   ];
 
@@ -387,7 +408,7 @@ describe("TTT special round commands", () => {
 
       assert.match(
         invocation.replies.join("\n"),
-        new RegExp(`could not.*${refusalCase.requestedId}`, "i"),
+        refusalCase.expected,
       );
     });
   }

@@ -130,6 +130,17 @@ describe("TTT role registry", () => {
     assert.equal(roles.reservedRoleOf(1), "");
   });
 
+  it("honors a Spectator reservation before assigning role quotas", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.reserveRole(1, STOCK_ROLES.spectator);
+
+    const assigned = roles.assignRoles([1, 2, 3, 4, 5]);
+
+    assert.equal(assigned.get(1), STOCK_ROLES.spectator);
+    assert.equal(roles.reservedRoleOf(1), "");
+  });
+
   it("does not honor a reservation below the role minimum player count", () => {
     const roles = createRoleRegistry();
     roles.registerDefaults();
@@ -170,17 +181,15 @@ describe("TTT role registry", () => {
     assert.equal(roles.reservedRoleOf(5), "");
   });
 
-  it("consumes zero-quota, unknown, and missing-slot reservations", () => {
-    const roles = createRoleRegistry();
+  it("consumes unknown and missing-slot reservations", () => {
+    const roles = createRoleRegistry({ random: () => 0 });
     roles.registerDefaults();
-    roles.reserveRole(1, STOCK_ROLES.spectator);
     roles.reserveRole(2, "custom:missing");
     roles.reserveRole(63, STOCK_ROLES.traitor);
 
     const assigned = roles.assignRoles([1, 2, 3]);
 
-    assert.notEqual(assigned.get(1), STOCK_ROLES.spectator);
-    assert.equal(roles.reservedRoleOf(1), "");
+    assert.equal(assigned.get(1), STOCK_ROLES.innocent);
     assert.equal(roles.reservedRoleOf(2), "");
     assert.equal(roles.reservedRoleOf(63), "");
   });

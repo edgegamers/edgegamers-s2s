@@ -1,6 +1,7 @@
 import type { BlackboxApi, BlackboxChannel } from "@edgegamers/blackbox";
 import type {
   TttCoreApi,
+  TttCoreForwards,
   TttEvents,
   TttLogEntry,
   TttStartRoundOptions,
@@ -28,6 +29,8 @@ export function createTttCoreApi(deps: {
   startRound?(options?: TttStartRoundOptions): boolean;
   endRound?(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline?(seconds: number): void;
+  extendRoundDeadline?(seconds: number, maxRemaining: number): number;
+  emitForward?<K extends keyof TttCoreForwards>(event: K, payload: TttCoreForwards[K]): void;
 }): TttCoreApi {
   const log: BlackboxChannel = deps.blackbox.createChannel({ id: "ttt.round", capacity: 512 });
   const settings = (): TttCoreConfig | null => deps.config === undefined
@@ -51,6 +54,38 @@ export function createTttCoreApi(deps: {
   deps.bus.on("gameState", (event) => {
     if (event.state === "countdown") log.clear();
   }, { priority: TttPriority.HIGHEST });
+  if (deps.emitForward !== undefined) {
+    const forward = deps.emitForward;
+    deps.bus.on("gameState", (event) => { forward("gameState", { ...event }); }, {
+      priority: TttPriority.MONITOR,
+    });
+    deps.bus.on("roleAssigned", (event) => { forward("roleAssigned", { ...event }); }, {
+      priority: TttPriority.MONITOR,
+    });
+    deps.bus.on("death", (event) => { forward("death", { ...event }); }, {
+      priority: TttPriority.MONITOR,
+    });
+    deps.bus.on("damage", (event) => {
+      forward("damage", {
+        slot: event.slot,
+        attacker: event.attacker,
+        damage: event.damage,
+        weapon: event.weapon,
+      });
+    }, { priority: TttPriority.MONITOR, ignoreCanceled: true });
+    deps.bus.on("join", (event) => { forward("join", { ...event }); }, {
+      priority: TttPriority.MONITOR,
+    });
+    deps.bus.on("leave", (event) => { forward("leave", { ...event }); }, {
+      priority: TttPriority.MONITOR,
+    });
+    deps.bus.on("bodyCreate", (event) => {
+      forward("bodyCreate", { body: { ...event.body } });
+    }, { priority: TttPriority.MONITOR, ignoreCanceled: true });
+    deps.bus.on("bodyIdentify", (event) => {
+      forward("bodyIdentify", { body: { ...event.body }, identifier: event.identifier });
+    }, { priority: TttPriority.MONITOR, ignoreCanceled: true });
+  }
   return {
     registerRole: deps.roles.registerRole,
     reserveRole: deps.roles.reserveRole,
@@ -86,7 +121,7 @@ export function createTttCoreApi(deps: {
     startRound: deps.startRound ?? (() => false),
     endRound: deps.endRound ?? deps.round.endRound,
     setRoundDeadline: deps.setRoundDeadline ?? (() => undefined),
-    on: deps.bus.on.bind(deps.bus),
+    extendRoundDeadline: deps.extendRoundDeadline ?? (() => 0),
     log: record,
     renderLogs: () => log.render(),
   };

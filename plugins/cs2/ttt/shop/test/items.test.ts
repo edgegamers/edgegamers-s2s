@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
-import type { TttShopApi, TttShopItem } from "../api.d.ts";
 import { createShopConfigSnapshot, type ShopConfigReader } from "../src/config.ts";
 import {
   createIntendedEffectDelivery,
@@ -10,6 +9,7 @@ import {
   type ShopItemDelivery,
 } from "../src/delivery.ts";
 import { registerStockItems } from "../src/items/index.ts";
+import type { TttShopItemDefinition, TttShopRuntime } from "../src/shop.ts";
 
 interface ManifestConfigValue {
   type: "bool" | "int" | "float" | "string";
@@ -40,11 +40,11 @@ function manifestReader(): ShopConfigReader {
   };
 }
 
-function captureRegistrations(): { shop: TttShopApi; items: TttShopItem[] } {
-  const items: TttShopItem[] = [];
+function captureRegistrations(): { shop: TttShopRuntime; items: TttShopItemDefinition[] } {
+  const items: TttShopItemDefinition[] = [];
   const shop = {
-    registerItem(item: TttShopItem) { items.push(item); },
-  } as unknown as TttShopApi;
+    registerItemDefinition(item: TttShopItemDefinition) { items.push(item); },
+  } as unknown as TttShopRuntime;
   return { shop, items };
 }
 
@@ -215,7 +215,10 @@ describe("stock shop items", () => {
       },
     });
 
-    for (const item of items) assert.equal(item.onPurchase(7), true);
+    for (const item of items) {
+      assert.ok(item.onPurchase);
+      assert.equal(item.onPurchase(7), true);
+    }
 
     assert.equal(requests.length, 21);
     assert.deepEqual(requests[0], {

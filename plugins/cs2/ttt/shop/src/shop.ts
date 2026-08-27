@@ -27,62 +27,53 @@ import type {
   TttBalanceChangeSource,
   TttPurchaseResult,
   TttShopApi,
-  TttShopEvents,
+  TttShopForwards,
   TttShopItem,
-  TttShopListenerOptions,
 } from "../api.d.ts";
 
 export interface TttShopOptions {
   karma?: TttKarmaApi | null;
   enabled?: () => boolean;
+  emitForward?<K extends keyof TttShopForwards>(event: K, payload: TttShopForwards[K]): void;
 }
 
-interface Listener<T> {
-  handler: (event: T) => void;
-  priority: number;
-  ignoreCanceled: boolean;
+export interface TttShopItemDefinition extends TttShopItem {
+  canPurchase?(slot: number): TttPurchaseResult | "success";
+  onPurchase?(slot: number): void | boolean;
 }
 
-export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): TttShopApi {
-  const items = new Map<string, TttShopItem>();
+export interface TttShopRuntime extends TttShopApi {
+  registerItemDefinition(item: TttShopItemDefinition): void;
+}
+
+function cloneDescriptor(item: TttShopItem): TttShopItem {
+  const descriptor: TttShopItem = {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    enabled: item.enabled,
+  };
+  if (item.allowedRoles !== undefined) descriptor.allowedRoles = [...item.allowedRoles];
+  if (item.allowedTeams !== undefined) descriptor.allowedTeams = [...item.allowedTeams];
+  if (item.limit !== undefined) descriptor.limit = item.limit;
+  return descriptor;
+}
+
+export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): TttShopRuntime {
+  const items = new Map<string, TttShopItemDefinition>();
   const balances: number[] = [];
   const purchaseCounts = new Map<string, Map<number, number>>();
-  const listeners = new Map<keyof TttShopEvents, Listener<never>[]>();
+  const purchaseBlocks = new Map<string, string>();
+  const balanceGainMultipliers = new Map<string, number>();
   const enabled = options.enabled ?? (() => true);
 
-  function on<K extends keyof TttShopEvents>(
-    event: K,
-    handler: (event: TttShopEvents[K]) => void,
-    listenerOptions?: TttShopListenerOptions,
-  ): void {
-    const entry: Listener<TttShopEvents[K]> = {
-      handler,
-      priority: listenerOptions?.priority ?? 60,
-      ignoreCanceled: listenerOptions?.ignoreCanceled ?? false,
-    };
-    const list = (listeners.get(event) ?? []) as unknown as Listener<TttShopEvents[K]>[];
-    let index = list.length;
-    while (index > 0 && list[index - 1]!.priority > entry.priority) index -= 1;
-    list.splice(index, 0, entry);
-    listeners.set(event, list as unknown as Listener<never>[]);
-  }
-
-  function emit<K extends keyof TttShopEvents>(event: K, payload: TttShopEvents[K]): TttShopEvents[K] {
-    const snapshot = (listeners.get(event) ?? []).slice() as unknown as Listener<TttShopEvents[K]>[];
-    const cancelable = "canceled" in payload;
-    for (const entry of snapshot) {
-      if (cancelable && entry.ignoreCanceled && (payload as { canceled: boolean }).canceled) continue;
-      try {
-        entry.handler(payload);
-      } catch (error) {
-        core.log({
-          kind: "shop.event.handler_failed",
-          message: `Shop ${String(event)} listener failed: ${String(error)}`,
-          data: { event: String(event), error: String(error) },
-        });
-      }
-    }
-    return payload;
+  function registerItemDefinition(item: TttShopItemDefinition): void {
+    items.set(item.id, {
+      ...cloneDescriptor(item),
+      canPurchase: item.canPurchase,
+      onPurchase: item.onPurchase,
+    });
   }
 
   function balanceOf(slot: number): number {
@@ -94,21 +85,22 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
     proposedBalance: number,
     reason: string,
     source: TttBalanceChangeSource,
-    mutable = true,
+    applyMultipliers = true,
   ): void {
     const previousBalance = balanceOf(slot);
     if (previousBalance === proposedBalance) return;
-    const changing = emit("balanceChanging", {
-      slot,
-      previousBalance,
-      newBalance: proposedBalance,
-      reason,
-      source,
-      mutable,
-    });
-    const newBalance = mutable ? changing.newBalance : proposedBalance;
+    let newBalance = proposedBalance;
+    if (
+      applyMultipliers
+      && (source === "add" || source === "set")
+      && proposedBalance > previousBalance
+    ) {
+      let multiplier = 1;
+      for (const value of balanceGainMultipliers.values()) multiplier *= value;
+      newBalance = previousBalance + Math.trunc((proposedBalance - previousBalance) * multiplier);
+    }
     balances[slot] = newBalance;
-    emit("balanceChanged", {
+    options.emitForward?.("balanceChanged", {
       slot,
       previousBalance,
       newBalance,
@@ -148,15 +140,26 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
     return item.canPurchase?.(slot) ?? "success";
   }
 
+  function deliver(slot: number, item: TttShopItemDefinition): boolean {
+    if (item.onPurchase === undefined) return true;
+    try {
+      return item.onPurchase(slot) !== false;
+    } catch {
+      return false;
+    }
+  }
+
   return {
     registerItem(item) {
-      items.set(item.id, item);
+      registerItemDefinition(item);
     },
+    registerItemDefinition,
     itemById(id) {
-      return items.get(id) ?? null;
+      const item = items.get(id);
+      return item === undefined ? null : cloneDescriptor(item);
     },
     allItems() {
-      return [...items.values()];
+      return [...items.values()].map(cloneDescriptor);
     },
     balanceOf,
     addBalance(slot, amount, reason = "") {
@@ -176,34 +179,20 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
     tryPurchase(slot, itemId) {
       const result = canPurchase(slot, itemId);
       if (result !== "success") return result;
+      if (purchaseBlocks.size > 0) return "canceled";
 
       const item = items.get(itemId)!;
-      const attempt = emit("purchaseAttempt", {
-        slot,
-        itemId,
-        price: item.price,
-        balance: balanceOf(slot),
-        canceled: false,
-      });
-      if (attempt.canceled) return "canceled";
-
       const balanceBeforePurchase = balanceOf(slot);
       changeBalance(slot, balanceBeforePurchase - item.price, item.name, "purchase");
 
-      let delivered = false;
-      let deliveryError = "";
-      try {
-        delivered = item.onPurchase(slot) !== false;
-      } catch (error) {
-        deliveryError = String(error);
-      }
+      const delivered = deliver(slot, item);
       if (!delivered) {
         changeBalance(slot, balanceBeforePurchase, `${item.name} refund`, "refund", false);
         core.log({
           kind: "shop.purchase.delivery_failed",
           message: `${item.name} delivery failed; the purchase was refunded.`,
           actorSlot: slot,
-          data: { itemId, itemName: item.name, price: item.price, error: deliveryError },
+          data: { itemId, itemName: item.name, price: item.price },
         });
         return "delivery_failed";
       }
@@ -219,7 +208,7 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
         balance: balanceOf(slot),
         purchaseCount,
       };
-      emit("purchaseCommitted", committed);
+      options.emitForward?.("purchaseCommitted", committed);
       core.log({
         kind: "shop.purchase.committed",
         message: `${core.player(slot)?.name ?? `Slot ${String(slot)}`} purchased ${item.name} for ${String(item.price)} credits.`,
@@ -228,6 +217,26 @@ export function createShopApi(core: TttCoreApi, options: TttShopOptions = {}): T
       });
       return "success";
     },
-    on,
+    grantItem(slot, itemId) {
+      const item = items.get(itemId);
+      return item !== undefined && deliver(slot, item);
+    },
+    setPurchaseBlock(name, reason = "") {
+      if (name.trim() === "") throw new Error("purchase block name must not be empty");
+      purchaseBlocks.set(name, reason);
+    },
+    clearPurchaseBlock(name) {
+      purchaseBlocks.delete(name);
+    },
+    setBalanceGainMultiplier(name, multiplier) {
+      if (name.trim() === "") throw new Error("balance gain multiplier name must not be empty");
+      if (!Number.isFinite(multiplier) || multiplier < 0) {
+        throw new Error("balance gain multiplier must be a finite non-negative number");
+      }
+      balanceGainMultipliers.set(name, multiplier);
+    },
+    clearBalanceGainMultiplier(name) {
+      balanceGainMultipliers.delete(name);
+    },
   };
 }

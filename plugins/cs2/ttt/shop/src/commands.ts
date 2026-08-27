@@ -179,7 +179,7 @@ export function registerShopCommands(
       cmd.reply(`[ttt] unknown item "${cmd.arg(1)}" - try sm_ttt_give with no arguments`);
       return;
     }
-    if (item.onPurchase(target.slot) === false) {
+    if (!shop.grantItem(target.slot, item.id)) {
       cmd.reply(`[ttt] could not deliver ${item.name} to ${target.name}`);
       return;
     }

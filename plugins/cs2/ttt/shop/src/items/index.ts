@@ -23,9 +23,9 @@ SOFTWARE.
 */
 
 import type { TttCoreApi } from "@edgegamers/ttt-core";
-import type { TttShopApi } from "../../api.d.ts";
 import type { ShopConfig } from "../config.ts";
 import { createIntendedEffectDelivery, type ShopItemDelivery } from "../delivery.ts";
+import type { TttShopRuntime } from "../shop.ts";
 import { registerArmorItems } from "./armor.ts";
 import { registerDetectiveBodyTools, registerTraitorBodyTools } from "./body-tools.ts";
 import { registerBodyCompassItems, registerPlayerCompassItems } from "./compass.ts";
@@ -41,7 +41,7 @@ import {
 
 export interface StockItemDependencies {
   core: TttCoreApi;
-  shop: TttShopApi;
+  shop: TttShopRuntime;
   config: ShopConfig;
   delivery?: ShopItemDelivery;
 }

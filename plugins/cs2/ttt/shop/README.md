@@ -2,19 +2,23 @@
 
 `@edgegamers/ttt-shop` provides the TTT credit economy, item registry, purchase API, and Shop commands. The plugin requires `@edgegamers/ttt-core`; `@edgegamers/ttt-karma` remains optional.
 
-## Public Events
+## Public Interface Boundary
 
-Consumers subscribe through `TttShopApi.on`. Lower numeric priorities run first, and equal priorities retain registration order.
+Source2Script copies published interface arguments and return values as structured JSON. Public item descriptors therefore contain data only; delivery callbacks remain private to this package. External plugins can register descriptors and observe a committed purchase through the consumer interface handle:
 
-A successful purchase follows this order:
+```ts
+const shop = ctx.use<TttShopApi>("@edgegamers/ttt-shop");
 
-1. `canPurchase` validates the module setting, round, player snapshot, liveness, participation, item gates, funds, and limit.
-2. `purchaseAttempt` runs. Setting `canceled` returns `canceled` without charging, delivery, or count changes.
-3. The debit emits `balanceChanging`, commits the possibly adjusted balance, then emits `balanceChanged`.
-4. The item delivery runs.
-5. Successful delivery commits the purchase count, emits `purchaseCommitted`, and writes `shop.purchase.committed` through Core logging.
+shop.on("purchaseCommitted", ({ slot, itemId }: TttShopForwards["purchaseCommitted"]) => {
+  // Apply the external plugin's effect for itemId.
+});
+```
 
-False or throwing delivery restores the exact pre-purchase balance, logs `shop.purchase.delivery_failed`, and returns `delivery_failed` without a committed event or count. `balanceChanging.newBalance` is mutable when `mutable` is true; refund, reset, and leave-clear writes set `mutable` to false so transactional and lifecycle cleanup remains authoritative. Every committed set, add, purchase, refund, reset, and clear balance write emits `balanceChanged`.
+`balanceChanged` and `purchaseCommitted` are copied observational forwards. Mutating their payloads has no effect on Shop state.
+
+Policy changes use named structured methods instead of mutable callback events. `setPurchaseBlock` and `clearPurchaseBlock` add or remove a purchase gate. `setBalanceGainMultiplier` and `clearBalanceGainMultiplier` adjust positive balance gains; debits, refunds, resets, and lifecycle cleanup remain authoritative. Names should be stable and scoped to the calling plugin so every applied policy can be removed during cleanup.
+
+A successful purchase validates the player, item, funds, limits, and active named blocks; debits the balance; performs package-internal delivery when one exists; commits the purchase count; emits the two observational forwards; and logs `shop.purchase.committed`. Failed internal delivery restores the exact pre-purchase balance and does not emit `purchaseCommitted`.
 
 ## Runtime Availability
 

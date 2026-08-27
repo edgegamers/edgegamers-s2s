@@ -108,7 +108,7 @@ function createCore(options: { state?: "waiting" | "in_progress"; alive?: boolea
 }
 
 function item(id: string, name = id): TttShopItem {
-  return { id, name, description: "", price: 40, enabled: true, onPurchase: () => undefined };
+  return { id, name, description: "", price: 40, enabled: true };
 }
 
 function createShop(overrides: Partial<TttShopApi> = {}): TttShopApi {
@@ -122,7 +122,11 @@ function createShop(overrides: Partial<TttShopApi> = {}): TttShopApi {
     setBalance() {},
     clearSlot() {},
     resetRound() {},
-    on() {},
+    grantItem: () => true,
+    setPurchaseBlock() {},
+    clearPurchaseBlock() {},
+    setBalanceGainMultiplier() {},
+    clearBalanceGainMultiplier() {},
     canPurchase: () => "success" as TttPurchaseResult,
     tryPurchase: () => "success" as TttPurchaseResult,
     ...overrides,
@@ -176,9 +180,10 @@ describe("TTT shop commands", () => {
     const commands = createCommands();
     let purchases = 0;
     let deliveries = 0;
-    const armor = { ...item("armor", "Armor"), onPurchase: () => { deliveries += 1; } };
+    const armor = item("armor", "Armor");
     registerShopCommands(commands, createCore(), createShop({
       itemById: () => armor,
+      grantItem: () => { deliveries += 1; return true; },
       tryPurchase: () => { purchases += 1; return "success"; },
     }), { enabled: () => false });
 
@@ -251,9 +256,14 @@ describe("TTT shop commands", () => {
   it("grants a named public item to a uniquely matched connected player", () => {
     const commands = createCommands();
     let grantedTo = -1;
-    const armor = { ...item("armor", "Armor"), onPurchase: (slot: number) => { grantedTo = slot; } };
+    const armor = item("armor", "Armor");
     registerShopCommands(commands, createCore({ players: [player(3, "Ada"), player(7, "Grace")] }), createShop({
       itemById: (id) => id === "armor" ? armor : null,
+      grantItem: (slot, id) => {
+        if (id !== "armor") return false;
+        grantedTo = slot;
+        return true;
+      },
     }));
     const invocation = command(-1, ["gra", "armor"]);
 

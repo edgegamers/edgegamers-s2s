@@ -23,9 +23,10 @@ SOFTWARE.
 */
 import { plugin } from "@s2script/sdk/plugin";
 import { config } from "@s2script/sdk/config";
+import type { PublishHandle } from "@s2script/sdk/interfaces";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "@edgegamers/ttt-karma";
-import type { TttShopApi } from "../api.d.ts";
+import type { TttShopApi, TttShopForwards } from "../api.d.ts";
 import { registerShopCommands } from "./commands.ts";
 import { createShopConfigSnapshot } from "./config.ts";
 import { createIntendedEffectDelivery } from "./delivery.ts";
@@ -39,7 +40,14 @@ export default plugin((ctx) => {
   let shopConfig = createShopConfigSnapshot(config);
   let startingCredits = createStartingCredits(config);
   const delivery = createIntendedEffectDelivery(core);
-  const shop = createShopApi(core, { karma, enabled: () => shopConfig.shopEnabled });
+  let published: PublishHandle | null = null;
+  const shop = createShopApi(core, {
+    karma,
+    enabled: () => shopConfig.shopEnabled,
+    emitForward<K extends keyof TttShopForwards>(event: K, payload: TttShopForwards[K]) {
+      published?.emit(event, payload);
+    },
+  });
   registerStockItems({ core, shop, config: shopConfig, delivery });
   installEconomy({
     core,
@@ -59,6 +67,6 @@ export default plugin((ctx) => {
       logExplorationAvailability(core, true);
     }
   });
-  ctx.publish<TttShopApi>("@edgegamers/ttt-shop", shop);
+  published = ctx.publish<TttShopApi>("@edgegamers/ttt-shop", shop);
   console.log("[ttt-shop] loaded");
 });

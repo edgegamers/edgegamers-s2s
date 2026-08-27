@@ -1,4 +1,5 @@
-import type { TttCoreApi } from "@edgegamers/ttt-core";
+import type { InterfaceHandle } from "@s2script/sdk/plugin";
+import type { TttCoreApi, TttCoreForwards } from "@edgegamers/ttt-core";
 import type { TttSpecialRoundsApi } from "../api.d.ts";
 import type { SpecialRoundsConfig } from "./config.ts";
 
@@ -8,33 +9,37 @@ const INNOCENT_ROLE = "ttt:innocent";
 export interface SpecialRoundLifecycle {
   install(specials: TttSpecialRoundsApi): void;
   onRoundStarted(id: string): void;
+  onMapStart(): void;
 }
 
 export function createSpecialRoundLifecycle(options: {
-  core: TttCoreApi;
-  config: SpecialRoundsConfig;
+  core: InterfaceHandle<TttCoreApi>;
+  config: SpecialRoundsConfig | (() => SpecialRoundsConfig);
   random?: () => number;
 }): SpecialRoundLifecycle {
-  const { core, config } = options;
+  const { core } = options;
+  const settings = (): SpecialRoundsConfig =>
+    typeof options.config === "function" ? options.config() : options.config;
   const random = options.random ?? Math.random;
   let roundsSinceSpecial = 0;
-  let speedDeadline: number | null = null;
 
   return {
-    onRoundStarted(id) {
+    onRoundStarted() {
       roundsSinceSpecial = 0;
-      if (id === SPEED_ROUND_ID) speedDeadline = config.speedInitialSeconds;
+    },
+    onMapStart() {
+      roundsSinceSpecial = 0;
     },
     install(specials) {
-      core.on("gameState", (event) => {
+      core.on("gameState", (event: TttCoreForwards["gameState"]) => {
         if (event.state === "finished") {
-          specials.clearRounds();
-          speedDeadline = null;
+          specials.clearRounds("round_finished");
           return;
         }
         if (event.state !== "in_progress") return;
 
         roundsSinceSpecial += 1;
+        const config = settings();
         const state = core.gameState();
         if (roundsSinceSpecial < config.minRoundsBetween) return;
         if (state.participants < config.minPlayers) return;
@@ -49,18 +54,13 @@ export function createSpecialRoundLifecycle(options: {
         }
       });
 
-      core.on("death", (event) => {
-        if (!specials.isActive(SPEED_ROUND_ID) || speedDeadline === null) return;
+      core.on("death", (event: TttCoreForwards["death"]) => {
+        if (!specials.isActive(SPEED_ROUND_ID)) return;
         if (event.killer < 0 || event.killer === event.slot) return;
         if (core.roleOf(event.slot) !== INNOCENT_ROLE) return;
 
-        const extended = Math.min(
-          speedDeadline + config.speedSecondsPerKill,
-          config.speedMaxSeconds,
-        );
-        if (extended <= speedDeadline) return;
-        speedDeadline = extended;
-        core.setRoundDeadline(speedDeadline);
+        const config = settings();
+        core.extendRoundDeadline(config.speedSecondsPerKill, config.speedMaxSeconds);
       });
     },
   };
