@@ -29,6 +29,41 @@ describe("TTT special rounds", () => {
     assert.equal(api.isActive("speed"), true);
   });
 
+  it("returns defensive registry and active-round snapshots", () => {
+    const api = createSpecialRoundsApi({ availablePlugins: new Set() });
+    api.registerRound(round({ id: "first" }));
+    api.registerRound(round({ id: "second" }));
+
+    const registered = api.roundIds() as string[];
+    registered.pop();
+    assert.deepEqual(api.roundIds(), ["first", "second"]);
+
+    api.startRounds(["first", "second"]);
+    const active = api.activeRounds() as string[];
+    active.pop();
+    assert.deepEqual(api.activeRounds(), ["first", "second"]);
+  });
+
+  it("starts forced rounds in request order", () => {
+    const api = createSpecialRoundsApi({ availablePlugins: new Set() });
+    const applied: string[] = [];
+    api.registerRound(round({ id: "first", apply: () => { applied.push("first"); } }));
+    api.registerRound(round({ id: "second", apply: () => { applied.push("second"); } }));
+
+    assert.deepEqual(api.startRounds(["second", "first"]), ["second", "first"]);
+    assert.deepEqual(applied, ["second", "first"]);
+  });
+
+  it("does not restart an already-active round", () => {
+    const api = createSpecialRoundsApi({ availablePlugins: new Set() });
+    let applications = 0;
+    api.registerRound(round({ apply: () => { applications += 1; } }));
+
+    assert.deepEqual(api.startRounds(["speed"]), ["speed"]);
+    assert.deepEqual(api.startRounds(["speed"]), []);
+    assert.equal(applications, 1);
+  });
+
   it("rejects duplicate round IDs", () => {
     const api = createSpecialRoundsApi({ availablePlugins: new Set() });
     api.registerRound(round());
