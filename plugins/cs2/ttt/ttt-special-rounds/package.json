@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-special-rounds",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT OR Apache-2.0",
   "private": false,
   "type": "module",
@@ -10,12 +10,12 @@
     "build": "s2s build ."
   },
   "dependencies": {
-    "@edgegamers/ttt-core": "0.1.0",
-    "@edgegamers/ttt-shop": "0.1.0"
+    "@edgegamers/ttt-core": "0.2.0",
+    "@edgegamers/ttt-shop": "0.2.0"
   },
   "s2script": {
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^0.1.0"
+      "@edgegamers/ttt-core": "^0.2.0"
     },
     "optionalPluginDependencies": {
       "@edgegamers/ttt-shop": "^0.1.0"
@@ -24,31 +24,153 @@
       "@edgegamers/ttt-special-rounds": "0.1.0"
     },
     "config": {
-      "special_min_rounds_between": { "type": "int", "default": 3, "min": 0, "max": 100, "description": "Minimum rounds between special rounds" },
-      "special_min_players": { "type": "int", "default": 5, "min": 0, "max": 64, "description": "Minimum players required for special rounds" },
-      "special_min_rounds_after_map": { "type": "int", "default": 2, "min": 0, "max": 100, "description": "Rounds after a map change before special rounds" },
-      "special_chance": { "type": "float", "default": 0.2, "min": 0, "max": 1, "description": "Chance to start a special round" },
-      "special_multi_chance": { "type": "float", "default": 0.33, "min": 0, "max": 1, "description": "Chance to stack another special round" },
-      "round_bhop_enabled": { "type": "bool", "default": true, "description": "Enable the bunny hop special round" },
-      "round_bhop_weight": { "type": "float", "default": 0.25, "description": "Bunny hop special round selection weight" },
-      "round_lowgrav_enabled": { "type": "bool", "default": true, "description": "Enable the low gravity special round" },
-      "round_lowgrav_weight": { "type": "float", "default": 0.6, "description": "Low gravity special round selection weight" },
-      "round_lowgrav_multiplier": { "type": "float", "default": 0.5, "min": 0.05, "max": 1, "description": "Low gravity multiplier" },
-      "round_pistol_enabled": { "type": "bool", "default": false, "description": "Reserved for a future pistol-only implementation; currently unavailable" },
-      "round_pistol_weight": { "type": "float", "default": 0, "description": "Reserved Pistol round selection weight while the round is unavailable" },
-      "round_suppressed_enabled": { "type": "bool", "default": false, "description": "Reserved for a future suppressed-weapons implementation; currently unavailable" },
-      "round_suppressed_weight": { "type": "float", "default": 0, "description": "Reserved Suppressed round selection weight while the round is unavailable" },
-      "round_vanilla_enabled": { "type": "bool", "default": true, "description": "Enable the vanilla special round" },
-      "round_vanilla_weight": { "type": "float", "default": 0.5, "description": "Vanilla special round selection weight" },
-      "round_rich_enabled": { "type": "bool", "default": true, "description": "Enable the rich special round" },
-      "round_rich_weight": { "type": "float", "default": 0.75, "description": "Rich special round selection weight" },
-      "round_rich_bonus_multiplier": { "type": "float", "default": 2, "min": 1, "max": 10, "description": "Rich round starting balance multiplier" },
-      "round_rich_gain_multiplier": { "type": "float", "default": 3, "min": 1, "max": 10, "description": "Rich round balance gain multiplier" },
-      "round_speed_enabled": { "type": "bool", "default": true, "description": "Enable the speed special round" },
-      "round_speed_weight": { "type": "float", "default": 1, "description": "Speed special round selection weight" },
-      "round_speed_initial_seconds": { "type": "int", "default": 40, "min": 5, "max": 600, "description": "Speed round initial duration in seconds" },
-      "round_speed_seconds_per_kill": { "type": "int", "default": 8, "min": 0, "max": 120, "description": "Seconds added per qualifying Speed round kill" },
-      "round_speed_max_seconds": { "type": "int", "default": 90, "min": 10, "max": 600, "description": "Maximum Speed round duration in seconds" }
+      "special_min_rounds_between": {
+        "type": "int",
+        "default": 3,
+        "min": 0,
+        "max": 100,
+        "description": "Minimum rounds between special rounds"
+      },
+      "special_min_players": {
+        "type": "int",
+        "default": 5,
+        "min": 0,
+        "max": 64,
+        "description": "Minimum players required for special rounds"
+      },
+      "special_min_rounds_after_map": {
+        "type": "int",
+        "default": 2,
+        "min": 0,
+        "max": 100,
+        "description": "Rounds after a map change before special rounds"
+      },
+      "special_chance": {
+        "type": "float",
+        "default": 0.2,
+        "min": 0,
+        "max": 1,
+        "description": "Chance to start a special round"
+      },
+      "special_multi_chance": {
+        "type": "float",
+        "default": 0.33,
+        "min": 0,
+        "max": 1,
+        "description": "Chance to stack another special round"
+      },
+      "round_bhop_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Enable the bunny hop special round"
+      },
+      "round_bhop_weight": {
+        "type": "float",
+        "default": 0.25,
+        "description": "Bunny hop special round selection weight"
+      },
+      "round_lowgrav_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Enable the low gravity special round"
+      },
+      "round_lowgrav_weight": {
+        "type": "float",
+        "default": 0.6,
+        "description": "Low gravity special round selection weight"
+      },
+      "round_lowgrav_multiplier": {
+        "type": "float",
+        "default": 0.5,
+        "min": 0.05,
+        "max": 1,
+        "description": "Low gravity multiplier"
+      },
+      "round_pistol_enabled": {
+        "type": "bool",
+        "default": false,
+        "description": "Reserved for a future pistol-only implementation; currently unavailable"
+      },
+      "round_pistol_weight": {
+        "type": "float",
+        "default": 0,
+        "description": "Reserved Pistol round selection weight while the round is unavailable"
+      },
+      "round_suppressed_enabled": {
+        "type": "bool",
+        "default": false,
+        "description": "Reserved for a future suppressed-weapons implementation; currently unavailable"
+      },
+      "round_suppressed_weight": {
+        "type": "float",
+        "default": 0,
+        "description": "Reserved Suppressed round selection weight while the round is unavailable"
+      },
+      "round_vanilla_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Enable the vanilla special round"
+      },
+      "round_vanilla_weight": {
+        "type": "float",
+        "default": 0.5,
+        "description": "Vanilla special round selection weight"
+      },
+      "round_rich_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Enable the rich special round"
+      },
+      "round_rich_weight": {
+        "type": "float",
+        "default": 0.75,
+        "description": "Rich special round selection weight"
+      },
+      "round_rich_bonus_multiplier": {
+        "type": "float",
+        "default": 2,
+        "min": 1,
+        "max": 10,
+        "description": "Rich round starting balance multiplier"
+      },
+      "round_rich_gain_multiplier": {
+        "type": "float",
+        "default": 3,
+        "min": 1,
+        "max": 10,
+        "description": "Rich round balance gain multiplier"
+      },
+      "round_speed_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Enable the speed special round"
+      },
+      "round_speed_weight": {
+        "type": "float",
+        "default": 1,
+        "description": "Speed special round selection weight"
+      },
+      "round_speed_initial_seconds": {
+        "type": "int",
+        "default": 40,
+        "min": 5,
+        "max": 600,
+        "description": "Speed round initial duration in seconds"
+      },
+      "round_speed_seconds_per_kill": {
+        "type": "int",
+        "default": 8,
+        "min": 0,
+        "max": 120,
+        "description": "Seconds added per qualifying Speed round kill"
+      },
+      "round_speed_max_seconds": {
+        "type": "int",
+        "default": 90,
+        "min": 10,
+        "max": 600,
+        "description": "Maximum Speed round duration in seconds"
+      }
     }
   }
 }
