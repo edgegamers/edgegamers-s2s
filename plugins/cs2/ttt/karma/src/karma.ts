@@ -135,6 +135,9 @@ export function createKarmaService(config: KarmaConfig | (() => KarmaConfig)): K
         setKarma(slot, values[slot]! + delta);
       }
     },
+    timeoutThreshold() {
+      return settings().timeoutThreshold;
+    },
     timeoutRemaining(slot) {
       return timeout[slot] ?? 0;
     },

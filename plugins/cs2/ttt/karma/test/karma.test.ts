@@ -55,6 +55,7 @@ function createKarma(overrides: Partial<TttKarmaApi>): TttKarmaApi {
     setKarma: () => {},
     queueKarma: () => {},
     flushKarma: () => {},
+    timeoutThreshold: () => 0,
     timeoutRemaining: () => 0,
     clearTimeout: () => {},
     suppressNextDeathPenalty: () => {},
@@ -206,6 +207,32 @@ describe("TTT karma commands", () => {
     assert.equal(karmaValue, 91);
     assert.equal(timeout, 0);
     assert.deepEqual(invocation.replies, ["[ttt] Grace karma set to 91 (timeout cleared)"]);
+  });
+
+  it("keeps the timeout when an admin sets karma below the threshold", () => {
+    const commands = createCommands();
+    const core = {
+      activePlayers: () => [{ slot: 5, name: "Grace" }],
+    } as unknown as TttCoreApi;
+    let karmaValue = 12;
+    let timeout = 4;
+    const karma = {
+      ...createKarma({
+        karmaOf: () => karmaValue,
+        setKarma: (_slot: number, value: number) => { karmaValue = value; },
+        timeoutRemaining: () => timeout,
+        clearTimeout: () => { timeout = 0; },
+      }),
+      timeoutThreshold: () => 20,
+    };
+
+    registerKarmaCommands(commands, core, karma);
+    const invocation = command(1, ["Grace", "0"]);
+    commands.admin.get("sm_ttt_karma")!(invocation);
+
+    assert.equal(karmaValue, 0);
+    assert.equal(timeout, 4);
+    assert.deepEqual(invocation.replies, ["[ttt] Grace karma set to 0"]);
   });
 
   it("rejects a negative karma value with usage", () => {

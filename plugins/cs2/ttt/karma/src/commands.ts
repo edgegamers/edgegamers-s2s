@@ -52,8 +52,10 @@ export function registerKarmaCommands(
         return;
       }
       karma.setKarma(target.slot, value);
-      karma.clearTimeout(target.slot);
-      cmd.reply(`[ttt] ${target.name} karma set to ${karma.karmaOf(target.slot)} (timeout cleared)`);
+      const updatedKarma = karma.karmaOf(target.slot);
+      const clearsTimeout = updatedKarma >= karma.timeoutThreshold();
+      if (clearsTimeout) karma.clearTimeout(target.slot);
+      cmd.reply(`[ttt] ${target.name} karma set to ${updatedKarma}${clearsTimeout ? " (timeout cleared)" : ""}`);
       return;
     }
     const timeout = karma.timeoutRemaining(target.slot);
