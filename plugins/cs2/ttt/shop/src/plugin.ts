@@ -24,9 +24,13 @@ SOFTWARE.
 import { plugin } from "@s2script/sdk/plugin";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "@edgegamers/ttt-karma";
+import type { TttShopApi } from "../api.d.ts";
+import { createShopApi } from "./shop.ts";
 
 export default plugin((ctx) => {
-  ctx.use<TttCoreApi>("@edgegamers/ttt-core");
-  ctx.tryUse<TttKarmaApi>("@edgegamers/ttt-karma");
+  const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
+  const karma = ctx.tryUse<TttKarmaApi>("@edgegamers/ttt-karma");
+  const shop = createShopApi(core, { karma });
+  ctx.publish<TttShopApi>("@edgegamers/ttt-shop", shop);
   console.log("[ttt-shop] loaded");
 });
