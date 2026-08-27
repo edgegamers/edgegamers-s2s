@@ -18,13 +18,18 @@ export interface KarmaScoreDeltas {
 export interface KarmaConfig {
   defaultKarma: number;
   minKarma: number;
+  lowKarmaCommand: string;
   timeoutThreshold: number;
   timeoutRounds: number;
+  warningWindowMs: number;
+  perRoundKarma: number;
+  perWinKarma: number;
   deltas?: Partial<KarmaScoreDeltas>;
 }
 
 export interface KarmaConfigReader {
   getInt(key: string): number;
+  getString(key: string): string;
 }
 
 const DELTA: KarmaScoreDeltas = {
@@ -52,8 +57,12 @@ export function createKarmaConfigSnapshot(reader: KarmaConfigReader): KarmaConfi
   return {
     defaultKarma: reader.getInt("karma_default"),
     minKarma: reader.getInt("karma_min"),
+    lowKarmaCommand: reader.getString("karma_low_command"),
     timeoutThreshold: reader.getInt("karma_timeout_threshold"),
     timeoutRounds: reader.getInt("karma_round_timeout"),
+    warningWindowMs: reader.getInt("karma_warning_window_hours") * 60 * 60 * 1_000,
+    perRoundKarma: reader.getInt("karma_per_round"),
+    perWinKarma: reader.getInt("karma_per_round_win"),
     deltas: {
       innocentOnTraitor: reader.getInt("karma_innocent_on_traitor"),
       traitorOnDetective: reader.getInt("karma_traitor_on_detective"),

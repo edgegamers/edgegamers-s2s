@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
+  "type": "module",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
   "scripts": {
@@ -13,7 +14,6 @@
     "@edgegamers/ttt-core": "0.1.0"
   },
   "s2script": {
-    "apiVersion": "1.x",
     "pluginDependencies": {
       "@edgegamers/ttt-core": "^0.1.0"
     },
@@ -23,8 +23,12 @@
     "config": {
       "karma_default": { "type": "int", "default": 50, "description": "Default karma for new or reset players" },
       "karma_min": { "type": "int", "default": 0, "description": "Minimum karma before low-karma punishment" },
+      "karma_low_command": { "type": "string", "default": "sm_ban #{0} 2880 Low Karma", "description": "Command run below minimum karma ({0} = user ID; blank disables the command)" },
       "karma_timeout_threshold": { "type": "int", "default": 20, "description": "Karma below which a player sits out" },
       "karma_round_timeout": { "type": "int", "default": 4, "description": "Rounds a low-karma player sits out" },
+      "karma_warning_window_hours": { "type": "int", "default": 24, "description": "Hours before another low-karma timeout can be assigned" },
+      "karma_per_round": { "type": "int", "default": 1, "description": "Karma gained by participating players who do not win" },
+      "karma_per_round_win": { "type": "int", "default": 1, "description": "Karma gained by participating players on the winning team" },
       "karma_innocent_on_traitor": { "type": "int", "default": 3, "description": "Karma for innocent-team killing traitor-team" },
       "karma_traitor_on_detective": { "type": "int", "default": 1, "description": "Karma for traitor-team killing the stock detective" },
       "karma_innocent_on_innocent_innocent": { "type": "int", "default": 0, "description": "Karma for retaliating against an innocent-team member" },

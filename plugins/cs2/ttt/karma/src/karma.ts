@@ -15,9 +15,17 @@ export interface KarmaKillInput {
 }
 
 export interface KarmaService extends TttKarmaApi {
+  join(slot: number, steamId: string): void;
+  leave(slot: number, steamId: string): void;
+  grantRound(slot: number, won: boolean): void;
   scoreKill(input: KarmaKillInput): void;
   resetRound(): void;
   serveTimeout(slot: number): boolean;
+}
+
+export interface KarmaServiceOptions {
+  now?: () => number;
+  onLowKarma?: (slot: number, command: string) => void;
 }
 
 const MAX_SLOTS = 64;
@@ -25,6 +33,7 @@ const MAX_SLOTS = 64;
 export interface FirstDamageHistory {
   recordDamage(attacker: number, victim: number): void;
   startedFight(attacker: number, victim: number): boolean;
+  clearSlot(slot: number): void;
   clear(): void;
 }
 
@@ -42,31 +51,95 @@ export function createFirstDamageHistory(): FirstDamageHistory {
     startedFight(attacker, victim) {
       return validPair(attacker, victim) && firstDamage[indexOf(attacker, victim)] === 1;
     },
+    clearSlot(slot) {
+      if (slot < 0 || slot >= MAX_SLOTS) return;
+      for (let other = 0; other < MAX_SLOTS; other++) {
+        firstDamage[indexOf(slot, other)] = 0;
+        firstDamage[indexOf(other, slot)] = 0;
+      }
+    },
     clear() {
       firstDamage.fill(0);
     },
   };
 }
 
-export function createKarmaService(config: KarmaConfig | (() => KarmaConfig)): KarmaService {
+export function createKarmaService(
+  config: KarmaConfig | (() => KarmaConfig),
+  options: KarmaServiceOptions = {},
+): KarmaService {
   const values = new Float64Array(MAX_SLOTS);
   const initialized = new Uint8Array(MAX_SLOTS);
   const pending = new Float64Array(MAX_SLOTS);
   const timeout = new Int32Array(MAX_SLOTS);
   const badKills = new Int32Array(MAX_SLOTS);
+  const lastWarned = new Float64Array(MAX_SLOTS);
+  const suppressKill = new Uint8Array(MAX_SLOTS);
+  const connected = new Uint8Array(MAX_SLOTS);
+  const steamIds = Array<string>(MAX_SLOTS).fill("");
+  const persistedKarma = new Map<string, number>();
+  const persistedTimeout = new Map<string, number>();
+  const persistedWarning = new Map<string, number>();
   const settings = (): KarmaConfig => typeof config === "function" ? config() : config;
 
+  function validSlot(slot: number): boolean {
+    return slot >= 0 && slot < MAX_SLOTS;
+  }
+
+  function validSteamId(steamId: string): boolean {
+    return steamId !== "" && steamId !== "0";
+  }
+
+  function clearSlot(slot: number): void {
+    if (!validSlot(slot)) return;
+    values[slot] = 0;
+    initialized[slot] = 0;
+    pending[slot] = 0;
+    timeout[slot] = 0;
+    badKills[slot] = 0;
+    lastWarned[slot] = 0;
+    suppressKill[slot] = 0;
+    connected[slot] = 0;
+    steamIds[slot] = "";
+  }
+
+  function persistSlot(slot: number): void {
+    const steamId = steamIds[slot] ?? "";
+    if (!validSteamId(steamId)) return;
+    persistedKarma.set(steamId, values[slot]!);
+    persistedTimeout.set(steamId, timeout[slot]!);
+    persistedWarning.set(steamId, lastWarned[slot]!);
+  }
+
   function ensure(slot: number): void {
-    if (slot < 0 || slot >= MAX_SLOTS || initialized[slot] === 1) return;
+    if (!validSlot(slot) || initialized[slot] === 1) return;
     initialized[slot] = 1;
     values[slot] = settings().defaultKarma;
   }
 
   function setKarma(slot: number, value: number): void {
     ensure(slot);
-    values[slot] = Math.round(value);
+    const rounded = Math.round(value);
     const current = settings();
-    if (values[slot]! < current.timeoutThreshold) timeout[slot] = current.timeoutRounds;
+    if (rounded < current.minKarma && connected[slot] === 1) {
+      values[slot] = current.defaultKarma;
+      persistSlot(slot);
+      options.onLowKarma?.(slot, current.lowKarmaCommand);
+      return;
+    }
+    values[slot] = rounded;
+    benchLowKarma(slot, rounded);
+    persistSlot(slot);
+  }
+
+  function benchLowKarma(slot: number, value: number): void {
+    const current = settings();
+    if (value >= current.timeoutThreshold) return;
+    const now = options.now?.() ?? Date.now();
+    if (now - lastWarned[slot]! <= current.warningWindowMs) return;
+    lastWarned[slot] = now;
+    timeout[slot] = current.timeoutRounds;
+    persistSlot(slot);
   }
 
   function queueKarma(slot: number, delta: number): void {
@@ -75,6 +148,8 @@ export function createKarmaService(config: KarmaConfig | (() => KarmaConfig)): K
   }
 
   function scoreKill(input: KarmaKillInput): void {
+    const suppressed = validSlot(input.victimSlot) && suppressKill[input.victimSlot] === 1;
+    if (validSlot(input.victimSlot)) suppressKill[input.victimSlot] = 0;
     if (
       input.killerSlot < 0
       || input.victimSlot < 0
@@ -116,11 +191,40 @@ export function createKarmaService(config: KarmaConfig | (() => KarmaConfig)): K
       return;
     }
 
+    if (suppressed) return;
     queueKarma(input.killerSlot, killerDelta * multiplier);
     queueKarma(input.victimSlot, victimDelta);
   }
 
   return {
+    join(slot, steamId) {
+      if (!validSlot(slot)) return;
+      clearSlot(slot);
+      steamIds[slot] = steamId;
+      connected[slot] = 1;
+      initialized[slot] = 1;
+      values[slot] = validSteamId(steamId)
+        ? (persistedKarma.get(steamId) ?? settings().defaultKarma)
+        : settings().defaultKarma;
+      timeout[slot] = validSteamId(steamId) ? (persistedTimeout.get(steamId) ?? 0) : 0;
+      lastWarned[slot] = validSteamId(steamId) ? (persistedWarning.get(steamId) ?? 0) : 0;
+    },
+    leave(slot, steamId) {
+      if (!validSlot(slot)) return;
+      const id = steamIds[slot] || steamId;
+      if (initialized[slot] === 1) {
+        values[slot] = Math.round(values[slot]! + pending[slot]!);
+        pending[slot] = 0;
+        if (values[slot]! >= settings().minKarma) benchLowKarma(slot, values[slot]!);
+        if (validSteamId(id) && steamIds[slot] !== id) steamIds[slot] = id;
+        persistSlot(slot);
+      }
+      clearSlot(slot);
+    },
+    grantRound(slot, won) {
+      const current = settings();
+      queueKarma(slot, won ? current.perWinKarma : current.perRoundKarma);
+    },
     karmaOf(slot) {
       ensure(slot);
       return values[slot] ?? settings().defaultKarma;
@@ -143,19 +247,23 @@ export function createKarmaService(config: KarmaConfig | (() => KarmaConfig)): K
     },
     clearTimeout(slot) {
       timeout[slot] = 0;
+      lastWarned[slot] = 0;
+      persistSlot(slot);
     },
     scoreKill,
     resetRound() {
       badKills.fill(0);
+      suppressKill.fill(0);
     },
     serveTimeout(slot) {
       const remaining = timeout[slot] ?? 0;
       if (remaining <= 0) return false;
       timeout[slot] = remaining - 1;
+      persistSlot(slot);
       return true;
     },
-    suppressNextDeathPenalty() {
-      return undefined;
+    suppressNextDeathPenalty(victimSlot) {
+      if (validSlot(victimSlot)) suppressKill[victimSlot] = 1;
     },
   };
 }
