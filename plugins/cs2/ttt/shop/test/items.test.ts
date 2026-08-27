@@ -14,14 +14,21 @@ import { registerStockItems } from "../src/items/index.ts";
 interface ManifestConfigValue {
   type: "bool" | "int" | "float" | "string";
   default: boolean | number | string;
+  min?: number;
+  max?: number;
 }
 
-function manifestReader(): ShopConfigReader {
+function manifestConfig(): Record<string, ManifestConfigValue> {
   const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
     s2script: { config: Record<string, ManifestConfigValue> };
   };
+  return manifest.s2script.config;
+}
+
+function manifestReader(): ShopConfigReader {
+  const config = manifestConfig();
   const value = (key: string): boolean | number | string => {
-    const entry = manifest.s2script.config[key];
+    const entry = config[key];
     if (entry === undefined) assert.fail(`missing manifest config key ${key}`);
     return entry.default;
   };
@@ -48,7 +55,94 @@ const DETECTIVE_TEAMS = ["innocent"];
 const TRAITOR_ROLES = ["ttt:traitor"];
 const TRAITOR_TEAMS = ["traitor"];
 
+const LEGACY_NUMERIC_ITEM_RANGES = [
+  ["item_armor_price", "int", 75, 0, 10_000],
+  ["item_armor_amount", "int", 100, 0, 1_000],
+  ["item_taser_price", "int", 110, 0, 10_000],
+  ["item_healthshot_price", "int", 40, 0, 10_000],
+  ["item_healthshot_max_purchases", "int", 2, 0, 100],
+  ["item_m4a1_price", "int", 50, 0, 10_000],
+  ["item_onedeagle_price", "int", 130, 0, 10_000],
+  ["item_stickers_price", "int", 45, 0, 10_000],
+  ["item_dna_price", "int", 110, 0, 10_000],
+  ["item_dna_decay_time", "int", 120, 1, 3_600],
+  ["item_dna_max_samples", "int", 0, 0, 100],
+  ["item_healthstation_price", "int", 50, 0, 10_000],
+  ["item_healthstation_interval", "int", 1, 1, 60],
+  ["item_healthstation_increments", "int", 10, -1_000, 1_000],
+  ["item_healthstation_total_health_given", "int", 0, -100_000, 100_000],
+  ["item_healthstation_station_health", "int", 200, 1, 10_000],
+  ["item_healthstation_max_range", "float", 256, 50, 2_048],
+  ["item_damagestation_price", "int", 65, 0, 10_000],
+  ["item_damagestation_increments", "int", -25, -1_000, 1_000],
+  ["item_damagestation_total_damage", "int", 3_000, 0, 100_000],
+  ["item_damagestation_max_purchases", "int", 3, 0, 100],
+  ["item_c4_price", "int", 130, 0, 10_000],
+  ["item_c4_fuse_time", "int", 30, 1, 600],
+  ["item_c4_power", "float", 100, 0, 10_000],
+  ["item_c4_max_at_once", "int", 1, 0, 100],
+  ["item_c4_max_per_round", "int", 0, 0, 100],
+  ["item_camo_price", "int", 65, 0, 10_000],
+  ["item_camo_visibility", "float", 0.5, 0, 1],
+  ["item_bodypaint_price", "int", 30, 0, 10_000],
+  ["item_bodypaint_max_uses", "int", 4, 1, 100],
+  ["item_gloves_price", "int", 40, 0, 10_000],
+  ["item_gloves_max_uses", "int", 5, 1, 100],
+  ["item_onehitknife_price", "int", 80, 0, 10_000],
+  ["item_silentawp_price", "int", 80, 0, 10_000],
+  ["item_silentawp_index", "int", 9, 0, 64],
+  ["item_silentawp_current_ammo", "int", 1, 0, 100],
+  ["item_silentawp_reserve_ammo", "int", 0, 0, 100],
+  ["item_poisonsmoke_price", "int", 45, 0, 10_000],
+  ["item_poisonsmoke_radius", "float", 180, 16, 1_024],
+  ["item_poisonsmoke_poison_tick_interval", "int", 500, 50, 10_000],
+  ["item_poisonsmoke_poison_damage_per_tick", "int", 15, 0, 1_000],
+  ["item_poisonsmoke_poison_total_damage", "int", 500, 0, 10_000],
+  ["item_poisonshots_price", "int", 40, 0, 10_000],
+  ["item_poisonshots_total", "int", 5, 1, 100],
+  ["item_clustergrenade_price", "int", 100, 0, 10_000],
+  ["item_clustergrenade_count", "int", 8, 1, 64],
+  ["item_clustergrenade_up_force", "float", 200, 0, 2_000],
+  ["item_clustergrenade_throw_force", "float", 250, 0, 2_000],
+  ["item_compass_price", "int", 60, 0, 10_000],
+  ["item_compass_max_range", "float", 10_000, 100, 100_000],
+  ["item_compass_fov", "float", 120, 10, 360],
+  ["item_compass_length", "int", 64, 8, 256],
+  ["item_tripwire_price", "int", 45, 0, 10_000],
+  ["item_tripwire_explosion_power", "int", 1_000, 0, 100_000],
+  ["item_tripwire_falloff_delay", "float", 0.015, 0, 10],
+  ["item_tripwire_friendlyfire_multiplier", "float", 0.5, 0, 10],
+  ["item_tripwire_friendlyfire_karma_penalty_time", "int", 15, -1, 3_600],
+  ["item_tripwire_max_distance_squared", "float", 50_000, 0, 10_000_000],
+  ["item_tripwire_max_span", "float", 4_096, 64, 16_384],
+  ["item_tripwire_initiation_time", "float", 2, 0, 60],
+  ["item_tripwire_size_squared", "float", 500, 0, 100_000],
+  ["item_tripwire_thickness", "float", 0.5, 0.1, 10],
+  ["item_tripwire_defuse_time", "float", 6, 0.1, 60],
+  ["item_tripwire_defuse_rate", "float", 0.5, 0.05, 10],
+  ["item_tripwire_defuse_reward", "int", 20, 0, 10_000],
+  ["item_tripwire_color_r", "int", 255, 0, 255],
+  ["item_tripwire_color_g", "int", 0, 0, 255],
+  ["item_tripwire_color_b", "int", 0, 0, 255],
+  ["item_tripwire_color_a", "int", 32, 0, 255],
+] as const;
+
 describe("stock shop items", () => {
+  it("preserves every legacy numeric item validation range", () => {
+    const configured = manifestConfig();
+
+    assert.equal(LEGACY_NUMERIC_ITEM_RANGES.length, 69);
+    for (const [key, type, defaultValue, min, max] of LEGACY_NUMERIC_ITEM_RANGES) {
+      const entry = configured[key];
+      if (entry === undefined) assert.fail(`missing manifest config key ${key}`);
+      assert.deepEqual(
+        { type: entry.type, default: entry.default, min: entry.min, max: entry.max },
+        { type, default: defaultValue, min, max },
+        key,
+      );
+    }
+  });
+
   it("reads stock item defaults and eligibility from package configuration", () => {
     const config = createShopConfigSnapshot(manifestReader());
 

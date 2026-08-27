@@ -172,3 +172,80 @@ The first sandboxed staging attempt failed before changing the index with `Unabl
 
 - Physical stock effects remain intentionally unavailable until a published SDK/Core capability or a concrete Shop-local runtime adapter can implement them. Purchases currently fail and refund after logging intent.
 - The filtered build remains unverified because of the sandbox access denial above. Typecheck and all focused behavioral tests pass, but they do not replace a successful bundle build.
+
+## Review Fix: Exact Numeric Manifest Bounds
+
+### Finding Addressed
+
+The initial port preserved all numeric stock-item config types and defaults but omitted the legacy `min` and `max` validation metadata. Because the manifest supports bounds, unrestricted values could admit invalid prices, limits, intervals, colors, and effect settings. In particular, a negative price could add credits if a future delivery adapter successfully completes the purchase.
+
+### Fix
+
+- Added the exact legacy `min` and `max` values to all 69 numeric stock-item settings in `plugins/cs2/ttt/shop/package.json`.
+- Added a table-driven manifest test covering every numeric item key's type, default, minimum, and maximum.
+- Kept the config snapshot, Core/Karma integrations, purchase flow, and unsupported delivery fail/log/refund boundary unchanged.
+
+Files changed for the review fix:
+
+- `plugins/cs2/ttt/shop/package.json`
+- `plugins/cs2/ttt/shop/test/items.test.ts`
+- `.superpowers/sdd/2026-08-26-ttt-shop/task-4-report.md`
+
+### Review-Fix TDD Evidence
+
+RED command:
+
+```powershell
+npm.cmd run test --workspace @edgegamers/ttt-shop
+```
+
+Result: FAIL, 18 passed / 1 failed. The new range test reported `item_armor_price` with expected bounds `0..10000` but actual `min` and `max` both `undefined`.
+
+GREEN command:
+
+```powershell
+npm.cmd run test --workspace @edgegamers/ttt-shop
+```
+
+Result: PASS, 19 passed / 0 failed / 0 skipped / 0 warnings.
+
+Independent source audit streamed `src/core/cvars.ts` from the source zip, parsed all numeric settings from Armor through Tripwire, and compared them with the manifest:
+
+```text
+Legacy numeric item settings checked: 69
+Mismatches: 0
+```
+
+### Review-Fix Validation
+
+```powershell
+npm.cmd run typecheck
+```
+
+PASS: 0 TypeScript errors or warnings.
+
+```powershell
+npm.cmd run workspace:check
+```
+
+PASS: `Workspace boundaries are valid.`
+
+```powershell
+npm.cmd run build -- --filter @edgegamers/ttt-shop
+```
+
+FAIL: prebuild license validation passed, then the sandboxed bundler repeated the existing 2 access errors:
+
+```text
+Cannot read directory "../..": Access is denied.
+Could not resolve "C:\Users\reece\VSCodeProjects\edgegamers-s2s\plugins\cs2\ttt\shop\src\plugin.ts"
+```
+
+No elevated build was run because the Task 4 ruling permits elevation only when already approved.
+
+### Review-Fix Self-Review
+
+- Confirmed all 69 test expectations were independently cross-checked against the streamed legacy source rather than inferred from the edited manifest.
+- Confirmed every price now has a non-negative minimum and every legacy sentinel range, including `-1` for Tripwire karma penalty time, is preserved exactly.
+- Confirmed limits, intervals, forces, radii, ammo counts, damage values, and RGBA channels retain their exact legacy ranges.
+- Confirmed no non-numeric config, runtime code, Core/Karma code, commands, menus, or delivery behavior changed.
