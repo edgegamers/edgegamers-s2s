@@ -24,9 +24,16 @@ SOFTWARE.
 import { plugin } from "@s2script/sdk/plugin";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttShopApi } from "@edgegamers/ttt-shop";
+import type { TttSpecialRoundsApi } from "../api.d.ts";
+import { createSpecialRoundsApi } from "./special-rounds.ts";
 
 export default plugin((ctx) => {
-  ctx.use<TttCoreApi>("@edgegamers/ttt-core");
-  ctx.tryUse<TttShopApi>("@edgegamers/ttt-shop");
+  const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
+  const shop = ctx.tryUse<TttShopApi>("@edgegamers/ttt-shop");
+  const specials = createSpecialRoundsApi({
+    availablePlugins: new Set(shop === null ? [] : ["@edgegamers/ttt-shop"]),
+  });
+  ctx.publish<TttSpecialRoundsApi>("@edgegamers/ttt-special-rounds", specials);
+  void core;
   console.log("[ttt-special-rounds] loaded");
 });

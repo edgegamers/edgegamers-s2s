@@ -21,6 +21,9 @@
     "optionalPluginDependencies": {
       "@edgegamers/ttt-shop": "^0.1.0"
     },
+    "publishes": {
+      "@edgegamers/ttt-special-rounds": "0.1.0"
+    },
     "config": {
       "special_min_rounds_between": { "type": "int", "default": 3, "description": "Minimum rounds between special rounds" },
       "special_min_players": { "type": "int", "default": 5, "description": "Minimum players required for special rounds" },
