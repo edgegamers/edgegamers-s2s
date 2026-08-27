@@ -56,3 +56,12 @@ No build was run: the brief requires focused tests and typecheck at minimum, and
 ## Concerns
 
 Periodic exploration reward runtime behavior is intentionally deferred. The published Core API has no position or frame/tick surface, and Task 3 explicitly prohibits reaching into Core internals or inventing a replacement event rule. The pure Karma scaling helper is present for a later Core API extension or Shop-local movement adapter.
+
+## Review Fix: Unscaled Starting Credits
+
+The review found that `roleAssigned` incorrectly reused `scaleExplorationReward` for starting credits. This halved the default Traitor start from 100 to 50 at Karma 50, even though the helper is reserved for deferred exploration payouts.
+
+- Updated the role-assignment test to expect the configured 100 credits while optional Karma reports 50. It failed first with `50 !== 100` (8 passed, 1 failed).
+- Updated the handler to award the configured starting-credit value unchanged. The economy suite then passed with 9 passed, 0 failed.
+- Kept `scaleExplorationReward` and its null/present Karma tests unchanged for future exploration payout work.
+- No Core, Karma, stock item, or command code was changed.

@@ -95,13 +95,12 @@ function startingCreditForRole(role: string, credits: StartingCredits): number {
 }
 
 export function installEconomy(options: InstallEconomyOptions): void {
-  const karma = options.karma ?? null;
   const startingCredits = options.startingCredits ?? (() => DEFAULT_STARTING_CREDITS);
 
   options.core.on("roleAssigned", (event) => {
     const credits = startingCreditForRole(event.role, startingCredits());
     if (credits === 0) return;
-    options.shop.addBalance(event.slot, scaleExplorationReward(credits, karma, event.slot));
+    options.shop.addBalance(event.slot, credits);
   });
 
   options.core.on("death", (event) => {

@@ -64,7 +64,7 @@ describe("shop economy", () => {
     assert.equal(scaleExplorationReward(10, { karmaOf: () => 50 }), 5);
   });
 
-  it("grants karma-scaled starting credits when a role is assigned", () => {
+  it("grants configured starting credits unchanged when karma is present", () => {
     const fake = createFakeCore([player(1, "ttt:traitor")]);
     const shop = createShopApi(fake.core);
     installEconomy({
@@ -76,7 +76,7 @@ describe("shop economy", () => {
 
     fake.emit("roleAssigned", { slot: 1, role: "ttt:traitor" });
 
-    assert.equal(shop.balanceOf(1), 50);
+    assert.equal(shop.balanceOf(1), 100);
   });
 
   it("grants the solo kill reward and half the victim balance", () => {
