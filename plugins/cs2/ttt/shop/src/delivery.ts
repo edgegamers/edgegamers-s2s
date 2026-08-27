@@ -33,6 +33,7 @@ export interface ShopDeliveryRequest {
 }
 
 export interface ShopItemDelivery {
+  supports(request: ShopDeliveryRequest): boolean;
   deliver(slot: number, request: ShopDeliveryRequest): boolean;
 }
 
@@ -65,12 +66,20 @@ const ITEM_NAMES: Readonly<Record<string, string>> = {
  * operations. Record the complete configured intent and fail delivery so the Shop refunds the buyer.
  */
 export function createIntendedEffectDelivery(core: Pick<TttCoreApi, "log">): ShopItemDelivery {
+  core.log({
+    kind: "shop.stock.delivery_unavailable",
+    message: "Stock Shop items are configured but unavailable because the public Core/SDK APIs cannot deliver their physical effects.",
+    data: { configured: true, purchasable: false },
+  });
   return {
+    supports() {
+      return false;
+    },
     deliver(slot, request) {
       const name = ITEM_NAMES[request.itemId] ?? request.itemId;
       core.log({
         kind: "shop.item.delivery_unsupported",
-        message: `${name} purchase recorded, but its physical effect is unavailable through the published Core/SDK APIs.`,
+        message: `${name} delivery was attempted, but its physical effect is unavailable through the public Core/SDK APIs.`,
         actorSlot: slot,
         data: {
           itemId: request.itemId,

@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation is ready to commit on the existing `dev` branch. The required package build is blocked by the sandbox before Source2Script can resolve the plugin entry; no elevated retry was made because none was already approved.
+Implementation was committed on the existing `dev` branch. The task-local sandboxed build was access-denied, and the subsequent controller validation reran the same command with elevated filesystem access successfully.
 
 ## Commit
 
@@ -35,7 +35,7 @@ Implementation is ready to commit on the existing `dev` branch. The required pac
 | `npm.cmd test -- plugins/cs2/ttt/shop/test/commands.test.ts` | PASS: 6 tests, 0 failures. |
 | `npm.cmd test -- plugins/cs2/ttt/shop/test/shop.test.ts plugins/cs2/ttt/shop/test/economy.test.ts` | PASS: 14 tests, 0 failures. |
 | `npm.cmd run typecheck` | PASS: `tsc --noEmit -p tsconfig.base.json` completed with 0 errors. |
-| `npm.cmd run build -- --filter @edgegamers/ttt-shop` | BLOCKED/FAIL (sandbox): `Cannot read directory "../..": Access is denied.` followed by `Could not resolve "C:\\Users\\reece\\VSCodeProjects\\edgegamers-s2s\\plugins\\cs2\\ttt\\shop\\src\\plugin.ts"`. No elevated retry was made. |
+| `npm.cmd run build -- --filter @edgegamers/ttt-shop` | PASS on the controller's elevated retry; the initial sandboxed attempt was access-denied before artifact resolution. |
 | `git diff --check` | PASS: no whitespace errors. |
 
 ## Self-Review
@@ -49,7 +49,7 @@ Implementation is ready to commit on the existing `dev` branch. The required pac
 
 ## Concern
 
-The package build remains unverified because the current sandbox denies the build tool access to the parent directory it reads while resolving the plugin. All unit tests and typechecking pass, but artifact compilation needs a rerun in an approved environment.
+None. The controller's elevated rerun verified artifact compilation after the task-local sandbox denial.
 
 ## Review Fix: Public SDK Menu Runtime
 
@@ -68,7 +68,7 @@ The original command module imported `Menu` and `MenuStyle` as types, so Source2
 1. RED: The revised focused test failed with `AssertionError: sm_shop should display a public SDK menu` under the previous private-global implementation (5 passing, 1 failing).
 2. GREEN: After the value import change, `npm.cmd test -- plugins/cs2/ttt/shop/test/commands.test.ts` passed: 6 tests, 0 failures.
 3. `npm.cmd run typecheck` passed with 0 errors.
-4. `npm.cmd run build -- --filter @edgegamers/ttt-shop` remains sandbox-blocked before artifact resolution with the same errors: `Cannot read directory "../..": Access is denied.` and `Could not resolve "C:\\Users\\reece\\VSCodeProjects\\edgegamers-s2s\\plugins\\cs2\\ttt\\shop\\src\\plugin.ts"`. No elevated retry was made.
+4. `npm.cmd run build -- --filter @edgegamers/ttt-shop` passed in the controller's elevated validation after the task-local sandbox attempt was access-denied.
 
 ### Review
 

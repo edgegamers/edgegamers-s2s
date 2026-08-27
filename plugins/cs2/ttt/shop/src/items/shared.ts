@@ -37,8 +37,14 @@ export function registerDeliveredItem(
   item: Omit<TttShopItem, "onPurchase">,
   request: ShopDeliveryRequest,
 ): void {
+  const configuredGate = item.canPurchase;
   deps.shop.registerItem({
     ...item,
+    canPurchase(slot) {
+      const configuredResult = configuredGate?.(slot) ?? "success";
+      if (configuredResult !== "success") return configuredResult;
+      return deps.delivery.supports(request) ? "success" : "not_purchasable";
+    },
     onPurchase(slot) {
       return deps.delivery.deliver(slot, request);
     },

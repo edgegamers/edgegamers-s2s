@@ -30,14 +30,32 @@ import type { TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
 const GENERIC_ADMIN_FLAG = 2;
 const PLAYER_ONLY = "This command can only be used by a player.";
 const SHOP_INACTIVE = "The shop is only available while you are alive in an active round.";
+const SHOP_DISABLED = "The shop is disabled.";
 
 interface ShopListEntry {
   item: TttShopItem;
   purchaseResult: TttPurchaseResult;
 }
 
-export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, shop: TttShopApi): void {
+export interface ShopCommandOptions {
+  enabled?: () => boolean;
+}
+
+export function registerShopCommands(
+  commands: CtxCommands,
+  core: TttCoreApi,
+  shop: TttShopApi,
+  options: ShopCommandOptions = {},
+): void {
+  const enabled = options.enabled ?? (() => true);
+  const requireEnabled = (cmd: CommandInvocation): boolean => {
+    if (enabled()) return true;
+    cmd.reply(SHOP_DISABLED);
+    return false;
+  };
+
   const balance = (cmd: CommandInvocation): void => {
+    if (!requireEnabled(cmd)) return;
     if (cmd.callerSlot < 0) {
       cmd.reply(PLAYER_ONLY);
       return;
@@ -46,6 +64,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
   };
 
   const list = (cmd: CommandInvocation): void => {
+    if (!requireEnabled(cmd)) return;
     const slot = cmd.callerSlot;
     if (slot >= 0 && core.gameState().state !== "in_progress") {
       cmd.reply(SHOP_INACTIVE);
@@ -63,7 +82,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
   };
 
   const buy = (cmd: CommandInvocation, query = cmd.argsFrom(0).trim()): void => {
-    if (!canPlayerPurchase(cmd, core)) return;
+    if (!requireEnabled(cmd) || !canPlayerPurchase(cmd, core)) return;
     if (query === "") {
       cmd.reply("Usage: sm_buy <item>");
       return;
@@ -79,6 +98,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
   };
 
   const openMenu = (cmd: CommandInvocation): void => {
+    if (!requireEnabled(cmd)) return;
     const slot = cmd.callerSlot;
     if (slot < 0) {
       list(cmd);
@@ -102,7 +122,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
       );
     }
     menu.onSelect((event) => {
-      if (event.slot !== slot || !canSlotPurchase(event.slot, core)) {
+      if (event.slot !== slot || !enabled() || !canSlotPurchase(event.slot, core)) {
         cmd.replyToChat(SHOP_INACTIVE);
         return;
       }
@@ -123,6 +143,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
   commands.register("sm_list", list);
   commands.register("sm_menu", openMenu);
   commands.register("sm_shop", (cmd) => {
+    if (!requireEnabled(cmd)) return;
     switch (cmd.arg(0).toLowerCase()) {
       case "buy":
       case "purchase":
@@ -141,6 +162,7 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
     }
   });
   commands.registerAdmin("sm_ttt_give", GENERIC_ADMIN_FLAG, (cmd) => {
+    if (!requireEnabled(cmd)) return;
     if (cmd.argCount < 2) {
       cmd.reply(`[ttt] items: ${shop.allItems().map((item) => item.id).join(", ")}`);
       cmd.reply("[ttt] usage: sm_ttt_give <slot|name> <item-id>");

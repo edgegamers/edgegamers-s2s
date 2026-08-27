@@ -28,21 +28,36 @@ import type { TttKarmaApi } from "@edgegamers/ttt-karma";
 import type { TttShopApi } from "../api.d.ts";
 import { registerShopCommands } from "./commands.ts";
 import { createShopConfigSnapshot } from "./config.ts";
-import { createStartingCredits, installEconomy } from "./economy.ts";
+import { createIntendedEffectDelivery } from "./delivery.ts";
+import { createStartingCredits, installEconomy, logExplorationAvailability } from "./economy.ts";
 import { registerStockItems } from "./items/index.ts";
 import { createShopApi } from "./shop.ts";
 
 export default plugin((ctx) => {
   const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
   const karma = ctx.tryUse<TttKarmaApi>("@edgegamers/ttt-karma");
+  let shopConfig = createShopConfigSnapshot(config);
   let startingCredits = createStartingCredits(config);
-  const shop = createShopApi(core, { karma });
-  registerStockItems({ core, shop, config: createShopConfigSnapshot(config) });
-  installEconomy({ core, shop, karma, startingCredits: () => startingCredits });
-  registerShopCommands(ctx.commands, core, shop);
+  const delivery = createIntendedEffectDelivery(core);
+  const shop = createShopApi(core, { karma, enabled: () => shopConfig.shopEnabled });
+  registerStockItems({ core, shop, config: shopConfig, delivery });
+  installEconomy({
+    core,
+    shop,
+    karma,
+    startingCredits: () => startingCredits,
+    enabled: () => shopConfig.shopEnabled,
+    explorationIncomeEnabled: shopConfig.explorationIncomeEnabled,
+  });
+  registerShopCommands(ctx.commands, core, shop, { enabled: () => shopConfig.shopEnabled });
   ctx.config.onChange(() => {
+    const previousExplorationSetting = shopConfig.explorationIncomeEnabled;
+    shopConfig = createShopConfigSnapshot(config);
     startingCredits = createStartingCredits(config);
-    registerStockItems({ core, shop, config: createShopConfigSnapshot(config) });
+    registerStockItems({ core, shop, config: shopConfig, delivery });
+    if (!previousExplorationSetting && shopConfig.explorationIncomeEnabled) {
+      logExplorationAvailability(core, true);
+    }
   });
   ctx.publish<TttShopApi>("@edgegamers/ttt-shop", shop);
   console.log("[ttt-shop] loaded");

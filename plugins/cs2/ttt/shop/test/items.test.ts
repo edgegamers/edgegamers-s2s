@@ -146,6 +146,8 @@ describe("stock shop items", () => {
   it("reads stock item defaults and eligibility from package configuration", () => {
     const config = createShopConfigSnapshot(manifestReader());
 
+    assert.equal(config.shopEnabled, true);
+    assert.equal(config.explorationIncomeEnabled, false);
     assert.deepEqual({
       armor: [config.itemArmorEnabled, config.itemArmorPrice, config.itemArmorAllowedRoles, config.itemArmorAllowedTeams],
       deagle: [config.itemOneDeagleEnabled, config.itemOneDeaglePrice, config.itemOneDeagleAllowedRoles, config.itemOneDeagleAllowedTeams],
@@ -169,7 +171,7 @@ describe("stock shop items", () => {
   it("registers the complete legacy catalog with configured gates, prices, and limits", () => {
     const { shop, items } = captureRegistrations();
     const core = {} as TttCoreApi;
-    const delivery = { deliver: () => true } satisfies ShopItemDelivery;
+    const delivery = { supports: () => true, deliver: () => true } satisfies ShopItemDelivery;
 
     registerStockItems({ core, shop, config: createShopConfigSnapshot(manifestReader()), delivery });
 
@@ -207,7 +209,10 @@ describe("stock shop items", () => {
       core: {} as TttCoreApi,
       shop,
       config: createShopConfigSnapshot(manifestReader()),
-      delivery: { deliver(slot, request) { requests.push({ slot, request }); return true; } },
+      delivery: {
+        supports: () => true,
+        deliver(slot, request) { requests.push({ slot, request }); return true; },
+      },
     });
 
     for (const item of items) assert.equal(item.onPurchase(7), true);
@@ -262,7 +267,26 @@ describe("stock shop items", () => {
     });
   });
 
-  it("logs unsupported intended effects and fails delivery so Task 2 refunds the purchase", () => {
+  it("marks fallback stock unavailable while preserving configured descriptors", () => {
+    const logs: Parameters<TttCoreApi["log"]>[0][] = [];
+    const core = {
+      log: (entry: Parameters<TttCoreApi["log"]>[0]) => logs.push(entry),
+    } as unknown as TttCoreApi;
+    const { shop, items } = captureRegistrations();
+
+    registerStockItems({ core, shop, config: createShopConfigSnapshot(manifestReader()) });
+
+    assert.equal(items.length, 21);
+    assert.equal(items.every((registered) => registered.enabled), true);
+    assert.equal(items.every((registered) => registered.canPurchase?.(3) === "not_purchasable"), true);
+    assert.deepEqual(logs, [{
+      kind: "shop.stock.delivery_unavailable",
+      message: "Stock Shop items are configured but unavailable because the public Core/SDK APIs cannot deliver their physical effects.",
+      data: { configured: true, purchasable: false },
+    }]);
+  });
+
+  it("logs unsupported delivery attempts and returns failure", () => {
     const logs: Parameters<TttCoreApi["log"]>[0][] = [];
     const delivery = createIntendedEffectDelivery({
       log: (entry: Parameters<TttCoreApi["log"]>[0]) => logs.push(entry),
@@ -273,12 +297,20 @@ describe("stock shop items", () => {
       settings: { amount: 100, helmet: true },
     };
 
+    assert.equal(delivery.supports(request), false);
     assert.equal(delivery.deliver(3, request), false);
-    assert.deepEqual(logs, [{
+    assert.deepEqual(logs, [
+      {
+        kind: "shop.stock.delivery_unavailable",
+        message: "Stock Shop items are configured but unavailable because the public Core/SDK APIs cannot deliver their physical effects.",
+        data: { configured: true, purchasable: false },
+      },
+      {
       kind: "shop.item.delivery_unsupported",
-      message: "Armor purchase recorded, but its physical effect is unavailable through the published Core/SDK APIs.",
+      message: "Armor delivery was attempted, but its physical effect is unavailable through the public Core/SDK APIs.",
       actorSlot: 3,
       data: { itemId: "armor", effect: "armor", settings: '{"amount":100,"helmet":true}' },
-    }]);
+      },
+    ]);
   });
 });

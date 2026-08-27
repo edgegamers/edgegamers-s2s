@@ -30,6 +30,8 @@ export interface ShopConfigReader {
 }
 
 export interface ShopConfig {
+  shopEnabled: boolean;
+  explorationIncomeEnabled: boolean;
   itemArmorEnabled: boolean;
   itemArmorPrice: number;
   itemArmorAllowedRoles: readonly string[];
@@ -190,6 +192,8 @@ export function createShopConfigSnapshot(reader: ShopConfigReader): ShopConfig {
   const roles = (id: string) => list(reader, `item_${id}_allowed_roles`);
   const teams = (id: string) => list(reader, `item_${id}_allowed_teams`);
   return {
+    shopEnabled: reader.getBool("shop_enabled"),
+    explorationIncomeEnabled: reader.getBool("credits_exploration_enabled"),
     itemArmorEnabled: reader.getBool("item_armor_enabled"),
     itemArmorPrice: reader.getInt("item_armor_price"),
     itemArmorAllowedRoles: roles("armor"),

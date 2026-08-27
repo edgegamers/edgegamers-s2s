@@ -26,6 +26,7 @@
     },
     "config": {
       "shop_enabled": { "type": "bool", "default": true, "description": "Enable the TTT shop module" },
+      "credits_exploration_enabled": { "type": "bool", "default": false, "description": "Request movement-based exploration income (currently unavailable until public player-position support exists)" },
       "credits_start_innocent": { "type": "int", "default": 60, "description": "Starting credits for Innocents" },
       "credits_start_traitor": { "type": "int", "default": 100, "description": "Starting credits for Traitors" },
       "credits_start_detective": { "type": "int", "default": 120, "description": "Starting credits for Detectives" },

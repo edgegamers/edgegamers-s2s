@@ -101,6 +101,8 @@ function createCore(options: { state?: "waiting" | "in_progress"; alive?: boolea
   return {
     gameState: () => ({ state, participants: players.length, roundsThisMap: 1, winner: "", reason: "" }),
     isAlive: () => alive,
+    isParticipating: () => true,
+    player: (slot: number) => players.find((candidate) => candidate.slot === slot) ?? null,
     activePlayers: () => players,
   } as unknown as TttCoreApi;
 }
@@ -118,7 +120,9 @@ function createShop(overrides: Partial<TttShopApi> = {}): TttShopApi {
     balanceOf: () => 75,
     addBalance() {},
     setBalance() {},
+    clearSlot() {},
     resetRound() {},
+    on() {},
     canPurchase: () => "success" as TttPurchaseResult,
     tryPurchase: () => "success" as TttPurchaseResult,
     ...overrides,
@@ -166,6 +170,30 @@ describe("TTT shop commands", () => {
 
     assert.equal(purchases, 0);
     assert.deepEqual(invocation.replies, ["The shop is only available while you are alive in an active round."]);
+  });
+
+  it("gates player and admin commands while the shop is disabled", () => {
+    const commands = createCommands();
+    let purchases = 0;
+    let deliveries = 0;
+    const armor = { ...item("armor", "Armor"), onPurchase: () => { deliveries += 1; } };
+    registerShopCommands(commands, createCore(), createShop({
+      itemById: () => armor,
+      tryPurchase: () => { purchases += 1; return "success"; },
+    }), { enabled: () => false });
+
+    const balance = command(3);
+    const buy = command(3, ["armor"]);
+    const grant = command(-1, ["Ada", "armor"]);
+    commands.public.get("sm_balance")!(balance);
+    commands.public.get("sm_buy")!(buy);
+    commands.admin.get("sm_ttt_give")!(grant);
+
+    assert.deepEqual(balance.replies, ["The shop is disabled."]);
+    assert.deepEqual(buy.replies, ["The shop is disabled."]);
+    assert.deepEqual(grant.replies, ["The shop is disabled."]);
+    assert.equal(purchases, 0);
+    assert.equal(deliveries, 0);
   });
 
   it("lists role-visible items in an active round and marks unavailable entries", () => {

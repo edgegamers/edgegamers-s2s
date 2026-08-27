@@ -43,7 +43,11 @@ export interface InstallEconomyOptions {
   shop: TttShopApi;
   karma?: KarmaReader | null;
   startingCredits?: () => StartingCredits;
+  enabled?: () => boolean;
+  explorationIncomeEnabled?: boolean;
 }
+
+export const EXPLORATION_INCOME_AVAILABLE = false;
 
 const DEFAULT_STARTING_CREDITS: StartingCredits = {
   innocent: 60,
@@ -85,6 +89,15 @@ export function scaleExplorationReward(base: number, karma: KarmaReader | null, 
   return Math.trunc(base * Math.max(0, karma.karmaOf(slot)) / 100);
 }
 
+export function logExplorationAvailability(core: Pick<TttCoreApi, "log">, configured: boolean): void {
+  if (!configured) return;
+  core.log({
+    kind: "shop.exploration.unavailable",
+    message: "Exploration income is enabled in configuration but unavailable: the public Core/SDK APIs do not expose authoritative player positions.",
+    data: { configured: true, active: EXPLORATION_INCOME_AVAILABLE },
+  });
+}
+
 function startingCreditForRole(role: string, credits: StartingCredits): number {
   switch (role) {
     case "ttt:innocent": return credits.innocent;
@@ -96,15 +109,18 @@ function startingCreditForRole(role: string, credits: StartingCredits): number {
 
 export function installEconomy(options: InstallEconomyOptions): void {
   const startingCredits = options.startingCredits ?? (() => DEFAULT_STARTING_CREDITS);
+  const enabled = options.enabled ?? (() => true);
+  logExplorationAvailability(options.core, options.explorationIncomeEnabled ?? false);
 
   options.core.on("roleAssigned", (event) => {
+    if (!enabled()) return;
     const credits = startingCreditForRole(event.role, startingCredits());
     if (credits === 0) return;
     options.shop.addBalance(event.slot, credits);
   });
 
   options.core.on("death", (event) => {
-    if (options.core.gameState().state !== "in_progress") return;
+    if (!enabled() || options.core.gameState().state !== "in_progress") return;
     if (event.killer < 0 || event.killer === event.slot) return;
 
     const victimRole = options.core.roleOf(event.slot);
@@ -122,7 +138,7 @@ export function installEconomy(options: InstallEconomyOptions): void {
   });
 
   options.core.on("bodyIdentify", (event) => {
-    if (event.canceled || event.identifier < 0) return;
+    if (!enabled() || options.core.gameState().state !== "in_progress" || event.canceled || event.identifier < 0) return;
 
     const victimBalance = options.shop.balanceOf(event.body.ownerSlot);
     options.shop.addBalance(event.identifier, Math.trunc(victimBalance / 4));
@@ -143,5 +159,13 @@ export function installEconomy(options: InstallEconomyOptions): void {
 
   options.core.on("gameState", (event) => {
     if (event.state === "finished") options.shop.resetRound();
+  });
+
+  options.core.on("leave", (event) => {
+    options.shop.clearSlot(event.slot, "player_leave");
+  });
+
+  options.core.on("join", (event) => {
+    options.shop.clearSlot(event.slot, "player_join");
   });
 }
