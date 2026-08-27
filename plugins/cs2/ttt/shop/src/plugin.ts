@@ -22,15 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import { plugin } from "@s2script/sdk/plugin";
+import { config } from "@s2script/sdk/config";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttKarmaApi } from "@edgegamers/ttt-karma";
 import type { TttShopApi } from "../api.d.ts";
+import { createStartingCredits, installEconomy } from "./economy.ts";
 import { createShopApi } from "./shop.ts";
 
 export default plugin((ctx) => {
   const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
   const karma = ctx.tryUse<TttKarmaApi>("@edgegamers/ttt-karma");
+  let startingCredits = createStartingCredits(config);
   const shop = createShopApi(core, { karma });
+  installEconomy({ core, shop, karma, startingCredits: () => startingCredits });
+  ctx.config.onChange(() => { startingCredits = createStartingCredits(config); });
   ctx.publish<TttShopApi>("@edgegamers/ttt-shop", shop);
   console.log("[ttt-shop] loaded");
 });

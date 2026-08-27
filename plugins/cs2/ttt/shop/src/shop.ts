@@ -70,6 +70,10 @@ export function createShopApi(core: TttCoreApi, _options: TttShopOptions = {}): 
     setBalance(slot, amount) {
       balances[slot] = amount;
     },
+    resetRound() {
+      balances.length = 0;
+      purchaseCounts.clear();
+    },
     canPurchase,
     tryPurchase(slot, itemId) {
       const result = canPurchase(slot, itemId);

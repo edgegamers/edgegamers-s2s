@@ -28,6 +28,7 @@ export interface TttShopApi {
   balanceOf(slot: number): number;
   addBalance(slot: number, amount: number, reason?: string, notify?: boolean): void;
   setBalance(slot: number, amount: number, reason?: string, notify?: boolean): void;
+  resetRound(): void;
   tryPurchase(slot: number, itemId: string, notify?: boolean): TttPurchaseResult;
   canPurchase(slot: number, itemId: string): TttPurchaseResult;
 }
