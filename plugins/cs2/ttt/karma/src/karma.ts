@@ -208,6 +208,11 @@ export function createKarmaService(
         : settings().defaultKarma;
       timeout[slot] = validSteamId(steamId) ? (persistedTimeout.get(steamId) ?? 0) : 0;
       lastWarned[slot] = validSteamId(steamId) ? (persistedWarning.get(steamId) ?? 0) : 0;
+      if (
+        validSteamId(steamId)
+        && persistedKarma.has(steamId)
+        && values[slot]! < settings().minKarma
+      ) setKarma(slot, values[slot]!);
     },
     leave(slot, steamId) {
       if (!validSlot(slot)) return;

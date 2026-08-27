@@ -656,6 +656,28 @@ describe("TTT karma event wiring", () => {
     assert.equal(karma.timeoutRemaining(3), 4);
   });
 
+  it("defers a below-minimum leave settlement until reconnect consequence handling", () => {
+    const commands: Array<{ slot: number; command: string }> = [];
+    const reconnecting = player(4, "steam-low-leaver", "ttt:innocent", "innocent");
+    const fake = createFakeCore([reconnecting]);
+    const karma = createService(
+      { minKarma: 5, timeoutThreshold: 0, lowKarmaCommand: "punish {0}" },
+      { onLowKarma: (slot, command) => { commands.push({ slot, command }); } },
+    );
+    installKarmaEvents(fake.core, karma);
+    karma.setKarma(4, 10);
+    karma.queueKarma(4, -7);
+
+    fake.emit("leave", { slot: 4 });
+    assert.deepEqual(commands, []);
+
+    fake.setPlayers([reconnecting]);
+    fake.emit("join", { slot: 4 });
+
+    assert.equal(karma.karmaOf(4), 50);
+    assert.deepEqual(commands, [{ slot: 4, command: "punish {0}" }]);
+  });
+
   it("suppresses one wired death and consumes the flag on an early exit", () => {
     const fake = createFakeCore([
       player(1, "steam-1", "ttt:innocent", "innocent"),

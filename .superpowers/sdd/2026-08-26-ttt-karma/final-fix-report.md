@@ -191,3 +191,82 @@ rg -n '@edgegamers/ttt-karma|ttt/karma' plugins/cs2/ttt/core
 - SteamID persistence is in-memory for the Karma plugin instance, matching the
   reviewed source behavior; durable database persistence across plugin/server
   restarts remains outside this fix wave.
+
+## Second Fix: Reconnect Enforcement for Offline Below-Minimum Settlement
+
+### Residual Finding
+
+The first fix intentionally settled a departing player's pending delta without
+running the connected-player command/reset path, but `join` restored that raw
+persisted value directly. When the leave-time settlement crossed below
+`minKarma`, reconnecting could therefore retain below-minimum Karma forever and
+never receive the configured consequence.
+
+### Policy and Implementation
+
+- Leave-time pending deltas are still rounded, persisted by Steam ID, and
+  settled without executing a player command while that player is offline.
+- During `join`, after the slot is marked connected and its SteamID state is
+  restored, an existing persisted Karma value below the current minimum is
+  passed through the normal connected `setKarma` consequence path.
+- Reconnect therefore resets the stored value to `defaultKarma`, persists that
+  reset, and dispatches the configured low-Karma command exactly when a live
+  player slot is available.
+- New players receiving `defaultKarma` are not treated as deferred offenders;
+  the reconnect check applies only when a persisted SteamID value exists.
+- No Core source or API changed. The implementation continues to use only the
+  published Core player/event APIs through the existing event installer.
+
+### Files Changed in Second Fix
+
+- `plugins/cs2/ttt/karma/src/karma.ts`
+- `plugins/cs2/ttt/karma/test/karma.test.ts`
+- `.superpowers/sdd/2026-08-26-ttt-karma/final-fix-report.md`
+
+### Regression Test
+
+Added event-level coverage named:
+
+`defers a below-minimum leave settlement until reconnect consequence handling`
+
+The test starts with connected Karma above the minimum, queues a leave-time
+delta that settles below the minimum, proves no command runs during `leave`,
+then emits Core `join` for the same Steam ID and proves Karma resets to `50`
+and the configured command is dispatched.
+
+Exact TDD command:
+
+```powershell
+npm.cmd test -- plugins/cs2/ttt/karma/test/karma.test.ts
+```
+
+- Before adding the regression: **29 passed, 0 failed**.
+- Red run: **29 passed, 1 failed**; reconnect returned persisted Karma `3`
+  instead of default Karma `50`.
+- Green run: **30 passed, 0 failed**.
+
+### Second-Fix Validation
+
+```powershell
+npm.cmd test -- plugins/cs2/ttt/karma/test/karma.test.ts
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build -- --filter @edgegamers/ttt-karma
+git diff --check
+```
+
+- Focused Karma tests: **30 passed, 0 failed**.
+- Typecheck: **passed, 0 errors**.
+- Lint and workspace boundaries: **passed, 0 errors**.
+- Full suite: **171 passed, 0 failed, 0 skipped**.
+- Karma package build: **1 of 1 built**; source and artifact license checks
+  passed.
+- The full suite retains the expected intentional event-bus warning documented
+  above. No new warnings were emitted.
+
+### Second-Fix Concerns
+
+- The configured command adapter is still covered by unit-level consequence
+  behavior plus typecheck/build, not a live CS2 server execution.
+- `.codex-scratch-s2s-ttt-port-main/` remains untracked and untouched.
