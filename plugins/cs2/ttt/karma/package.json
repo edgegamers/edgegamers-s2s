@@ -24,7 +24,21 @@
       "karma_default": { "type": "int", "default": 50, "description": "Default karma for new or reset players" },
       "karma_min": { "type": "int", "default": 0, "description": "Minimum karma before low-karma punishment" },
       "karma_timeout_threshold": { "type": "int", "default": 20, "description": "Karma below which a player sits out" },
-      "karma_round_timeout": { "type": "int", "default": 4, "description": "Rounds a low-karma player sits out" }
+      "karma_round_timeout": { "type": "int", "default": 4, "description": "Rounds a low-karma player sits out" },
+      "karma_innocent_on_traitor": { "type": "int", "default": 3, "description": "Karma for innocent-team killing traitor-team" },
+      "karma_traitor_on_detective": { "type": "int", "default": 1, "description": "Karma for traitor-team killing the stock detective" },
+      "karma_innocent_on_innocent_innocent": { "type": "int", "default": 0, "description": "Karma for retaliating against an innocent-team member" },
+      "karma_innocent_on_innocent_guilty": { "type": "int", "default": -4, "description": "Karma for an unprovoked innocent-team kill" },
+      "karma_innocent_on_innocent_victim_innocent": { "type": "int", "default": 1, "description": "Karma for an innocent-team victim who did not start the fight" },
+      "karma_innocent_on_innocent_victim_guilty": { "type": "int", "default": -2, "description": "Karma for an innocent-team victim who started the fight" },
+      "karma_traitor_on_traitor_innocent": { "type": "int", "default": -3, "description": "Karma for retaliating against a traitor-team member" },
+      "karma_traitor_on_traitor_guilty": { "type": "int", "default": -5, "description": "Karma for an unprovoked traitor-team kill" },
+      "karma_traitor_on_traitor_victim_innocent": { "type": "int", "default": 1, "description": "Karma for a traitor-team victim who did not start the fight" },
+      "karma_traitor_on_traitor_victim_guilty": { "type": "int", "default": -2, "description": "Karma for a traitor-team victim who started the fight" },
+      "karma_innocent_on_detective_innocent": { "type": "int", "default": -4, "description": "Karma for retaliating against the stock detective" },
+      "karma_innocent_on_detective_guilty": { "type": "int", "default": -6, "description": "Karma for an unprovoked kill of the stock detective" },
+      "karma_innocent_on_detective_victim_innocent": { "type": "int", "default": 1, "description": "Karma for a stock detective victim who did not start the fight" },
+      "karma_innocent_on_detective_victim_guilty": { "type": "int", "default": -1, "description": "Karma for a stock detective victim who started the fight" }
     }
   }
 }
