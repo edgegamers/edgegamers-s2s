@@ -64,6 +64,57 @@ describe("TTT role registry", () => {
     assert.equal(roles.reservedRoleOf(2), "");
   });
 
+  it("keeps an Innocent reservation out of special-role quota selection", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.reserveRole(1, STOCK_ROLES.innocent);
+
+    const assigned = roles.assignRoles([1, 2, 3, 4, 5]);
+
+    assert.equal(assigned.get(1), STOCK_ROLES.innocent);
+    assert.equal(roles.reservedRoleOf(1), "");
+  });
+
+  it("does not honor a reservation below the role minimum player count", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.registerRole({
+      key: "custom:marshal",
+      name: "Marshal",
+      team: "innocent",
+      assignmentOrder: 50,
+      minPlayers: 6,
+      ratio: { numerator: 1, denominator: 1, mode: "floor" },
+    });
+    roles.reserveRole(1, "custom:marshal");
+
+    const assigned = [...roles.assignRoles([1, 2, 3, 4, 5]).values()];
+
+    assert.equal(assigned.includes("custom:marshal"), false);
+    assert.equal(roles.reservedRoleOf(1), "");
+  });
+
+  it("does not let reservations exceed a role maximum count", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.registerRole({
+      key: "custom:marshal",
+      name: "Marshal",
+      team: "innocent",
+      assignmentOrder: 50,
+      maxCount: 1,
+      ratio: { numerator: 1, denominator: 1, mode: "floor" },
+    });
+    roles.reserveRole(4, "custom:marshal");
+    roles.reserveRole(5, "custom:marshal");
+
+    const assigned = [...roles.assignRoles([1, 2, 3, 4, 5]).values()];
+
+    assert.equal(assigned.filter((role) => role === "custom:marshal").length, 1);
+    assert.equal(roles.reservedRoleOf(4), "");
+    assert.equal(roles.reservedRoleOf(5), "");
+  });
+
   it("consumes zero-quota, unknown, and missing-slot reservations", () => {
     const roles = createRoleRegistry();
     roles.registerDefaults();

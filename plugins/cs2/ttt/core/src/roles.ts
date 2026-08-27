@@ -71,16 +71,34 @@ export function createRoleRegistry(): RoleRegistry {
       const requested = new Map(reserved);
       reserved.clear();
 
+      const assign = (slot: number, role: TttRoleKey): void => {
+        const index = pool.indexOf(slot);
+        if (index < 0) return;
+        pool.splice(index, 1);
+        result.set(slot, role);
+        assigned.set(slot, role);
+      };
+
       const assignable = [...definitions.values()]
         .filter((role) => role.key !== STOCK_ROLES.innocent && role.key !== STOCK_ROLES.spectator)
         .sort((left, right) => (left.assignmentOrder ?? 500) - (right.assignmentOrder ?? 500));
+
+      for (const slot of slots) {
+        if (requested.get(slot) === STOCK_ROLES.innocent) assign(slot, STOCK_ROLES.innocent);
+      }
+
+      const remainingByRole = new Map<TttRoleKey, number>();
       for (const role of assignable) {
-        const count = Math.min(pool.length, roleQuota(role, slots.length));
+        const quota = roleQuota(role, slots.length);
+        const reservations = pool.filter((slot) => requested.get(slot) === role.key).slice(0, quota);
+        for (const slot of reservations) assign(slot, role.key);
+        remainingByRole.set(role.key, quota - reservations.length);
+      }
+
+      for (const role of assignable) {
+        const count = Math.min(pool.length, remainingByRole.get(role.key) ?? 0);
         for (let index = 0; index < count; index += 1) {
-          const reservedIndex = pool.findIndex((slot) => requested.get(slot) === role.key);
-          const slot = pool.splice(reservedIndex >= 0 ? reservedIndex : 0, 1)[0]!;
-          result.set(slot, role.key);
-          assigned.set(slot, role.key);
+          assign(pool[0]!, role.key);
         }
       }
 

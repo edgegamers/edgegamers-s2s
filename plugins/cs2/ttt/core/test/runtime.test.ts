@@ -120,4 +120,26 @@ describe("TTT runtime", () => {
 
     assert.equal(aliveDuringEvent, false);
   });
+
+  it("commits death state before publishing the bodyCreate event", () => {
+    const { bus, players, roles, runtime } = setup();
+    players.add(1, "one", "One");
+    players.add(2, "two", "Two");
+    assert.equal(runtime.startRound(), true);
+    const combat = createCombatRuntime({
+      bus,
+      players,
+      roles,
+      runtime,
+      bodies: createBodyRegistry(),
+    });
+    let aliveDuringEvent = true;
+    bus.on("bodyCreate", (event) => {
+      aliveDuringEvent = players.isAlive(event.body.ownerSlot);
+    });
+
+    combat.death(2, 1, -1, "ak47", false);
+
+    assert.equal(aliveDuringEvent, false);
+  });
 });
