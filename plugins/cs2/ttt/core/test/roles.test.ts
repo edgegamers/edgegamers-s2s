@@ -16,6 +16,24 @@ describe("TTT role registry", () => {
     assert.equal(roles.teamOfRole("custom:jester"), "spectator");
   });
 
+  it("returns defensive snapshots of registered role definitions", () => {
+    const roles = createRoleRegistry();
+    const weapons = ["weapon_taser"];
+    roles.registerRole({
+      key: "custom:marshal",
+      name: "Marshal",
+      team: "innocent",
+      publicRole: false,
+      startingWeapons: weapons,
+    });
+
+    weapons.push("weapon_revolver");
+    const definition = roles.roleDefinition("custom:marshal");
+    assert.deepEqual(definition?.startingWeapons, ["weapon_taser"]);
+    assert.equal(definition?.publicRole, false);
+    assert.deepEqual(roles.roleDefinitions().map((role) => role.key), ["custom:marshal"]);
+  });
+
   it("reserves a role for one assignment", () => {
     const roles = createRoleRegistry();
     roles.registerDefaults();
@@ -33,6 +51,43 @@ describe("TTT role registry", () => {
     assert.equal(assigned.filter((role) => role === STOCK_ROLES.traitor).length, 3);
     assert.equal(assigned.filter((role) => role === STOCK_ROLES.detective).length, 1);
     assert.equal(assigned.filter((role) => role === STOCK_ROLES.innocent).length, 8);
+  });
+
+  it("shuffles candidates between repeated rounds through injected randomness", () => {
+    const values = [0, 0, 0, 0, 0.999, 0.999, 0.999, 0.999];
+    const roles = createRoleRegistry({ random: () => values.shift() ?? 0 });
+    roles.registerDefaults();
+    const slots = [1, 2, 3, 4, 5];
+
+    const first = roles.assignRoles(slots);
+    const second = roles.assignRoles(slots);
+    const firstTraitor = slots.find((slot) => first.get(slot) === STOCK_ROLES.traitor);
+    const secondTraitor = slots.find((slot) => second.get(slot) === STOCK_ROLES.traitor);
+
+    assert.notEqual(firstTraitor, secondTraitor);
+  });
+
+  it("uses weight when custom roles at the same order compete for a slot", () => {
+    const roles = createRoleRegistry({ random: () => 0.8 });
+    roles.registerDefaults();
+    roles.registerRole({
+      key: "custom:alpha",
+      name: "Alpha",
+      team: "innocent",
+      assignmentOrder: 50,
+      weight: 1,
+      ratio: { numerator: 1, denominator: 1, mode: "floor" },
+    });
+    roles.registerRole({
+      key: "custom:beta",
+      name: "Beta",
+      team: "innocent",
+      assignmentOrder: 50,
+      weight: 3,
+      ratio: { numerator: 1, denominator: 1, mode: "floor" },
+    });
+
+    assert.equal(roles.assignRoles([1]).get(1), "custom:beta");
   });
 
   it("assigns a third-party role through its public ratio definition", () => {

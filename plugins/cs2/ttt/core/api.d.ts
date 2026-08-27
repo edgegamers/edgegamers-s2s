@@ -44,6 +44,13 @@ export interface TttGameStateSnapshot {
   participants: number;
   roundsThisMap: number;
   winner: TttTeamKey | "";
+  reason: string;
+}
+
+export interface TttStartingLoadoutSnapshot {
+  health: number | null;
+  armor: number | null;
+  weapons: readonly string[];
 }
 
 export interface TttBodySnapshot {
@@ -58,8 +65,17 @@ export interface TttCancelableEvent {
   canceled: boolean;
 }
 
-export interface TttGameStateEvent extends TttCancelableEvent {
+export interface TttGameStateChangingEvent extends TttCancelableEvent {
+  previousState: TttRoundState;
   state: TttRoundState;
+  winner: TttTeamKey | "";
+  reason: string;
+  quiet: boolean;
+}
+
+export interface TttGameStateEvent extends TttGameStateSnapshot {
+  previousState: TttRoundState;
+  quiet: boolean;
 }
 
 export interface TttRoleAssigningEvent extends TttCancelableEvent {
@@ -105,6 +121,7 @@ export interface TttBodyIdentifyEvent extends TttCancelableEvent {
 }
 
 export interface TttEvents {
+  gameStateChanging: TttGameStateChangingEvent;
   gameState: TttGameStateEvent;
   roleAssigning: TttRoleAssigningEvent;
   roleAssigned: TttRoleAssignedEvent;
@@ -137,6 +154,10 @@ export interface TttLogEntry {
 export interface TttCoreApi {
   registerRole(role: TttRoleDefinition): void;
   reserveRole(slot: number, role: TttRoleKey | ""): void;
+  roleDefinition(role: TttRoleKey): TttRoleDefinition | null;
+  roleDefinitions(): readonly TttRoleDefinition[];
+  startingLoadout(role: TttRoleKey): TttStartingLoadoutSnapshot | null;
+  loadoutOf(slot: number): TttStartingLoadoutSnapshot | null;
   roleOf(slot: number): TttRoleKey;
   teamOfRole(role: TttRoleKey): TttTeamKey;
   player(slot: number): TttPlayerSnapshot | null;
@@ -144,6 +165,8 @@ export interface TttCoreApi {
   gameState(): TttGameStateSnapshot;
   isAlive(slot: number): boolean;
   isParticipating(slot: number): boolean;
+  body(ownerSlot: number): TttBodySnapshot | null;
+  identifyBody(ownerSlot: number, identifier: number): boolean;
   startRound(options?: TttStartRoundOptions): boolean;
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline(seconds: number): void;

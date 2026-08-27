@@ -6,6 +6,10 @@ import type {
   TttStartRoundOptions,
   TttTeamKey,
 } from "../api";
+import type { TttCoreConfig } from "./config.ts";
+import type { BodyRegistry } from "./cs2/bodies.ts";
+import { startingLoadout, type InventoryAdapter } from "./cs2/inventory.ts";
+import { identifyBody as identifyRegisteredBody } from "./cs2/interact.ts";
 import { TttPriority, type TttEventBus } from "./events.ts";
 import type { PlayerRegistry } from "./players.ts";
 import type { RoleRegistry } from "./roles.ts";
@@ -18,17 +22,46 @@ export function createTttCoreApi(deps: {
   round: RoundController;
   playerName(slot: number): string;
   players?: PlayerRegistry;
+  bodies?: BodyRegistry;
+  inventory?: InventoryAdapter;
+  config?: TttCoreConfig | (() => TttCoreConfig);
   startRound?(options?: TttStartRoundOptions): boolean;
   endRound?(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline?(seconds: number): void;
 }): TttCoreApi {
   const log: BlackboxChannel = deps.blackbox.createChannel({ id: "ttt.round", capacity: 512 });
+  const settings = (): TttCoreConfig | null => deps.config === undefined
+    ? null
+    : typeof deps.config === "function" ? deps.config() : deps.config;
+  const record = (entry: TttLogEntry): void => {
+    log.record({
+      at: Date.now() / 1000,
+      kind: entry.kind,
+      message: entry.message,
+      actor: entry.actorSlot === undefined
+        ? undefined
+        : { slot: entry.actorSlot, name: deps.playerName(entry.actorSlot) },
+      target: entry.targetSlot === undefined
+        ? undefined
+        : { slot: entry.targetSlot, name: deps.playerName(entry.targetSlot) },
+      data: entry.data,
+      coalesceKey: entry.coalesceKey,
+    });
+  };
   deps.bus.on("gameState", (event) => {
-    if (event.state === "in_progress") log.clear();
+    if (event.state === "countdown") log.clear();
   }, { priority: TttPriority.HIGHEST });
   return {
     registerRole: deps.roles.registerRole,
     reserveRole: deps.roles.reserveRole,
+    roleDefinition: deps.roles.roleDefinition,
+    roleDefinitions: deps.roles.roleDefinitions,
+    startingLoadout(role) {
+      const config = settings();
+      const definition = deps.roles.roleDefinition(role);
+      return config === null || definition === null ? null : startingLoadout(config, definition);
+    },
+    loadoutOf: (slot) => deps.inventory?.loadoutOf(slot) ?? null,
     roleOf: deps.roles.roleOf,
     teamOfRole: deps.roles.teamOfRole,
     player: (slot) => deps.players?.player(slot) ?? null,
@@ -36,25 +69,25 @@ export function createTttCoreApi(deps: {
     gameState: deps.round.snapshot,
     isAlive: (slot) => deps.players?.isAlive(slot) ?? false,
     isParticipating: (slot) => deps.players?.isParticipating(slot) ?? false,
-    startRound: deps.startRound ?? (() => deps.round.startRound(0)),
+    body: (ownerSlot) => deps.bodies?.bodyOf(ownerSlot) ?? null,
+    identifyBody(ownerSlot, identifier) {
+      if (deps.bodies === undefined) return false;
+      const body = deps.bodies.bodyOf(ownerSlot);
+      if (body === null || !identifyRegisteredBody(deps.bodies, deps.bus, ownerSlot, identifier)) return false;
+      record({
+        kind: "body_identify",
+        message: `${deps.playerName(identifier)} identified ${body.ownerName}`,
+        actorSlot: identifier,
+        targetSlot: ownerSlot,
+        data: { role: body.ownerRole, killerSlot: body.killerSlot },
+      });
+      return true;
+    },
+    startRound: deps.startRound ?? (() => false),
     endRound: deps.endRound ?? deps.round.endRound,
     setRoundDeadline: deps.setRoundDeadline ?? (() => undefined),
     on: deps.bus.on.bind(deps.bus),
-    log(entry: TttLogEntry) {
-      log.record({
-        at: Date.now() / 1000,
-        kind: entry.kind,
-        message: entry.message,
-        actor: entry.actorSlot === undefined
-          ? undefined
-          : { slot: entry.actorSlot, name: deps.playerName(entry.actorSlot) },
-        target: entry.targetSlot === undefined
-          ? undefined
-          : { slot: entry.targetSlot, name: deps.playerName(entry.targetSlot) },
-        data: entry.data,
-        coalesceKey: entry.coalesceKey,
-      });
-    },
+    log: record,
     renderLogs: () => log.render(),
   };
 }

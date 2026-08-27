@@ -2,6 +2,7 @@ import type { PluginContext } from "@s2script/sdk/plugin";
 import type { TttEvents } from "../../api";
 import type { TttCoreConfig } from "../config.ts";
 import type { TttEventBus } from "../events.ts";
+import { createCoreFrameHandler } from "../frame.ts";
 import type { PlayerRegistry } from "../players.ts";
 import type { RoleRegistry } from "../roles.ts";
 import type { RoundController } from "../round.ts";
@@ -35,9 +36,9 @@ export function installCoreHandlers(ctx: PluginContext, deps: {
 
   ctx.events.on("player_spawn", (event) => {
     const slot = event.getPlayerSlot("userid");
-    if (slot < 0 || !deps.players.isParticipating(slot)) return;
+    if (slot < 0) return;
     deps.players.setAlive(slot, true);
-    deps.round.setAlive(slot, true);
+    if (deps.players.isParticipating(slot)) deps.round.setAlive(slot, true);
   });
 
   ctx.events.on("player_death", (event) => {
@@ -72,14 +73,5 @@ export function installCoreHandlers(ctx: PluginContext, deps: {
     applyServerSettings();
   });
 
-  ctx.server.onGameFrame(() => {
-    deps.drainPreFrame();
-    deps.runtime.tick();
-    if (
-      deps.round.snapshot().state === "waiting" &&
-      deps.players.playerCount() >= deps.config().minPlayers
-    ) {
-      deps.runtime.startRound();
-    }
-  });
+  ctx.server.onGameFrame(createCoreFrameHandler(deps));
 }

@@ -29,6 +29,7 @@ import type { TttCoreApi, TttEvents } from "../api";
 import { createTttCoreApi } from "./api.ts";
 import { createBodyRegistry } from "./cs2/bodies.ts";
 import { installCoreHandlers } from "./cs2/handlers.ts";
+import { createInventoryAdapter } from "./cs2/inventory.ts";
 import { applyServerSettings, seedPlayers } from "./cs2/pawn.ts";
 import { registerCoreCommands } from "./commands.ts";
 import { createCoreConfigSnapshot } from "./config.ts";
@@ -48,8 +49,16 @@ export default plugin((ctx) => {
   const round = createRoundController(roles);
   const players = createPlayerRegistry(roles);
   const bodies = createBodyRegistry();
+  const inventory = createInventoryAdapter();
   let settings = createCoreConfigSnapshot(config);
-  const runtime = createTttRuntime({ bus, roles, players, round, config: () => settings });
+  const runtime = createTttRuntime({
+    bus,
+    roles,
+    players,
+    round,
+    config: () => settings,
+    applyStartingLoadout: inventory.applyStartingLoadout,
+  });
   const preFrame = createPreFrameQueue((slot) => ({
     steamId: players.steamIdOf(slot),
     generation: players.generationOf(slot),
@@ -62,6 +71,9 @@ export default plugin((ctx) => {
     round,
     playerName,
     players,
+    bodies,
+    inventory,
+    config: () => settings,
     startRound: runtime.startRound,
     endRound: runtime.endRound,
     setRoundDeadline: runtime.setRoundDeadline,
@@ -72,7 +84,10 @@ export default plugin((ctx) => {
   applyServerSettings();
   ctx.config.onChange(() => { settings = createCoreConfigSnapshot(config); });
   bus.on("gameState", (event) => {
-    if (event.state === "in_progress") bodies.clear();
+    if (event.state === "countdown") {
+      bodies.clear();
+      inventory.clear();
+    }
   }, { priority: TttPriority.HIGHEST });
   bus.on("roleAssigned", (event) => {
     api.log({ kind: "role", message: `${players.nameOf(event.slot)} was assigned ${event.role}`, actorSlot: event.slot });
@@ -121,6 +136,7 @@ export default plugin((ctx) => {
     onUnload() {
       preFrame.bumpMapEpoch();
       bodies.clear();
+      inventory.clear();
       players.clear();
       bus.clear();
     },

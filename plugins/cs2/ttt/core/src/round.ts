@@ -3,7 +3,9 @@ import type { RoleRegistry } from "./roles.ts";
 
 export interface RoundController {
   setAlive(slot: number, alive: boolean): void;
-  startRound(participants: number): boolean;
+  startCountdown(participants: number): boolean;
+  beginRound(): boolean;
+  abortCountdown(reason: string): boolean;
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   checkEndConditions(): TttTeamKey | "";
   resetRound(): void;
@@ -16,23 +18,42 @@ export function createRoundController(roles: RoleRegistry): RoundController {
   let participants = 0;
   let roundsThisMap = 0;
   let winner: TttTeamKey | "" = "";
+  let reason = "";
 
   return {
     setAlive(slot, value) {
       alive.set(slot, value);
     },
-    startRound(count) {
+    startCountdown(count) {
       if (state !== "waiting") return false;
-      state = "in_progress";
+      state = "countdown";
       participants = count;
-      roundsThisMap += 1;
       winner = "";
+      reason = "";
       return true;
     },
-    endRound(nextWinner) {
+    beginRound() {
+      if (state !== "countdown") return false;
+      state = "in_progress";
+      roundsThisMap += 1;
+      winner = "";
+      reason = "";
+      return true;
+    },
+    abortCountdown(nextReason) {
+      if (state !== "countdown") return false;
+      state = "waiting";
+      participants = 0;
+      winner = "";
+      reason = nextReason;
+      alive.clear();
+      return true;
+    },
+    endRound(nextWinner, nextReason = "") {
       if (state !== "in_progress" && state !== "countdown") return false;
       state = "finished";
       winner = nextWinner;
+      reason = nextReason;
       return true;
     },
     checkEndConditions() {
@@ -53,10 +74,11 @@ export function createRoundController(roles: RoleRegistry): RoundController {
       state = "waiting";
       participants = 0;
       winner = "";
+      reason = "";
       alive.clear();
     },
     snapshot() {
-      return { state, participants, roundsThisMap, winner };
+      return { state, participants, roundsThisMap, winner, reason };
     },
   };
 }
