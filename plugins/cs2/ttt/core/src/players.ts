@@ -68,10 +68,12 @@ export function createPlayerRegistry(roles: RoleRegistry): PlayerRegistry {
       steamIds[slot] = "";
       names[slot] = "";
       roles.setRole(slot, "");
+      roles.reserveRole(slot, "");
       const index = active.indexOf(slot);
       if (index >= 0) active.splice(index, 1);
     },
     clear() {
+      roles.clearReservations();
       for (const slot of active) {
         generations[slot]! += 1;
         roles.setRole(slot, "");

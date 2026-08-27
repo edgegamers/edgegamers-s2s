@@ -1,4 +1,3 @@
-import { ADMFLAG } from "@s2script/sdk/admin";
 import type { CtxCommands } from "@s2script/sdk/plugin";
 import type { TttCoreApi } from "../api";
 import { message } from "./messages.ts";
@@ -12,6 +11,8 @@ export function registerCoreCommands(commands: CtxCommands, deps: {
   runtime: TttRuntime;
   roles: RoleRegistry;
   players: PlayerRegistry;
+  genericAdminFlag: number;
+  rootAdminFlag: number;
 }): void {
   commands.register("sm_ttt", (cmd) => {
     const game = deps.api.gameState();
@@ -23,27 +24,27 @@ export function registerCoreCommands(commands: CtxCommands, deps: {
     cmd.reply(player === null ? message("noRound") : `TTT: ${game.state}; role=${player.role || "unassigned"}`);
   });
 
-  commands.register("sm_ttt_logs", (cmd) => {
+  commands.registerAdmin("sm_ttt_logs", deps.genericAdminFlag, (cmd) => {
     const lines = deps.api.renderLogs(cmd.callerSlot);
     if (lines.length === 0) cmd.reply(message("noRound"));
     else for (const line of lines) cmd.reply(line);
   });
 
-  commands.registerAdmin("sm_ttt_start", ADMFLAG.GENERIC, (cmd) => {
+  commands.registerAdmin("sm_ttt_start", deps.genericAdminFlag, (cmd) => {
     cmd.reply(deps.runtime.startRound({ quiet: true }) ? message("roundStarting") : message("noRound"));
   });
 
-  commands.registerAdmin("sm_ttt_end", ADMFLAG.GENERIC, (cmd) => {
+  commands.registerAdmin("sm_ttt_end", deps.genericAdminFlag, (cmd) => {
     cmd.reply(deps.runtime.endRound("", "Ended by an admin") ? message("roundEnded") : message("noRound"));
   });
 
-  commands.registerAdmin("sm_ttt_roles", ADMFLAG.GENERIC, (cmd) => {
+  commands.registerAdmin("sm_ttt_roles", deps.genericAdminFlag, (cmd) => {
     const players = deps.api.activePlayers();
     if (players.length === 0) cmd.reply(message("noRound"));
     else for (const player of players) cmd.reply(`[${player.slot}] ${player.name}: ${player.role || "unassigned"}${player.alive ? "" : " [DEAD]"}`);
   });
 
-  commands.registerAdmin("sm_ttt_myrole", ADMFLAG.ROOT, (cmd) => {
+  commands.registerAdmin("sm_ttt_myrole", deps.rootAdminFlag, (cmd) => {
     if (cmd.callerSlot < 0) {
       cmd.reply(message("playerOnly"));
       return;
@@ -64,7 +65,7 @@ export function registerCoreCommands(commands: CtxCommands, deps: {
     }
   });
 
-  commands.registerAdmin("sm_ttt_setrole", ADMFLAG.ROOT, (cmd) => {
+  commands.registerAdmin("sm_ttt_setrole", deps.rootAdminFlag, (cmd) => {
     const slot = cmd.argInt(0, -1);
     const requested = cmd.arg(1).toLowerCase();
     const role = requested === "innocent" ? STOCK_ROLES.innocent

@@ -54,4 +54,28 @@ describe("TTT player registry", () => {
 
     assert.equal(players.player(6)?.role, "");
   });
+
+  it("does not carry a reservation across slot recycling", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    const players = createPlayerRegistry(roles);
+    players.add(4, "first", "First");
+    roles.reserveRole(4, STOCK_ROLES.traitor);
+
+    players.remove(4);
+    players.add(4, "second", "Second");
+
+    assert.equal(roles.reservedRoleOf(4), "");
+  });
+
+  it("clears every reservation with map-scoped player state", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    const players = createPlayerRegistry(roles);
+    roles.reserveRole(12, STOCK_ROLES.detective);
+
+    players.clear();
+
+    assert.equal(roles.reservedRoleOf(12), "");
+  });
 });

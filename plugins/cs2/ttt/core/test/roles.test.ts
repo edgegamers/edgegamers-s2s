@@ -50,4 +50,32 @@ describe("TTT role registry", () => {
 
     assert.equal(assigned.filter((role) => role === "custom:marshal").length, 2);
   });
+
+  it("does not let reservations exceed a role quota", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.reserveRole(1, STOCK_ROLES.traitor);
+    roles.reserveRole(2, STOCK_ROLES.traitor);
+
+    const assigned = [...roles.assignRoles([1, 2, 3, 4, 5]).values()];
+
+    assert.equal(assigned.filter((role) => role === STOCK_ROLES.traitor).length, 1);
+    assert.equal(roles.reservedRoleOf(1), "");
+    assert.equal(roles.reservedRoleOf(2), "");
+  });
+
+  it("consumes zero-quota, unknown, and missing-slot reservations", () => {
+    const roles = createRoleRegistry();
+    roles.registerDefaults();
+    roles.reserveRole(1, STOCK_ROLES.spectator);
+    roles.reserveRole(2, "custom:missing");
+    roles.reserveRole(63, STOCK_ROLES.traitor);
+
+    const assigned = roles.assignRoles([1, 2, 3]);
+
+    assert.notEqual(assigned.get(1), STOCK_ROLES.spectator);
+    assert.equal(roles.reservedRoleOf(1), "");
+    assert.equal(roles.reservedRoleOf(2), "");
+    assert.equal(roles.reservedRoleOf(63), "");
+  });
 });

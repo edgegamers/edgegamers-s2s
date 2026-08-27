@@ -8,7 +8,13 @@ export function identifyBody(
   ownerSlot: number,
   identifier: number,
 ): boolean {
-  const body = bodies.identify(ownerSlot);
-  if (body === null) return false;
-  return !bus.emit("bodyIdentify", { body, identifier, canceled: false }).canceled;
+  const body = bodies.bodyOf(ownerSlot);
+  if (body === null || body.identified) return false;
+  const event = bus.emit("bodyIdentify", {
+    body: { ...body, identified: true },
+    identifier,
+    canceled: false,
+  });
+  if (event.canceled) return false;
+  return bodies.identify(ownerSlot) !== null;
 }

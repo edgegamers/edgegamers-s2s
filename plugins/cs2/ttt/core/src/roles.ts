@@ -11,6 +11,7 @@ export interface RoleRegistry {
   registerDefaults(): void;
   registerRole(role: TttRoleDefinition): void;
   reserveRole(slot: number, role: TttRoleKey | ""): void;
+  clearReservations(): void;
   reservedRoleOf(slot: number): TttRoleKey | "";
   roleOf(slot: number): TttRoleKey;
   setRole(slot: number, role: TttRoleKey): void;
@@ -49,6 +50,9 @@ export function createRoleRegistry(): RoleRegistry {
       if (role === "") reserved.delete(slot);
       else reserved.set(slot, role);
     },
+    clearReservations() {
+      reserved.clear();
+    },
     reservedRoleOf(slot) {
       return reserved.get(slot) ?? "";
     },
@@ -64,23 +68,17 @@ export function createRoleRegistry(): RoleRegistry {
     assignRoles(slots) {
       const result = new Map<number, TttRoleKey>();
       const pool = [...slots];
-      const reservedEntries = [...reserved.entries()];
-      for (const [slot, role] of reservedEntries) {
-        if (!pool.includes(slot) || !definitions.has(role)) continue;
-        result.set(slot, role);
-        assigned.set(slot, role);
-        reserved.delete(slot);
-        pool.splice(pool.indexOf(slot), 1);
-      }
+      const requested = new Map(reserved);
+      reserved.clear();
 
       const assignable = [...definitions.values()]
         .filter((role) => role.key !== STOCK_ROLES.innocent && role.key !== STOCK_ROLES.spectator)
         .sort((left, right) => (left.assignmentOrder ?? 500) - (right.assignmentOrder ?? 500));
       for (const role of assignable) {
-        const alreadyAssigned = [...result.values()].filter((key) => key === role.key).length;
-        const count = Math.min(pool.length, Math.max(0, roleQuota(role, slots.length) - alreadyAssigned));
+        const count = Math.min(pool.length, roleQuota(role, slots.length));
         for (let index = 0; index < count; index += 1) {
-          const slot = pool.shift()!;
+          const reservedIndex = pool.findIndex((slot) => requested.get(slot) === role.key);
+          const slot = pool.splice(reservedIndex >= 0 ? reservedIndex : 0, 1)[0]!;
           result.set(slot, role.key);
           assigned.set(slot, role.key);
         }

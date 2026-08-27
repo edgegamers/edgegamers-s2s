@@ -6,7 +6,7 @@ import type {
   TttStartRoundOptions,
   TttTeamKey,
 } from "../api";
-import type { TttEventBus } from "./events.ts";
+import { TttPriority, type TttEventBus } from "./events.ts";
 import type { PlayerRegistry } from "./players.ts";
 import type { RoleRegistry } from "./roles.ts";
 import type { RoundController } from "./round.ts";
@@ -23,6 +23,9 @@ export function createTttCoreApi(deps: {
   setRoundDeadline?(seconds: number): void;
 }): TttCoreApi {
   const log: BlackboxChannel = deps.blackbox.createChannel({ id: "ttt.round", capacity: 512 });
+  deps.bus.on("gameState", (event) => {
+    if (event.state === "in_progress") log.clear();
+  }, { priority: TttPriority.HIGHEST });
   return {
     registerRole: deps.roles.registerRole,
     reserveRole: deps.roles.reserveRole,

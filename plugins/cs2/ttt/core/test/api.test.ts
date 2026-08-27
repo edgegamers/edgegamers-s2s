@@ -66,4 +66,29 @@ describe("createTttCoreApi", () => {
     api.setRoundDeadline(45);
     assert.deepEqual(calls, ["start", "end:innocent", "deadline:45"]);
   });
+
+  it("clears the round log when a new round begins", () => {
+    const entries: BlackboxEntry[] = [];
+    const bus = new TttEventBus<TttEvents>();
+    const roles = createRoleRegistry();
+    const api = createTttCoreApi({
+      blackbox: {
+        createChannel: () => ({
+          clear: () => entries.splice(0),
+          record: (entry) => entries.push(entry),
+          entries: () => entries,
+          render: () => entries.map((entry) => entry.message),
+        }),
+      },
+      bus,
+      roles,
+      round: createRoundController(roles),
+      playerName: () => "",
+    });
+    api.log({ kind: "role", message: "secret role" });
+
+    bus.emit("gameState", { state: "in_progress", canceled: false });
+
+    assert.deepEqual(api.renderLogs(), []);
+  });
 });

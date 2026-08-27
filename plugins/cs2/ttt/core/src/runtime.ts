@@ -11,6 +11,7 @@ export interface TttRuntime {
   endRound(winner: TttTeamKey | "", reason?: string): boolean;
   setRoundDeadline(seconds: number): void;
   tick(): boolean;
+  markDead(slot: number): void;
   handleDeath(slot: number): TttTeamKey | "";
 }
 
@@ -69,7 +70,7 @@ export function createTttRuntime(deps: {
     tick() {
       const snapshot = deps.round.snapshot();
       if (snapshot.state === "in_progress" && deadline > 0 && now() >= deadline) {
-        return endRound("", "Round time expired");
+        return endRound("innocent", "Round time expired");
       }
       if (snapshot.state === "finished" && nextRoundAt > 0 && now() >= nextRoundAt) {
         for (const slot of deps.players.activeSlots()) {
@@ -82,6 +83,10 @@ export function createTttRuntime(deps: {
         return true;
       }
       return false;
+    },
+    markDead(slot) {
+      deps.players.setAlive(slot, false);
+      deps.round.setAlive(slot, false);
     },
     handleDeath(slot) {
       deps.players.setAlive(slot, false);

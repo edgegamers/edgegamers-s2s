@@ -18,6 +18,7 @@ export function createCombatRuntime(deps: {
     },
     death(slot: number, killer: number, assister: number, weapon: string, headshot: boolean): void {
       if (!deps.players.isParticipating(slot)) return;
+      deps.runtime.markDead(slot);
       deps.bus.emit("death", { slot, killer, assister, weapon, headshot });
       const body = deps.bodies.create(slot, deps.players.nameOf(slot), deps.roles.roleOf(slot), killer);
       const bodyEvent = deps.bus.emit("bodyCreate", { body, canceled: false });

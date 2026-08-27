@@ -43,7 +43,7 @@ describe("TTT runtime", () => {
     assert.equal(players.isAlive(2), true);
   });
 
-  it("ends an expired round with no winner", () => {
+  it("awards the innocent team when the round expires", () => {
     const { players, round, runtime, setNow } = setup();
     players.add(1, "one", "One");
     players.add(2, "two", "Two");
@@ -58,7 +58,7 @@ describe("TTT runtime", () => {
       state: "finished",
       participants: 2,
       roundsThisMap: 1,
-      winner: "",
+      winner: "innocent",
     });
   });
 
@@ -97,5 +97,27 @@ describe("TTT runtime", () => {
 
     assert.equal(players.isAlive(2), false);
     assert.equal(bodies.bodyOf(2), null);
+  });
+
+  it("commits death state before publishing the death event", () => {
+    const { bus, players, roles, runtime } = setup();
+    players.add(1, "one", "One");
+    players.add(2, "two", "Two");
+    assert.equal(runtime.startRound(), true);
+    const combat = createCombatRuntime({
+      bus,
+      players,
+      roles,
+      runtime,
+      bodies: createBodyRegistry(),
+    });
+    let aliveDuringEvent = true;
+    bus.on("death", (event) => {
+      aliveDuringEvent = players.isAlive(event.slot);
+    });
+
+    combat.death(2, 1, -1, "ak47", false);
+
+    assert.equal(aliveDuringEvent, false);
   });
 });

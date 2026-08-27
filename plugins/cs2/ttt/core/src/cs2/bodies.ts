@@ -20,7 +20,7 @@ export function createBodyRegistry(): BodyRegistry {
     bodyOf: (ownerSlot) => ownerSlot >= 0 && ownerSlot < MAX_TTT_SLOTS ? bodies[ownerSlot] ?? null : null,
     identify(ownerSlot) {
       const body = ownerSlot >= 0 && ownerSlot < MAX_TTT_SLOTS ? bodies[ownerSlot] ?? null : null;
-      if (body === null) return null;
+      if (body === null || body.identified) return null;
       const identified = { ...body, identified: true };
       bodies[ownerSlot] = identified;
       return identified;
