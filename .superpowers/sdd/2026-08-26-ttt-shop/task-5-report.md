@@ -50,3 +50,26 @@ Implementation is ready to commit on the existing `dev` branch. The required pac
 ## Concern
 
 The package build remains unverified because the current sandbox denies the build tool access to the parent directory it reads while resolving the plugin. All unit tests and typechecking pass, but artifact compilation needs a rerun in an approved environment.
+
+## Review Fix: Public SDK Menu Runtime
+
+### Finding Addressed
+
+The original command module imported `Menu` and `MenuStyle` as types, so Source2Script could not inject the public runtime binding. It then consulted the private `globalThis.__s2pkg_menu` property and silently used the text list when that property was absent.
+
+### Fix
+
+- Replaced the type-only menu import with `import { Menu, MenuStyle } from "@s2script/sdk/menu"`.
+- Removed the private global lookup and its player-menu fallback. Player `sm_shop` and `sm_menu` commands now always construct the public SDK chat menu; server-console callers still receive the normal text listing.
+- Reworked the focused command test to install a temporary Node module hook for the public SDK menu module, then dynamically load `commands.ts`. It asserts that `sm_shop` displays a `Menu` with `MenuStyle.Chat` before exercising the existing stale-state/dead-player selection gate. The test no longer defines or injects `__s2pkg_menu`.
+
+### TDD and Validation Evidence
+
+1. RED: The revised focused test failed with `AssertionError: sm_shop should display a public SDK menu` under the previous private-global implementation (5 passing, 1 failing).
+2. GREEN: After the value import change, `npm.cmd test -- plugins/cs2/ttt/shop/test/commands.test.ts` passed: 6 tests, 0 failures.
+3. `npm.cmd run typecheck` passed with 0 errors.
+4. `npm.cmd run build -- --filter @edgegamers/ttt-shop` remains sandbox-blocked before artifact resolution with the same errors: `Cannot read directory "../..": Access is denied.` and `Could not resolve "C:\\Users\\reece\\VSCodeProjects\\edgegamers-s2s\\plugins\\cs2\\ttt\\shop\\src\\plugin.ts"`. No elevated retry was made.
+
+### Review
+
+The direct and menu selection paths still require both an in-progress round and a live player before `tryPurchase` is called. Failure reporting, role-filtered catalog entries, and the admin grant path are unchanged.

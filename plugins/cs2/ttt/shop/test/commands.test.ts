@@ -1,10 +1,32 @@
 import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
 import { describe, it } from "node:test";
 import type { CommandInvocation } from "@s2script/sdk/commands";
 import type { CtxCommands } from "@s2script/sdk/plugin";
 import type { TttCoreApi, TttPlayerSnapshot } from "@edgegamers/ttt-core";
 import type { TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
-import { registerShopCommands } from "../src/commands.ts";
+
+const menuModuleSource = `
+export const MenuStyle = { Chat: "chat" };
+export class Menu {
+  static instances = [];
+  constructor(title = "") { this.title = title; this.style = ""; this.items = []; }
+  addItem(info, display, options = {}) { this.items.push({ info, display, options }); }
+  onSelect(handler) { this.selectHandler = handler; }
+  display(slot, seconds = 0) { this.displayed = { slot, seconds }; Menu.instances.push(this); }
+  select(slot, info) { this.selectHandler?.({ slot, info }); }
+}`;
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier === "@s2script/sdk/menu") {
+      return { shortCircuit: true, url: `data:text/javascript,${encodeURIComponent(menuModuleSource)}` };
+    }
+    return nextResolve(specifier, context);
+  },
+});
+
+const { registerShopCommands } = await import("../src/commands.ts");
 
 interface RegisteredCommands {
   public: Map<string, (cmd: CommandInvocation) => void>;
@@ -12,11 +34,16 @@ interface RegisteredCommands {
 }
 
 interface FakeMenu {
+  title: string;
   style: string;
+  items: Array<{ info: string; display: string; options: { disabled?: boolean } }>;
   addItem(info: string, display: string, options?: { disabled?: boolean }): void;
   onSelect(handler: (event: { slot: number; info: string }) => void): void;
   display(slot: number, seconds?: number): void;
+  select(slot: number, info: string): void;
 }
+
+const TestMenu = (await import("@s2script/sdk/menu")).Menu as unknown as { instances: FakeMenu[] };
 
 function createCommands(): RegisteredCommands & CtxCommands {
   const publicCommands = new Map<string, (cmd: CommandInvocation) => void>();
@@ -161,21 +188,12 @@ describe("TTT shop commands", () => {
     ]);
   });
 
-  it("revalidates round state and liveness when a menu selection is made", () => {
+  it("opens the public SDK chat menu and revalidates round state and liveness on selection", () => {
     const commands = createCommands();
-    let select: ((event: { slot: number; info: string }) => void) | undefined;
     let purchases = 0;
     let state: "in_progress" | "waiting" = "in_progress";
     let alive = true;
-    (globalThis as unknown as { __s2pkg_menu: { Menu: new () => FakeMenu; MenuStyle: { Chat: string } } }).__s2pkg_menu = {
-      Menu: class {
-        style = "";
-        addItem() {}
-        onSelect(handler: (event: { slot: number; info: string }) => void) { select = handler; }
-        display() {}
-      },
-      MenuStyle: { Chat: "chat" },
-    };
+    TestMenu.instances.length = 0;
     const core = {
       gameState: () => ({ state, participants: 1, roundsThisMap: 1, winner: "", reason: "" }),
       isAlive: () => alive,
@@ -187,10 +205,14 @@ describe("TTT shop commands", () => {
     const invocation = command(3);
 
     commands.public.get("sm_shop")!(invocation);
+    const menu = TestMenu.instances.at(-1);
+    assert.ok(menu, "sm_shop should display a public SDK menu");
     state = "waiting";
     alive = false;
-    select!({ slot: 3, info: "armor" });
+    menu.select(3, "armor");
 
+    assert.equal(menu?.title, "Shop");
+    assert.equal(menu?.style, "chat");
     assert.equal(purchases, 0);
     assert.deepEqual(invocation.replies, [
       "You have 75 credits.",

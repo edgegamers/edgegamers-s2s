@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 import type { CommandInvocation } from "@s2script/sdk/commands";
-import type { Menu, MenuStyle } from "@s2script/sdk/menu";
+import { Menu, MenuStyle } from "@s2script/sdk/menu";
 import type { CtxCommands } from "@s2script/sdk/plugin";
 import type { TttCoreApi, TttPlayerSnapshot } from "@edgegamers/ttt-core";
 import type { TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
@@ -30,11 +30,6 @@ import type { TttPurchaseResult, TttShopApi, TttShopItem } from "../api.d.ts";
 const GENERIC_ADMIN_FLAG = 2;
 const PLAYER_ONLY = "This command can only be used by a player.";
 const SHOP_INACTIVE = "The shop is only available while you are alive in an active round.";
-
-interface MenuRuntime {
-  Menu: new (title?: string) => Menu;
-  MenuStyle: { Chat: MenuStyle };
-}
 
 interface ShopListEntry {
   item: TttShopItem;
@@ -94,14 +89,8 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
       return;
     }
 
-    const runtime = menuRuntime();
-    if (runtime === null) {
-      list(cmd);
-      return;
-    }
-
-    const menu = new runtime.Menu("Shop");
-    menu.style = runtime.MenuStyle.Chat;
+    const menu = new Menu("Shop");
+    menu.style = MenuStyle.Chat;
     const entries = listEntries(slot, shop);
     cmd.replyToChat(`You have ${shop.balanceOf(slot)} credits.`);
     for (const entry of entries) {
@@ -174,10 +163,6 @@ export function registerShopCommands(commands: CtxCommands, core: TttCoreApi, sh
     }
     cmd.reply(`[ttt] gave ${item.name} to ${target.name}`);
   });
-}
-
-function menuRuntime(): MenuRuntime | null {
-  return (globalThis as unknown as { __s2pkg_menu?: MenuRuntime }).__s2pkg_menu ?? null;
 }
 
 function canPlayerPurchase(cmd: CommandInvocation, core: TttCoreApi): boolean {
