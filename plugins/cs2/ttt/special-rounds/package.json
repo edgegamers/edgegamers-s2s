@@ -1,0 +1,32 @@
+{
+  "name": "@edgegamers/ttt-special-rounds",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-core": "0.1.0",
+    "@edgegamers/ttt-shop": "0.1.0"
+  },
+  "s2script": {
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^0.1.0"
+    },
+    "optionalPluginDependencies": {
+      "@edgegamers/ttt-shop": "^0.1.0"
+    },
+    "config": {
+      "special_min_rounds_between": { "type": "int", "default": 3, "description": "Minimum rounds between special rounds" },
+      "special_min_players": { "type": "int", "default": 5, "description": "Minimum players required for special rounds" },
+      "special_chance": { "type": "float", "default": 0.2, "description": "Chance to start a special round" },
+      "round_bhop_enabled": { "type": "bool", "default": true, "description": "Enable the bunny hop special round" },
+      "round_bhop_weight": { "type": "float", "default": 0.25, "description": "Bunny hop special round selection weight" }
+    }
+  }
+}
