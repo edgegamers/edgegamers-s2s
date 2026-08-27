@@ -18,5 +18,6 @@ export interface TttSpecialRoundsApi {
   activeRounds(): readonly string[];
   isActive(id: string): boolean;
   startRounds(ids?: readonly string[]): readonly string[];
+  tickActiveRounds(dt: number): void;
   clearRounds(): void;
 }

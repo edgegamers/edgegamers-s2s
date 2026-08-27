@@ -3,6 +3,7 @@ import type { TttSpecialRoundDefinition, TttSpecialRoundsApi } from "../api.d.ts
 export interface SpecialRoundsOptions {
   availablePlugins: ReadonlySet<string>;
   random?: () => number;
+  onRoundStarted?(id: string): void;
 }
 
 export function createSpecialRoundsApi(options: SpecialRoundsOptions): TttSpecialRoundsApi {
@@ -42,6 +43,7 @@ export function createSpecialRoundsApi(options: SpecialRoundsOptions): TttSpecia
       active.pop();
       throw error;
     }
+    options.onRoundStarted?.(round.id);
   }
 
   return {
@@ -65,6 +67,9 @@ export function createSpecialRoundsApi(options: SpecialRoundsOptions): TttSpecia
       }
 
       return started;
+    },
+    tickActiveRounds(dt) {
+      for (const id of [...active]) rounds.get(id)?.tick?.(dt);
     },
     clearRounds() {
       for (const id of active) {

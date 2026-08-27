@@ -27,27 +27,35 @@ import { Server } from "@s2script/sdk/server";
 import type { TttCoreApi } from "@edgegamers/ttt-core";
 import type { TttShopApi } from "@edgegamers/ttt-shop";
 import type { TttSpecialRoundsApi } from "../api.d.ts";
+import { registerSpecialRoundCommands } from "./commands.ts";
 import { createSpecialRoundsConfigSnapshot } from "./config.ts";
+import { createSpecialRoundLifecycle } from "./lifecycle.ts";
 import { createSpecialRoundsApi } from "./special-rounds.ts";
 import { registerStockSpecialRounds } from "./stock.ts";
 
 export default plugin((ctx) => {
   const core = ctx.use<TttCoreApi>("@edgegamers/ttt-core");
   const shop = ctx.tryUse<TttShopApi>("@edgegamers/ttt-shop");
+  const settings = createSpecialRoundsConfigSnapshot(config);
+  const lifecycle = createSpecialRoundLifecycle({ core, config: settings });
   const specials = createSpecialRoundsApi({
     availablePlugins: new Set(shop === null ? [] : ["@edgegamers/ttt-shop"]),
+    onRoundStarted: lifecycle.onRoundStarted,
   });
   registerStockSpecialRounds({
     specials,
     core,
     shop,
-    config: createSpecialRoundsConfigSnapshot(config),
+    config: settings,
     runtime: {
       command: (command) => { Server.command(command); },
       getCvar: (name) => Server.getCvar(name),
       setCvar: (name, value) => { Server.setCvar(name, value); },
     },
   });
+  lifecycle.install(specials);
+  registerSpecialRoundCommands(ctx.commands, specials);
+  ctx.server.onGameFrame(() => { specials.tickActiveRounds(0); });
   ctx.publish<TttSpecialRoundsApi>("@edgegamers/ttt-special-rounds", specials);
   console.log("[ttt-special-rounds] loaded");
 

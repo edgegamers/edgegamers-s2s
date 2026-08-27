@@ -141,4 +141,30 @@ describe("TTT special rounds", () => {
     assert.deepEqual(api.activeRounds(), []);
     assert.equal(api.isActive("speed"), false);
   });
+
+  it("ticks only active round definitions", () => {
+    const api = createSpecialRoundsApi({ availablePlugins: new Set() });
+    const ticks: Array<[string, number]> = [];
+    api.registerRound(round({ id: "inactive", tick: (dt) => { ticks.push(["inactive", dt]); } }));
+    api.registerRound(round({ id: "active", tick: (dt) => { ticks.push(["active", dt]); } }));
+    api.startRounds(["active"]);
+
+    api.tickActiveRounds(0.25);
+
+    assert.deepEqual(ticks, [["active", 0.25]]);
+  });
+
+  it("notifies package lifecycle state after each round actually starts", () => {
+    const started: string[] = [];
+    const api = createSpecialRoundsApi({
+      availablePlugins: new Set(),
+      onRoundStarted: (id) => { started.push(id); },
+    });
+    api.registerRound(round({ id: "allowed" }));
+    api.registerRound(round({ id: "blocked", canStart: () => false }));
+
+    api.startRounds(["allowed", "blocked"]);
+
+    assert.deepEqual(started, ["allowed"]);
+  });
 });
