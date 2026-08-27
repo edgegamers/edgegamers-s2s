@@ -1,5 +1,6 @@
 node_modules/
 .superpowers/
+.codex-scratch-*/
 /docs/superpowers/
 /docs/decisions/
 .worktrees/
