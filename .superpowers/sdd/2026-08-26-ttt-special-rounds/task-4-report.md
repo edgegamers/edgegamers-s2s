@@ -23,3 +23,26 @@ Verification:
 
 Concern:
 - Core does not expose remaining round time. Speed therefore follows the approved package-local model and extends its tracked configured deadline value rather than querying an authoritative remaining-time value.
+
+## Review Fix: Focused Coverage Gaps
+
+Date: 2026-08-27
+
+Status: Complete
+
+Coverage added:
+- Loaded the real Special Rounds plugin factory with controlled SDK capabilities and verified exactly one frame callback is registered.
+- Started a round through the plugin's published API, executed the captured frame callback, and verified the active definition receives `dt = 0`.
+- Split automatic-selection gates into independent spacing, minimum-player, minimum-map-round, and chance tests.
+- Added command refusal coverage for unknown, disabled, missing-Shop, conflicting, already-active, and `canStart`-blocked rounds.
+
+Mutation evidence:
+- Temporarily removed frame registration and the minimum-player gate and forced the command success branch. The focused suite failed in the plugin wiring test, the independent player-gate test, and all six refusal tests.
+- Restored the original implementation unchanged; all focused tests passed.
+
+Verification:
+- Focused Special Rounds tests: 39 passed, 0 failed.
+- Full repository tests: 248 passed, 0 failed.
+- Typecheck: passed.
+- Lint and workspace boundaries: passed.
+- Production diff: none.

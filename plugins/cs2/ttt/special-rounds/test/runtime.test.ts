@@ -167,6 +167,14 @@ function command(args: readonly string[] = []): CommandInvocation & { replies: s
   };
 }
 
+function specialCommand(specials: TttSpecialRoundsApi): (cmd: CommandInvocation) => void {
+  const commands = createCommands();
+  registerSpecialRoundCommands(commands, specials);
+  const registered = commands.admin.get("sm_ttt_special");
+  assert.ok(registered);
+  return registered.handler;
+}
+
 describe("TTT special round lifecycle", () => {
   it("clears active rounds whenever Core finishes a round", () => {
     const { core, specials } = createLifecycleHarness();
@@ -180,26 +188,67 @@ describe("TTT special round lifecycle", () => {
     assert.deepEqual(specials.activeRounds(), []);
   });
 
-  it("requires spacing, players, map rounds, and chance before automatic selection", () => {
-    const randomValues = [0.9, 0.1];
+  it("waits for the configured number of rounds between specials", () => {
     const { core, specials } = createLifecycleHarness({
-      config: { minRoundsBetween: 2, chance: 0.5 },
-      lifecycleRandom: () => randomValues.shift() ?? 0,
+      config: { minRoundsBetween: 2 },
+      lifecycleRandom: () => 0,
       selectionRandom: () => 0,
     });
     specials.registerRound(definition());
 
-    core.setGameState({ participants: 1, roundsThisMap: 0 });
-    core.emitGameState("in_progress");
-    core.emitGameState("in_progress");
-    core.setGameState({ participants: 2 });
-    core.emitGameState("in_progress");
-    core.setGameState({ roundsThisMap: 1 });
     core.emitGameState("in_progress");
     assert.deepEqual(specials.activeRounds(), []);
 
     core.emitGameState("in_progress");
 
+    assert.deepEqual(specials.activeRounds(), ["speed"]);
+  });
+
+  it("waits for the configured minimum player count independently", () => {
+    const { core, specials } = createLifecycleHarness({
+      lifecycleRandom: () => 0,
+      selectionRandom: () => 0,
+    });
+    specials.registerRound(definition());
+    core.setGameState({ participants: 1, roundsThisMap: 1 });
+
+    core.emitGameState("in_progress");
+    assert.deepEqual(specials.activeRounds(), []);
+
+    core.setGameState({ participants: 2 });
+    core.emitGameState("in_progress");
+    assert.deepEqual(specials.activeRounds(), ["speed"]);
+  });
+
+  it("waits for the configured minimum map-round count independently", () => {
+    const { core, specials } = createLifecycleHarness({
+      lifecycleRandom: () => 0,
+      selectionRandom: () => 0,
+    });
+    specials.registerRound(definition());
+    core.setGameState({ participants: 2, roundsThisMap: 0 });
+
+    core.emitGameState("in_progress");
+    assert.deepEqual(specials.activeRounds(), []);
+
+    core.setGameState({ roundsThisMap: 1 });
+    core.emitGameState("in_progress");
+    assert.deepEqual(specials.activeRounds(), ["speed"]);
+  });
+
+  it("requires the configured random chance independently", () => {
+    const randomValues = [0.9, 0.1];
+    const { core, specials } = createLifecycleHarness({
+      config: { chance: 0.5 },
+      lifecycleRandom: () => randomValues.shift() ?? 0,
+      selectionRandom: () => 0,
+    });
+    specials.registerRound(definition());
+
+    core.emitGameState("in_progress");
+    assert.deepEqual(specials.activeRounds(), []);
+
+    core.emitGameState("in_progress");
     assert.deepEqual(specials.activeRounds(), ["speed"]);
   });
 
@@ -255,7 +304,7 @@ describe("TTT special round lifecycle", () => {
 });
 
 describe("TTT special round commands", () => {
-  it("registers generic-admin access, lists IDs, starts a round, and reports refusals", () => {
+  it("registers generic-admin access, lists IDs, and starts a forced round", () => {
     const commands = createCommands();
     const specials = createSpecialRoundsApi({ availablePlugins: new Set() });
     specials.registerRound(definition({ id: "speed" }));
@@ -275,13 +324,71 @@ describe("TTT special round commands", () => {
     const start = command(["speed"]);
     registered?.handler(start);
     assert.match(start.replies.join("\n"), /started.*speed/i);
-
-    const unknown = command(["missing"]);
-    registered?.handler(unknown);
-    assert.match(unknown.replies.join("\n"), /could not.*missing/i);
-
-    const missingShop = command(["rich"]);
-    registered?.handler(missingShop);
-    assert.match(missingShop.replies.join("\n"), /could not.*rich/i);
   });
+
+  const refusalCases: Array<{
+    name: string;
+    requestedId: string;
+    setup(specials: TttSpecialRoundsApi): void;
+  }> = [
+    {
+      name: "the ID is unknown",
+      requestedId: "missing",
+      setup() {},
+    },
+    {
+      name: "the round is disabled",
+      requestedId: "disabled",
+      setup(specials) { specials.registerRound(definition({ id: "disabled", enabled: false })); },
+    },
+    {
+      name: "the optional Shop dependency is missing",
+      requestedId: "rich",
+      setup(specials) {
+        specials.registerRound(definition({
+          id: "rich",
+          requiresPlugins: ["@edgegamers/ttt-shop"],
+        }));
+      },
+    },
+    {
+      name: "an active round conflicts",
+      requestedId: "rich",
+      setup(specials) {
+        specials.registerRound(definition({ id: "vanilla", conflicts: ["rich"] }));
+        specials.registerRound(definition({ id: "rich" }));
+        specials.startRounds(["vanilla"]);
+      },
+    },
+    {
+      name: "the round is already active",
+      requestedId: "speed",
+      setup(specials) {
+        specials.registerRound(definition());
+        specials.startRounds(["speed"]);
+      },
+    },
+    {
+      name: "canStart blocks the round",
+      requestedId: "blocked",
+      setup(specials) {
+        specials.registerRound(definition({ id: "blocked", canStart: () => false }));
+      },
+    },
+  ];
+
+  for (const refusalCase of refusalCases) {
+    it(`reports refusal when ${refusalCase.name}`, () => {
+      const specials = createSpecialRoundsApi({ availablePlugins: new Set() });
+      refusalCase.setup(specials);
+      const invocation = command([refusalCase.requestedId]);
+
+      specialCommand(specials)(invocation);
+
+      assert.match(
+        invocation.replies.join("\n"),
+        new RegExp(`could not.*${refusalCase.requestedId}`, "i"),
+      );
+    });
+  }
 });
