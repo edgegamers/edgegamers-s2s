@@ -1,0 +1,109 @@
+{
+  "name": "@edgegamers/maul",
+  "version": "0.1.0",
+  "license": "MIT OR Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build ."
+  },
+  "dependencies": {
+    "@s2script/cs2": "^0.11.1"
+  },
+  "s2script": {
+    "id": "maul",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/maul": "0.1.0"
+    },
+    "config": {
+      "maul_url": {
+        "type": "string",
+        "default": "https://maul.edge-gamers.com/api",
+        "description": "MAUL API base URL. v1 requests use legacy paths; v2 requests append /v2 paths."
+      },
+      "maul_key": {
+        "type": "string",
+        "default": "",
+        "description": "MAUL API key. Empty disables authentication."
+      },
+      "api_version": {
+        "type": "string",
+        "default": "v1",
+        "description": "MAUL API version: v1 or v2. Changing this requires plugin reload."
+      },
+      "division_id": {
+        "type": "int",
+        "default": 0,
+        "description": "v2 only: division id recorded on penalties."
+      },
+      "console_admin_user_id": {
+        "type": "int",
+        "default": 0,
+        "description": "v2 only: MAUL user id for console/rcon bans."
+      },
+      "game_id_type_id": {
+        "type": "int",
+        "default": 1,
+        "description": "v2 only: numeric game id type. 1 is Steam."
+      },
+      "server_ip": {
+        "type": "string",
+        "default": "",
+        "description": "v1 only: override REQUEST_IP. Empty derives from server cvars."
+      },
+      "server_port": {
+        "type": "int",
+        "default": 0,
+        "description": "v1 only: override REQUEST_PORT. 0 derives from hostport."
+      },
+      "ip_arg_encoding": {
+        "type": "string",
+        "default": "plain",
+        "description": "v1 only: client-IP info argument encoding: plain, base64, or omit."
+      },
+      "user_agent": {
+        "type": "string",
+        "default": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36",
+        "description": "User-Agent sent with MAUL API calls."
+      },
+      "eventserver": {
+        "type": "bool",
+        "default": false,
+        "description": "Grant event-gated ranks."
+      },
+      "autotag": {
+        "type": "bool",
+        "default": true,
+        "description": "Rename players to the MAUL rank tag plus MAUL name."
+      },
+      "join_message": {
+        "type": "bool",
+        "default": true,
+        "description": "Broadcast Dedicated Supporter join messages."
+      },
+      "http_timeout_ms": {
+        "type": "int",
+        "default": 8000,
+        "description": "MAUL request timeout in milliseconds."
+      },
+      "debug": {
+        "type": "bool",
+        "default": false,
+        "description": "Enable verbose MAUL logging."
+      },
+      "presence": {
+        "type": "bool",
+        "default": false,
+        "description": "v2 only: report live roster to MAUL presence."
+      },
+      "presence_interval_ms": {
+        "type": "int",
+        "default": 15000,
+        "description": "v2 presence snapshot cadence, floored to 5000 ms."
+      }
+    }
+  }
+}
