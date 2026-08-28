@@ -8,7 +8,7 @@ test("recognizes artifacts only beneath recursively nested plugin dist directori
     "plugins/cs2/servers/ttt/dist/ttt.s2sp",
   ), true);
   assert.equal(licenseArtifacts.isPluginArtifactPath(
-    "plugins/global/maul/dist/maul.s2sp",
+    "plugins/cs2/maul/dist/maul.s2sp",
   ), true);
   assert.equal(licenseArtifacts.isPluginArtifactPath(
     "plugins/cs2/dist/ttt.s2sp",

@@ -60,7 +60,7 @@ test("discovers recursive workspace and Source2Script plugin manifests", (t) => 
       workspaces: ["plugins/*/**", "packages/*/**"],
       s2script: { workspace: { plugins: ["plugins/*/**"] } },
     },
-    "plugins/global/maul/package.json": { name: "@edgegamers/maul", private: true },
+    "plugins/cs2/maul/package.json": { name: "@edgegamers/maul", private: true },
     "plugins/cs2/servers/ttt/package.json": { name: "@edgegamers/ttt", private: true },
     "packages/global/config/package.json": { name: "@edgegamers/config" },
   });
@@ -69,11 +69,11 @@ test("discovers recursive workspace and Source2Script plugin manifests", (t) => 
     "package.json",
     "packages/global/config/package.json",
     "plugins/cs2/servers/ttt/package.json",
-    "plugins/global/maul/package.json",
+    "plugins/cs2/maul/package.json",
   ]);
   assert.deepEqual(manifestPaths(root, discoverSource2ScriptPluginManifests(root)), [
     "plugins/cs2/servers/ttt/package.json",
-    "plugins/global/maul/package.json",
+    "plugins/cs2/maul/package.json",
   ]);
 });
 

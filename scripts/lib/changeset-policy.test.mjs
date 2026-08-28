@@ -17,7 +17,7 @@ test("matches changed files within recursive plugin directories without prefix c
       manifest: { private: false },
     },
     {
-      directory: "plugins/global/maul",
+      directory: "plugins/cs2/maul",
       name: "@edgegamers/maul",
       manifest: { private: false },
     },
