@@ -1,0 +1,266 @@
+import { Clients } from "@s2script/sdk/clients";
+import type { Client } from "@s2script/sdk/clients";
+import { WebSocket } from "@s2script/sdk/ws";
+import type { WebSocket as Socket } from "@s2script/sdk/ws";
+import type { MaulConfig } from "./config.ts";
+import type { Logger } from "./log.ts";
+
+const SIGNON_FULL = 6;
+const RECONNECT_BASE_MS = 2_000;
+const RECONNECT_MAX_MS = 60_000;
+const SNAPSHOT_NUDGE_MS = 250;
+const TEAM_UNASSIGNED = 0;
+
+const TEAM_LABELS = new Map<number, string>([
+  [1, "Spectators"],
+  [2, "Terrorists"],
+  [3, "Counter-Terrorists"],
+]);
+
+type Timer = ReturnType<typeof setTimeout>;
+
+export interface PresenceDeps {
+  getConfig: () => MaulConfig;
+  log: Logger;
+  accessToken: () => Promise<string | null>;
+  server?: () => { map?: string; maxPlayers?: number };
+}
+
+export interface PresencePlayer {
+  gameIdType: "steam";
+  gameIdValue: string;
+  name: string;
+  slot: number;
+  team: string;
+}
+
+export interface PresenceSnapshot {
+  cadenceMs: number;
+  players: PresencePlayer[];
+  teams: Record<string, number>;
+  unidentifiedCount: number;
+  map: string;
+  maxPlayers: number;
+}
+
+export function toWebSocketUrl(baseUrl: string): string {
+  const url = new URL(baseUrl);
+  if (url.protocol === "https:") url.protocol = "wss:";
+  if (url.protocol === "http:") url.protocol = "ws:";
+  return url.toString().replace(/\/$/, "");
+}
+
+export class PresenceReporter {
+  private readonly getConfig: () => MaulConfig;
+  private readonly log: Logger;
+  private readonly accessToken: () => Promise<string | null>;
+  private readonly server: () => { map?: string; maxPlayers?: number };
+  private readonly teamsBySlot = new Map<number, number>();
+  private socket: Socket | null = null;
+  private seq = 0;
+  private stopped = true;
+  private reconnectDelayMs = RECONNECT_BASE_MS;
+  private reconnectTimer: Timer | null = null;
+  private snapshotTimer: Timer | null = null;
+
+  constructor(deps: PresenceDeps) {
+    this.getConfig = deps.getConfig;
+    this.log = deps.log;
+    this.accessToken = deps.accessToken;
+    this.server = deps.server ?? (() => ({}));
+  }
+
+  setTeam(slot: number, team: number): void {
+    this.teamsBySlot.set(slot, team);
+    this.nudgeSnapshot();
+  }
+
+  forgetTeam(slot: number): void {
+    this.teamsBySlot.delete(slot);
+    this.nudgeSnapshot();
+  }
+
+  async start(): Promise<void> {
+    this.stopped = false;
+    await this.connect();
+  }
+
+  stop(): void {
+    this.stopped = true;
+    this.clearTimer("reconnectTimer");
+    this.clearTimer("snapshotTimer");
+    const socket = this.socket;
+    this.socket = null;
+    socket?.close();
+  }
+
+  playerJoined(client: Client): void {
+    const player = this.playerFrom(client);
+    if (player === null) return;
+    this.send("player.joined", player);
+  }
+
+  playerLeft(client: Client): void {
+    if (!this.hasRealSteamId(client)) return;
+    this.send("player.left", {
+      gameIdType: "steam",
+      gameIdValue: client.steamId,
+    });
+    this.forgetTeam(client.slot);
+  }
+
+  playerChat(client: Client, text: string, teamOnly: boolean): void {
+    const player = this.playerFrom(client);
+    if (player === null) return;
+    this.send("chat.message", {
+      gameIdType: player.gameIdType,
+      gameIdValue: player.gameIdValue,
+      name: player.name,
+      scope: teamOnly ? "team" : "all",
+      text: text.slice(0, 512),
+    });
+  }
+
+  buildSnapshot(): PresenceSnapshot {
+    const server = this.server();
+    const snapshot: PresenceSnapshot = {
+      cadenceMs: this.getConfig().presenceIntervalMs,
+      players: [],
+      teams: this.emptyTeams(),
+      unidentifiedCount: 0,
+      map: server.map ?? "",
+      maxPlayers: server.maxPlayers ?? 0,
+    };
+
+    for (const client of Clients.all()) {
+      if (!client.isValid() || client.signonState < SIGNON_FULL) continue;
+      const team = this.teamName(client.slot);
+      if (this.hasRealSteamId(client)) {
+        snapshot.players.push({
+          gameIdType: "steam",
+          gameIdValue: client.steamId,
+          name: client.name,
+          slot: client.slot,
+          team,
+        });
+        snapshot.teams[team] = (snapshot.teams[team] ?? 0) + 1;
+      } else {
+        snapshot.unidentifiedCount += 1;
+        snapshot.teams[team] = (snapshot.teams[team] ?? 0) + 1;
+      }
+    }
+
+    return snapshot;
+  }
+
+  private async connect(): Promise<void> {
+    if (this.stopped || !this.isEnabled()) return;
+    const token = await this.accessToken();
+    if (token === null) {
+      this.scheduleReconnect();
+      return;
+    }
+
+    try {
+      const socket = await WebSocket.connect(`${toWebSocketUrl(this.getConfig().maulUrl)}/v2/presence`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (this.stopped) {
+        socket.close();
+        return;
+      }
+      this.socket = socket;
+      this.reconnectDelayMs = RECONNECT_BASE_MS;
+      socket.onClose(() => this.handleClosed());
+      socket.onError((error) => this.log.warn(`MAUL presence WebSocket error: ${error}`));
+      socket.onMessage(() => {});
+      this.scheduleSnapshot(SNAPSHOT_NUDGE_MS);
+    } catch (error) {
+      this.log.warn(`MAUL presence WebSocket connect failed: ${this.errorReason(error)}`);
+      this.scheduleReconnect();
+    }
+  }
+
+  private handleClosed(): void {
+    this.socket = null;
+    this.scheduleReconnect();
+  }
+
+  private scheduleReconnect(): void {
+    if (this.stopped || this.reconnectTimer !== null) return;
+    const waitMs = this.reconnectDelayMs;
+    this.reconnectDelayMs = Math.min(this.reconnectDelayMs * 2, RECONNECT_MAX_MS);
+    this.reconnectTimer = this.setTimer(() => {
+      this.reconnectTimer = null;
+      void this.connect();
+    }, waitMs);
+  }
+
+  private nudgeSnapshot(): void {
+    if (this.socket === null) return;
+    this.scheduleSnapshot(SNAPSHOT_NUDGE_MS);
+  }
+
+  private scheduleSnapshot(waitMs: number): void {
+    if (this.stopped || this.snapshotTimer !== null) return;
+    this.snapshotTimer = this.setTimer(() => {
+      this.snapshotTimer = null;
+      this.send("presence.snapshot", this.buildSnapshot());
+      this.scheduleSnapshot(this.getConfig().presenceIntervalMs);
+    }, waitMs);
+  }
+
+  private send(type: string, payload: object): void {
+    if (this.socket === null) return;
+    this.socket.send(JSON.stringify({ type, seq: ++this.seq, ...payload }));
+  }
+
+  private playerFrom(client: Client): PresencePlayer | null {
+    if (!client.isValid() || client.signonState < SIGNON_FULL || !this.hasRealSteamId(client)) return null;
+    return {
+      gameIdType: "steam",
+      gameIdValue: client.steamId,
+      name: client.name,
+      slot: client.slot,
+      team: this.teamName(client.slot),
+    };
+  }
+
+  private hasRealSteamId(client: Client): boolean {
+    return client.steamId !== "0" && !client.isBot;
+  }
+
+  private teamName(slot: number): string {
+    return TEAM_LABELS.get(this.teamsBySlot.get(slot) ?? TEAM_UNASSIGNED) ?? "Unassigned";
+  }
+
+  private emptyTeams(): Record<string, number> {
+    return {
+      "Counter-Terrorists": 0,
+      Spectators: 0,
+      Terrorists: 0,
+      Unassigned: 0,
+    };
+  }
+
+  private isEnabled(): boolean {
+    const config = this.getConfig();
+    return config.apiVersion === "v2" && config.presence && config.maulUrl.length > 0;
+  }
+
+  private setTimer(callback: () => void, ms: number): Timer {
+    const timer = setTimeout(callback, ms);
+    timer.unref?.();
+    return timer;
+  }
+
+  private clearTimer(name: "reconnectTimer" | "snapshotTimer"): void {
+    const timer = this[name];
+    if (timer !== null) clearTimeout(timer);
+    this[name] = null;
+  }
+
+  private errorReason(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
