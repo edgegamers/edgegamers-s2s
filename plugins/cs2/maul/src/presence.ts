@@ -10,6 +10,7 @@ const RECONNECT_BASE_MS = 2_000;
 const RECONNECT_MAX_MS = 60_000;
 const SNAPSHOT_NUDGE_MS = 250;
 const TEAM_UNASSIGNED = 0;
+const STEAM_ID64_RE = /^7656119\d{10}$/;
 
 const TEAM_LABELS = new Map<number, string>([
   [1, "Spectators"],
@@ -134,6 +135,7 @@ export class PresenceReporter {
 
     for (const client of Clients.all()) {
       if (!client.isValid() || client.signonState < SIGNON_FULL) continue;
+      if (client.isBot) continue;
       const team = this.teamName(client.slot);
       if (this.hasRealSteamId(client)) {
         snapshot.players.push({
@@ -144,7 +146,7 @@ export class PresenceReporter {
           team,
         });
         snapshot.teams[team] = (snapshot.teams[team] ?? 0) + 1;
-      } else {
+      } else if (client.steamId === "0") {
         snapshot.unidentifiedCount += 1;
         snapshot.teams[team] = (snapshot.teams[team] ?? 0) + 1;
       }
@@ -183,6 +185,7 @@ export class PresenceReporter {
 
   private handleClosed(): void {
     this.socket = null;
+    this.clearTimer("snapshotTimer");
     this.scheduleReconnect();
   }
 
@@ -227,7 +230,7 @@ export class PresenceReporter {
   }
 
   private hasRealSteamId(client: Client): boolean {
-    return client.steamId !== "0" && !client.isBot;
+    return !client.isBot && STEAM_ID64_RE.test(client.steamId);
   }
 
   private teamName(slot: number): string {

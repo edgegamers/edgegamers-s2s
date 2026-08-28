@@ -13,6 +13,7 @@ interface RecordedConnect {
 
 interface FakeSocket {
   sent: string[];
+  closeHandler?: (code: number, reason: string) => void;
   onMessage: (handler: (data: string) => void) => void;
   onClose: (handler: (code: number, reason: string) => void) => void;
   onError: (handler: (err: string) => void) => void;
@@ -66,8 +67,11 @@ registerHooks({
               globalThis.__maulPresenceConnects.push({ url, init });
               const socket = {
                 sent: [],
+                closeHandler: undefined,
                 onMessage() {},
-                onClose() {},
+                onClose(handler) {
+                  this.closeHandler = handler;
+                },
                 onError() {},
                 send(data) {
                   this.sent.push(data);
@@ -146,6 +150,11 @@ function decodeLast(socket = sockets.at(-1)) {
   return JSON.parse(data) as Record<string, unknown>;
 }
 
+async function flushPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 beforeEach(() => {
   clients.length = 0;
   sockets.length = 0;
@@ -189,6 +198,41 @@ test("buildSnapshot reports full authenticated players and tracked teams", () =>
   assert.deepEqual(presence.buildSnapshot().players, [{ gameIdType: "steam", gameIdValue: "76561198000000001", name: "Alpha", slot: 0, team: "Unassigned" }]);
 });
 
+test("buildSnapshot omits bots and clients without reportable SteamID64 game IDs", () => {
+  clients.push(
+    client({ slot: 0, steamId: "76561198000000001", name: "Alpha" }),
+    client({ slot: 1, steamId: "0", name: "Unauthenticated" }),
+    client({ slot: 2, steamId: "0", name: "Bot", isBot: true }),
+    client({ slot: 3, steamId: "", name: "Empty" }),
+    client({ slot: 4, steamId: " 76561198000000002 ", name: "Whitespace" }),
+    client({ slot: 5, steamId: "STEAM_1:1:1234", name: "Legacy" }),
+    client({ slot: 6, steamId: "7656119800000000", name: "Short" })
+  );
+
+  const presence = reporter();
+  presence.setTeam(0, 2);
+  presence.setTeam(1, 3);
+  presence.setTeam(2, 3);
+  presence.setTeam(3, 3);
+  presence.setTeam(4, 3);
+  presence.setTeam(5, 3);
+  presence.setTeam(6, 3);
+
+  assert.deepEqual(presence.buildSnapshot(), {
+    cadenceMs: 15000,
+    players: [{ gameIdType: "steam", gameIdValue: "76561198000000001", name: "Alpha", slot: 0, team: "Terrorists" }],
+    teams: {
+      "Counter-Terrorists": 1,
+      Spectators: 0,
+      Terrorists: 1,
+      Unassigned: 0,
+    },
+    unidentifiedCount: 1,
+    map: "de_dust2",
+    maxPlayers: 24,
+  });
+});
+
 test("playerChat sends scoped truncated chat messages for authenticated players", async () => {
   const presence = reporter();
   await presence.start();
@@ -209,6 +253,19 @@ test("playerChat sends scoped truncated chat messages for authenticated players"
   assert.equal(sockets[0]?.sent.length, 1);
 });
 
+test("player events ignore malformed and unauthenticated game IDs", async () => {
+  const presence = reporter();
+  await presence.start();
+
+  for (const steamId of ["", " ", "not-a-steamid", "STEAM_1:1:1234", "7656119800000000", "0"]) {
+    presence.playerJoined(client({ steamId }));
+    presence.playerChat(client({ steamId }), "hidden", false);
+    presence.playerLeft(client({ steamId }));
+  }
+
+  assert.equal(sockets[0]?.sent.length, 0);
+});
+
 test("playerLeft sends a flat disconnect event for real SteamIDs", async () => {
   const presence = reporter();
   await presence.start();
@@ -222,4 +279,35 @@ test("playerLeft sends a flat disconnect event for real SteamIDs", async () => {
     gameIdValue: "76561198000000001",
   });
   assert.equal(Object.hasOwn(decodeLast(), "player"), false);
+});
+
+test("closed sockets cancel stale snapshot timers before reconnect", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  clients.push(client());
+  const presence = reporter();
+  await presence.start();
+
+  sockets[0]?.closeHandler?.(1000, "closed");
+  t.mock.timers.tick(2000);
+  await flushPromises();
+  assert.equal(sockets.length, 2);
+
+  t.mock.timers.tick(250);
+
+  assert.equal(sockets[0]?.sent.length, 0);
+  assert.deepEqual(decodeLast(sockets[1]), {
+    type: "presence.snapshot",
+    seq: 1,
+    cadenceMs: 15000,
+    players: [{ gameIdType: "steam", gameIdValue: "76561198000000001", name: "Player", slot: 0, team: "Unassigned" }],
+    teams: {
+      "Counter-Terrorists": 0,
+      Spectators: 0,
+      Terrorists: 0,
+      Unassigned: 1,
+    },
+    unidentifiedCount: 0,
+    map: "de_dust2",
+    maxPlayers: 24,
+  });
 });
