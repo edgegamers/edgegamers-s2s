@@ -17,7 +17,7 @@ edgegamers-s2s/
 game-agnostic plugins. `plugins/<game>/**` holds plugins scoped to a game
 listed in `workspace-policy.json`. Only this first segment is policy; deeper
 directories are free-form. For example, the migrated plugins are
-`plugins/global/maul` and `plugins/cs2/ttt`. Each plugin has its own version
+`plugins/cs2/maul` and `plugins/cs2/ttt`. Each plugin has its own version
 and package metadata. Private plugins build normally but cannot be published
 by `s2s deploy`.
 

@@ -14,7 +14,7 @@ policy: it is either `global` for game-agnostic code or a game listed in
 npm.cmd run create:plugin -- <scope>/<optional-folders>/<plugin-name>
 ```
 
-For example, the existing plugins are `plugins/global/maul` and
+For example, the existing plugins are `plugins/cs2/maul` and
 `plugins/cs2/ttt`. Workspace detection places the generated plugin beneath
 `plugins/<scope>/...`. Use an `@edgegamers/` package name, keep the generated
 Source2Script metadata, and keep the generated `private: true` state while the
