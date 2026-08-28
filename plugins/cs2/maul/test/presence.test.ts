@@ -13,6 +13,7 @@ interface RecordedConnect {
 
 interface FakeSocket {
   sent: string[];
+  messageHandler?: (data: string) => void;
   closeHandler?: (code: number, reason: string) => void;
   onMessage: (handler: (data: string) => void) => void;
   onClose: (handler: (code: number, reason: string) => void) => void;
@@ -24,6 +25,10 @@ interface FakeSocket {
 const clients: FakeClient[] = [];
 const sockets: FakeSocket[] = [];
 const connects: RecordedConnect[] = [];
+const chatMessages: string[] = [];
+const kickedPlayers: Array<{ steamId: string; reason: string }> = [];
+const commands: string[] = [];
+const logs: Array<{ level: string; message: string }> = [];
 
 const globalWithPresence = globalThis as typeof globalThis & {
   __maulPresenceClients?: FakeClient[];
@@ -67,8 +72,11 @@ registerHooks({
               globalThis.__maulPresenceConnects.push({ url, init });
               const socket = {
                 sent: [],
+                messageHandler: undefined,
                 closeHandler: undefined,
-                onMessage() {},
+                onMessage(handler) {
+                  this.messageHandler = handler;
+                },
                 onClose(handler) {
                   this.closeHandler = handler;
                 },
@@ -111,7 +119,12 @@ const config: MaulConfig = {
   debug: false,
 };
 
-const silentLog = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
+const silentLog = {
+  debug: (message: string) => { logs.push({ level: "debug", message }); },
+  info: (message: string) => { logs.push({ level: "info", message }); },
+  warn: (message: string) => { logs.push({ level: "warn", message }); },
+  error: (message: string) => { logs.push({ level: "error", message }); },
+};
 
 function client(over: Partial<FakeClient> = {}): FakeClient {
   return {
@@ -140,6 +153,21 @@ function reporter() {
     log: silentLog,
     accessToken: async () => "test-token",
     server: () => ({ map: "de_dust2", maxPlayers: 24 }),
+    controls: {
+      chat: { send: (message) => { chatMessages.push(message); } },
+      player: {
+        kick(gameIdValue, reason) {
+          kickedPlayers.push({ steamId: gameIdValue, reason });
+          return clients.some((candidate) => candidate.steamId === gameIdValue);
+        },
+      },
+      server: {
+        command(line) {
+          commands.push(line);
+          return true;
+        },
+      },
+    },
   });
 }
 
@@ -159,6 +187,10 @@ beforeEach(() => {
   clients.length = 0;
   sockets.length = 0;
   connects.length = 0;
+  chatMessages.length = 0;
+  kickedPlayers.length = 0;
+  commands.length = 0;
+  logs.length = 0;
 });
 
 test("toWebSocketUrl converts HTTP bases and preserves WebSocket bases", () => {
@@ -279,6 +311,54 @@ test("playerLeft sends a flat disconnect event for real SteamIDs", async () => {
     gameIdValue: "76561198000000001",
   });
   assert.equal(Object.hasOwn(decodeLast(), "player"), false);
+});
+
+test("isActive tracks whether a presence socket is connected", async () => {
+  const presence = reporter();
+
+  assert.equal(presence.isActive(), false);
+
+  await presence.start();
+  assert.equal(presence.isActive(), true);
+
+  sockets[0]?.closeHandler?.(1000, "closed");
+  assert.equal(presence.isActive(), false);
+});
+
+test("inbound presence controls relay chat and kick players", async () => {
+  clients.push(client({ slot: 1, steamId: "76561198000000002" }));
+  const presence = reporter();
+  await presence.start();
+
+  sockets[0]?.messageHandler?.(JSON.stringify({ type: "chat.send", message: "MAUL says hello" }));
+  sockets[0]?.messageHandler?.(JSON.stringify({ event: "player.kick", data: { gameIdValue: "76561198000000002", reason: "MAUL moderation" } }));
+  sockets[0]?.messageHandler?.(JSON.stringify({ type: "player.kick", gameIdValue: "76561198000000003" }));
+
+  assert.deepEqual(chatMessages, ["MAUL says hello"]);
+  assert.deepEqual(kickedPlayers, [
+    { steamId: "76561198000000002", reason: "MAUL moderation" },
+    { steamId: "76561198000000003", reason: "Kicked by MAUL" },
+  ]);
+  assert.deepEqual(logs.filter((entry) => entry.level === "info").map((entry) => entry.message), [
+    "MAUL presence kicked 76561198000000002",
+  ]);
+  assert.deepEqual(logs.filter((entry) => entry.level === "warn").map((entry) => entry.message), [
+    "MAUL presence could not find player 76561198000000003 to kick",
+  ]);
+});
+
+test("inbound server commands dispatch and acknowledge success or malformed requests", async () => {
+  const presence = reporter();
+  await presence.start();
+
+  sockets[0]?.messageHandler?.(JSON.stringify({ event: "server.command", data: { id: "cmd-1", command: "mp_restartgame 1" } }));
+  sockets[0]?.messageHandler?.(JSON.stringify({ type: "server.command", id: "cmd-2", line: "" }));
+
+  assert.deepEqual(commands, ["mp_restartgame 1"]);
+  assert.deepEqual(sockets[0]?.sent.map((frame) => JSON.parse(frame) as Record<string, unknown>), [
+    { type: "server.command.ack", seq: 1, id: "cmd-1", ok: true },
+    { type: "server.command.ack", seq: 2, id: "cmd-2", ok: false, reason: "empty command" },
+  ]);
 });
 
 test("closed sockets cancel stale snapshot timers before reconnect", async (t) => {

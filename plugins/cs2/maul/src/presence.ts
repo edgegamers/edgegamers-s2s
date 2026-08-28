@@ -20,11 +20,24 @@ const TEAM_LABELS = new Map<number, string>([
 
 type Timer = ReturnType<typeof setTimeout>;
 
+export interface PresenceControls {
+  chat: {
+    send(message: string): void;
+  };
+  player: {
+    kick(gameIdValue: string, reason: string): boolean;
+  };
+  server: {
+    command(line: string): boolean;
+  };
+}
+
 export interface PresenceDeps {
   getConfig: () => MaulConfig;
   log: Logger;
   accessToken: () => Promise<string | null>;
   server?: () => { map?: string; maxPlayers?: number };
+  controls?: PresenceControls;
 }
 
 export interface PresencePlayer {
@@ -56,6 +69,7 @@ export class PresenceReporter {
   private readonly log: Logger;
   private readonly accessToken: () => Promise<string | null>;
   private readonly server: () => { map?: string; maxPlayers?: number };
+  private readonly controls: PresenceControls | null;
   private readonly teamsBySlot = new Map<number, number>();
   private socket: Socket | null = null;
   private seq = 0;
@@ -69,6 +83,7 @@ export class PresenceReporter {
     this.log = deps.log;
     this.accessToken = deps.accessToken;
     this.server = deps.server ?? (() => ({}));
+    this.controls = deps.controls ?? null;
   }
 
   setTeam(slot: number, team: number): void {
@@ -84,6 +99,10 @@ export class PresenceReporter {
   async start(): Promise<void> {
     this.stopped = false;
     await this.connect();
+  }
+
+  isActive(): boolean {
+    return this.socket !== null;
   }
 
   stop(): void {
@@ -175,7 +194,7 @@ export class PresenceReporter {
       this.reconnectDelayMs = RECONNECT_BASE_MS;
       socket.onClose(() => this.handleClosed());
       socket.onError((error) => this.log.warn(`MAUL presence WebSocket error: ${error}`));
-      socket.onMessage(() => {});
+      socket.onMessage((message) => this.handleMessage(message));
       this.scheduleSnapshot(SNAPSHOT_NUDGE_MS);
     } catch (error) {
       this.log.warn(`MAUL presence WebSocket connect failed: ${this.errorReason(error)}`);
@@ -216,6 +235,84 @@ export class PresenceReporter {
   private send(type: string, payload: object): void {
     if (this.socket === null) return;
     this.socket.send(JSON.stringify({ type, seq: ++this.seq, ...payload }));
+  }
+
+  private handleMessage(message: string): void {
+    const frame = this.parseMessage(message);
+    if (frame === null) return;
+
+    const type = typeof frame.event === "string" ? frame.event : typeof frame.type === "string" ? frame.type : "";
+    const data = this.objectField(frame, "data") ?? frame;
+    if (type === "chat.send") {
+      this.handleChatSend(data);
+    } else if (type === "player.kick") {
+      this.handlePlayerKick(data);
+    } else if (type === "server.command") {
+      this.handleServerCommand(data);
+    }
+  }
+
+  private handleChatSend(data: Record<string, unknown>): void {
+    const message = this.stringField(data, "message") ?? this.stringField(data, "text");
+    if (message === null || message.length === 0) return;
+    this.controls?.chat.send(message);
+  }
+
+  private handlePlayerKick(data: Record<string, unknown>): void {
+    const gameIdValue = this.stringField(data, "gameIdValue") ?? this.stringField(data, "steamId");
+    if (gameIdValue === null || gameIdValue.length === 0) return;
+
+    const reason = this.stringField(data, "reason") ?? "Kicked by MAUL";
+    const kicked = this.controls?.player.kick(gameIdValue, reason) ?? false;
+    if (kicked) {
+      this.log.info(`MAUL presence kicked ${gameIdValue}`);
+    } else {
+      this.log.warn(`MAUL presence could not find player ${gameIdValue} to kick`);
+    }
+  }
+
+  private handleServerCommand(data: Record<string, unknown>): void {
+    const id = this.stringField(data, "id");
+    const command = this.stringField(data, "command") ?? this.stringField(data, "line");
+    if (command === null || command.trim().length === 0) {
+      this.ackCommand(id, false, "empty command");
+      return;
+    }
+
+    try {
+      const dispatched = this.controls?.server.command(command.trim()) ?? false;
+      this.ackCommand(id, dispatched, dispatched ? undefined : "command dispatcher unavailable");
+    } catch (error) {
+      this.ackCommand(id, false, this.errorReason(error));
+    }
+  }
+
+  private ackCommand(id: string | null, ok: boolean, reason?: string): void {
+    const payload: Record<string, unknown> = { ok };
+    if (id !== null) payload.id = id;
+    if (reason !== undefined) payload.reason = reason;
+    this.send("server.command.ack", payload);
+  }
+
+  private parseMessage(message: string): Record<string, unknown> | null {
+    try {
+      const parsed: unknown = JSON.parse(message);
+      if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+      return parsed as Record<string, unknown>;
+    } catch (error) {
+      this.log.warn(`MAUL presence ignored malformed frame: ${this.errorReason(error)}`);
+      return null;
+    }
+  }
+
+  private objectField(source: Record<string, unknown>, key: string): Record<string, unknown> | null {
+    const value = source[key];
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  }
+
+  private stringField(source: Record<string, unknown>, key: string): string | null {
+    const value = source[key];
+    return typeof value === "string" ? value.trim() : null;
   }
 
   private playerFrom(client: Client): PresencePlayer | null {

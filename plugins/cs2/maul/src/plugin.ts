@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-import { ADMFLAG } from "@s2script/sdk/admin";
 import { Chat } from "@s2script/sdk/chat";
 import { Clients } from "@s2script/sdk/clients";
 import { HookResult } from "@s2script/sdk/events";
@@ -40,6 +39,7 @@ import { NameManager } from "./names.ts";
 import { PresenceReporter } from "./presence.ts";
 import type { MaulBackend, PlayerLookup } from "./backend.ts";
 import type { MaulConfig } from "./config.ts";
+import type { PresenceControls } from "./presence.ts";
 import type { RankTable } from "./types.ts";
 
 function toPublicProfile(steamId: string, profile: PlayerLookup): MaulProfile {
@@ -114,26 +114,29 @@ export default plugin((ctx) => {
   const names = new NameManager();
   let presence: PresenceReporter | null = null;
   if (cfg.presence && api instanceof MaulV2Api) {
+    const controls: PresenceControls = {
+      chat: { send: (message) => { Chat.toAll(message); } },
+      player: {
+        kick: (gameIdValue, reason) => {
+          const client = Clients.all().find((candidate) => candidate.steamId === gameIdValue);
+          if (client === undefined) return false;
+          client.kick(reason);
+          return true;
+        },
+      },
+      server: {
+        command: (line) => {
+          Server.command(line);
+          return true;
+        },
+      },
+    };
     const presenceDeps = {
       getConfig: () => cfg,
       log,
       accessToken: () => api.accessToken(),
       server: () => ({ map: Server.mapName, maxPlayers: Server.maxPlayers }),
-      getToken: () => api.accessToken(),
-      getMap: () => Server.mapName,
-      getMaxPlayers: () => Server.maxPlayers,
-      enforcedName: (steamId: string) => names.nameOf(steamId),
-      schedule: (ms: number, fn: () => void) => {
-        const timer = after(ms, fn);
-        return { cancel: () => { timer.kill(); } };
-      },
-      chat: { send: (message: string) => { Chat.toAll(message); } },
-      kick: (steamId: string, reason?: string) => {
-        for (const client of Clients.all()) {
-          if (client.steamId === steamId) client.kick(reason);
-        }
-      },
-      dispatch: (line: string) => { Server.command(line); },
+      controls,
     };
     presence = new PresenceReporter(presenceDeps);
     void presence.start();
@@ -178,7 +181,7 @@ export default plugin((ctx) => {
     getConfig: () => cfg,
     getRankTable: () => rankTable,
     getBanRoutingStatus: () => banRoutingStatus,
-    isPresenceActive: () => presence !== null,
+    isPresenceActive: () => presence?.isActive() ?? false,
     reloadConfig,
   });
 
