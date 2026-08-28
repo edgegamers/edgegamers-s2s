@@ -34,14 +34,19 @@ const globalWithPresence = globalThis as typeof globalThis & {
   __maulPresenceClients?: FakeClient[];
   __maulPresenceSockets?: FakeSocket[];
   __maulPresenceConnects?: RecordedConnect[];
+  __maulPresenceSetTimeout?: typeof setTimeout;
+  __maulPresenceClearTimeout?: typeof clearTimeout;
 };
 globalWithPresence.__maulPresenceClients = clients;
 globalWithPresence.__maulPresenceSockets = sockets;
 globalWithPresence.__maulPresenceConnects = connects;
+globalWithPresence.__maulPresenceSetTimeout = setTimeout;
+globalWithPresence.__maulPresenceClearTimeout = clearTimeout;
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
     if (specifier === "@s2script/sdk/clients") return { shortCircuit: true, url: "maul-presence-test:sdk-clients" };
+    if (specifier === "@s2script/sdk/timers") return { shortCircuit: true, url: "maul-presence-test:sdk-timers" };
     if (specifier === "@s2script/sdk/ws") return { shortCircuit: true, url: "maul-presence-test:sdk-ws" };
     return nextResolve(specifier, context);
   },
@@ -59,6 +64,26 @@ registerHooks({
               return globalThis.__maulPresenceClients.find((client) => client.slot === slot) ?? null;
             }
           };
+        `,
+      };
+    }
+    if (url === "maul-presence-test:sdk-timers") {
+      return {
+        format: "module",
+        shortCircuit: true,
+        source: `
+          export function after(ms, fn) {
+            const handle = globalThis.__maulPresenceSetTimeout(fn, ms);
+            return {
+              get alive() {
+                return true;
+              },
+              kill() {
+                globalThis.__maulPresenceClearTimeout(handle);
+                return true;
+              }
+            };
+          }
         `,
       };
     }
@@ -363,6 +388,8 @@ test("inbound server commands dispatch and acknowledge success or malformed requ
 
 test("closed sockets cancel stale snapshot timers before reconnect", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
+  globalWithPresence.__maulPresenceSetTimeout = setTimeout;
+  globalWithPresence.__maulPresenceClearTimeout = clearTimeout;
   clients.push(client());
   const presence = reporter();
   await presence.start();

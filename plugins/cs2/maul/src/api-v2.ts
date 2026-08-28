@@ -1,7 +1,7 @@
 import { fetch } from "@s2script/sdk/http";
 import type { BackendResult, BanRequest, MaulBackend, PlayerLookup } from "./backend.ts";
 import type { MaulConfig } from "./config.ts";
-import { base64Std } from "./encoding.ts";
+import { base64Std, formEncode } from "./encoding.ts";
 import type { Logger } from "./log.ts";
 import type { TokenResponse, V2LookupData } from "./v2-wire.ts";
 import { mapV2Lookup, parseV2Envelope } from "./v2-wire.ts";
@@ -44,13 +44,13 @@ export class MaulV2Api implements MaulBackend {
   }
 
   async lookup(steamId: string, clientIp: string): Promise<BackendResult<PlayerLookup>> {
-    const query = new URLSearchParams({
+    const query = {
       gameIdValue: steamId,
       gameIdTypeId: String(this.getConfig().gameIdTypeId),
-    });
-    if (clientIp !== "") query.set("ip", clientIp);
+      ...(clientIp === "" ? {} : { ip: clientIp }),
+    };
 
-    const result = await this.request<V2LookupData>("GET", `/v2/players/lookup?${query.toString()}`);
+    const result = await this.request<V2LookupData>("GET", `/v2/players/lookup?${formEncode(query)}`);
     if (!result.ok) return result;
     return { ok: true, data: mapV2Lookup(result.data) };
   }
@@ -117,7 +117,7 @@ export class MaulV2Api implements MaulBackend {
           Accept: "application/json",
           ...(this.getConfig().userAgent === "" ? {} : { "User-Agent": this.getConfig().userAgent }),
         },
-        body: new URLSearchParams({ grant_type: "client_credentials" }).toString(),
+        body: formEncode({ grant_type: "client_credentials" }),
         timeoutMs: this.getConfig().httpTimeoutMs,
       });
       const parsed = this.parseTokenResponse(response.status, response.text());

@@ -57,8 +57,8 @@ function toPublicProfile(steamId: string, profile: PlayerLookup): MaulProfile {
   };
 }
 
-export function createPublishedApi(ctx: { publish<T extends object>(name: string, impl: T): unknown }, auth: Authenticator, api: MaulBackend): unknown {
-  return ctx.publish<PublicMaulApi>("@edgegamers/maul", {
+export function createPublicApi(auth: Authenticator, api: MaulBackend): PublicMaulApi {
+  return {
     profile(steamId) {
       const profile = auth.profileOf(steamId);
       return profile === null ? null : toPublicProfile(steamId, profile);
@@ -81,7 +81,7 @@ export function createPublishedApi(ctx: { publish<T extends object>(name: string
       return true;
     },
     backend: () => ({ version: api.version, ready: api.isReady(), description: api.describe() }),
-  });
+  };
 }
 
 export default plugin((ctx) => {
@@ -236,7 +236,7 @@ export default plugin((ctx) => {
   });
 
   sweepUnverified();
-  createPublishedApi(ctx, auth, api);
+  ctx.publish<PublicMaulApi>("@edgegamers/maul", createPublicApi(auth, api));
   log.info(`loaded (${api.describe()})`);
 
   return {

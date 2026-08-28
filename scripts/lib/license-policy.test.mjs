@@ -68,12 +68,12 @@ test("discovers recursive workspace and Source2Script plugin manifests", (t) => 
   assert.deepEqual(manifestPaths(root, discoverWorkspaceManifests(root)), [
     "package.json",
     "packages/global/config/package.json",
-    "plugins/cs2/servers/ttt/package.json",
     "plugins/cs2/maul/package.json",
+    "plugins/cs2/servers/ttt/package.json",
   ]);
   assert.deepEqual(manifestPaths(root, discoverSource2ScriptPluginManifests(root)), [
-    "plugins/cs2/servers/ttt/package.json",
     "plugins/cs2/maul/package.json",
+    "plugins/cs2/servers/ttt/package.json",
   ]);
 });
 

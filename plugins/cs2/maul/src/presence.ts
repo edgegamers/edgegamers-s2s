@@ -1,5 +1,7 @@
 import { Clients } from "@s2script/sdk/clients";
 import type { Client } from "@s2script/sdk/clients";
+import { after } from "@s2script/sdk/timers";
+import type { Timer } from "@s2script/sdk/timers";
 import { WebSocket } from "@s2script/sdk/ws";
 import type { WebSocket as Socket } from "@s2script/sdk/ws";
 import type { MaulConfig } from "./config.ts";
@@ -17,8 +19,6 @@ const TEAM_LABELS = new Map<number, string>([
   [2, "Terrorists"],
   [3, "Counter-Terrorists"],
 ]);
-
-type Timer = ReturnType<typeof setTimeout>;
 
 export interface PresenceControls {
   chat: {
@@ -58,10 +58,10 @@ export interface PresenceSnapshot {
 }
 
 export function toWebSocketUrl(baseUrl: string): string {
-  const url = new URL(baseUrl);
-  if (url.protocol === "https:") url.protocol = "wss:";
-  if (url.protocol === "http:") url.protocol = "ws:";
-  return url.toString().replace(/\/$/, "");
+  return baseUrl.trim()
+    .replace(/^https:\/\//, "wss://")
+    .replace(/^http:\/\//, "ws://")
+    .replace(/\/+$/, "");
 }
 
 export class PresenceReporter {
@@ -349,14 +349,12 @@ export class PresenceReporter {
   }
 
   private setTimer(callback: () => void, ms: number): Timer {
-    const timer = setTimeout(callback, ms);
-    timer.unref?.();
-    return timer;
+    return after(ms, callback);
   }
 
   private clearTimer(name: "reconnectTimer" | "snapshotTimer"): void {
     const timer = this[name];
-    if (timer !== null) clearTimeout(timer);
+    if (timer !== null) timer.kill();
     this[name] = null;
   }
 
