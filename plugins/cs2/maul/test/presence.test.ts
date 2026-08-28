@@ -294,6 +294,13 @@ test("playerChat sends scoped truncated chat messages for authenticated players"
   const presence = reporter();
   await presence.start();
 
+  assert.deepEqual(connects, [
+    {
+      url: "wss://maul.example/v2/ws",
+      init: { headers: { Authorization: "Bearer test-token", "User-Agent": "test-agent" } },
+    },
+  ]);
+
   presence.playerChat(client(), "x".repeat(600), true);
 
   assert.deepEqual(decodeLast(), {

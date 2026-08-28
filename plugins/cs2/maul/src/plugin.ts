@@ -112,25 +112,39 @@ export default plugin((ctx) => {
   if (api instanceof MaulApi) api.resolveEndpoint();
 
   const names = new NameManager();
+  const controls: PresenceControls = {
+    chat: { send: (message) => { Chat.toAll(message); } },
+    player: {
+      kick: (gameIdValue, reason) => {
+        const client = Clients.all().find((candidate) => candidate.steamId === gameIdValue);
+        if (client === undefined) return false;
+        client.kick(reason);
+        return true;
+      },
+    },
+    server: {
+      command: (line) => {
+        Server.command(line);
+        return true;
+      },
+    },
+  };
+
   let presence: PresenceReporter | null = null;
-  if (cfg.presence && api instanceof MaulV2Api) {
-    const controls: PresenceControls = {
-      chat: { send: (message) => { Chat.toAll(message); } },
-      player: {
-        kick: (gameIdValue, reason) => {
-          const client = Clients.all().find((candidate) => candidate.steamId === gameIdValue);
-          if (client === undefined) return false;
-          client.kick(reason);
-          return true;
-        },
-      },
-      server: {
-        command: (line) => {
-          Server.command(line);
-          return true;
-        },
-      },
-    };
+
+  function shouldRunPresence(): boolean {
+    return cfg.presence && cfg.apiVersion === "v2" && api instanceof MaulV2Api;
+  }
+
+  function reconcilePresence(): void {
+    if (!shouldRunPresence()) {
+      presence?.stop();
+      presence = null;
+      return;
+    }
+
+    if (presence !== null) return;
+    if (!(api instanceof MaulV2Api)) return;
     const presenceDeps = {
       getConfig: () => cfg,
       log,
@@ -142,6 +156,8 @@ export default plugin((ctx) => {
     void presence.start();
   }
 
+  reconcilePresence();
+
   const auth = new Authenticator({
     api,
     log,
@@ -151,9 +167,16 @@ export default plugin((ctx) => {
   });
 
   function reloadConfig(): void {
-    cfg = readConfig();
+    const next = readConfig();
+    if (next.apiVersion !== api.version) {
+      log.warn(`api_version changes require a plugin reload; keeping loaded ${api.version} backend`);
+      cfg = { ...next, apiVersion: api.version };
+    } else {
+      cfg = next;
+    }
     reloadRankTable();
     if (api instanceof MaulApi) api.resolveEndpoint();
+    reconcilePresence();
     log.info("config reloaded");
   }
 

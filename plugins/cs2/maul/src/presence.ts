@@ -183,9 +183,10 @@ export class PresenceReporter {
     }
 
     try {
-      const socket = await WebSocket.connect(`${toWebSocketUrl(this.getConfig().maulUrl)}/v2/presence`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const config = this.getConfig();
+      const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+      if (config.userAgent.length > 0) headers["User-Agent"] = config.userAgent;
+      const socket = await WebSocket.connect(`${toWebSocketUrl(config.maulUrl)}/v2/ws`, { headers });
       if (this.stopped) {
         socket.close();
         return;
