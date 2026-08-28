@@ -40,8 +40,9 @@ function dsOf(info: PlayerLookup): string {
   return tier.length === 0 ? "yes" : `yes (${tier})`;
 }
 
-function targetPattern(cmd: { argCount: number; arg(index: number): string; callerSlot: number }): string {
-  return cmd.argCount === 0 && cmd.callerSlot >= 0 ? "@me" : cmd.arg(0);
+function targetPattern(cmd: { argCount: number; argString: string; callerSlot: number }): string {
+  const pattern = cmd.argString.trim();
+  return pattern.length === 0 && cmd.callerSlot >= 0 ? "@me" : pattern;
 }
 
 function playerName(player: Player): string {
