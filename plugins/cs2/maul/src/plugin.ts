@@ -21,11 +21,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-import { plugin } from "@s2script/sdk/plugin";
+import { ADMFLAG } from "@s2script/sdk/admin";
+import { Chat } from "@s2script/sdk/chat";
 import { Clients } from "@s2script/sdk/clients";
-import type { MaulApi, MaulProfile } from "../api";
-import type { Authenticator } from "./auth.ts";
+import { HookResult } from "@s2script/sdk/events";
+import { plugin } from "@s2script/sdk/plugin";
+import { Server } from "@s2script/sdk/server";
+import { after } from "@s2script/sdk/timers";
+import type { MaulApi as PublicMaulApi, MaulProfile } from "../api";
+import { MaulApi } from "./api.ts";
+import { MaulV2Api } from "./api-v2.ts";
+import { Authenticator } from "./auth.ts";
+import { registerBanHooks, type BanRoutingStatus } from "./bans.ts";
+import { registerCommands } from "./commands.ts";
+import { loadRankTable, readConfig } from "./config.ts";
+import { createLogger } from "./log.ts";
+import { NameManager } from "./names.ts";
+import { PresenceReporter } from "./presence.ts";
 import type { MaulBackend, PlayerLookup } from "./backend.ts";
+import type { MaulConfig } from "./config.ts";
+import type { RankTable } from "./types.ts";
 
 function toPublicProfile(steamId: string, profile: PlayerLookup): MaulProfile {
   return {
@@ -43,7 +58,7 @@ function toPublicProfile(steamId: string, profile: PlayerLookup): MaulProfile {
 }
 
 export function createPublishedApi(ctx: { publish<T extends object>(name: string, impl: T): unknown }, auth: Authenticator, api: MaulBackend): unknown {
-  return ctx.publish<MaulApi>("@edgegamers/maul", {
+  return ctx.publish<PublicMaulApi>("@edgegamers/maul", {
     profile(steamId) {
       const profile = auth.profileOf(steamId);
       return profile === null ? null : toPublicProfile(steamId, profile);
@@ -70,5 +85,160 @@ export function createPublishedApi(ctx: { publish<T extends object>(name: string
 }
 
 export default plugin((ctx) => {
-  console.log("Maul plugin loaded!");
+  let cfg: MaulConfig = readConfig();
+  const log = createLogger(() => cfg.debug);
+  let rankTable: RankTable = { ranks: {} };
+  let rankTableLoaded = false;
+
+  function reloadRankTable(): void {
+    const result = loadRankTable(rankTableLoaded ? rankTable : undefined);
+    rankTable = result.table;
+    rankTableLoaded = true;
+
+    if (result.status === "created") {
+      log.info("created default MAUL rank table");
+    } else if (result.status === "loaded") {
+      log.debug("loaded MAUL rank table");
+    } else {
+      log.warn("failed to parse MAUL rank table; keeping last good table");
+    }
+  }
+
+  reloadRankTable();
+
+  const api: MaulBackend = cfg.apiVersion === "v2"
+    ? new MaulV2Api(() => cfg, log)
+    : new MaulApi(() => cfg, log);
+  if (api instanceof MaulApi) api.resolveEndpoint();
+
+  const names = new NameManager();
+  let presence: PresenceReporter | null = null;
+  if (cfg.presence && api instanceof MaulV2Api) {
+    const presenceDeps = {
+      getConfig: () => cfg,
+      log,
+      accessToken: () => api.accessToken(),
+      server: () => ({ map: Server.mapName, maxPlayers: Server.maxPlayers }),
+      getToken: () => api.accessToken(),
+      getMap: () => Server.mapName,
+      getMaxPlayers: () => Server.maxPlayers,
+      enforcedName: (steamId: string) => names.nameOf(steamId),
+      schedule: (ms: number, fn: () => void) => {
+        const timer = after(ms, fn);
+        return { cancel: () => { timer.kill(); } };
+      },
+      chat: { send: (message: string) => { Chat.toAll(message); } },
+      kick: (steamId: string, reason?: string) => {
+        for (const client of Clients.all()) {
+          if (client.steamId === steamId) client.kick(reason);
+        }
+      },
+      dispatch: (line: string) => { Server.command(line); },
+    };
+    presence = new PresenceReporter(presenceDeps);
+    void presence.start();
+  }
+
+  const auth = new Authenticator({
+    api,
+    log,
+    names,
+    getConfig: () => cfg,
+    getRankTable: () => rankTable,
+  });
+
+  function reloadConfig(): void {
+    cfg = readConfig();
+    reloadRankTable();
+    if (api instanceof MaulApi) api.resolveEndpoint();
+    log.info("config reloaded");
+  }
+
+  function sweepUnverified(): void {
+    for (const client of Clients.all()) {
+      if (client.isBot || client.steamId === "0" || auth.isVerified(client.steamId)) continue;
+      void auth.verify(client.slot, client.steamId, false);
+    }
+  }
+
+  ctx.config.onChange(reloadConfig);
+
+  let banRoutingStatus: BanRoutingStatus = { available: false, reason: "not registered" };
+  banRoutingStatus = registerBanHooks({
+    api,
+    log,
+    rankOf: (steamId) => auth.profileOf(steamId)?.primaryRank ?? 0,
+    profileOf: (steamId) => auth.profileOf(steamId),
+  });
+
+  registerCommands(ctx, {
+    auth,
+    api,
+    log,
+    getConfig: () => cfg,
+    getRankTable: () => rankTable,
+    getBanRoutingStatus: () => banRoutingStatus,
+    isPresenceActive: () => presence !== null,
+    reloadConfig,
+  });
+
+  ctx.clients.onFullyConnect((client) => {
+    if (client.isBot) return;
+    const steamId = client.steamId;
+    if (steamId === "0") {
+      log.warn(`skipping MAUL verification for slot ${client.slot}: SteamID unavailable`);
+      return;
+    }
+
+    void auth.verify(client.slot, steamId, true);
+    presence?.playerJoined(client);
+  });
+
+  ctx.clients.onDisconnect((client) => {
+    presence?.forgetTeam(client.slot);
+    const steamId = client.steamId;
+    if (steamId === "0") return;
+
+    presence?.playerLeft(client);
+    names.forget(steamId);
+    auth.forget(steamId);
+  });
+
+  ctx.clients.onSay((slot, text, teamonly) => {
+    const client = Clients.fromSlot(slot);
+    if (client !== null) presence?.playerChat(client, text, teamonly);
+  });
+
+  ctx.events.on("player_team", (ev) => {
+    const slot = ev.getPlayerSlot("userid");
+    if (slot >= 0) presence?.setTeam(slot, ev.getInt("team"));
+  });
+
+  ctx.events.onPre("player_changename", (ev) => {
+    const slot = ev.getPlayerSlot("userid");
+    if (slot < 0) return;
+
+    const steamId = Clients.fromSlot(slot)?.steamId ?? "0";
+    if (steamId === "0" || !names.needsEnforcement(steamId, ev.getString("newname"))) return;
+
+    after(1, () => names.enforce(slot, steamId));
+    return HookResult.Handled;
+  });
+
+  ctx.events.on("round_start", () => {
+    after(1000, () => {
+      names.reapplyAll();
+      sweepUnverified();
+    });
+  });
+
+  sweepUnverified();
+  createPublishedApi(ctx, auth, api);
+  log.info(`loaded (${api.describe()})`);
+
+  return {
+    onUnload() {
+      presence?.stop();
+    },
+  };
 });
