@@ -32,7 +32,7 @@
   "MAUL_STATUS_HEADING": "Admin » Status",
   "MAUL_BAN_PERMANENT": "Permanently banned for: {2}. Use edgegamers.com to appeal",
   "MAUL_BAN_TEMPORARY": "Banned for {1} minutes: {2}. Use edgegamers.com to appeal",
-  "MAUL_DS_JOIN": "{blue}DS {grey}» {blue}{1}{grey} ",
+  "MAUL_DS_JOIN": "{green}DS {white}» {green}{1}{white} ",
   "MAUL_NO_MATCH": "{red}Admin {grey}» No matching client was found.",
   "MAUL_SEE_CONSOLE": "{blue}Admin {grey}» See console for output.",
   "MAUL_REVERIFY": "{blue}Admin {grey}» Re-verifying {yellow}{1}{grey} player(s).",
