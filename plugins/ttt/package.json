@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "EdgeGamers Trouble in Terrorist Town for CS2 on s2script: core rounds and roles plus karma, shop, items, bodies, special rounds, reports, communication, UI and world.",
   "type": "module",
   "s2script": {

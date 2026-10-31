@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/surftimer-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SurfTimer for s2script: map-trigger and SharpTimer-format zones, tick-exact timing, records, replays, styles.",
   "license": "GPL-3.0-or-later",
   "main": "src/plugin.ts",

@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-items",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "type": "module",
   "description": "Existing port item effects, charges, gadgets and weapon effects",
   "main": "src/plugin.ts",
@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.7"
+      "@edgegamers/ttt-core": "^2.0.8"
     }
   },
   "publishConfig": {
@@ -30,6 +30,6 @@
     "directory": "plugins/ttt/plugins/items"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.0.2"
+    "@edgegamers/ttt-contracts": "1.0.3"
   }
 }

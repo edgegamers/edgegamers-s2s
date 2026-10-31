@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-warden",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The warden: selection, commands, markers, paint, special treatment and peace mute.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -11,7 +11,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.1"
+      "@edgegamers/jailbreak-core": "^1.1.2"
     },
     "config": {
       "hp_equal": {
@@ -165,7 +165,7 @@
     "directory": "plugins/jb/plugins/warden"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.1"
+    "@edgegamers/jailbreak-shared": "1.0.2"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"

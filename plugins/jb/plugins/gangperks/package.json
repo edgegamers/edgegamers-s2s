@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-gangperks",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Bridges Gangs into Jailbreak: gang perks (icons, colours, bomb icon) and Jailbreak gang stats.",
   "main": "src/plugin.ts",
   "s2script": {
@@ -34,7 +34,7 @@
     "directory": "plugins/jb/plugins/gangperks"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.1"
+    "@edgegamers/jailbreak-shared": "1.0.2"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"

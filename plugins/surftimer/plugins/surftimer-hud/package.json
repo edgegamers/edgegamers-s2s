@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/surftimer-hud",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Panorama HUD for @edgegamers/surftimer-core: live timer, splits, speed meter, keys, finish cards, leaderboard and spectator/replay views, with a center-HTML fallback.",
   "license": "GPL-3.0-or-later",
   "main": "src/plugin.ts",
@@ -10,7 +10,7 @@
   "s2script": {
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/surftimer-core": "^0.1.1"
+      "@edgegamers/surftimer-core": "^0.1.2"
     },
     "config": {
       "mode": {

@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "EdgeGamers Jailbreak for CS2, ported to s2script as a small set of modular plugins.",
   "s2script": {
     "kind": "bundle",

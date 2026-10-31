@@ -1,5 +1,11 @@
 # @edgegamers/s2s-maul
 
+## 0.1.4
+
+### Patch Changes
+
+- 6432f80: Add native English phrase coverage and recipient-localized output across chat, console, menus, HUD and disconnect wrappers. Standardize complete chat/console messages as `Feature » Message`, preserve plain UI labels and authored content, and update Hide Russian translations.
+
 ## 0.1.3
 
 ### Patch Changes

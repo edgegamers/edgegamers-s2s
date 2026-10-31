@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-guards",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Guard queue, prisoner:guard ratio, playtime priority and CT bans (port of EdgeGamers CTBans).",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -11,7 +11,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.1"
+      "@edgegamers/jailbreak-core": "^1.1.2"
     },
     "config": {
       "prisoner_to_guard_ratio": {
@@ -110,7 +110,7 @@
     "directory": "plugins/jb/plugins/guards"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.1"
+    "@edgegamers/jailbreak-shared": "1.0.2"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"

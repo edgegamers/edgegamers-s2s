@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-lastrequest",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Last requests and last guard.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -11,8 +11,8 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.1",
-      "@edgegamers/jailbreak-warden": "^1.0.1"
+      "@edgegamers/jailbreak-core": "^1.1.2",
+      "@edgegamers/jailbreak-warden": "^1.0.2"
     },
     "config": {
       "lr_activate_lr_at": {
@@ -136,7 +136,7 @@
     "directory": "plugins/jb/plugins/lastrequest"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.1"
+    "@edgegamers/jailbreak-shared": "1.0.2"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"
