@@ -1,3 +1,7 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
+import {broadcastText} from '@edgegamers/jailbreak-shared';
 import { ADMFLAG, after, Chat, command, createEntity, HookResult } from "@s2script/sdk";
 import type { CommandInvocation, HookResultValue } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
@@ -6,7 +10,7 @@ import { cellsOpened, describe, log, openCells } from "@edgegamers/jailbreak-cor
 import { cfg } from "./config";
 import { hasFlagLetters, hasFlags, isWarmup, roundElapsed } from "./env";
 import { getMarker, isInMarker, openMarkerColorMenu, openMarkerTypeMenu } from "./markers";
-import { msg, who } from "./messages";
+import { msgFor, who } from "./messages";
 import { isPeace, msSinceLastPeace, peaceMute } from "./peace";
 import { countdownSchedule, parseCountdown, parseRoll, rollBetween } from "./rules";
 import {
@@ -61,23 +65,23 @@ export function registerCommands(): void {
 
     const ends = passCooldownEnds(slot);
     if (Date.now() < ends && !hasFlags(slot, ADMFLAG.RCON)) {
-      reply(cmd, msg.onCooldown(Math.ceil((ends - Date.now()) / 1000)));
+      reply(cmd, msgFor(cmd.callerSlot).onCooldown(Math.ceil((ends - Date.now()) / 1000)));
       return H;
     }
     if (isWarmup()) {
-      reply(cmd, msg.cannotWardenDuringWarmup);
+      reply(cmd, msgFor(cmd.callerSlot).cannotWardenDuringWarmup);
       return H;
     }
     if (isQueueActive()) {
       if (!isInQueue(slot)) {
-        if (tryEnterQueue(slot) && !isWarden(slot)) reply(cmd, msg.joinRaffle);
+        if (tryEnterQueue(slot) && !isWarden(slot)) reply(cmd, msgFor(cmd.callerSlot).joinRaffle);
       } else if (tryExitQueue(slot)) {
-        reply(cmd, msg.leaveRaffle);
+        reply(cmd, msgFor(cmd.callerSlot).leaveRaffle);
       }
       return H;
     }
     if (!hasWarden() && (tryGuaranteed(slot) || setWarden(slot))) return H;
-    reply(cmd, msg.currentWarden(hasWarden() ? nameOf(getWarden()) : null));
+    reply(cmd, msgFor(cmd.callerSlot).currentWarden(hasWarden() ? nameOf(getWarden()) : null));
     return H;
   });
 
@@ -92,11 +96,11 @@ export function registerCommands(): void {
   on(["sm_fire"], (cmd) => {
     if (cmd.callerSlot < 0) return H;
     if (!hasWarden()) {
-      reply(cmd, msg.currentWarden(null));
+      reply(cmd, msgFor(cmd.callerSlot).currentWarden(null));
       return H;
     }
     if (!hasFlags(cmd.callerSlot, ADMFLAG.BAN)) {
-      reply(cmd, msg.noPermission("@css/ban"));
+      reply(cmd, msgFor(cmd.callerSlot).noPermission(labelFor(cmd.callerSlot,"JB_WARDEN_LABEL_CSS_BAN")));
       return H;
     }
     removeWarden("fire", cmd.callerSlot);
@@ -109,25 +113,25 @@ export function registerCommands(): void {
     const admin = slot < 0 || hasFlags(slot, ADMFLAG.CHEATS);
     if (!admin) {
       if (!isWarden(slot)) {
-        reply(cmd, msg.notWarden);
+        reply(cmd, msgFor(cmd.callerSlot).notWarden);
         return H;
       }
       if (roundElapsed() < cfg.openCooldown) {
-        reply(cmd, msg.cannotOpenYet(cfg.openCooldown));
+        reply(cmd, msgFor(cmd.callerSlot).cannotOpenYet(cfg.openCooldown));
         return H;
       }
       if (cellsOpened()) {
-        reply(cmd, msg.alreadyOpened);
+        reply(cmd, msgFor(cmd.callerSlot).alreadyOpened);
         return H;
       }
     }
     const byWarden = isWarden(slot);
     if (!openCells(byWarden ? "warden" : "admin")) {
-      Chat.toAll(msg.openingFailed);
+      broadcastText(recipient => msgFor(recipient).openingFailed);
       return H;
     }
-    Chat.toAll(slot >= 0 && !byWarden ? msg.cellsOpenedBy(nameOf(slot)) : msg.cellsOpenedByWarden);
-    log(slot >= 0 ? `${describe(slot)} opened the cells.` : "Console opened the cells.");
+    broadcastText(forRecipients((recipient,value0) => slot >= 0 && !byWarden ? msgFor(recipient).cellsOpenedBy(value0) : msgFor(recipient).cellsOpenedByWarden, nameOf(slot)));
+    log(...(slot >= 0 ? logEntry("JB_LOG_OPENED_THE_CELLS", [String(describe(slot))]) : logEntry("JB_LOG_CONSOLE_OPENED_THE_CELLS", [])));
     return H;
   });
 
@@ -135,7 +139,7 @@ export function registerCommands(): void {
   on(["sm_peace"], (cmd) => {
     const slot = cmd.callerSlot;
     if (isPeace()) {
-      if (slot >= 0) reply(cmd, msg.peaceActive);
+      if (slot >= 0) reply(cmd, msgFor(cmd.callerSlot).peaceActive);
       return H;
     }
     const fromWarden = isWarden(slot);
@@ -144,12 +148,12 @@ export function registerCommands(): void {
       return H;
     }
     if (!fromWarden && !hasFlags(slot, ADMFLAG.CHAT)) {
-      reply(cmd, msg.notWarden);
+      reply(cmd, msgFor(cmd.callerSlot).notWarden);
       return H;
     }
     const since = msSinceLastPeace();
     if (since < cfg.peaceCooldown * 1000) {
-      reply(cmd, msg.onCooldown(Math.ceil((cfg.peaceCooldown * 1000 - since) / 1000)));
+      reply(cmd, msgFor(cmd.callerSlot).onCooldown(Math.ceil((cfg.peaceCooldown * 1000 - since) / 1000)));
       return H;
     }
     peaceMute(fromWarden ? "warden" : "admin");
@@ -161,16 +165,16 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     if (slot < 0) return H;
     if (!isWarden(slot)) {
-      reply(cmd, msg.notWarden);
+      reply(cmd, msgFor(cmd.callerSlot).notWarden);
       return H;
     }
     const wait = cfg.countCooldown - roundElapsed();
     if (wait > 0) {
-      reply(cmd, msg.cannotCountYet(wait));
+      reply(cmd, msgFor(cmd.callerSlot).cannotCountYet(wait));
       return H;
     }
     if (!getMarker()) {
-      reply(cmd, msg.noMarkerSet);
+      reply(cmd, msgFor(cmd.callerSlot).noMarkerSet);
       return H;
     }
     let n = 0;
@@ -179,7 +183,7 @@ export function registerCommands(): void {
       const o = p.pawn?.origin;
       if (o && isInMarker(o)) n++;
     }
-    reply(cmd, msg.prisonersInMarker(n));
+    reply(cmd, msgFor(cmd.callerSlot).prisonersInMarker(n));
     return H;
   });
 
@@ -188,17 +192,17 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     const parsed = parseCountdown(cmd.arg(0), cfg.countdownMin, cfg.countdownMax, cfg.countdownDefault);
     if (!parsed.ok) {
-      reply(cmd, msg.invalidParameter(parsed.arg, parsed.expected));
+      reply(cmd, msgFor(cmd.callerSlot).invalidParameter(parsed.arg, parsed.expected));
       return H;
     }
     if (!countdownPeace(slot, cmd)) return H;
 
     const duration = parsed.value;
-    Chat.toAll(msg.countdownStarted(duration));
+    broadcastText(forRecipients((recipient,value0) => msgFor(recipient).countdownStarted(value0), duration));
     for (const { delay, remaining } of countdownSchedule(duration)) {
-      after(delay * 1000, () => Chat.toAll(msg.countdownTick(remaining)));
+      after(delay * 1000, () => broadcastText(forRecipients((recipient,value0) => msgFor(recipient).countdownTick(value0), remaining)));
     }
-    after(duration * 1000, () => Chat.toAll(msg.countdownGo));
+    after(duration * 1000, () => broadcastText(recipient => msgFor(recipient).countdownGo));
     return H;
   });
 
@@ -207,32 +211,32 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     if (slot < 0) return H;
     if (!isWarden(slot)) {
-      reply(cmd, msg.notWarden);
+      reply(cmd, msgFor(cmd.callerSlot).notWarden);
       return H;
     }
     const r = parseRoll(cmd.args);
     if (!r.ok) {
-      reply(cmd, msg.invalidParameter(r.arg, "number"));
+      reply(cmd, msgFor(cmd.callerSlot).invalidParameter(r.arg, labelFor(cmd.callerSlot,"JB_WARDEN_LABEL_NUMBER")));
       return H;
     }
-    Chat.toAll(msg.roll(rollBetween(r.min, r.max, Math.random)));
+    broadcastText(forRecipients((recipient,value0) => msgFor(recipient).roll(value0), rollBetween(r.min, r.max, Math.random)));
     return H;
   });
 
   // ── !chicken / !soccer ────────────────────────────────────────────────────
   on(["sm_chicken"], (cmd) => {
     spawnForWarden(cmd, "chicken", {}, () => chickens < cfg.maxChickens, () => chickens++, {
-      tooMany: msg.tooManyChickens,
-      failed: msg.chickenFailed,
-      spawned: msg.chickenSpawned,
+      tooMany: msgFor(cmd.callerSlot).tooManyChickens,
+      failed: msgFor(cmd.callerSlot).chickenFailed,
+      spawned: (recipient:number)=>msgFor(recipient).chickenSpawned,
     });
     return H;
   });
   on(["sm_soccer", "sm_spawnball"], (cmd) => {
     spawnForWarden(cmd, "prop_physics_multiplayer", { model: SOCCER_MODEL }, () => soccerBalls < cfg.maxSoccers, () => soccerBalls++, {
-      tooMany: msg.tooManySoccers,
-      failed: msg.soccerFailed,
-      spawned: msg.soccerSpawned,
+      tooMany: msgFor(cmd.callerSlot).tooManySoccers,
+      failed: msgFor(cmd.callerSlot).soccerFailed,
+      spawned: (recipient:number)=>msgFor(recipient).soccerSpawned,
     });
     return H;
   });
@@ -242,15 +246,15 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     if (slot < 0) return H;
     if (!isWarden(slot)) {
-      reply(cmd, msg.notWarden);
-      cmd.replyToConsole(msg.notWarden);
+      reply(cmd, msgFor(cmd.callerSlot).notWarden);
+      cmd.replyToConsole(msgFor(cmd.callerSlot).notWarden);
       return H;
     }
     if (cmd.argCount === 0) return H; // C# TODO: a prisoner picker menu
     const query = cmd.arg(0);
     const eligible = Player.target(query, slot, false).filter((p) => p.teamNum === Team.Prisoner && isAlive(p));
     if (eligible.length !== 1) {
-      const text = eligible.length === 0 ? msg.playerNotFound(query) : msg.playerFoundMultiple(query);
+      const text = eligible.length === 0 ? msgFor(slot).playerNotFound(query) : msgFor(slot).playerFoundMultiple(query);
       reply(cmd, text);
       cmd.replyToConsole(text);
       return H;
@@ -279,7 +283,7 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     if (slot < 0) return H;
     if (!hasFlagLetters(slot, cfg.autoWardenFlag)) {
-      reply(cmd, msg.noPermission(cfg.autoWardenFlag));
+      reply(cmd, msgFor(cmd.callerSlot).noPermission(cfg.autoWardenFlag));
       return H;
     }
     reply(cmd, toggleAutoWarden(slot));
@@ -289,17 +293,17 @@ export function registerCommands(): void {
   // ── debug: sm_markst <target> (C# `css_debug st`) ─────────────────────────
   command.admin("sm_markst", ADMFLAG.ROOT, (cmd) => {
     if (cmd.argCount === 0) {
-      cmd.reply("Specify target?");
+      cmd.reply(phraseFor(cmd.callerSlot,"JB_WARDEN_CHAT_SPECIFY_TARGET"));
       return H;
     }
     const targets = Player.target(cmd.arg(0), cmd.callerSlot, true);
     if (targets.length === 0) {
-      cmd.reply(msg.playerNotFound(cmd.arg(0)));
+      cmd.reply(msgFor(cmd.callerSlot).playerNotFound(cmd.arg(0)));
       return H;
     }
     for (const p of targets) setSpecialTreatment(p.slot, !isSpecialTreatment(p.slot));
     const label = targets.length === 1 ? (targets[0].playerName ?? "") : `${targets.length} players`;
-    cmd.reply(`Toggled special treatment for ${label}.`);
+    cmd.reply(phraseFor(cmd.callerSlot,"JB_WARDEN_CHAT_TOGGLED_SPECIAL_TREATMENT_FOR", String(label)));
     return H;
   });
 }
@@ -319,11 +323,11 @@ function countdownPeace(slot: number, cmd: CommandInvocation): boolean {
   }
   const since = Date.now() - lastCountdownMs;
   if (since < 60000) {
-    reply(cmd, msg.onCooldown(Math.ceil((60000 - since) / 1000)));
+    reply(cmd, msgFor(cmd.callerSlot).onCooldown(Math.ceil((60000 - since) / 1000)));
     return false;
   }
   if (!fromWarden) {
-    reply(cmd, msg.notWarden);
+    reply(cmd, msgFor(cmd.callerSlot).notWarden);
     return false;
   }
   peaceMute("warden");
@@ -338,12 +342,12 @@ function spawnForWarden(
   kv: Record<string, string>,
   underCap: () => boolean,
   count: () => void,
-  text: { tooMany: string; failed: string; spawned: string },
+  text: { tooMany: string; failed: string; spawned: (slot:number)=>string },
 ): void {
   const slot = cmd.callerSlot;
   if (slot < 0) return;
   if (!isWarden(slot)) {
-    reply(cmd, msg.notWarden);
+    reply(cmd, msgFor(cmd.callerSlot).notWarden);
     return;
   }
   if (!underCap()) {
@@ -361,6 +365,6 @@ function spawnForWarden(
     return;
   }
   ent.teleport([o.x, o.y, o.z], null, null);
-  Chat.toAll(text.spawned);
+  broadcastText(text.spawned);
   count();
 }

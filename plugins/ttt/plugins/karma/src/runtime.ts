@@ -45,3 +45,5 @@ export function setScore(slot: number, value: number): void {
   if (player !== null) player.score = value;
 }
 export function tell(slot: number, message: string): void { Chat.toSlot(slot, message); }
+
+export function msgFor(slot:number,key:string,...args:(string|number)[]):string{return phraseFor(slot,key,...args);}

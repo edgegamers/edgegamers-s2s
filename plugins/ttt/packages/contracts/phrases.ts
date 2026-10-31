@@ -57,7 +57,8 @@ export function applyColors(text: string): string {
 
 /** Trim a float to at most two decimals without a trailing `.00` — matches the C# `{0:0.##}`. */
 function formatArg(v: string | number): string | number {
-  if (typeof v !== "number" || Number.isInteger(v)) return v;
+  if (typeof v === "string") return v.replace(/[\x01-\x10]/g, '');
+  if (Number.isInteger(v)) return v;
   return String(Math.round(v * 100) / 100);
 }
 
@@ -72,4 +73,10 @@ export function loadPhrases(): void {
  */
 export function phraseFor(slot: number, key: string, ...args: (string | number)[]): string {
   return applyColors(Translations.translate(slot, key, ...args.map(formatArg)));
+}
+
+/** Native lookup for menus, HUD and console text, without chat presentation bytes. */
+export function plainPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
+  return Translations.translate(slot, key, ...args.map(formatArg))
+    .replace(/\{[a-z]+\}|[\x01-\x10]/gi, '');
 }

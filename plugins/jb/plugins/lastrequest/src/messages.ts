@@ -1,3 +1,6 @@
+import {loadPhrases,phraseFor,plainPhraseFor} from '@edgegamers/jailbreak-shared';
+import english from '../translations/jb-lastrequest.phrases.json';
+export function loadMessages():void {loadPhrases('jb-lastrequest',english);}
 /**
  * Every player-facing English string for last requests and last guard (ported from
  * lang/Jailbreak.English/LastRequest/* and LastGuard/LGLocale.cs).
@@ -15,27 +18,27 @@ const LG_PREFIX = tag("Guard", C.DarkBlue);
 export const prisonerName = (name: string): string => teamColored(name, Team.Prisoner);
 export const guardName = (name: string): string => teamColored(name, Team.Guard);
 
-export const msg = {
-  // --- enabling / commands -----------------------------------------------------------------
+export function msgFor(slot: number) {
+ return {
+  get typeMenuTitle(){return plainPhraseFor(slot,"JB_LASTREQUEST_TYPE_MENU");},
+  playerMenuTitle:(type:LRType):string=>plainPhraseFor(slot,"JB_LASTREQUEST_PLAYER_MENU",plainPhraseFor(slot,lrName(type))),
   enabled: (): string =>
-    `${PREFIX}Last Request activated. Type ${C.BlueGrey}!lr${C.Default} to start a last request.`,
-  disabled: (): string => `${PREFIX}Last Request ${C.Red}disabled${C.Default}.`,
-  notEnabled: (): string => `${PREFIX}Last Request is not enabled.`,
-  invalid: (query: string): string => `${PREFIX}Invalid Last Request: ${hl(query)}`,
-  unavailable: (type: LRType): string => `${PREFIX}${hl(lrName(type))} is not available right now.`,
-  cannotLR: (reason: string): string => `${PREFIX}You cannot LR, ${C.BlueGrey}${reason}${C.Default}.`,
+    phraseFor(slot, "JB_LASTREQUEST_ENABLED"),
+  disabled: (): string => phraseFor(slot, "JB_LASTREQUEST_DISABLED"),
+  notEnabled: (): string => phraseFor(slot, "JB_LASTREQUEST_NOT_ENABLED"),
+  invalid: (query: string): string => phraseFor(slot, "JB_LASTREQUEST_INVALID", String(query)),
+  unavailable: (type: LRType): string => phraseFor(slot,"JB_LASTREQUEST_UNAVAILABLE", plainPhraseFor(slot,lrName(type))),
+  cannotLR: (reason: string): string => phraseFor(slot, "JB_LASTREQUEST_CANNOT_LR", String(reason)),
   cannotLRWith: (name: string, reason: string): string =>
-    `${PREFIX}You cannot LR ${name}, ${C.BlueGrey}${reason}${C.Red}.`,
-  playerNotFound: (query: string): string => `${PREFIX}No player found matching ${hl(query)}.`,
-  playerFoundMultiple: (query: string): string => `${PREFIX}More than one player matches ${hl(query)}.`,
+    phraseFor(slot, "JB_LASTREQUEST_CANNOT_LRWITH", String(name), String(reason)),
+  playerNotFound: (query: string): string => phraseFor(slot, "JB_LASTREQUEST_PLAYER_NOT_FOUND", String(query)),
+  playerFoundMultiple: (query: string): string => phraseFor(slot, "JB_LASTREQUEST_PLAYER_FOUND_MULTIPLE", String(query)),
   initFailed: (): string =>
-    `${PREFIX}An error occurred while initiating the last request. Please try again later.`,
-
-  // --- lifecycle ------------------------------------------------------------------------------
+    phraseFor(slot, "JB_LASTREQUEST_INIT_FAILED"),
   inform: (prisoner: string, type: LRType, guard: string): string =>
-    `${PREFIX}${prisonerName(prisoner)} is starting a ${C.White}${lrName(type)}${C.Default} LR against ${guardName(guard)}.`,
-  countdown: (seconds: number): string => `${PREFIX}Starting in ${hl(seconds)}...`,
-  go: (): string => `${PREFIX}Go!`,
+    phraseFor(slot,"JB_LASTREQUEST_INFORM", String(prisoner), plainPhraseFor(slot,lrName(type)), String(guard)),
+  countdown: (seconds: number): string => phraseFor(slot, "JB_LASTREQUEST_COUNTDOWN", String(seconds)),
+  go: (): string => phraseFor(slot, "JB_LASTREQUEST_GO"),
   decided: (
     result: LRResult,
     prisoner: string,
@@ -43,83 +46,70 @@ export const msg = {
     prisonerPresent: boolean,
     guardPresent: boolean,
   ): string => {
-    if (!prisonerPresent && !guardPresent) return `${PREFIX}Last Request decided.`;
+    if (!prisonerPresent && !guardPresent) return phraseFor(slot, "JB_LASTREQUEST_DECIDED");
     if (!prisonerPresent && result === "prisoner_win")
-      return `${PREFIX}${guardName(guard)} lost the LR, but the prisoner left the game?`;
+      return phraseFor(slot, "JB_LASTREQUEST_DECIDED_3", String(guard));
     if (!guardPresent && result === "guard_win")
-      return `${PREFIX}${prisonerName(prisoner)} lost the LR, but the guard left the game?`;
+      return phraseFor(slot, "JB_LASTREQUEST_DECIDED_5", String(prisoner));
     switch (result) {
       case "timed_out":
-        return `${PREFIX}${C.Grey}Last Request timed out.`;
+        return phraseFor(slot, "JB_LASTREQUEST_DECIDED_6");
       case "interrupted":
-        return `${PREFIX}${C.Grey}Last Request interrupted.`;
+        return phraseFor(slot, "JB_LASTREQUEST_DECIDED_7");
       case "prisoner_win":
-        return `${PREFIX}${prisonerName(prisoner)} won.`;
+        return phraseFor(slot, "JB_LASTREQUEST_DECIDED_8", String(prisoner));
       case "guard_win":
-        return `${PREFIX}${guardName(guard)} won.`;
+        return phraseFor(slot, "JB_LASTREQUEST_DECIDED_8", String(guard));
     }
   },
-  winByHealth: (name: string): string => `${PREFIX}${name} won by health.`,
-  winByReason: (name: string, reason: string): string => `${PREFIX}${name} won by ${reason}.`,
-  lrColor: (colorLabel: string): string => `${PREFIX}Your LR will be ${colorLabel}${C.Grey}.`,
+  winByHealth: (name: string): string => phraseFor(slot, "JB_LASTREQUEST_WIN_BY_HEALTH", String(name)),
+  winByReason: (name: string, reason: string): string => phraseFor(slot, "JB_LASTREQUEST_WIN_BY_REASON", String(name), plainPhraseFor(slot,reason)),
+  lrColor: (colorLabel: string): string => phraseFor(slot, "JB_LASTREQUEST_LR_COLOR", String(colorLabel)),
   lrRainbow: (): string =>
-    `${PREFIX}Your LR will be ${C.Red}r${C.Orange}a${C.Yellow}i${C.Green}n${C.Blue}b${C.Purple}o${C.LightPurple}w${C.Grey}.`,
-
-  // --- damage (centre text) -------------------------------------------------------------------
-  damageBlockedInside: "You or they are in LR, damage blocked.",
-  damageBlockedOtherLR: "You are not in the same LR as them, damage blocked.",
-
-  // --- LR rebel -------------------------------------------------------------------------------
+    phraseFor(slot, "JB_LASTREQUEST_LR_RAINBOW"),
+  get damageBlockedInside() { return plainPhraseFor(slot, "JB_LASTREQUEST_DAMAGE_BLOCKED_INSIDE"); },
+  get damageBlockedOtherLR() { return plainPhraseFor(slot, "JB_LASTREQUEST_DAMAGE_BLOCKED_OTHER_LR"); },
   rebel: (name: string, hp: number): string =>
-    `${PREFIX}${prisonerName(name)} ${C.LightRed}has decided to ${C.DarkRed}LR Rebel ${C.LightRed}with ${hl(hp)} ${C.LightRed}HP!`,
-  rebelDisabled: (): string => `${PREFIX}Rebelling during last request is disabled.`,
-  rebelCt: (): string => `${PREFIX}You cannot rebel as a CT during the last request.`,
-
-  // --- shot for shot / mag for mag -------------------------------------------------------------
-  goesFirst: (name: string): string => `${PREFIX}Randomly selected ${name} to go first.`,
-  cheated: (name: string): string => `${PREFIX}${name} cheated.`,
-  choosePistol: "Choose Pistol",
-  chooseRifle: "Choose Rifle",
-
-  // --- coinflip -------------------------------------------------------------------------------
-  coinflipTitle: (prisoner: string, guard: string): string => `Heads or Tails? - ${prisoner} vs ${guard}`,
+    phraseFor(slot, "JB_LASTREQUEST_REBEL", String(name), String(hp)),
+  rebelDisabled: (): string => phraseFor(slot, "JB_LASTREQUEST_REBEL_DISABLED"),
+  rebelCt: (): string => phraseFor(slot, "JB_LASTREQUEST_REBEL_CT"),
+  goesFirst: (name: string): string => phraseFor(slot, "JB_LASTREQUEST_GOES_FIRST", String(name)),
+  cheated: (name: string): string => phraseFor(slot, "JB_LASTREQUEST_CHEATED", String(name)),
+  get choosePistol() { return plainPhraseFor(slot, "JB_LASTREQUEST_CHOOSE_PISTOL"); },
+  get chooseRifle() { return plainPhraseFor(slot, "JB_LASTREQUEST_CHOOSE_RIFLE"); },
+  coinflipTitle: (prisoner: string, guard: string): string => plainPhraseFor(slot, "JB_LASTREQUEST_COINFLIP_TITLE", String(prisoner), String(guard)),
   failedToChoose: (heads: boolean): string =>
-    `${PREFIX}You failed to choose in time, defaulting to ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}.`,
+    phraseFor(slot, "JB_LASTREQUEST_FAILED_TO_CHOOSE", String((heads ? plainPhraseFor(slot, "JB_LASTREQUEST_FAILED_TO_CHOOSE_YES") : plainPhraseFor(slot, "JB_LASTREQUEST_FAILED_TO_CHOOSE_NO")))),
   guardChose: (guard: string, heads: boolean): string =>
-    `${PREFIX}${guardName(guard)} chose ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}, flipping...`,
+    phraseFor(slot, "JB_LASTREQUEST_GUARD_CHOSE", String(guard), String((heads ? plainPhraseFor(slot, "JB_LASTREQUEST_GUARD_CHOSE_YES") : plainPhraseFor(slot, "JB_LASTREQUEST_GUARD_CHOSE_NO")))),
   coinLands: (heads: boolean): string =>
-    `${PREFIX}The coin landed on ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}.`,
-  coinEvent: (text: string): string => `${PREFIX}${text}`,
-
-  // --- rock paper scissors -------------------------------------------------------------------
-  rpsTitle: (prisoner: string, guard: string): string => `Rock Paper Scissors - ${prisoner} vs ${guard}`,
-  rpsMadeChoice: (name: string): string => `${PREFIX}${name} made their choice.`,
-  rpsBoth: (): string => `${PREFIX}Both players rocked, papered, and scissored! (ew)`,
-  rpsTie: (): string => `${PREFIX}It's a tie! Let's go again!`,
+    phraseFor(slot, "JB_LASTREQUEST_COIN_LANDS", String((heads ? plainPhraseFor(slot, "JB_LASTREQUEST_COIN_LANDS_YES") : plainPhraseFor(slot, "JB_LASTREQUEST_COIN_LANDS_NO")))),
+  coinEvent: (text: string): string => phraseFor(slot, "JB_LASTREQUEST_COIN_EVENT", plainPhraseFor(slot,text)),
+  rpsTitle: (prisoner: string, guard: string): string => plainPhraseFor(slot, "JB_LASTREQUEST_RPS_TITLE", String(prisoner), String(guard)),
+  rpsMadeChoice: (name: string): string => phraseFor(slot, "JB_LASTREQUEST_RPS_MADE_CHOICE", String(name)),
+  rpsBoth: (): string => phraseFor(slot, "JB_LASTREQUEST_RPS_BOTH"),
+  rpsTie: (): string => phraseFor(slot, "JB_LASTREQUEST_RPS_TIE"),
   rpsResults: (guard: string, guardPick: number, prisoner: string, prisonerPick: number): string =>
-    `${PREFIX}Results: ${guardName(guard)} picked ${hl(rpsName(guardPick))} and ${prisonerName(prisoner)} picked ${hl(rpsName(prisonerPick))}`,
-
-  // --- race -------------------------------------------------------------------------------------
-  endRaceInstruction: (): string => `${PREFIX}Type ${C.Blue}!endrace${C.White} to set the end point!`,
+    phraseFor(slot,"JB_LASTREQUEST_RPS_RESULTS", String(guard), plainPhraseFor(slot,rpsName(guardPick)), String(prisoner), plainPhraseFor(slot,rpsName(prisonerPick))),
+  endRaceInstruction: (): string => phraseFor(slot, "JB_LASTREQUEST_END_RACE_INSTRUCTION"),
   raceStarting: (prisoner: string): string =>
-    `${PREFIX}${prisonerName(prisoner)} is racing you. Pay attention to where they set the end point!`,
-  notInRace: (): string => `${PREFIX}${C.Red}You must be in a race ${C.Blue}!lr${C.Red} to use this.`,
-  notPending: (): string => `${PREFIX}${C.Red}You must be in the pending state to use this command.`,
-
-  // --- last guard -------------------------------------------------------------------------------
+    phraseFor(slot, "JB_LASTREQUEST_RACE_STARTING", String(prisoner)),
+  notInRace: (): string => phraseFor(slot, "JB_LASTREQUEST_NOT_IN_RACE"),
+  notPending: (): string => phraseFor(slot, "JB_LASTREQUEST_NOT_PENDING"),
   lgStartedChat: (guard: string, ctHealth: number, tHealth: number): string[] => [
-    `${LG_PREFIX}${C.Grey}All Ts are rebels! ${C.DarkRed}LAST GUARD${C.Grey} must kill until two prisoners alive (${C.BlueGrey}LR${C.Grey}).`,
-    `${LG_PREFIX}${guardName(guard)} ${C.Grey}has ${hl(ctHealth)} ${C.Grey}health, Ts have ${hl(tHealth)} ${C.Grey}health total.`,
+    phraseFor(slot, "JB_LASTREQUEST_LG_STARTED_CHAT"),
+    phraseFor(slot, "JB_LASTREQUEST_LG_STARTED_CHAT_2", String(guard), String(ctHealth), String(tHealth)),
   ],
   lgStartedCenter: (guard: string, ctHealth: number, tHealth: number): string =>
-    `LAST GUARD! ${guard} has ${ctHealth} health, Ts have ${tHealth} health total.`,
-
-  // --- debug ------------------------------------------------------------------------------------
-  debugEnabled: "Last Request enabled.",
-  debugDisabled: "Last Request disabled.",
-  debugEnableRefused: "Could not enable Last Request: the round mode is owned by something else.",
-  debugLastGuard: (name: string): string => `Enabled LastGuard for ${name}`,
+    plainPhraseFor(slot, "JB_LASTREQUEST_LG_STARTED_CENTER", String(guard), String(ctHealth), String(tHealth)),
+  get debugEnabled() { return phraseFor(slot, "JB_LASTREQUEST_DEBUG_ENABLED"); },
+  get debugDisabled() { return phraseFor(slot, "JB_LASTREQUEST_DEBUG_DISABLED"); },
+  get debugEnableRefused() { return phraseFor(slot, "JB_LASTREQUEST_DEBUG_ENABLE_REFUSED"); },
+  debugLastGuard: (name: string): string => phraseFor(slot, "JB_LASTREQUEST_DEBUG_LAST_GUARD", String(name)),
   debugLastGuardRefused: (name: string): string =>
-    `Could not start LastGuard for ${name}: the round mode is owned by something else.`,
-  debugUsage: "Usage: sm_lrdebug [enable|disable|<lr type> [player] [target]]",
-};
+    phraseFor(slot, "JB_LASTREQUEST_DEBUG_LAST_GUARD_REFUSED", String(name)),
+  get debugUsage() { return phraseFor(slot, "JB_LASTREQUEST_DEBUG_USAGE"); }
+ };
+}
+
+export {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';

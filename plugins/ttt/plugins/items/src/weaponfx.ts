@@ -1,3 +1,4 @@
+import { plainPhraseFor as tr, phraseFor } from "../../../packages/contracts/phrases.ts";
 import {resetOperation,checked,entityInput,createOwned} from './lifecycle';
 import {UserMessages,type UserMessageView} from '@s2script/sdk/usermessages';
 import {HookResult,type HookResultValue} from '@s2script/sdk/events';
@@ -56,17 +57,17 @@ const lastDnaRead = new Map<number, number>();
 
 /** Flavour text for a body with no recoverable DNA, as the C# `missingDnaExplanations`. */
 const NO_DNA: readonly string[] = [
-  "the killer used gloves... for their bullets",
-  "the killer was very careful",
-  "the killer wiped the weapon clean",
-  "the killer retrieved the bullets",
-  "the bullets disintegrated on impact",
-  "the killer was GOATed",
-  "but no DNA was found",
-  "but legal litigation caused the DNA to be lost",
-  "and confirmed they were dead",
-  "and they will remember that",
-  "good job",
+  "DNA_NO_TRACE_1",
+  "DNA_NO_TRACE_2",
+  "DNA_NO_TRACE_3",
+  "DNA_NO_TRACE_4",
+  "DNA_NO_TRACE_5",
+  "DNA_NO_TRACE_6",
+  "DNA_NO_TRACE_7",
+  "DNA_NO_TRACE_8",
+  "DNA_NO_TRACE_9",
+  "DNA_NO_TRACE_10",
+  "DNA_NO_TRACE_11",
 ];
 
 /** Grant `count` silenced shots to a slot. */
@@ -314,14 +315,14 @@ export function readDna(slot: number, body: Body): void {
   // suicide case, so Gloves still read as "no DNA" rather than "they killed themselves".
   if (body.dnaSuppressed || body.killer < 0) {
     const why = NO_DNA[(Math.random() * NO_DNA.length) | 0]!;
-    tell(slot, msgFor(slot, "SHOP_ITEM_DNA_SCANNED_OTHER", roleColour, body.ownerName, why));
+    tell(slot, msgFor(slot, "SHOP_ITEM_DNA_SCANNED_OTHER", roleColour, body.ownerName, tr(slot,why)));
     return;
   }
   // `SHOP_ITEM_DNA_SCANNED_SUICIDE` in the C# is just `SCANNED_OTHER` with a fixed explanation.
   if (body.killer === body.owner) {
     tell(
       slot,
-      msg("SHOP_ITEM_DNA_SCANNED_OTHER", roleColour, body.ownerName, "they killed themselves"),
+      msgFor(slot,"SHOP_ITEM_DNA_SCANNED_OTHER",roleColour,body.ownerName,tr(slot,"TEXT_THEY_KILLED_THEMSELVES")),
     );
     return;
   }
@@ -561,7 +562,7 @@ export function tickDnaTracker(dt: number): void {
         dnaLockedAt[slot] = now;
         // The lock is the payoff, so it is announced three ways: chat (permanent record), a banner
         // that owns the screen for a moment, and a cue — a Detective mid-chase is not reading chat.
-        tell(slot, msgFor(slot, "DNA_TRACK_IDENTIFIED", reg.nameOf(target)));
+        tell(slot, msgFor(slot, "DNA_TRACK_IDENTIFIED_CHAT", reg.nameOf(target)));
         checked(() => Sound.emit(SND_DNA_LOCK, { recipients: [slot] }));
         // The reward for the work: from here the killer is visible through walls, to this Detective
         // only, until the trace goes cold.

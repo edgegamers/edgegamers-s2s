@@ -1,3 +1,4 @@
+import english from "../translations/jb-rtd.phrases.json" with {type:"json"};
 /**
  * The RTD reward pool as data: what each reward is, who may receive it, its name/description and
  * its weight. Ported 1:1 from Jailbreak.RTD/RewardGenerator.cs (same order, same weights — the
@@ -146,96 +147,50 @@ export function isJackpot(spec: RewardSpec): boolean {
 
 const COLOR_TITLE: Record<"green", string> = { green: "Green" };
 
-export function rewardName(spec: RewardSpec): string {
-  switch (spec.kind) {
-    case "nothing":
-      return "Nothing";
-    case "credit":
-      return `${spec.amount} credit${spec.amount === 1 ? "" : "s"}`;
-    case "weapon":
-      return friendlyWeaponName(spec.weapon);
-    case "ammoWeapon":
-      return spec.primary + spec.secondary === 0
-        ? `Toy ${friendlyWeaponName(spec.weapon)}`
-        : `${friendlyWeaponName(spec.weapon)} (${spec.primary}/${spec.secondary})`;
-    case "fakeBomb":
-      return "Fake Bomb";
-    case "hp":
-      return `${spec.hp} HP`;
-    case "armor":
-      return `${spec.armor} Armor`;
-    case "cannotUse":
-      return `Cannot Use ${WEAPON_GROUPS[spec.group].title}`;
-    case "cannotScope":
-      return "Cannot Scope";
-    case "cannotLeftKnife":
-      return "Cannot Left-Knife";
-    case "cannotRightKnife":
-      return "Cannot Right-Knife";
-    case "noWeapon":
-      return "No Weapon";
-    case "color":
-      return `Spawn ${COLOR_TITLE[spec.color]}`;
-    case "transparent":
-      return "Spawn Transparent";
-    case "guaranteedWarden":
-      return "Guaranteed Warden";
-    case "chatSpy":
-      return "Chat Spy";
-    case "randomTeleport":
-      return "Random Teleport";
-    case "bomb":
-      return "Bomb";
+export type RewardText = (key: string, ...args: (string | number)[]) => string;
+const englishText: RewardText = (key,...args) => ((english as Record<string,string>)[key] ?? key).replace(/\{(\d+)\}/g,(_tag,n:string)=>String(args[Number(n)-1]??""));
+
+export function rewardName(spec: RewardSpec, text: RewardText = englishText): string {
+  switch(spec.kind){
+    case "nothing": return text("RTD_NAME_NOTHING");
+    case "credit": return text(spec.amount===1?"RTD_NAME_CREDIT_ONE":"RTD_NAME_CREDIT_MANY",spec.amount);
+    case "weapon": return text(friendlyWeaponName(spec.weapon));
+    case "ammoWeapon": return spec.primary+spec.secondary===0 ? text("RTD_NAME_TOY",text(friendlyWeaponName(spec.weapon))) : text("RTD_NAME_AMMO",text(friendlyWeaponName(spec.weapon)),spec.primary,spec.secondary);
+    case "fakeBomb": return text("RTD_NAME_FAKE_BOMB");
+    case "hp": return text("RTD_NAME_HP",spec.hp);
+    case "armor": return text("RTD_NAME_ARMOR",spec.armor);
+    case "cannotUse": return text("RTD_NAME_CANNOT_USE",text(WEAPON_GROUPS[spec.group].title));
+    case "cannotScope": return text("RTD_NAME_CANNOT_SCOPE");
+    case "cannotLeftKnife": return text("RTD_NAME_CANNOT_LEFT");
+    case "cannotRightKnife": return text("RTD_NAME_CANNOT_RIGHT");
+    case "noWeapon": return text("RTD_NAME_NO_WEAPON");
+    case "color": return text("RTD_NAME_COLOR",text(COLOR_TITLE[spec.color]));
+    case "transparent": return text("RTD_NAME_TRANSPARENT");
+    case "guaranteedWarden": return text("RTD_NAME_WARDEN");
+    case "chatSpy": return text("RTD_NAME_SPY");
+    case "randomTeleport": return text("RTD_NAME_TELEPORT");
+    case "bomb": return text("RTD_NAME_BOMB");
   }
 }
 
-const startsWithVowel = (s: string): boolean => /^[aeiou]/i.test(s);
-
-/**
- * The second chat line after a roll. `paint(text, color)` lets the caller colour the colour name
- * of a colour reward (the C# printed it in that colour).
- */
-export function rewardDescription(
-  spec: RewardSpec,
-  paint: (text: string, color: "green") => string = (t) => t,
-): string {
-  switch (spec.kind) {
-    case "nothing":
-      return "You won nothing.";
-    case "credit":
-      return `You won ${rewardName(spec)}${spec.amount > 500 ? "!" : "."}`;
-    case "weapon":
-    case "ammoWeapon": {
-      const w = friendlyWeaponName(spec.weapon);
-      return `You won a${startsWithVowel(w) ? "n" : ""} ${w} next round.`;
-    }
-    case "fakeBomb":
-      return "You will spawn with a fake bomb next round.";
-    case "hp":
-      return `You won ${spec.hp} HP next round.`;
-    case "armor":
-      return `You will spawn with ${spec.armor} Armor next round.`;
-    case "cannotUse":
-      return `You will not be able to use ${WEAPON_GROUPS[spec.group].title} next round.`;
-    case "cannotScope":
-      return "You will not be able to scope next round.";
-    case "cannotLeftKnife":
-      return "You will not be able to left-click knife next round.";
-    case "cannotRightKnife":
-      return "You will not be able to right-click knife next round.";
-    case "noWeapon":
-      return "You will not spawn with a knife next round.";
-    case "color":
-      return `You will spawn ${paint(COLOR_TITLE[spec.color], spec.color)} next round.`;
-    case "transparent":
-      return "You will spawn transparent next round.";
-    case "guaranteedWarden":
-      return "You are guaranteed to be the warden next round if you queue for it.";
-    case "chatSpy":
-      return "You will be able to read all team chats next round.";
-    case "randomTeleport":
-      return "You will be teleported to a random location next round.";
-    case "bomb":
-      return "You will receive the bomb next round.";
+export function rewardDescription(spec: RewardSpec, paint: (text:string,color:"green")=>string = t=>t, text: RewardText = englishText): string {
+  switch(spec.kind){
+    case "nothing": return text("RTD_DESC_NOTHING");
+    case "credit": return text("RTD_DESC_CREDIT",rewardName(spec,text),spec.amount>500?"!":".");
+    case "weapon": case "ammoWeapon": {const w=friendlyWeaponName(spec.weapon);return text("RTD_DESC_WEAPON",/^[aeiou]/i.test(w)?"n":"",text(w));}
+    case "fakeBomb": return text("RTD_DESC_FAKE_BOMB");
+    case "hp": return text("RTD_DESC_HP",spec.hp);
+    case "armor": return text("RTD_DESC_ARMOR",spec.armor);
+    case "cannotUse": return text("RTD_DESC_CANNOT_USE",text(WEAPON_GROUPS[spec.group].title));
+    case "cannotScope": return text("RTD_DESC_CANNOT_SCOPE");
+    case "cannotLeftKnife": return text("RTD_DESC_CANNOT_LEFT");
+    case "cannotRightKnife": return text("RTD_DESC_CANNOT_RIGHT");
+    case "noWeapon": return text("RTD_DESC_NO_WEAPON");
+    case "color": return text("RTD_DESC_COLOR",paint(text(COLOR_TITLE[spec.color]),spec.color));
+    case "transparent": return text("RTD_DESC_TRANSPARENT");
+    case "guaranteedWarden": return text("RTD_DESC_WARDEN");
+    case "chatSpy": return text("RTD_DESC_SPY");
+    case "randomTeleport": return text("RTD_DESC_TELEPORT");
+    case "bomb": return text("RTD_DESC_BOMB");
   }
 }

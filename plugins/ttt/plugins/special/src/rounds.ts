@@ -17,7 +17,7 @@ import { Server } from "@s2script/sdk/server";
 import { GameRules } from "@s2script/cs2";
 import type { DomainBus } from "../../../packages/contracts/ordered.ts";
 import { GameState, RoleId, Priority, n, msg, reg, tell, tellAll, game,
-  setRoundDeadline, addBalance, balanceOf, setSuppressPistols } from "./runtime";
+  setRoundDeadline, addBalance, balanceOf, setSuppressPistols , msgFor } from "./runtime";
 import { clearSlot, GearSlot, RIFLES, heldWeapons, weaponClass } from "./inventory";
 
 /** A special round definition. */
@@ -224,11 +224,11 @@ export function startSpecialRounds(forced?: readonly string[]): string[] {
   }
   if (chosen.length === 0) return [];
 
-  tellAll(msg("SPECIAL_ROUND_STARTED", chosen.map((r) => r.name).join(", ")));
+  tellAll((recipient) => msgFor(recipient, "SPECIAL_ROUND_STARTED", chosen.map((r) => msgFor(recipient,"SPECIAL_NAME_"+r.id.toUpperCase())).join(", ")));
   for (let i = 0; i < chosen.length; i++) {
     const r = chosen[i]!;
     activeRounds.push(r.id);
-    tellAll(msg(r.descKey));
+    tellAll((recipient) => msgFor(recipient, r.descKey));
     r.apply();
   }
   sinceSpecial = 0;
@@ -286,7 +286,7 @@ export function installSpecialRounds(bus: DomainBus): void {
   bus.on("purchase", (ev) => {
     if (!isActive("vanilla")) return;
     ev.canceled = true;
-    tell(ev.slot, msg("VANILLA_ROUND_REMINDER"));
+    tell(ev.slot, msgFor(ev.slot, "VANILLA_ROUND_REMINDER"));
   }, { priority: Priority.HIGH });
 
   // Rich: multiply in-round gains.

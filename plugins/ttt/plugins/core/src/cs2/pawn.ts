@@ -241,9 +241,18 @@ export function tell(slot: number, message: string): void {
 }
 
 /** Send a chat line to every player. */
-export function tellAll(message: string): void {
-  Chat.toAll(message);
+export function tellAll(message: string | ((slot: number) => string)): void {
+  if (typeof message === 'string') { Chat.toAll(message); return; }
+  for (let slot = 0; slot < MAX_SLOTS; slot++) {
+    const client = Clients.fromSlot(slot);
+    if (client?.isValid()) Chat.toSlot(slot, message(slot));
+  }
 }
 
 /** The only applied-model record is the World writer's private record. */
 export {appliedModelOf,clearAppliedModels} from '../core/world-provider';
+
+/** Snapshot event arguments at the call site; only translation varies per recipient. */
+export function tellAllWith<Args extends unknown[]>(render:(slot:number,...args:Args)=>string,...args:Args):void {
+  tellAll(slot=>render(slot,...args));
+}

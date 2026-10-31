@@ -1,3 +1,4 @@
+import {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';
 /**
  * No Scope (C# `NoScope`): the prisoner picks a sniper rifle, countdown, then both get it with
  * the scope disabled every frame. Knives at 30s; at 60s the healthier player wins (guard needs
@@ -7,7 +8,7 @@ import { Server } from "@s2script/sdk";
 import { Menu, MenuStyle } from "@s2script/sdk";
 import type { LRResult, LRType } from "../../api";
 import { isKnifeDef, NOSCOPE_RIFLES, noScopeTimeoutResult } from "../logic";
-import { msg } from "../messages";
+import { msgFor } from "../messages";
 import { WeaponizedRequest } from "./base";
 import { showMenu } from "../menus";
 
@@ -18,9 +19,9 @@ export class NoScope extends WeaponizedRequest {
   private weapon = "weapon_ssg08";
 
   configure(done: () => void, cancel: () => void): void {
-    const menu = new Menu(msg.chooseRifle);
+    const menu = new Menu(msgFor(this.prisoner.slot).chooseRifle);
     menu.style = MenuStyle.Center;
-    for (const r of NOSCOPE_RIFLES) menu.addItem(r.weapon, r.name);
+    for (const r of NOSCOPE_RIFLES) menu.addItem(r.weapon,labelFor(this.prisoner.slot,r.name));
     menu.onSelect((e) => {
       this.weapon = e.info;
       done();
@@ -30,7 +31,7 @@ export class NoScope extends WeaponizedRequest {
   }
 
   execute(): void {
-    this.tell(msg.go());
+    this.tell(recipient => msgFor(recipient).go());
     this.prisoner.give(this.weapon);
     this.guard.give(this.weapon);
     this.state = "active";

@@ -6,7 +6,7 @@ import { Team } from "@edgegamers/jailbreak-shared";
 import { isActive, isPermanent, minutesLeft, repeatPenalty, revokedDuration, secondsLeft, type Ban } from "./bans";
 import { settings } from "./config";
 import { broadcast, now, playerBySteam, playerRef, pub, toSteam } from "./env";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 import { entry, rankOfSlot, setBanCached, setPriority } from "./players";
 import { atLeast } from "./ranks";
 import { banHistory, writeBan, writeBanDuration } from "./store";
@@ -20,7 +20,7 @@ export function activeBan(steamId: string): Ban | null {
 }
 
 export function remind(slot: number, ban: Ban): void {
-  Chat.toSlot(slot, isPermanent(ban) ? msg.reminderPermanent(ban.reason) : msg.reminder(minutesLeft(ban, now()), ban.reason));
+  Chat.toSlot(slot, isPermanent(ban) ? msgFor(slot).reminderPermanent(ban.reason) : msgFor(slot).reminder(minutesLeft(ban, now()), ban.reason));
 }
 
 export function clearExpiry(steamId: string): void {
@@ -52,7 +52,7 @@ export function armExpiry(ban: Ban): void {
     after(delay, () => {
       timers.delete(steamId);
       const p = playerBySteam(steamId);
-      if (p) broadcast(msg.expired(p.playerName ?? steamId));
+      if (p) broadcast(recipient => msgFor(recipient).expired(p.playerName ?? steamId));
       applyPenalty(steamId);
     }),
   );
@@ -70,7 +70,7 @@ function applyPenalty(steamId: string): void {
         return;
       }
       setPriority(steamId, (e.priority ?? 0) - pen.minutes);
-      toSteam(steamId, msg.penalty(pen.count, s.penaltyWindowHours, pen.minutes));
+      toSteam(steamId, recipient=>msgFor(recipient).penalty(pen.count, s.penaltyWindowHours, pen.minutes));
     })
     .catch(() => undefined);
 }
@@ -97,8 +97,8 @@ export function issueBan(
   for (const viewer of Player.allConnected()) {
     const isAdmin = atLeast(rankOfSlot(viewer.slot), "eg");
     const line = isPermanent(ban)
-      ? isAdmin ? msg.ctbanAdminPermanent(target.name, adminName, reason) : msg.ctbanPublicPermanent(target.name, reason)
-      : isAdmin ? msg.ctbanAdmin(target.name, minutes, adminName, reason) : msg.ctbanPublic(target.name, minutes, reason);
+      ? isAdmin ? msgFor(viewer.slot).ctbanAdminPermanent(target.name, adminName, reason) : msgFor(viewer.slot).ctbanPublicPermanent(target.name, reason)
+      : isAdmin ? msgFor(viewer.slot).ctbanAdmin(target.name, minutes, adminName, reason) : msgFor(viewer.slot).ctbanPublic(target.name, minutes, reason);
     Chat.toSlot(viewer.slot, line);
   }
   pub()?.emit("OnCTBan", {
@@ -120,7 +120,7 @@ export function unban(ban: Ban, targetName: string, by: string): boolean {
   const written = writeBanDuration(revoked);
   for (const viewer of Player.allConnected()) {
     const isAdmin = atLeast(rankOfSlot(viewer.slot), "eg");
-    Chat.toSlot(viewer.slot, isAdmin ? msg.unctbanAdmin(targetName, by) : msg.unctbanPublic(targetName));
+    Chat.toSlot(viewer.slot, isAdmin ? msgFor(viewer.slot).unctbanAdmin(targetName, by) : msgFor(viewer.slot).unctbanPublic(targetName));
   }
   pub()?.emit("OnCTUnban", { targetSteamId: ban.steamId, by });
   return written;

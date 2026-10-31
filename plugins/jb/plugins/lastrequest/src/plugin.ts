@@ -1,3 +1,4 @@
+import {loadMessages} from './messages';
 /**
  * @edgegamers/jailbreak-lastrequest — last requests (8 games), LR rebel and last guard. Wiring only: the logic
  * lives in manager.ts (LR), lr-command.ts (!lr), lr-rebel.ts (!rebel), lastguard.ts, debug.ts.
@@ -30,6 +31,7 @@ import { playerOfEntity } from "./players";
 import { loadSettings } from "./settings";
 
 export function OnPluginStart(): void {
+  loadMessages();
   loadSettings();
   config.onChange(() => loadSettings());
 

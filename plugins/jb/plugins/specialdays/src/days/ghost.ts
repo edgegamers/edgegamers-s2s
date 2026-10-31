@@ -7,7 +7,7 @@ import { Clients, config, Server, Transmit } from "@s2script/sdk";
 import { HintText } from "@s2script/cs2";
 import type { SpecialDay } from "../day.ts";
 import { ffaBase, ffaSettings } from "./ffa.ts";
-import { msg } from "../messages.ts";
+import { msgFor } from "../messages.ts";
 import { alive, isBot, livePawn, setTakesDamage } from "../game.ts";
 
 export function ghostDay(): SpecialDay {
@@ -56,7 +56,7 @@ export function ghostDay(): SpecialDay {
         const shouldBeVisible = mod < visibleFor;
         const left = Math.floor((shouldBeVisible ? visibleFor : cycle) - mod);
         if (shouldBeVisible !== visible) setVisibility(shouldBeVisible);
-        for (const p of alive()) HintText.to(p.slot, msg.ghostCountdown(visible, left));
+        for (const p of alive()) HintText.to(p.slot, msgFor(p.slot).ghostCountdown(visible, left));
       });
     },
     teardown() {

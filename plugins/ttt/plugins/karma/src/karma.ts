@@ -1,3 +1,4 @@
+import { plainPhraseFor } from "../../../packages/contracts/phrases.ts";
 import {lowKarmaCommand} from "./settings";
 /**
  * Karma — the port of `IKarmaService`, `KarmaUpdateManager`, `KarmaListener` and `KarmaBanner`.
@@ -23,7 +24,7 @@ import {lowKarmaCommand} from "./settings";
 
 import { Server } from "@s2script/sdk/server";
 import { Bans } from "@s2script/sdk/bans";
-import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msg, reg, setScore, tell, game } from "./runtime";
+import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msgFor, reg, setScore, tell, game } from "./runtime";
 import type { DomainBus, KarmaEvent } from "../../../packages/contracts/ordered.ts";
 import { Player } from "@s2script/cs2";
 
@@ -406,7 +407,7 @@ function punishLowKarma(slot: number, player: Player): void {
 
   const id = reg.steamIdOf(slot);
   if (id !== "" && id !== "0") Bans.add(id, LOW_KARMA_BAN_MINUTES, LOW_KARMA_REASON);
-  player.kick(LOW_KARMA_REASON);
+  player.kick(plainPhraseFor(slot,"LOW_KARMA_REASON"));
 }
 
 /**
@@ -493,7 +494,7 @@ export function installKarma(eventBus: DomainBus): void {
     (ev) => {
       const remaining = timeoutRounds[ev.slot]!;
       if (remaining <= 0) return;
-      tell(ev.slot, msg("KARMA_WARNING", remaining));
+      tell(ev.slot, msgFor(ev.slot,"KARMA_WARNING", remaining));
       timeoutRounds[ev.slot] = remaining - 1;
       ev.role = RoleId.Spectator;
     },

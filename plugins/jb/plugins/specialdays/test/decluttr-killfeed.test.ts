@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const mocks:Record<string,string>={
  '../settings.ts':'export const baseSettings=x=>x,withFriendlyFire=x=>x,withRespawns=x=>x;',
  '../sdtype.ts':"export const SD_NAMES={gungame:'GunGame'};",
- '../messages.ts':"export const DESCRIPTIONS={gungame:''},msg=new Proxy({},{get:()=>()=>''});",
+ '../messages.ts':"export const DESCRIPTIONS={gungame:''},msgFor=()=>new Proxy({},{get:()=>()=>''});",
  '../runner.ts':'export const randomSpawns=()=>[];',
  '../game.ts':"export const alive=()=>[],give=()=>{},nameOf=p=>'Killer',setSpeed=()=>{},setTakesDamage=()=>{},setTimeRemaining=()=>{},strip=()=>{},teleport=()=>{},teleportOnto=()=>{},timeRemaining=()=>60,toAll=()=>{},toSlot=()=>{};",
 };

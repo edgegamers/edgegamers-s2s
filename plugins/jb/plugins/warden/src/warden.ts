@@ -1,3 +1,6 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {broadcastText,broadcastLines} from '@edgegamers/jailbreak-shared';
 import { after, ADMFLAG, Chat, Entity, Clients } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import { Player, Weapon } from "@s2script/cs2";
@@ -8,7 +11,7 @@ import type { PlayerRef, WardenRemovedReason } from "../api";
 import { cfg } from "./config";
 import { centerAll, hasFlags, isWarmup, playerRef, playToAll, pub } from "./env";
 import { assignWardenIcon, removeWardenIcon } from "./icons";
-import { msg, who } from "./messages";
+import { msgFor, who } from "./messages";
 import { peaceMute, peaceOnWarden, unPeaceMute } from "./peace";
 import { guardArmor } from "./rules";
 import { isSpecialTreatment } from "./special-treatment";
@@ -77,12 +80,12 @@ export function setWarden(slot: number): boolean {
   setPawnColor(p.pawn, Colors.Blue);
 
   const name = who(ref.name, p.teamNum);
-  Chat.toAll(msg.newWarden(name));
-  centerAll(msg.newWardenCenter(ref.name));
+  broadcastText(forRecipients((recipient,value0) => msgFor(recipient).newWarden(value0), name));
+  centerAll(forRecipients((recipient, name) => msgFor(recipient).newWardenCenter(name), ref.name));
   playToAll(cfg.soundNew);
   assignWardenIcon(slot);
   peaceOnWarden(slot);
-  log(`${describe(slot)} is now the warden.`);
+  log(...logEntry("JB_LOG_IS_NOW_THE_WARDEN", [String(describe(slot))]));
 
   unblueTimer?.kill();
   unblueTimer = after(3000, unmarkPrisonersBlue);
@@ -154,7 +157,7 @@ function clearWarden(reason: WardenRemovedReason): boolean {
     freedayTimer?.kill();
     freedayTimer = after(10000, () => {
       freedayTimer = null;
-      Chat.toAll(msg.nowFreeday);
+      broadcastText(recipient => msgFor(recipient).nowFreeday);
     });
   }
 
@@ -162,9 +165,9 @@ function clearWarden(reason: WardenRemovedReason): boolean {
   const samePlayer = p !== null && ref !== null && p.userId === ref.userId;
   if (samePlayer && p) {
     if (p.pawn) setPawnColor(p.pawn, Colors.White);
-    log(`${describe(slot)} is no longer the warden (${reason}).`);
+    log(...logEntry("JB_LOG_IS_NO_LONGER_THE_WARDEN", [String(describe(slot)), String(reason)], [1]));
   } else if (ref) {
-    log(`${ref.name} is no longer the warden (${reason}).`);
+    log(...logEntry("JB_LOG_IS_NO_LONGER_THE_WARDEN", [String(ref.name), String(reason)], [1]));
   }
   removeWardenIcon(slot);
 
@@ -201,8 +204,8 @@ export function removeWarden(reason: WardenRemovedReason, actorSlot = -1): boole
     case "death":
     case "team_change": {
       if (!clearWarden(reason)) return false;
-      for (const line of msg.wardenDied) Chat.toAll(line);
-      centerAll(msg.wardenDiedCenter);
+      broadcastLines(recipient => msgFor(recipient).wardenDied);
+      centerAll(recipient => msgFor(recipient).wardenDiedCenter);
       playToAll(cfg.soundKilled);
       unblueTimer?.kill(); // died within 3 s of taking warden
       unblueTimer = null;
@@ -212,33 +215,33 @@ export function removeWarden(reason: WardenRemovedReason, actorSlot = -1): boole
     }
     case "disconnect": {
       if (!clearWarden(reason)) return false;
-      Chat.toAll(msg.wardenLeft);
-      centerAll(msg.wardenLeftCenter);
+      broadcastText(recipient => msgFor(recipient).wardenLeft);
+      centerAll(recipient => msgFor(recipient).wardenLeftCenter);
       playToAll(cfg.soundPassed);
-      Chat.toAll(msg.becomeNextWarden);
+      broadcastText(recipient => msgFor(recipient).becomeNextWarden);
       return true;
     }
     case "pass": {
-      Chat.toAll(msg.passWarden(name));
-      centerAll(msg.passWardenCenter(plain));
+      broadcastText(forRecipients((recipient,value0) => msgFor(recipient).passWarden(value0), name));
+      centerAll(forRecipients((recipient, name) => msgFor(recipient).passWardenCenter(name), plain));
       playToAll(cfg.soundPassed);
-      Chat.toAll(msg.becomeNextWarden);
+      broadcastText(recipient => msgFor(recipient).becomeNextWarden);
       passCooldowns.set(cooldownKey(slot), Date.now());
-      if (!clearWarden(reason)) Chat.toAll(msg.removeFailed);
+      if (!clearWarden(reason)) broadcastText(recipient => msgFor(recipient).removeFailed);
       return true;
     }
     case "fire": {
       const actor = actorSlot >= 0 ? Player.fromSlot(actorSlot) : null;
       const actorName = actor ? who(actor.playerName ?? "", actor.teamNum) : "";
       for (const c of Clients.all()) {
-        if (actor && hasFlags(c.slot, ADMFLAG.CHAT)) Chat.toSlot(c.slot, msg.fireWardenBy(actorName, name));
-        else Chat.toSlot(c.slot, msg.fireWarden(name));
+        if (actor && hasFlags(c.slot, ADMFLAG.CHAT)) Chat.toSlot(c.slot, msgFor(c.slot).fireWardenBy(actorName, name));
+        else Chat.toSlot(c.slot, msgFor(c.slot).fireWarden(name));
       }
       playToAll(cfg.soundPassed);
-      Chat.toAll(msg.becomeNextWarden);
+      broadcastText(recipient => msgFor(recipient).becomeNextWarden);
       passCooldowns.set(cooldownKey(slot), Date.now());
-      if (actor) log(`${describe(actorSlot)} fired the warden.`);
-      if (!clearWarden(reason)) Chat.toAll(msg.removeFailed);
+      if (actor) log(...logEntry("JB_LOG_FIRED_THE_WARDEN", [String(describe(actorSlot))]));
+      if (!clearWarden(reason)) broadcastText(recipient => msgFor(recipient).removeFailed);
       return true;
     }
     default:

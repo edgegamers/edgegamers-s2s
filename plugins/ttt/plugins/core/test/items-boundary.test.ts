@@ -14,7 +14,7 @@ const mocks:Record<string,string>={
  '../cs2/color':'export const setPawnColor=()=>fixture.calls.push("pawn tint");',
  './body-provider':'export const isCurrentBody=()=>{fixture.onBodyRead?.();return true;},tintBody=()=>fixture.calls.push("corpse tint");',
 };
-const code=(await build({stdin:{contents:"export * from './core/items-provider';export * from './shop/items';export {drainPreFrame,bindRoundEpoch,bindPreFrameIdentity,nextPreFrame,preFrameDepth} from './core/preframe';export {setCenterHud,compareAndClearCenterHud} from './cs2/hud';",resolveDir:fileURLToPath(new URL('../src/',import.meta.url)),loader:'ts'},bundle:true,format:'cjs',platform:'node',write:false,external:['@s2script/*'],plugins:[{name:'native-boundaries',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'native'}:undefined);b.onLoad({filter:/.*/,namespace:'native'},a=>({loader:'js',contents:mocks[a.path]}));}}]})).outputFiles[0]!.text;
+const code=(await build({stdin:{contents:"export * from './core/items-provider';export * from './shop/items';export {drainPreFrame,bindRoundEpoch,bindPreFrameIdentity,nextPreFrame,preFrameDepth} from './core/preframe';export {setCenterHud,compareAndClearCenterHud,hudLine} from './cs2/hud';",resolveDir:fileURLToPath(new URL('../src/',import.meta.url)),loader:'ts'},bundle:true,format:'cjs',platform:'node',write:false,external:['@s2script/*'],plugins:[{name:'native-boundaries',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'native'}:undefined);b.onLoad({filter:/.*/,namespace:'native'},a=>({loader:'js',contents:mocks[a.path]}));}}]})).outputFiles[0]!.text;
 function fixture(){
  const state={actor:{slot:2,steamId:'buyer',generation:1,roundEpoch:1},calls:[] as string[],onGive:null as null|(()=>void),onBodyRead:null as null|(()=>void)};
  const module={exports:{} as any};runInContext(code,createContext({fixture:state,module,console:{log(){}},require:()=>({})}));const api=module.exports;
@@ -72,4 +72,9 @@ test('paint retirement/throw after mark keeps canonical mutation and prevents st
 test('Body provider reentry before paint invocation cannot spend a retired Item charge',()=>{
  const f=fixture();f.provider.spendBodyPaint=()=>{f.state.calls.push('retired spend');return true;};f.api.bindItemsProvider(f.provider);let reads=0;
  f.state.onBodyRead=()=>{if(++reads===2)f.api.bindItemsProvider(f.provider);};assert.equal(f.api.spendPinnedBodyPaint(2,{owner:3,painted:false}),false);assert.deepEqual(f.state.calls,[]);
+});
+
+test('center nameplates render user text as text inside the presentation span',()=>{
+ const {api}=fixture();
+ assert.equal(api.hudLine('<b>A & B</b>', '#ffffff'), "<font class='fontSize-sm' color='#ffffff'>&lt;b&gt;A &amp; B&lt;/b&gt;</font>");
 });

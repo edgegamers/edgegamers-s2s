@@ -12,11 +12,6 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "config": {
-      "chat_prefix": {
-        "type": "string",
-        "default": "Surf",
-        "description": "Chat prefix label (shown as [label] in colour)."
-      },
       "database": {
         "type": "string",
         "default": "surftimer",

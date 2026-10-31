@@ -39,6 +39,8 @@ npm run changeset                # record release intent
 
 The root owns the only npm workspace, lockfile and Changesets configuration. Bundle containers hold descriptors; their runtime plugins and shared libraries are workspace packages. Keep additions inside `plugins/` and update the root's discovery lists when adding a product.
 
+Player/admin text follows [the translations and message guide](docs/translations.md), shared by contributors and coding agents.
+
 ## Releases
 
 Add a changeset for each changed runtime plugin or shared library. After it reaches `main`, the release workflow:

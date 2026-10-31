@@ -18,7 +18,7 @@ function fixture() {
   const players = [0,1,2].map(slot => ({ userId: slot + 100, set score(value) { scores.push([slot,value]); }, kick(reason) { kicks.push([slot,reason]); kickHook(slot); } }));
   const configuration=configFixture(SPECS,{...values,sm_ttt_karma_per_round_win:2,sm_ttt_karma_low_command:''});
   const context = vm.createContext({ module: { exports: {} }, console: { log() {} }, require(name) {
-    if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatKarmaWarning(args[0]));
+    if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>key === "LOW_KARMA_REASON" ? "Low Karma" : core.formatKarmaWarning(args[0]));
     if (name === '@s2script/cs2') return { ChatColors:testChatColors, Player: { fromSlot: s => players[s] ?? null } };
     if (name === '@s2script/sdk/config') return {config:configuration.config};
     if (name === '@s2script/sdk/server') return { Server: { ...configuration.server, command: s => commands.push(s) } };

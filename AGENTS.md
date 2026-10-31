@@ -17,3 +17,7 @@ Before triage, read `docs/agents/triage-labels.md`: use the five default role la
 ### Domain docs
 
 Before domain exploration, read `docs/agents/domain.md`: one root glossary and `docs/adr/` for consequential decisions.
+
+### Player/admin text
+
+Before changing player/admin text, phrase catalogs or output routing, read [docs/translations.md](docs/translations.md) and follow its localization and formatting standard.

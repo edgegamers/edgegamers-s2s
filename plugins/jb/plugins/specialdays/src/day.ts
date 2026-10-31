@@ -41,7 +41,7 @@ export interface SpecialDay {
   readonly description: readonly string[];
   readonly settings: DaySettings;
   /** Keep a team inside the armory/cells until the day executes (Abstract*RestrictedDay). */
-  readonly restrict?: { kind: "armory" | "cell"; teamNum: number; reminder: string };
+  readonly restrict?: { kind: "armory" | "cell"; teamNum: number; reminder: string | ((slot:number)=>string) };
   /** Execute without the shared part (no damage enable, no pickup gate) — SpeedrunDay never called base.Execute(). */
   readonly skipBaseExecute?: boolean;
 
@@ -54,7 +54,7 @@ export interface SpecialDay {
   /** Round end or abort: undo what the day changed beyond its settings. */
   teardown?(ctx: DayContext): void;
   /** Custom "begins in" wording (Hide and Seek). */
-  beginsIn?(seconds: number): string;
+  beginsIn?(seconds: number, slot?: number): string;
   /** Replace the settings-based pickup rule (Gun Game). */
   pickupRule?(player: Player, item: string): boolean;
 

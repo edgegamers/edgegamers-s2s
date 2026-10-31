@@ -1,3 +1,4 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /**
  * Hide and Seek: the hiders (CTs by default) get a head start while the seekers wait in the armory
  * with extra HP (HideAndSeekDay). All numbers come from the `sd_hns_*` config keys.
@@ -6,7 +7,7 @@ import { config } from "@s2script/sdk";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import { parseItemList } from "../weapons.ts";
 import { alive, onTeam, setArmor, setHealth, setSpeed, setTakesDamage, Team, toTeam } from "../game.ts";
 
@@ -24,7 +25,7 @@ export function hnsDay(): SpecialDay {
     type: "hns",
     name,
     description: DESCRIPTIONS.hns,
-    restrict: { kind: "armory", teamNum: seekers, reminder: msg.hnsStayInArmory(name) },
+    restrict: { kind: "armory", teamNum: seekers, reminder: (slot:number)=>msgFor(slot).hnsStayInArmory(name) },
     settings: baseSettings({
       tTeleport: "armory",
       ctTeleport: "armory",
@@ -33,12 +34,12 @@ export function hnsDay(): SpecialDay {
       allowedWeapons: (p) => (isT(p.teamNum) ? tWeapons : ctWeapons),
       freezeTime: (p) => (p.teamNum === Team.Guard ? 3 : 8),
     }),
-    beginsIn: (seconds) => msg.hnsBeginsIn(name, seconds),
+    beginsIn: (seconds, slot = -1) => msgFor(slot).hnsBeginsIn(name, seconds),
     setup(ctx) {
       if (seekTime >= 10) {
         ctx.at(10, () => {
           for (const p of onTeam(hiders)) setSpeed(p, 1.5);
-          toTeam(seekers, msg.hnsDamageWarning(15));
+          toTeam(seekers, forRecipients((recipient,value0) => msgFor(recipient).hnsDamageWarning(value0), 15));
         });
       }
       if (seekTime >= 25) {

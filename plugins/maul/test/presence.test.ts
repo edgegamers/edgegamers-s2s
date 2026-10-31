@@ -480,3 +480,10 @@ describe("game id type", () => {
     expect(snap.players).toEqual([]);
   });
 });
+
+it('marks plugin-owned fallback kick wording separately from an authored identical reason',()=>{
+ const calls:unknown[][]=[];const r=reporter([],{onKick:(...args:unknown[])=>{calls.push(args);return true;}});
+ (r as any).handleKick({gameIdValue:'76561198000000001'});
+ (r as any).handleKick({gameIdValue:'76561198000000001',reason:'Kicked by MAUL'});
+ expect(calls[0]?.[2]).toBe(true);expect(calls[1]?.[2]).toBe(false);
+});

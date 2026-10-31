@@ -14,7 +14,7 @@ const mocks:Record<string,string>={
   '../core/cvars':'export const cfg={showNames:true,afkSeconds:0};',
   '../game/game':'export const game={get state(){return fixture.state}},inProgress=()=>fixture.state===2,inWarmup=()=>false;',
   './communication':'export const tickCommunication=()=>{},resetCommunication=()=>{},forgetCommunication=()=>{};',
-  './pawn':'export const pawnOf=s=>{fixture.pawnReads.push(s);return fixture.pawns.get(s)??null},setTakesDamage=()=>{},setArmor=()=>{},setPawnIsAlive=()=>{},tell=()=>{},tellAll=()=>{},toSpectator=()=>{};',
+  './pawn':'export const pawnOf=s=>{fixture.pawnReads.push(s);return fixture.pawns.get(s)??null},setTakesDamage=()=>{},setArmor=()=>{},setPawnIsAlive=()=>{},tell=()=>{},tellAll=()=>{},tellAllWith=()=>{},toSpectator=()=>{};',
   './hud':'export const HUD_FONT_BIG="big",setCenterHud=(s,t)=>fixture.hud.set(s,t),hudLine=t=>t;',
   '../shop/effects':'export const isCamouflaged=()=>false;',
 };

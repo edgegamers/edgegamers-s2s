@@ -1,3 +1,6 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {broadcastText} from '@edgegamers/jailbreak-shared';
 import { ADMFLAG, after, Chat, Clients, Voice } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
@@ -5,7 +8,7 @@ import { Team, alivePrisoners } from "@edgegamers/jailbreak-shared";
 import { log } from "@edgegamers/jailbreak-core";
 import type { PeaceReason } from "../api";
 import { centerTo, hasFlags, pub } from "./env";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 import { peaceCoversSpawn, peaceDuration } from "./rules";
 import { isWarden } from "./warden";
 
@@ -81,13 +84,13 @@ export function peaceMute(reason: PeaceReason): void {
 
   switch (reason) {
     case "admin":
-      Chat.toAll(msg.peaceByAdmin(prisoner));
+      broadcastText(forRecipients((recipient,value0) => msgFor(recipient).peaceByAdmin(value0), prisoner));
       break;
     case "warden":
-      Chat.toAll(msg.peaceByWarden(prisoner));
+      broadcastText(forRecipients((recipient,value0) => msgFor(recipient).peaceByWarden(value0), prisoner));
       break;
     default:
-      Chat.toAll(msg.peaceGeneral(prisoner));
+      broadcastText(forRecipients((recipient,value0) => msgFor(recipient).peaceGeneral(value0), prisoner));
   }
 
   const now = Date.now();
@@ -101,7 +104,7 @@ export function peaceMute(reason: PeaceReason): void {
   guardTimer = after(guard * 1000, unmuteGuards);
   prisonerTimer = after(prisoner * 1000, unmutePrisoners);
 
-  log(`Peace enacted for ${prisoner}s (${reason}).`);
+  log(...logEntry("JB_LOG_PEACE_ENACTED_FOR_S", [String(prisoner), String(reason)], [1]));
   pub()?.emit("OnPeaceChanged", { active: true, reason, seconds: prisoner });
 }
 
@@ -118,7 +121,7 @@ function unmuteGuards(): void {
   if (guardTimer) {
     guardTimer.kill();
     guardTimer = null;
-    Chat.toAll(msg.unmutedGuards);
+    broadcastText(recipient => msgFor(recipient).unmutedGuards);
   }
   guardPeaceEndMs = Math.min(guardPeaceEndMs, Date.now());
 }
@@ -130,7 +133,7 @@ function unmutePrisoners(): void {
   if (prisonerTimer) {
     prisonerTimer.kill();
     prisonerTimer = null;
-    Chat.toAll(msg.unmutedPrisoners);
+    broadcastText(recipient => msgFor(recipient).unmutedPrisoners);
     peaceEndMs = Math.min(peaceEndMs, Date.now());
     pub()?.emit("OnPeaceChanged", { active: false, reason: lastReason, seconds: 0 });
   }
@@ -194,12 +197,12 @@ export function peaceOnVoice(slot: number): void {
   const alive = p.pawnIsAlive === true;
   const bypass = bypassMute(slot);
   if (!alive && !bypass) {
-    remind(slot, msg.deadReminder);
+    remind(slot, msgFor(slot).deadReminder);
     mute(slot);
     return;
   }
   if (isMuted(slot)) {
-    remind(slot, msg.muteReminder);
+    remind(slot, msgFor(slot).muteReminder);
     return;
   }
   if (!bypass) return;
@@ -207,8 +210,8 @@ export function peaceOnVoice(slot: number): void {
   // Admins are never muted, so remind them instead.
   if (isPeace()) {
     if (p.teamNum === Team.Guard && Date.now() >= guardPeaceEndMs) return;
-    remind(slot, msg.peaceReminder);
+    remind(slot, msgFor(slot).peaceReminder);
     return;
   }
-  if (!alive) remind(slot, msg.adminDeadReminder);
+  if (!alive) remind(slot, msgFor(slot).adminDeadReminder);
 }

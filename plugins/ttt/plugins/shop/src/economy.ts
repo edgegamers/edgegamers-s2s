@@ -1,3 +1,4 @@
+import {plainPhraseFor as tr} from "../../../packages/contracts/phrases.ts";
 /**
  * Credit income — the port of `RoleAssignCreditor`, `PlayerKillListener`, `TaseRewarder`,
  * `PeriodicRewarder` and `RoundShopClearer`.
@@ -11,7 +12,7 @@
  */
 
 import {Server} from '@s2script/sdk/server';
-import {GameState,MAX_SLOTS,RoleId,cfg,msg,reg,Priority,karmaOf,MAX_KARMA,minimumKarma,pawnOf,game} from './runtime';
+import {GameState,MAX_SLOTS,RoleId,cfg,msg,msgFor,reg,Priority,karmaOf,MAX_KARMA,minimumKarma,pawnOf,game} from './runtime';
 import {n} from './settings';
 import type {DomainBus} from '../../../packages/contracts/ordered.ts';
 import {addBalance,balanceOf,resetShop} from './shop';
@@ -129,7 +130,7 @@ function payExplorationRewards(): void {
     const slot = ranking[i]!;
     // Rank 0 (most movement) gets `max`; the least-moved gets `min`.
     const position = count === 1 ? 1 : (count - i - 1) / (count - 1);
-    addBalance(slot, Math.ceil(min + (max - min) * position), reason);
+    addBalance(slot, Math.ceil(min + (max - min) * position), reason, true, (sign,delta) => msgFor(slot,"CREDITS_GIVEN_REASON",sign,delta,tr(slot,"SHOP_EXPLORATION")));
     travelled[slot] = 0;
   }
 }
@@ -188,15 +189,15 @@ export function installEconomy(bus: DomainBus): void {
       const assistCredits = Math.trunc(
         creditsForKill(reg.roleOf(assister), victimRole) * n("sm_ttt_shop_assist_multiplier"),
       );
-      addBalance(assister, assistCredits, `Assisted on ${reg.nameOf(ev.slot)}`);
+      awardPlayer(assister, assistCredits, "Assisted on", "CREDITS_GIVEN_ASSIST", reg.nameOf(ev.slot));
     } else {
       killerCredits = Math.trunc(killerCredits * n("sm_ttt_shop_solo_kill_multiplier"));
     }
-    addBalance(killer, killerCredits, `Killed ${reg.nameOf(ev.slot)}`);
+    awardPlayer(killer, killerCredits, "Killed", "CREDITS_GIVEN_KILL", reg.nameOf(ev.slot));
 
     // The victim's remaining balance is partly inherited by the killer, as in the C#.
     const victimBalance = balanceOf(ev.slot);
-    if (victimBalance > 0) addBalance(killer, (victimBalance / 2) | 0, "Loot");
+    if (victimBalance > 0) awardReason(killer, (victimBalance / 2) | 0, "Loot", "CREDIT_REASON_LOOT");
 
     clearTrail(ev.slot);
   });
@@ -206,16 +207,16 @@ export function installEconomy(bus: DomainBus): void {
     if (ev.canceled || ev.identifier < 0) return;
     const body = ev.body;
     const victimBalance = balanceOf(body.owner);
-    addBalance(ev.identifier, (victimBalance / 4) | 0, `Identified ${body.ownerName}`);
+    awardPlayer(ev.identifier, (victimBalance / 4) | 0, "Identified", "CREDITS_GIVEN_IDENTIFIED", body.ownerName);
 
     const killer = body.killer;
     if (killer < 0 || !reg.isConnected(killer)) return;
     const goodKill = (reg.roleOf(killer) === RoleId.Traitor) !== (body.ownerRole === RoleId.Traitor);
     if (goodKill) {
-      addBalance(killer, (victimBalance / 4) | 0, "Good Kill");
+      awardReason(killer, (victimBalance / 4) | 0, "Good Kill", "CREDIT_REASON_GOOD_KILL");
     } else {
       const killerBalance = balanceOf(killer);
-      addBalance(killer, -(((killerBalance / 3) | 0) + ((victimBalance / 2) | 0)), "Bad Kill");
+      awardReason(killer, -(((killerBalance / 3) | 0) + ((victimBalance / 2) | 0)), "Bad Kill", "CREDIT_REASON_BAD_KILL");
     }
   }, { ignoreCanceled: true });
 
@@ -226,7 +227,7 @@ export function installEconomy(bus: DomainBus): void {
     // while the pre-hook reports `weapon_taser`, so equality misses the live path.
     if (ev.attacker < 0 || !ev.weapon.includes("taser")) return;
     ev.canceled = true;
-    addBalance(ev.attacker, 30, "Successful Tase");
+    awardReason(ev.attacker, 30, "Successful Tase", "CREDIT_REASON_SUCCESSFUL_TASE");
   }, { priority: Priority.HIGH });
 
   // Wipe balances and per-round state when a round finishes.
@@ -247,4 +248,12 @@ export function installEconomy(bus: DomainBus): void {
 /** Exposed for the Rich round, which needs the server clock without importing `Server` itself. */
 export function now(): number {
   return Server.gameTime;
+}
+
+/** Keep domain reasons stable while resolving the rendered award for its recipient. */
+function awardPlayer(slot:number, amount:number, reason:string, key:string, name:string):void {
+  addBalance(slot,amount,`${reason} ${name}`,true,(sign,delta)=>msgFor(slot,key,sign,delta,name));
+}
+function awardReason(slot:number, amount:number, reason:string, key:string):void {
+  addBalance(slot,amount,reason,true,(sign,delta)=>msgFor(slot,"CREDITS_GIVEN_REASON",sign,delta,tr(slot,key)));
 }

@@ -1,3 +1,4 @@
+import { plainPhraseFor as tr } from "../../../../packages/contracts/phrases.ts";
 import { Admin, ADMFLAG } from '@s2script/sdk/admin';
 import { Bans } from '@s2script/sdk/bans';
 import { Clients } from '@s2script/sdk/clients';
@@ -34,50 +35,50 @@ function matchesShopStamp(actor:UiActor,stamp:UiShopStamp):boolean {
 function ruleReport(actor: UiActor, id: number, binding: number, action: UiReportAction, slays: number): UiRulingReply {
   const slot = actor.slot;
   const report = binding === reportsBinding() ? getReport(id) : null;
-  if (!report || report.verdict !== 0 || binding !== reportsBinding()) return { status: 'refused', title: 'Cannot rule', message: 'This report was already ruled', tone: 'warn' };
+  if (!report || report.verdict !== 0 || binding !== reportsBinding()) return { status: 'refused', title: tr(slot, "UI_CANNOT_RULE"), message: tr(slot, "UI_ALREADY_RULED"), tone: 'warn' };
   if (action === 'ban' && report.accusedSteamId === '') {
-    return { status: 'refused', title: 'Cannot ban', message: 'No SteamID was recorded', tone: 'warn' };
+    return { status: 'refused', title: tr(slot, "UI_CANNOT_BAN"), message: tr(slot, "UI_NO_STEAM_ID"), tone: 'warn' };
   }
-  const admin = Player.fromSlot(slot)?.playerName ?? `slot ${slot}`;
+  const admin = Player.fromSlot(slot)?.playerName ?? tr(slot,"LABEL_SLOT",slot);
   if (!matchesUiActor(actor) || Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) !== true || !matchesUiActor(actor)) {
-    return { status: 'refused', title: 'Cannot rule', message: 'Your access is no longer available', tone: 'warn' };
+    return { status: 'refused', title: tr(slot, "UI_CANNOT_RULE"), message: tr(slot, "UI_ACCESS_UNAVAILABLE"), tone: 'warn' };
   }
   let decision:ReturnType<typeof commitReportRuling>;
   try { decision=commitReportRuling(actor,id,binding,action,slays); }
-  catch(error){console.log(`[ttt/rdm] #${id} verdict outcome requires operator review: ${String(error)}`);return {status:'unknown',title:'Check report outcome',message:'Verify the report in the server console',tone:'warn'};}
-  if (!decision) return { status: 'refused', title: 'Cannot rule', message: 'This report was already ruled', tone: 'warn' };
+  catch(error){console.log(`[ttt/rdm] #${id} verdict outcome requires operator review: ${String(error)}`);return {status:'unknown',title:tr(slot, "UI_CHECK_REPORT"),message:tr(slot, "UI_VERIFY_REPORT"),tone:'warn'};}
+  if (!decision) return { status: 'refused', title: tr(slot, "UI_CANNOT_RULE"), message: tr(slot, "UI_ALREADY_RULED"), tone: 'warn' };
   const {report:ruled,priorGuilty:priors,totalOwed:total}=decision.ruling;
-  if (!decision.isCurrent()) return {status:'unknown',title:'Check report outcome',message:'Reports owner changed after the verdict',tone:'warn'};
+  if (!decision.isCurrent()) return {status:'unknown',title:tr(slot, "UI_CHECK_REPORT"),message:tr(slot, "UI_REPORTS_CHANGED"),tone:'warn'};
   if (action === 'ban') {
     // Preserve the old permanent ban policy. SDK cache visibility is not disk acknowledgement.
     try {
-      Bans.add(ruled.accusedSteamId, 0, `RDM (banned by ${admin})`);
+      Bans.add(ruled.accusedSteamId, 0, tr(-1,"RDM_BAN_REASON",admin));
       if (Bans.get(ruled.accusedSteamId)?.until !== 0) throw new Error('ban cache did not accept entry');
       if(!decision.isCurrent())throw Error("Reports owner changed during ban");
       decision.pardon();
       for (const target of reg.activeSlots()) {
         if (reg.steamIdOf(target) !== ruled.accusedSteamId) continue;
         const client = Clients.fromSlot(target);
-        if (client?.isValid() && client.steamId === ruled.accusedSteamId) client.kickWithReason(`Banned for RDM by ${admin}`);
+        if (client?.isValid() && client.steamId === ruled.accusedSteamId) client.kickWithReason(tr(target,"RDM_DISCONNECT",admin));
         break;
       }
       console.log(`[ttt/rdm] ${admin} BANNED ${ruled.accusedName} (${ruled.accusedSteamId})`);
-      tellAll(`[ttt] ${ruled.accusedName} was banned for RDM.`);
-      return { status: 'success', title: 'Banned', message: ruled.accusedName, tone: 'bad' };
+      tellAll(recipient => msgFor(recipient,"RDM_BANNED_CHAT",ruled.accusedName));
+      return { status: 'success', title: tr(slot, "UI_BANNED"), message: ruled.accusedName, tone: 'bad' };
     } catch (error) {
       console.log(`[ttt/rdm] #${id} ban outcome requires operator review: ${String(error)}`);
-      return { status: 'unknown', title: 'Check ban outcome', message: 'Report ruled; verify the ban in the server console', tone: 'warn' };
+      return { status: 'unknown', title: tr(slot, "UI_CHECK_BAN"), message: tr(slot, "UI_VERIFY_BAN"), tone: 'warn' };
     }
   }
   if (action === 'convict') {
     console.log(`[ttt/rdm] ${admin} queued ${ruled.slays} slay(s) for ${ruled.accusedName} (${total} owed, offence #${priors})`);
-    tellAll(`[ttt] ${ruled.accusedName} was found guilty of RDM — ${total} slay(s) queued.`);
+    tellAll(recipient => msgFor(recipient,"RDM_GUILTY_CHAT",ruled.accusedName,total));
   }
   console.log(`[ttt/rdm] rdm #${id}: ${ruled.reporterName} vs ${ruled.accusedName} -> ` +
     `${action === 'convict' ? `guilty (${ruled.slays} slays)` : 'innocent'} by ${admin}`);
   return {
-    status: 'success', title: action === 'convict' ? 'Guilty' : 'Not guilty',
-    message: action === 'convict' ? `${ruled.accusedName} - ${ruled.slays} slay(s)` : ruled.accusedName,
+    status: 'success', title: action === 'convict' ? tr(slot, "UI_GUILTY") : tr(slot, "UI_NOT_GUILTY"),
+    message: action === 'convict' ? tr(slot,"UI_VERDICT_SLAYS",ruled.accusedName,ruled.slays) : ruled.accusedName,
     tone: action === 'convict' ? 'bad' : 'good',
   };
 }
@@ -95,25 +96,25 @@ export const uiModels = createUiModels({
       const refusal = gate !== PurchaseResult.Success ? gate : item.price > balance ? PurchaseResult.InsufficientFunds : PurchaseResult.Success;
       return {
         itemId: item.id, name: msgFor(slot, item.nameKey), description: msgFor(slot, item.descriptionKey),
-        price: item.price, limit: item.limit, refusal: refusal === PurchaseResult.Success ? null : resultMessage(refusal),
+        price: item.price, limit: item.limit, refusal: refusal === PurchaseResult.Success ? null : resultMessage(refusal, slot),
       };
     });
     return { balance, rows };
   },
   buy: (slot, id) => {
     const item = itemById(id);
-    if (!item) return { status: 'refused', title: 'Cannot buy', message: resultMessage(PurchaseResult.NotFound), tone: 'warn' };
+    if (!item) return { status: 'refused', title: tr(slot, "UI_CANNOT_BUY"), message: resultMessage(PurchaseResult.NotFound, slot), tone: 'warn' };
     const gate = canPurchase(slot, item);
     const refusal = gate !== PurchaseResult.Success ? gate : item.price > balanceOf(slot) ? PurchaseResult.InsufficientFunds : PurchaseResult.Success;
-    if (refusal !== PurchaseResult.Success) return { status: 'refused', title: 'Cannot buy', message: resultMessage(refusal), tone: 'warn' };
+    if (refusal !== PurchaseResult.Success) return { status: 'refused', title: tr(slot, "UI_CANNOT_BUY"), message: resultMessage(refusal, slot), tone: 'warn' };
     const result = tryPurchase(slot, item);
     const ok = result === PurchaseResult.Success;
     const name = msgFor(slot, item.nameKey);
-    const desc = ok ? msg(item.descKey) : '';
+    const desc = ok ? msgFor(slot,item.descKey) : '';
     const detail = desc !== '' && desc !== item.descKey ? desc : '';
     return {
-      status: ok ? 'success' : 'refused', title: ok ? 'Purchased' : 'Failed',
-      message: ok ? detail === '' ? name : `${name} - ${detail}` : `${name} - ${resultMessage(result)}`,
+      status: ok ? 'success' : 'refused', title: ok ? tr(slot, "UI_PURCHASED") : tr(slot, "UI_FAILED"),
+      message: ok ? detail === '' ? name : tr(slot,"UI_NAME_DETAIL",name,detail) : tr(slot,"UI_NAME_DETAIL",name,resultMessage(result,slot)),
       tone: ok ? 'good' : 'bad',
     };
   },
@@ -125,7 +126,7 @@ export const uiModels = createUiModels({
     }))};
   },
   rule: ruleReport,
-  logPage: (at) => ({ rows: makeLogRows(at), round: logRoundAt(at), count: Math.max(1, logCount()) }),
+  logPage: (at, slot = -1) => ({ rows: makeLogRows(at, slot), round: logRoundAt(at), count: Math.max(1, logCount()) }),
   actors: () => reg.activeSlots().flatMap((slot) => {
     const actor = captureUiActor(slot);
     return actor === null ? [] : [actor];
@@ -139,4 +140,4 @@ export const uiModels = createUiModels({
     return target === null ? [] : [{ target, name: reg.nameOf(other) }];
   }),
   beginReport,
-});
+}, tr);

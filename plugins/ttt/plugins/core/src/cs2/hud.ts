@@ -31,7 +31,7 @@ export const HUD_FONT_SMALL = "fontSize-s";
 
 /** Wrap `body` in a coloured font span at `size`. */
 export function hudLine(body: string, color: string, size = HUD_FONT_MID): string {
-  return `<font class='${size}' color='${color}'>${body}</font>`;
+  return `<font class='${size}' color='${color}'>${body.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</font>`;
 }
 
 /** Set (or clear, with "") what `slot` sees in the centre of the screen. */

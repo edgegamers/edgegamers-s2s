@@ -7,6 +7,7 @@ import { createContext, runInContext } from 'node:vm';
 // Keep the lifecycle, role deal, registry, actors, teams, queue and bus real. Only the native
 // world, configured settings and unrelated owner boundaries are substituted.
 const boundaries: Record<string, string> = {
+ "../../../../packages/contracts/phrases.ts":"export const plainPhraseFor=(slot,key)=>slot===1&&key===\"Draw\"?\"Unentschieden\":key;",
   '@s2script/sdk/timers': `export const delay = milliseconds => new Promise(resolve =>
     fixture.timers.push({milliseconds, resolve, fired: false}));`,
   '@s2script/sdk/server': `export const Server = {gameTime: 0,
@@ -30,7 +31,7 @@ const boundaries: Record<string, string> = {
     roleWeapons: [[], ['weapon_glock'], ['weapon_deagle'], ['weapon_taser'], []]};
     export const roundDuration = () => 120;`,
   '../core/settings': 'export const refreshSettings = () => {};',
-  '../core/msgs': 'export const msg = key => key, msgFor = (slot, key) => key;',
+  '../core/msgs': 'export const msg = key => key, msgFor = (slot, key, ...args) => [key,...args].join("|");',
   '../core/reports-provider': 'export const owedBy = () => 0;',
   './logger': 'export const clearLog = () => {}, printLogs = () => {};',
   '../cs2/bodies': 'export const clearBodies = () => {}, bodyOfPlayer = () => null;',
@@ -50,7 +51,7 @@ const boundaries: Record<string, string> = {
     export const respawn = slot => {pawnOf(slot).lifeState = 0; pawnOf(slot).health = 100;};
     export const restoreFullHealth = slot => {pawnOf(slot).health = 100; pawnOf(slot).armor = 0;};
     export const setPawnIsAlive = (slot, alive) => {pawnOf(slot).lifeState = alive ? 0 : 2;};
-    export const tell = () => {}, tellAll = () => {};`,
+    export const tell = () => {}, tellAll = text => {if(typeof text=== "function")for(const slot of [0,1])fixture.messages.push([slot,text(slot)]);};`,
   '../cs2/inventory': `export const resolveWeapon = weapon => weapon, slotOf = weapon => weapon;
     export const clearSlot = slot => {fixture.players[slot].weapons.length = 0;};
     export const give = (slot, weapon) => {
@@ -79,7 +80,7 @@ const bundle = await build({
 
 function lifecycle() {
   const state = {
-    phase: 'POST', frame: 0, clock: 0, terminations: 0,
+    phase: 'POST', frame: 0, clock: 0, terminations: 0, messages: [] as [number,string][],
     cvars: new Map<string, string>(),
     timers: [] as {milliseconds: number; resolve(): void; fired: boolean}[],
     effects: [] as {kind: string; slot: number; value: unknown; phase: string; frame: number}[],
@@ -226,4 +227,10 @@ test('an InProgress listener can replace the default deadline without losing rol
   await f.wake(5000);
   f.pre();
   assert.equal(f.api.game.state, 3);
+});
+
+test('draw announcements translate their reason for each round participant',()=>{
+ const f=lifecycle();f.api.game.state=2;f.api.endGame(0,'Draw');
+ assert.ok(f.state.messages.some(([slot,text])=>slot===1&&text.includes('Unentschieden')));
+ assert.ok(f.state.messages.some(([slot,text])=>slot===0&&text.endsWith('|Draw')));
 });

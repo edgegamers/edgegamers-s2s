@@ -1,3 +1,4 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
 /**
  * The jihad C4 (Jailbreak.Rebel C4Behavior). A random prisoner gets a C4 each round; holding it
  * out and pressing E arms it: the bomber becomes a rebel, shouts, and `c4_delay` seconds later
@@ -21,7 +22,7 @@ import { bus, refOf } from "./bus";
 import { currentRound } from "./round";
 import { markRebel } from "./rebels";
 import { describe, log } from "./logs";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 
 const SOUND_ARM = "jb.jihad";
 const SOUND_EXPLODE = "jb.jihadExplosion";
@@ -93,9 +94,9 @@ export function giveC4(p: Player): boolean {
   if (!w) return false;
   trackBomb(w.ref);
   const c = Clients.fromSlot(p.slot);
-  c?.chat(msg.c4Received());
-  c?.chat(msg.c4Usage());
-  log(`${describe(p.slot)} received a jihad C4.`);
+  c?.chat(msgFor(c?.slot).c4Received());
+  c?.chat(msgFor(c?.slot).c4Usage());
+  log(...logEntry("JB_LOG_RECEIVED_A_JIHAD_C", [String(describe(p.slot))]));
   return true;
 }
 
@@ -133,7 +134,7 @@ function startDetonation(bomber: Player, index: number): void {
   detonating.add(index);
   markRebel(bomber.slot, 0, "c4");
   bomber.pawn?.emitSound(SOUND_ARM);
-  log(`${describe(bomber.slot)} armed a jihad C4.`);
+  log(...logEntry("JB_LOG_ARMED_A_JIHAD_C", [String(describe(bomber.slot))]));
 
   // The kill-feed icon is decided once per detonation (gang perks patch it).
   let icon = DEFAULT_BOMB_ICON;
@@ -180,7 +181,7 @@ function detonate(userId: number, index: number, round: number, icon: string): v
 
   bomber.pawn?.emitSound(SOUND_EXPLODE);
   spawnExplosion(origin);
-  log(`${describe(bomber.slot)} detonated a jihad C4, killing ${killed} guard${killed === 1 ? "" : "s"}.`);
+  log(...logEntry("JB_LOG_DETONATED_A_JIHAD_C_KILLING_GUARD", [String(describe(bomber.slot)), String(killed), String(killed === 1 ? "" : "s")], [2]));
   const bomberRef = refOf(bomber);
   // Dying drops the C4; bomb_dropped (below) removes it while it is still marked detonating.
   bomber.pawn?.slay();

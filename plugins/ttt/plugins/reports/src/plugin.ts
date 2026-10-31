@@ -1,4 +1,5 @@
 import {publish,use} from '@s2script/sdk/plugin';
+import {loadPhrases} from '../../../packages/contracts/phrases.ts';
 import type {ReportsPublicationMethods,ReportActor,ReportRuling,ServedSlay} from '../api';
 import {createFeatureAdapter,type FeatureAdapter} from '../../../packages/contracts/ordered';
 import {bindCore,closeCore,held,current,valid,players} from './runtime';
@@ -40,7 +41,7 @@ function serveRoundStart():ServedSlay[]{
   return served.map(s=>({actor:{...bySlot.get(s.slot)!},steamId:s.steamId,remaining:s.remaining}));
  }finally{serving=false;}
 }
-export function OnPluginStart():void{
+export function OnPluginStart():void{loadPhrases();
  const core=use('@edgegamers/ttt-core');bindCore(core);
  const currentAdapter=createFeatureAdapter('reports',{emit:e=>core.dispatchDomain(e),has:k=>core.hasDomain(k),log:m=>console.log(m)});adapter=currentAdapter;flow.installFlow(currentAdapter.bus);
  const methods:ReportsPublicationMethods={getHandlers:()=>currentAdapter.getHandlers(),handleDomain:call=>currentAdapter.handleDomain(call),fileReport:flow.fileManual,captureSay:flow.captureSay,answerPending:flow.answerPending,beginReport:flow.beginReport,tick:flow.tick,

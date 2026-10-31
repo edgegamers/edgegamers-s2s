@@ -7,7 +7,7 @@ import { getRound } from "@edgegamers/jailbreak-core";
 import { activeBan, remind } from "./ctbans";
 import { settings } from "./config";
 import { broadcast, ctEmpty, humans, isRealClient } from "./env";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 import { capOfSlot, entry, rankOfSlot } from "./players";
 import { parseJoinTeam } from "./queue";
 import { clearQueue, fillGuards, leaveQueue, resetRoundRestarts, trimGuards } from "./queueing";
@@ -22,7 +22,7 @@ export function onJoinTeam(slot: number, argString: string): HookResultValue {
   if (req === "ct" && p.steamId === "0") {
     // Unverified: no ban/priority can be checked, so never CT.
     p.changeTeam(Team.Prisoner);
-    Chat.toSlot(slot, msg.guardUnverified());
+    Chat.toSlot(slot, msgFor(slot).guardUnverified());
     return HookResult.Stop;
   }
   if (req === "auto") {
@@ -79,10 +79,10 @@ export function roundStart(): void {
     const prio = Math.min(e.priority ?? 0, capOfSlot(p.slot));
     if (prio >= s.minPriority) continue;
     p.changeTeam(Team.Prisoner);
-    Chat.toSlot(p.slot, msg.guardInsufficient(prio, s.minPriority));
+    Chat.toSlot(p.slot, msgFor(p.slot).guardInsufficient(prio, s.minPriority));
   }
   const add = guardsToAdd(humans(Team.Prisoner).length, humans(Team.Guard).length, s.ratio);
-  if (add > 0 && !fillGuards(add)) broadcast(msg.queueEmptyBroadcast());
+  if (add > 0 && !fillGuards(add)) broadcast(recipient => msgFor(recipient).queueEmptyBroadcast());
 }
 
 /** Core OnRoundEnd: bans always; ratio trim unless this round was a special day. */

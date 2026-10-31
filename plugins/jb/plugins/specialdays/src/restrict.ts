@@ -65,7 +65,7 @@ export class ZoneRestriction {
   constructor(
     private readonly area: Area,
     teamNum: number,
-    private readonly reminder: string,
+    private readonly reminder: string | ((slot:number)=>string),
   ) {
     for (const p of onTeam(teamNum)) this.tracked.set(p.userId, null);
   }

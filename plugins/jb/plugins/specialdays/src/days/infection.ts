@@ -1,3 +1,4 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /**
  * Infection: CTs are zombies; a prisoner who dies respawns as a zombie where the nearest player
  * stands (InfectionDay). Swapped prisoners go back to T at round end.
@@ -6,7 +7,7 @@ import { Player } from "@s2script/cs2";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings, withRespawns } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import { KNIVES, PISTOLS, UTILITY } from "../weapons.ts";
 import { nearestIndex } from "../geometry.ts";
 import type { Vec3 } from "../geometry.ts";
@@ -51,12 +52,12 @@ export function infectionDay(): SpecialDay {
     name,
     description: DESCRIPTIONS.infection,
     // AbstractArmoryRestrictedDay(restrictedTeam: CT)
-    restrict: { kind: "armory", teamNum: Team.Guard, reminder: msg.stayInArmory(name) },
+    restrict: { kind: "armory", teamNum: Team.Guard, reminder: (slot:number)=>msgFor(slot).stayInArmory(name) },
     settings,
     setup(ctx) {
       ctx.at(15, () => {
         ctx.beginsIn(15);
-        toAll(msg.infDamageWarning(5));
+        toAll(forRecipients((recipient,value0) => msgFor(recipient).infDamageWarning(value0), 5));
       });
       ctx.at(20, () => onTeam(Team.Prisoner).forEach((t) => setTakesDamage(t, true)));
       ctx.at(30, () => ctx.execute());
@@ -79,12 +80,12 @@ export function infectionDay(): SpecialDay {
         pos,
       );
       const target = i >= 0 ? others[i] : null;
-      if (target && target.teamNum === Team.Prisoner) toSlot(target.slot, msg.infInfectedWarning(nameOf(victim)));
+      if (target && target.teamNum === Team.Prisoner) toSlot(target.slot, msgFor(target.slot).infInfectedWarning(nameOf(victim)));
       const spot = (target && originOf(target)) ?? pos;
 
       swapped.add(victim.userId);
       const attacker = Player.fromSlot(ev.getPlayerSlot("attacker"));
-      toSlot(victim.slot, msg.infYouWereInfected(attacker && attacker.slot !== victim.slot ? nameOf(attacker) : null));
+      toSlot(victim.slot, msgFor(victim.slot).infYouWereInfected(attacker && attacker.slot !== victim.slot ? nameOf(attacker) : null));
 
       const userId = victim.userId;
       ctx.after(500, () => {

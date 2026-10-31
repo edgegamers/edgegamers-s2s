@@ -252,10 +252,10 @@ export function requestReplay(track: number, style: number): number {
   return b.slot;
 }
 
-export function describeReplay(track: number, style: number): string | null {
+/** Snapshot the replay metadata; presentation belongs to the requesting viewer. */
+export function replayDetails(track: number, style: number): { name: string; time: string } | null {
   const r = store.get(skey(track, style));
-  if (!r) return null;
-  return `${trackName(track)} ${styleById(style).name}: ${formatTicks(r.header.runTicks, r.header.tickInterval)} by ${r.header.name}`;
+  return r ? { name: r.header.name, time: formatTicks(r.header.runTicks, r.header.tickInterval) } : null;
 }
 
 /** Recorded buttons of the frame a bot is showing (for spectator HUDs). */

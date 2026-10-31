@@ -1,3 +1,5 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';
 /**
  * Shot for Shot / Mag for Mag (C# `BulletForBullet`). The prisoner picks a pistol; after 5s both
  * get it empty and a random player gets the first shot (one bullet, or a full magazine for mag
@@ -8,7 +10,7 @@ import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
 import type { LRResult, LRType } from "../../api";
 import { B4B_PISTOLS, b4bHealthDecision, GUN_DEFS, isKnifeDef, PISTOL_MAG } from "../logic";
-import { guardName, msg, prisonerName } from "../messages";
+import { guardName, msgFor, prisonerName } from "../messages";
 import { settings } from "../settings";
 import type { Participant } from "../players";
 import { showMenu } from "../menus";
@@ -39,9 +41,9 @@ export class BulletForBullet extends TeleportingRequest {
   }
 
   configure(done: () => void, cancel: () => void): void {
-    const menu = new Menu(msg.choosePistol);
+    const menu = new Menu(msgFor(this.prisoner.slot).choosePistol);
     menu.style = MenuStyle.Center;
-    for (const p of B4B_PISTOLS) menu.addItem(p.weapon, p.name);
+    for (const p of B4B_PISTOLS) menu.addItem(p.weapon,labelFor(this.prisoner.slot,p.name));
     menu.onSelect((e) => {
       this.weapon = e.info;
       done();
@@ -83,7 +85,7 @@ export class BulletForBullet extends TeleportingRequest {
       const shooter = Math.random() < 0.5 ? this.prisoner : this.guard;
       this.whosShot = shooter.slot;
       const name = shooter === this.prisoner ? prisonerName(shooter.name) : guardName(shooter.name);
-      this.tell(msg.goesFirst(name));
+      this.tell(forRecipients((recipient,value0) => msgFor(recipient).goesFirst(value0), name));
       this.gun(shooter)?.setAmmo(this.magSize, 0);
       this.state = "active";
     });
@@ -99,7 +101,7 @@ export class BulletForBullet extends TeleportingRequest {
       if (this.state !== "active") return;
       const d = b4bHealthDecision(this.guard.health, this.prisoner.health, this.whosShot === this.prisoner.slot);
       const winner = d.result === "guard_win" ? guardName(this.guard.name) : prisonerName(this.prisoner.name);
-      this.tell(d.reason === "health" ? msg.winByHealth(winner) : msg.winByReason(winner, d.reason));
+      this.tell(forRecipients((recipient,value0,value1,value2) => d.reason === "health" ? msgFor(recipient).winByHealth(value0) : msgFor(recipient).winByReason(value1, value2), winner,winner,d.reason));
       if (d.result === "guard_win") this.prisoner.slay();
       else this.guard.slay();
     });
@@ -110,7 +112,7 @@ export class BulletForBullet extends TeleportingRequest {
     if (!this.isParticipant(slot)) return;
     const shooter = slot === this.prisoner.slot ? this.prisoner : this.guard;
     if (slot !== this.whosShot) {
-      this.tell(msg.cheated(shooter.name));
+      this.tell(forRecipients((recipient,value0) => msgFor(recipient).cheated(value0), shooter.name));
       shooter.slay();
       return;
     }

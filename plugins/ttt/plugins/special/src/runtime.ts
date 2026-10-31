@@ -20,8 +20,12 @@ export const game = {
 };
 export function n(name:string):number { return settingsNumber(name); }
 export function msg(key:string,...args:(number|string)[]):string { return phraseFor(-1,key,...args); }
+export function msgFor(slot:number,key:string,...args:(number|string)[]):string { return phraseFor(slot,key,...args); }
 export function tell(slot:number,message:string):void { Chat.toSlot(slot,message); }
-export function tellAll(message:string):void { Chat.toAll(message); }
+export function tellAll(message:string|((slot:number)=>string)):void {
+  if(typeof message==='string'){Chat.toAll(message);return;}
+  for(const slot of [...current().activeSlots()])Chat.toSlot(slot,message(slot));
+}
 export function setRoundDeadline(seconds:number):void { current().setRoundDeadline(seconds); }
 export function balanceOf(slot:number):number { return current().getBalance(slot); }
 export function addBalance(slot:number,amount:number,reason:string,print=true):void { current().addBalance(slot,amount,reason,print); }

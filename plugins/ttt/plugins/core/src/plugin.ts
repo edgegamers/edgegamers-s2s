@@ -1,4 +1,6 @@
+import {tellAllWith} from "./cs2/pawn";
 import { watchDecluttr, decluttrCall } from '../../../../decluttr/src/owner.ts';
+import { plainPhraseFor as tr, phraseFor } from "../../../packages/contracts/phrases.ts";
 import {bindBodySettingsProvider} from './core/body-settings';
 /**
  * TTT (Trouble in Terrorist Town) — an s2script port of https://github.com/edgegamers/TTT.
@@ -331,7 +333,7 @@ export function OnPluginStart(): void {
     "purchase",
     (ev) => {
       const item = itemById(ev.itemId);
-      if (item !== undefined) logPurchase(ev.slot, msg(item.nameKey));
+      if (item !== undefined) logPurchase(ev.slot, item.nameKey);
     },
     { priority: Priority.MONITOR, ignoreCanceled: true },
   );
@@ -703,14 +705,15 @@ function serveQueuedSlays(): void {
     // sanctions for a round that is already over.
     if (game.state !== GameState.InProgress && game.state !== GameState.Countdown) break;
     if(!uiModels.matchesUiActor(s.actor))continue;
-    tell(s.actor.slot, `[ttt] Slain for RDM.${s.remaining > 0 ? ` ${s.remaining} slay(s) remaining.` : ""}`);
+    const servedName=reg.nameOf(s.actor.slot);
+    tell(s.actor.slot, phraseFor(s.actor.slot, "CHAT_SLAIN_FOR_RDM", s.remaining > 0 ? tr(s.actor.slot,"SANCTION_REMAINING",s.remaining) : ""));
     // Say WHY they had no role this round. Being killed at the buzzer with no explanation reads as
     // a bug, and the exclusion from role selection is the half nobody can see.
-    tell(s.actor.slot, msg("RDM_SANCTION_BENCHED"));
+    tell(s.actor.slot, msgFor(s.actor.slot,"RDM_SANCTION_BENCHED"));
     // Announced to EVERYONE, not just the person served. A player dropping dead at the round start
     // with no explanation looks like a bug to the other nine people watching it happen, and the
     // deterrent only works if the server can see it land.
-    tellAll(msg("RDM_SANCTION_SERVED", reg.nameOf(s.actor.slot)));
+    tellAllWith((recipient,name) => msgFor(recipient,"RDM_SANCTION_SERVED",name),servedName);
     // The death illusion must never cover a sanction: TTT normally keeps a dead player reading as
     // alive until their body is found, which would leave a slain player showing as alive on the
     // scoreboard for the whole round. This is a punishment, not a secret.

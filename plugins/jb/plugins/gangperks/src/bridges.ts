@@ -23,7 +23,7 @@ import {
   unlockedMask,
 } from "./enum-perk.ts";
 import { higherPlayer } from "./records.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 import { guard, readyGangs } from "./state.ts";
 
 const rand = (): number => Math.random();
@@ -96,10 +96,9 @@ export function onLRColor(req: LRColorRequest): { result: typeof HookResult.Chan
     const now = Date.now();
     if ((lrAnnounced.get(key) ?? 0) + LR_ANNOUNCE_DEDUPE_MS < now) {
       lrAnnounced.set(key, now);
-      const line = msg.lrColor(LR_COLOR, opt);
       for (const p of [req.prisoner, req.guard]) {
         const pl = Player.fromUserId(p.userId);
-        if (pl) Chat.toSlot(pl.slot, line);
+        if (pl) Chat.toSlot(pl.slot, msgFor(pl.slot).lrColor(LR_COLOR,opt));
       }
     }
     if (opt.value === req.color) return CONTINUE;
@@ -152,7 +151,7 @@ export function onSpecialDayStart(_ev: SDStartEvent): void {
         if (c && c !== "rainbow") setPawnColor(p.pawn, c);
         sdTinted.set(p.userId, false);
       }
-      Chat.toSlot(p.slot, msg.sdColor(SD_COLOR, opt));
+      Chat.toSlot(p.slot, msgFor(p.slot).sdColor(SD_COLOR, opt));
     }
   });
 }

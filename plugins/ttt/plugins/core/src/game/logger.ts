@@ -1,3 +1,4 @@
+import { plainPhraseFor as tr } from "../../../../packages/contracts/phrases.ts";
 /**
  * The round action log — the port of `IActionLogger` / `SimpleLogger` / the `IAction` classes.
  *
@@ -155,7 +156,7 @@ export function logDeath(victim: number, killer: number, weapon: string): void {
     actorRole: killer >= 0 ? kRole : vRole,
     other: killer >= 0 ? label(victim) : "",
     otherRole: killer >= 0 ? vRole : RoleId.None,
-    detail: weapon === "" ? "" : `using ${weapon}`,
+    detail: weapon,
     amount: 0,
     bad: killer >= 0 && sameTeam(kRole, vRole),
   });
@@ -244,22 +245,22 @@ function stamp(at: number): string {
 }
 
 /** Render one entry to its log line. */
-function render(e: Entry): string {
-  const bad = e.bad ? "[BAD] " : "";
+function render(e: Entry, slot = -1): string {
+  const bad = e.bad ? tr(slot,"LOG_BAD") : "";
   const a = e.actor + tag(e.actorRole);
   switch (e.kind) {
     case Kind.Death:
       return e.other === ""
-        ? `${stamp(e.at)} ${bad}${a} died ${e.detail}`
-        : `${stamp(e.at)} ${bad}${a} killed ${e.other}${tag(e.otherRole)} ${e.detail}`;
+        ? tr(slot,"LOG_DEATH",stamp(e.at), bad, a, e.detail ? tr(slot,"LOG_USING",e.detail) : "")
+        : tr(slot,"LOG_KILL",stamp(e.at), bad, a, e.other + tag(e.otherRole), e.detail ? tr(slot,"LOG_USING",e.detail) : "");
     case Kind.Damage:
-      return `${stamp(e.at)} ${bad}${a} damaged ${e.other}${tag(e.otherRole)} for ${e.amount} damage with ${e.detail}`;
+      return tr(slot,"LOG_DAMAGE",stamp(e.at), bad, a, e.other + tag(e.otherRole), e.amount, e.detail);
     case Kind.Identify:
-      return `${stamp(e.at)} ${a} identified the body of ${e.other}${tag(e.otherRole)}`;
+      return tr(slot,"LOG_IDENTIFY",stamp(e.at), a, e.other + tag(e.otherRole));
     case Kind.RoleAssigned:
-      return `${stamp(e.at)} ${a} was assigned ${e.detail}`;
+      return tr(slot,"LOG_ROLE",stamp(e.at), a, tr(slot,e.actorRole===1?"ROLE_INNOCENT":e.actorRole===2?"ROLE_TRAITOR":e.actorRole===3?"ROLE_DETECTIVE":e.actorRole===4?"ROLE_SPECTATOR":"ROLE_NONE"));
     default:
-      return `${stamp(e.at)} ${a} purchased ${e.detail}`;
+      return tr(slot,"LOG_PURCHASE",stamp(e.at), a, tr(slot,e.detail));
   }
 }
 
@@ -277,15 +278,15 @@ function toneOf(e: Entry): LogRow["tone"] {
 }
 
 /** The log at browse index `at` (0 = most recent) as toned rows, for the Panorama sheet. */
-export function makeLogRows(at = 0): LogRow[] {
-  return rowsForEntries(logAt(at).entries);
+export function makeLogRows(at = 0, slot = -1): LogRow[] {
+  return rowsForEntries(logAt(at).entries, slot);
 }
 
-function rowsForEntries(src: readonly Entry[]): LogRow[] {
+function rowsForEntries(src: readonly Entry[], slot = -1): LogRow[] {
   const out: LogRow[] = [];
   for (let i = 0; i < src.length; i++) {
     const e = src[i]!;
-    out.push({ a: render(e), tone: toneOf(e) });
+    out.push({ a: render(e, slot), tone: toneOf(e) });
   }
   return out;
 }
@@ -307,10 +308,10 @@ function isLogAdmin(slot: number): boolean {
 }
 
 /** Build the full log as lines (header + entries + footer). */
-export function makeLogs(): string[] {
-  const out: string[] = [msg("GAME_LOGS_HEADER")];
-  for (let i = 0; i < entries.length; i++) out.push(render(entries[i]!));
-  out.push(msg("GAME_LOGS_FOOTER"));
+export function makeLogs(slot = -1): string[] {
+  const out: string[] = [tr(slot,"GAME_LOGS_HEADER")];
+  for (let i = 0; i < entries.length; i++) out.push(render(entries[i]!, slot));
+  out.push(tr(slot,"GAME_LOGS_FOOTER"));
   return out;
 }
 
@@ -327,7 +328,7 @@ export function printLogs(): void {
   // Preserve the original projection point across admin/UI callbacks, without
   // rendering a second set of strings for bots or clients who cannot open it.
   const rowEntries = logAt(0).entries.map(entry => ({ ...entry }));
-  let rows: LogRow[] | undefined;
+
   const active = reg.activeSlots();
   const ui = getTttHud();
   for (let i = 0; i < active.length; i++) {
@@ -339,10 +340,11 @@ export function printLogs(): void {
     // available to this plugin at a time, so a player already reading something else keeps it and
     // gets the console dump instead of having it yanked away at the round end.
     if (ui !== null && !ui.isShopOpen(slot) && !ui.isRdmOpen(slot)) {
-      rows ??= rowsForEntries(rowEntries);
+      const rows = rowsForEntries(rowEntries, slot);
       if (ui.openLogs(slot, rows)) continue;
     }
-    for (let j = 0; j < lines.length; j++) client.print(lines[j]!);
+    const localized = [tr(slot,"GAME_LOGS_HEADER"), ...rowEntries.map(entry => render(entry,slot)), tr(slot,"GAME_LOGS_FOOTER")];
+    for (const line of localized) client.print(line);
   }
   for (let j = 0; j < lines.length; j++) console.log(lines[j]!);
 }
@@ -356,13 +358,13 @@ export function printLogs(): void {
  * for anyone without the HUD.
  */
 export function printLogsTo(slot: number): void {
-  const lines = makeLogs();
+  const lines = makeLogs(slot);
   const client = slot < 0 ? null : Clients.fromSlot(slot);
   if (client === null) {
     for (let j = 0; j < lines.length; j++) console.log(lines[j]!);
     return;
   }
-  if (getTttHud()?.openLogs(slot, makeLogRows()) === true) return;
+  if (getTttHud()?.openLogs(slot, makeLogRows(0, slot)) === true) return;
   for (let j = 0; j < lines.length; j++) client.print(lines[j]!);
 }
 

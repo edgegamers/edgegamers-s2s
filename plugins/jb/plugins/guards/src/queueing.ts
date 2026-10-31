@@ -5,7 +5,7 @@ import { Team } from "@edgegamers/jailbreak-shared";
 import { activeBan } from "./ctbans";
 import { settings } from "./config";
 import { playerBySteam, pub, toSteam } from "./env";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 import { effectiveOf } from "./players";
 import { GuardQueue, type Notice } from "./queue";
 
@@ -13,10 +13,10 @@ export const queue = new GuardQueue();
 const restartedBy = new Set<string>();
 
 function send(n: Notice): void {
-  const line =
-    n.kind === "probability" ? msg.positionProbability(n.chance, n.position, n.size)
-    : n.kind === "priority" ? msg.positionPriority(n.position, n.size)
-    : msg.positionMoved(n.position, n.size);
+  const line = (recipient:number) =>
+    n.kind === "probability" ? msgFor(recipient).positionProbability(n.chance, n.position, n.size)
+    : n.kind === "priority" ? msgFor(recipient).positionPriority(n.position, n.size)
+    : msgFor(recipient).positionMoved(n.position, n.size);
   toSteam(n.steamId, line);
 }
 
@@ -30,8 +30,8 @@ export function joinQueue(slot: number): void {
   if (!p) return;
   const r = queue.add(p.steamId, effectiveOf, settings().normalCap, Math.random);
   for (const n of r.notices) send(n);
-  if (r.skippedByChance > 0) Chat.toSlot(slot, msg.guardSkipped(r.skippedByChance));
-  Chat.toSlot(slot, msg.guardQueued(queue.position(p.steamId) + 1, queue.size()));
+  if (r.skippedByChance > 0) Chat.toSlot(slot, msgFor(slot).guardSkipped(r.skippedByChance));
+  Chat.toSlot(slot, msgFor(slot).guardQueued(queue.position(p.steamId) + 1, queue.size()));
   changed();
 }
 
@@ -69,14 +69,14 @@ export function trimGuards(count: number): void {
     .sort((a, b) => effectiveOf(a.steamId) - effectiveOf(b.steamId));
   for (const p of guards.slice(0, count)) {
     p.changeTeam(Team.Prisoner);
-    Chat.toSlot(p.slot, msg.swapped());
-    Chat.toSlot(p.slot, msg.readded());
+    Chat.toSlot(p.slot, msgFor(p.slot).swapped());
+    Chat.toSlot(p.slot, msgFor(p.slot).readded());
     joinQueue(p.slot);
   }
 }
 
 export function clearQueue(): void {
-  for (const id of queue.clear()) toSteam(id, msg.leaveRemoved());
+  for (const id of queue.clear()) toSteam(id, recipient=>msgFor(recipient).leaveRemoved());
   changed();
 }
 

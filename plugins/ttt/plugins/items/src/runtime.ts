@@ -59,7 +59,7 @@ export const cfg={get dnaGlow():boolean{return b('sm_ttt_dna_glow');}};
 export const msg=(key:string,...args:(number|string)[]):string=>phraseFor(-1,key,...args);
 export const msgFor=(slot:number,key:string,...args:(number|string)[]):string=>phraseFor(slot,key,...args);
 export function tell(slot:number,text:string):void {const actor=actorOf(slot);if(actor&&matchesActor(actor))checked(()=>Chat.toSlot(slot,text));}
-export function roleName(role:RoleId):string {return role===1?msg('ROLE_INNOCENT'):role===2?msg('ROLE_TRAITOR'):role===3?msg('ROLE_DETECTIVE'):role===4?msg('ROLE_SPECTATOR'):'';}
+export function roleName(role:RoleId,slot=-1):string {return role===1?msgFor(slot,'ROLE_INNOCENT'):role===2?msgFor(slot,'ROLE_TRAITOR'):role===3?msgFor(slot,'ROLE_DETECTIVE'):role===4?msgFor(slot,'ROLE_SPECTATOR'):'';}
 export function setHealth(slot:number,value:number):void {const actor=actorOf(slot);if(actor)call(c=>c.setItemHealth(actor,value));}
 export function teamOf(slot:number):number {const actor=actorOf(slot),player=actor?checked(()=>Player.fromSlot(slot)):null;return player&&actor&&matchesActor(actor)?player.teamNum??0:0;}
 export function killWithGadget(slot:number,killer:number,cause:GadgetCause,suppressBody=false):void {const actor=actorOf(slot);if(actor)call(c=>c.killItemWithGadget(actor,killer,cause,suppressBody));}

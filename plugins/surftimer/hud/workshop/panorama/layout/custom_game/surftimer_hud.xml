@@ -24,7 +24,7 @@
 			</Panel>
 			<Panel class="st-speedrow">
 				<Label id="st_speed" class="st-speed" text="{s:st_speed}" />
-				<Label class="st-speed-unit" text="u/s" />
+				<Label class="st-speed-unit" text="{s:st_unit}" />
 			</Panel>
 			<Panel class="st-meter">
 				<Panel id="st_speedfill" class="st-meter-fill s2-w0" />
@@ -39,8 +39,8 @@
 					<Label id="k_d" class="st-key" text="D" />
 				</Panel>
 				<Panel class="st-keyrow">
-					<Label id="k_duck" class="st-key st-key-wide" text="DUCK" />
-					<Label id="k_jump" class="st-key st-key-wide" text="JUMP" />
+					<Label id="k_duck" class="st-key st-key-wide" text="{s:st_duck_label}" />
+					<Label id="k_jump" class="st-key st-key-wide" text="{s:st_jump_label}" />
 				</Panel>
 			</Panel>
 		</Panel>

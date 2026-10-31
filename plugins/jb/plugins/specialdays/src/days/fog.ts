@@ -1,3 +1,4 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /**
  * Fog War: FFA in a black fog that closes in, then slowly opens up (FogDay). An env_fog_controller
  * is created and pushed to every pawn with the SetFogController input; its fog end is lerped per
@@ -9,7 +10,7 @@ import { Player, wrapEntity } from "@s2script/cs2";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings, randomFreeze, withFriendlyFire } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import { livePawn, toAll } from "../game.ts";
 
 /** Server ticks per second (CS2 runs 64-tick). */
@@ -89,7 +90,7 @@ export function fogDay(): SpecialDay {
       setSky(false);
       ctx.at(20, () => ctx.beginsIn(20));
       ctx.at(25, () => {
-        toAll(msg.fogComing());
+        toAll(recipient => msgFor(recipient).fogComing());
         setTarget(300, 10);
       });
       ctx.at(30, () => ctx.beginsIn(10));
@@ -98,12 +99,12 @@ export function fogDay(): SpecialDay {
         ctx.execute();
         ctx.beginsIn(0);
       });
-      ctx.at(97, () => toAll(msg.fogExpands(3)));
-      ctx.at(98, () => toAll(msg.fogExpands(2)));
-      ctx.at(99, () => toAll(msg.fogExpands(1)));
+      ctx.at(97, () => toAll(forRecipients((recipient,value0) => msgFor(recipient).fogExpands(value0), 3)));
+      ctx.at(98, () => toAll(forRecipients((recipient,value0) => msgFor(recipient).fogExpands(value0), 2)));
+      ctx.at(99, () => toAll(forRecipients((recipient,value0) => msgFor(recipient).fogExpands(value0), 1)));
       ctx.at(100, () => {
         setTarget(3000, 180);
-        toAll(msg.fogExpands(0));
+        toAll(forRecipients((recipient,value0) => msgFor(recipient).fogExpands(value0), 0));
       });
     },
     onFrame() {

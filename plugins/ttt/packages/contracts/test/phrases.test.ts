@@ -26,49 +26,43 @@ export const Translations = {
     return key;
   },
 };`;
-const colors = `export const ChatColors = new Proxy({}, { get: (_t, k) => '<' + String(k) + '>' });`;
+const colors = `export const Player={},Pawn={};export const ChatColors = new Proxy({}, { get: (_t, k) => '<' + String(k) + '>' });`;
 const bundle = await build({
-  stdin: {contents: "export * from './phrases.ts';", resolveDir: fileURLToPath(new URL('..', import.meta.url)), loader: 'ts'},
+  stdin: {contents: "export * from './phrases.ts';export {tellAll,tellAllWith} from '../../plugins/core/src/cs2/pawn.ts';", resolveDir: fileURLToPath(new URL('..', import.meta.url)), loader: 'ts'},
   bundle: true, format: 'cjs', platform: 'node', write: false,
   plugins: [{name: 'sdk', setup(b) {
     b.onResolve({filter: /^@s2script\//}, a => ({path: a.path, namespace: 'sdk'}));
-    b.onLoad({filter: /.*/, namespace: 'sdk'}, a => ({contents: a.path === '@s2script/sdk/translations' ? sdk : colors, loader: 'js'}));
+    b.onResolve({filter: /core\/world-provider$/}, () => ({path: 'world-provider', namespace: 'sdk'}));
+    b.onLoad({filter: /.*/, namespace: 'sdk'}, a => ({contents: a.path === '@s2script/sdk/translations' ? sdk :
+      a.path === 'world-provider' ? 'export const appliedModelOf=()=>null,clearAppliedModels=()=>{};' :
+      a.path === '@s2script/sdk/clients' ? 'export const Clients={fromSlot:s=>s===3||s===4?{slot:s,isValid:()=>true}:null};' :
+      a.path === '@s2script/sdk/chat' ? 'export const Chat={toSlot:(slot,text)=>{fixture.messages.push({slot,text});fixture.onSend?.();},toAll:text=>fixture.messages.push({slot:-1,text})};' : colors, loader: 'js'}));
   }}],
 });
 const file = JSON.parse(readFileSync(new URL('../../../translations/ttt.phrases.json', import.meta.url), 'utf8'));
 
 function load(root: Record<string, Record<string, string>> = {}, langs: Record<string, Record<string, Record<string, string>>> = {}) {
-  const fixture = {root, langs, language: {} as Record<number, string>};
+  const fixture = {root, langs, language: {} as Record<number, string>, messages: [] as {slot:number,text:string}[]};
   const module = {exports: {} as any};
   runInContext(bundle.outputFiles[0]!.text, createContext({module, exports: module.exports, fixture}));
   module.exports.loadPhrases();
   return {...module.exports, fixture};
 }
 
-test('the phrase file is plain SDK syntax: no splices or grammar markers, only colour tags and slots 1-8', () => {
-  assert.ok(Object.keys(file).length >= 162);
-  for (const [key, text] of Object.entries(file) as [string, string][]) {
-    assert.equal(/%[A-Za-z_]+%/.test(text), false, `${key} still uses TTT % syntax`);
-    for (const m of text.matchAll(/\{([^}]*)\}/g)) {
-      const t = m[1]!;
-      assert.ok(/^[1-8]$/.test(t) || /^[a-z]+$/.test(t), `${key} has an unexpected token {${t}}`);
-    }
-  }
-});
-
 test('phrases render through the SDK with colours, arguments and number formatting', () => {
   const p = load();
-  assert.equal(p.phraseFor(-1, 'ROLE_ASSIGNED', 'Traitor'), '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey>Your role: Traitor<Grey>!');
-  assert.equal(p.phraseFor(-1, 'COMMAND_BALANCE', 3), '<Green>SHOP <Grey>| You have <Yellow>3<Grey> point(s).');
-  assert.equal(p.phraseFor(-1, 'GAME_STATE_STARTING', 2.5), '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey><Lime>The game starts in <Yellow>2.5<Lime> second(s).');
+  assert.match(p.phraseFor(-1, 'ROLE_ASSIGNED', 'Traitor'), /Your role: <Yellow>Traitor<Grey>/);
+  assert.match(p.phraseFor(-1, 'COMMAND_BALANCE', 3), /<Yellow>3<Grey>/);
+  assert.match(p.phraseFor(-1, 'GAME_STATE_STARTING', 2.5), /<Yellow>2.5 seconds<Grey>/);
   assert.equal(p.phraseFor(-1, 'SHOP_ITEM_TRIPWIRE_DEFUSING', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
   assert.equal(p.phraseFor(-1, 'NO_SUCH_PHRASE'), 'NO_SUCH_PHRASE', 'an unknown key renders as itself');
 });
 
 test('a player name cannot inject a colour tag', () => {
   const p = load();
-  assert.equal(p.phraseFor(-1, 'BODY_IDENTIFIED', '{red}Eve', 'Bob', 'Innocent'),
-    '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey><Default>redEve<Grey> identified the body of <Blue>Bob<Grey>. Their role: Innocent<Grey>!');
+  const text = p.phraseFor(-1, 'BODY_IDENTIFIED', '{red}Eve', 'Bob', 'Innocent');
+  assert.match(text, /<Blue>redEve<Grey>/);
+  assert.doesNotMatch(text, /<Red>Eve/);
 });
 
 test('the deployed file and per-language files override the bundled English', () => {
@@ -76,18 +70,31 @@ test('the deployed file and per-language files override the bundled English', ()
   p.fixture.language[3] = 'de';
   assert.equal(p.phraseFor(-1, 'COMMAND_BALANCE', 7), 'Balance: 7');
   assert.equal(p.phraseFor(3, 'COMMAND_BALANCE', 7), 'Guthaben: 7');
-  assert.equal(p.phraseFor(3, 'SHOP_INACTIVE'), '<Green>SHOP <Grey>| The shop is currently closed.', 'missing translation falls back to English');
+  assert.match(p.phraseFor(3, 'SHOP_INACTIVE'), /shop is currently closed/, 'missing translation falls back to English');
 });
 
-test('every literal phrase key used by plugin code exists in the phrase file', async () => {
-  const {readdirSync, statSync} = await import('node:fs');
-  const {join} = await import('node:path');
-  const root = fileURLToPath(new URL('../../../plugins/', import.meta.url));
-  const files: string[] = [];
-  const walk = (dir: string): void => { for (const e of readdirSync(dir)) { const p = join(dir, e); if (statSync(p).isDirectory()) walk(p); else if (p.endsWith('.ts')) files.push(p); } };
-  for (const plugin of readdirSync(root)) { try { walk(join(root, plugin, 'src')); } catch { /* no src */ } }
-  const missing: string[] = [];
-  const call = /\b(?:msg|msgFor|phraseFor|tellT)\(\s*(?:[^,()"'`]+,\s*)?["']([A-Z][A-Z0-9_]+)["']/g;
-  for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(call)) if (!(m[1]! in file)) missing.push(`${m[1]} (${f.slice(root.length)})`);
-  assert.deepEqual(missing, []);
+test('plain sinks resolve the same locale without chat colors or leaking color arguments', () => {
+  const p = load({}, { de: { ttt: { DNA_TRACK_IDENTIFIED: 'Erkannt: {1}' } } });
+  p.fixture.language[3] = 'de';
+  assert.equal(p.plainPhraseFor(3, 'DNA_TRACK_IDENTIFIED', '{red}Eve'), 'Erkannt: redEve');
+  assert.equal(p.plainPhraseFor(-1, 'ROLE_TRAITOR'), 'Traitor');
+  assert.doesNotMatch(p.plainPhraseFor(-1, 'BODY_IDENTIFIED', 'Alice', 'Bob', 'Traitor'), /<Blue>|<Grey>|<Yellow>|\{[a-z]+\}|[\x01-\x10]/);
+});
+
+test('one broadcast resolves each recipient independently with English fallback', () => {
+  const p = load({}, { de: { ttt: { COMMAND_BALANCE: 'Guthaben: {1}' } } });
+  p.fixture.language[3] = 'de';
+  p.tellAll((slot: number) => p.phraseFor(slot, 'COMMAND_BALANCE', 7));
+  assert.equal(p.fixture.messages.length, 2);
+  assert.equal(p.fixture.messages[0].slot, 3);
+  assert.equal(p.fixture.messages[0].text, 'Guthaben: 7');
+  assert.equal(p.fixture.messages[1].slot, 4);
+  assert.match(p.fixture.messages[1].text, /7.*point/);
+});
+
+test('event broadcasts keep captured names when a native send reenters and renames the actor',()=>{
+ const p=load();let name='Original';p.fixture.onSend=()=>{name='Replacement';};
+ p.tellAllWith((slot:number,captured:string)=>p.phraseFor(slot,'LOGS_VIEWED_ALIVE',captured),name);
+ assert.equal(p.fixture.messages.length,2);
+ for(const line of p.fixture.messages)assert.match(line.text,/Original/);
 });

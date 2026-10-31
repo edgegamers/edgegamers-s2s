@@ -32,3 +32,7 @@ required by everything else. `@edgegamers/jailbreak-gangperks` also needs the Ga
 the `@s2script/zones` base plugin when it is installed.
 
 Requires s2script runtime with host API 3 (SDK 0.27+).
+
+## Translations and messages
+
+See [the shared translations guide](../../docs/translations.md) for catalogs, native locale overrides, startup loading and the required chat/console formatting. English is embedded; copy loose catalogs only to customize wording or add locales. Update existing deployed overrides manually when upgrading.

@@ -14,6 +14,7 @@
 // Duration clamping is NOT ported: it depends on maul_commands.sp's own config
 // (TemporaryBanLimit) and on COMMRANK flag checks that belong to that plugin, not to this one.
 
+import { plainPhraseFor } from "./phrases.ts";
 import { watchOptional } from "@s2script/sdk/plugin";
 import { HookResult } from "@s2script/sdk/events";
 import { Clients } from "@s2script/sdk/clients";
@@ -39,10 +40,12 @@ export interface BanDeps {
 const ADMIN_WITNESS_MIN_RANK = 20;
 
 /** The kick text for a MAUL ban. `minutes` 0 = permanent. Shared with the connect-time gate. */
-export function banKickMessage(minutes: number, reason: string): string {
-  return minutes <= 0
-    ? `Permanently banned for: ${reason}. Use edgegamers.com to appeal`
-    : `Banned for ${String(minutes)} minutes: ${reason}. Use edgegamers.com to appeal`;
+export function banKickMessage(minutes: number, reason: string, slot: number = -1): string {
+  // Resolve only our wrapper. Native substitution sanitizes braces in arguments; the authored
+  // reason is opaque content and must survive unchanged, so splice it after translation.
+  const marker = "\uFFFC";
+  return plainPhraseFor(slot, minutes <= 0 ? "MAUL_BAN_PERMANENT" : "MAUL_BAN_TEMPORARY", minutes, marker)
+    .replace(marker, () => reason);
 }
 
 export function registerBanHooks(deps: BanDeps): void {
@@ -112,7 +115,7 @@ export function registerBanHooks(deps: BanDeps): void {
       // dispatch: an engine action from inside an interop callback is the re-entrant shape to avoid.
       // A stale handle (they left) makes kick a no-op.
       if (live !== null) {
-        after(1, () => { live.kick(banKickMessage(ban.minutes, ban.reason)); });
+        after(1, () => { live.kick(banKickMessage(ban.minutes, ban.reason, live.slot)); });
       }
 
       // Handled: MAUL owns this ban, so skip bans.json.

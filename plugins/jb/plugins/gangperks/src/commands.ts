@@ -8,7 +8,7 @@
  * - an unlocked option → equip it (per-player perks: for you; gang-wide perks: for the gang, needs
  *   MANAGE_PERKS, announced in gang chat).
  */
-import { Chat } from "@s2script/sdk";
+import { Chat, Clients } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import type { EnumPerkDef, PerkOption } from "./perks.ts";
 import { ALL_PERKS } from "./perks.ts";
@@ -24,7 +24,7 @@ import {
   unlock,
   unlockedMask,
 } from "./enum-perk.ts";
-import { msg } from "./messages.ts";
+import { msgFor, labelFor } from "./messages.ts";
 import { openPerkMenu } from "./menus.ts";
 import type { GangsApi } from "./state.ts";
 import { readyGangs, steamOfSlot } from "./state.ts";
@@ -59,11 +59,11 @@ function purchaseReason(def: EnumPerkDef, opt: PerkOption): string {
 export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
   const say = (m: string): void => Chat.toSlot(slot, m);
   const gangs = readyGangs();
-  if (!gangs) return say(msg.notReady());
+  if (!gangs) return say(msgFor(slot).notReady());
   const steam = steamOfSlot(slot);
-  if (!steam) return say(msg.noSteamId());
+  if (!steam) return say(msgFor(slot).noSteamId());
   const gang = gangs.getGangOf(steam);
-  if (!gang) return say(msg.notInGang());
+  if (!gang) return say(msgFor(slot).notInGang());
 
   const view = readPerk(gangs, def, gang.id, steam);
   if (args.length === 0) {
@@ -73,8 +73,8 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
 
   const opt = findOption(def, args);
   if (!opt) {
-    const expected = def.resolve === "icon" || def.resolve === "gang-icon" ? "an icon" : "a color";
-    return say(msg.invalidParam(args.join(" "), expected));
+    const expected = def.resolve === "icon" || def.resolve === "gang-icon" ? labelFor(slot,"JB_GANGPERKS_EXPECT_ICON") : labelFor(slot,"JB_GANGPERKS_EXPECT_COLOR");
+    return say(msgFor(slot).invalidParam(args.join(" "), expected));
   }
 
   const decision = decide(def, opt, {
@@ -87,14 +87,14 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
 
   switch (decision.kind) {
     case "no_purchase_perm":
-      return say(msg.noPermRank(minRankName(gangs.getRanks(gang.id), Perm.PURCHASE_PERKS)));
+      return say(msgFor(slot).noPermRank(minRankName(gangs.getRanks(gang.id), Perm.PURCHASE_PERKS)));
     case "no_manage_perm":
-      return say(msg.noPermRank(minRankName(gangs.getRanks(gang.id), Perm.MANAGE_PERKS)));
+      return say(msgFor(slot).noPermRank(minRankName(gangs.getRanks(gang.id), Perm.MANAGE_PERKS)));
     case "already":
       return;
     case "buy": {
       if (gangs.tryPurchase(steam, decision.cost, purchaseReason(def, opt), false) < 0) {
-        return say(msg.cannotAfford(decision.cost, gangs.getBalance(steam, false)));
+        return say(msgFor(slot).cannotAfford(decision.cost, gangs.getBalance(steam, false)));
       }
       const stored = unlock(view.stored, opt);
       const value =
@@ -102,18 +102,18 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
       if (!gangs.setGangStat(gang.id, def.statId, value)) {
         // Could not record the unlock: give the credits back rather than lose them.
         gangs.grantPlayer(steam, decision.cost, `Refund: ${purchaseReason(def, opt)}`);
-        return say(msg.purchaseFailed());
+        return say(msgFor(slot).purchaseFailed());
       }
-      gangs.sendGangChat(gang.id, msg.purchased(who, def, opt));
+      broadcastGang(gangs,gang.id,recipient=>msgFor(recipient).purchased(who,def,opt));
       return;
     }
     case "equip": {
       if (def.equip === "player") {
         gangs.setPlayerStat(steam, def.statId, opt.bit);
-        return say(msg.equipped(def, opt));
+        return say(msgFor(slot).equipped(def, opt));
       }
       gangs.setGangStat(gang.id, def.statId, encodeGangData({ Unlocked: view.stored, Equipped: opt.bit }));
-      gangs.sendGangChat(gang.id, msg.gangThingSet(who, def, opt));
+      broadcastGang(gangs,gang.id,recipient=>msgFor(recipient).gangThingSet(who,def,opt));
       return;
     }
   }
@@ -121,3 +121,13 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
 
 /** The perk commands' names, for the README and registration. */
 export const PERK_COMMANDS: string[] = ALL_PERKS.map((p) => p.command);
+
+/** Gangs' chat contract targets online members; resolve each member's text on this side. */
+function broadcastGang(gangs:GangsApi,gangId:number,render:(slot:number)=>string):void {
+  for(const client of Clients.all()){
+    if(!client.isValid()||client.isBot||!client.steamId||client.steamId==="0"||gangs.getGangOf(client.steamId)?.id!==gangId)continue;
+    const text=render(client.slot);
+    // Both translation and the provider can reenter. Keep membership and connection current.
+    if(gangs.getGangOf(client.steamId)?.id===gangId&&client.isValid())client.chat(text);
+  }
+}

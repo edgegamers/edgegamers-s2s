@@ -1,3 +1,5 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {loadMessages} from './messages';
 /**
  * @edgegamers/jailbreak-core — round state + mode arbitration, rebels, the jihad C4, cell doors, the round log and
  * the admin debug commands. This file is wiring only: every feature lives in its own module.
@@ -24,6 +26,7 @@ import * as logs from "./logs";
 import { debugCommand } from "./admin";
 
 export function OnPluginStart(): void {
+  loadMessages();
   const handle = publish("@edgegamers/jailbreak-core", {
     getRound: round.getRound,
     setMode: round.setMode,
@@ -68,7 +71,7 @@ export function OnPluginStart(): void {
   Events.on("round_end", (ev) => {
     const winner = round.roundEnded(ev.getInt("winner"));
     cells.stopAutoOpen();
-    logs.log(`Round over — winner: ${winner}.`);
+    logs.log(...logEntry("JB_LOG_ROUND_OVER_WINNER", [String(winner)], [0]));
     logs.dumpToAll();
   });
 

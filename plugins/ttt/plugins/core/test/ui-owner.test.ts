@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import { createContext, runInContext } from 'node:vm';
@@ -8,16 +9,17 @@ import type { UiModelMethods } from '../../../packages/contracts/ui-types.ts';
 // Run the production owner with actual report/sanction stores. Replace engine observations only.
 const sourceDir = fileURLToPath(new URL('../src/', import.meta.url));
 const mocks: Record<string, string> = {
+  '@s2script/sdk/translations':'let phrases={};export const Translations={load:(n,s)=>Object.assign(phrases,s),translate:(slot,key,...args)=>(phrases[key]??key).replace(/\\{(\\d+)\\}/g,(_,n)=>String(args[Number(n)-1]??""))};',
   '@s2script/sdk/plugin':'export const use=()=>fixture.core,publish=(name,methods)=>{fixture.reports=methods;};',
   '@s2script/sdk/admin': 'export const ADMFLAG={GENERIC:1}; export const Admin={forSlot:s=>({hasFlags:()=>fixture.admin})};',
   '@s2script/sdk/bans': 'export const Bans={add:(id,m,r)=>{fixture.banCalls.push(id); fixture.onBan?.(); if(fixture.banThrows)throw Error("ban failed"); fixture.bans.set(id,{until:0,reason:r});},get:id=>fixture.bans.get(id)??null};',
   '@s2script/sdk/clients': 'export const Clients={fromSlot:s=>{if(!fixture.connected.has(s))return null;const id=fixture.userIds.get(s);const valid=()=>fixture.connected.has(s)&&fixture.userIds.get(s)===id;return {slot:s,isValid:valid,get steamId(){return valid()?fixture.engineIds.get(s):"0"},kickWithReason:r=>{if(valid()){fixture.kicks.push(s);fixture.onKick?.();}}};}};',
-  '@s2script/cs2': 'export const Pawn={forSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{}:null};export const Player={fromSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{steamId:fixture.engineIds.get(s),playerName:"Admin"}:null};',
+  '@s2script/cs2': 'export const ChatColors={};export const Pawn={forSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{}:null};export const Player={fromSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{steamId:fixture.engineIds.get(s),playerName:"Admin"}:null};',
   './registry': 'export const isConnected=s=>fixture.connected.has(s), steamIdOf=s=>fixture.ids.get(s)??"", generationOf=s=>fixture.generations.get(s)??0, activeSlots=()=>[...fixture.connected], isParticipating=s=>fixture.live, isAlive=s=>fixture.alive,roleOf=s=>2,nameOf=s=>s===2?"Admin":"Accused";',
   '../game/game': 'export const roundEpoch=()=>fixture.epoch, inProgress=()=>fixture.live,game={get state(){return fixture.live?2:0;}};',
   '../game/logger': 'export const logCount=()=>1, logRoundAt=()=>3, makeLogRows=()=>[{a:"private log"}];',
   '../cs2/pawn': 'export const tellAll=s=>fixture.announcements.push(s),tell=(s,t)=>fixture.announcements.push(t),pawnOf=()=>{fixture.onPawn?.();return fixture.pawn;};',
-  './msgs': 'export const msg=(k,...a)=>k, msgFor=(s,k,...a)=>k;',
+  './msgs': 'const phrases='+JSON.stringify(JSON.parse(readFileSync(new URL("../../../translations/ttt.phrases.json",import.meta.url),"utf8")))+';export const msg=(k,...a)=>k,msgFor=(s,k,...a)=>k.startsWith("UI_")?(phrases[k]??k).replace(/\\{(\\d+)\\}/g,(_,n)=>String(a[Number(n)-1]??"")):k;',
   '../shop/shop': 'export const PurchaseResult={Success:0,InsufficientFunds:1,NotFound:2,NotPurchasable:3,WrongRole:4}; const item={id:"armor",nameKey:"armor",descKey:"description",price:10,limit:1}; export const getShopView=()=>({balance:fixture.balance,rows:fixture.shopRows??[{...item,descriptionKey:item.descKey,gate:fixture.gate}]}),balanceOf=()=>fixture.balance,canPurchase=()=>fixture.gate,itemById=id=>id===item.id?item:undefined,resultMessage=r=>"refused "+r,tryPurchase=()=>{fixture.purchases++;return 0};',
 };
 const bundle = await build({
