@@ -1,3 +1,4 @@
+import { killfeedFor } from '../../../../../decluttr/src/owner.ts';
 /**
  * Death and damage — the port of `CombatHandler`, `DamageCanceler`, `BodySpawner` and
  * `PlayerStatsTracker`.
@@ -524,7 +525,7 @@ export function installDeathFeedSuppressor(): void {
  * nothing at all — an unreachable `setRecipients` would silently disable suppression for the rest of
  * the session with no trace of why.
  */
-function setDeathViewers(viewers: readonly number[]): void {
+function setDeathViewers(viewers: readonly number[], attacker = -1): void {
   const setter = Events.setRecipients;
   if (typeof setter !== "function") {
     if (!warnedNoRecipients) {
@@ -534,7 +535,7 @@ function setDeathViewers(viewers: readonly number[]): void {
     return;
   }
   try {
-    Events.setRecipients(viewers);
+    Events.setRecipients(killfeedFor(attacker, viewers));
   } catch (err) {
     if (!warnedNoRecipients) {
       warnedNoRecipients = true;
@@ -589,7 +590,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   if (gadgetHandledKiller[victim]! >= 0 || gadgetHandledKiller[victim] === -2) {
     const credited = gadgetHandledKiller[victim]!;
     gadgetHandledKiller[victim] = -1;
-    setDeathViewers(viewersForKill(credited < 0 ? -1 : credited));
+    setDeathViewers(viewersForKill(credited < 0 ? -1 : credited), credited);
     return HookResult.Handled;
   }
 
@@ -612,7 +613,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   // their own kill client-side, and nobody else has any business being told.
   if (!inProgress()) {
     const lone = engineKiller >= 0 && engineKiller !== victim ? [engineKiller] : [];
-    setDeathViewers(lone);
+    setDeathViewers(lone, engineKiller);
     return HookResult.Handled;
   }
 
@@ -693,7 +694,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   // sound, a nested dispatch) would have ITS pre-hook consume our mask, so the death then fanned out
   // unscoped. That is exactly the intermittency observed: suppression worked for some deaths and not
   // others, depending on what `handleDeath` happened to do.
-  setDeathViewers(viewers);
+  setDeathViewers(viewers, killer);
 
   // Suppressed for EVERY client by returning Handled: the shim carries that decision through to the
   // `CMsgSource1LegacyGameEvent` post that actually delivers the event, so nobody outside the

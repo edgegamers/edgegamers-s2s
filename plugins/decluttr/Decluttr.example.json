@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "reloadFlags": "z",
+  "radio": {
+    "players": false,
+    "bots": false,
+    "grenades": false,
+    "wheel": false,
+    "pings": "off"
+  },
+  "messages": {
+    "map": {
+      "enabled": false,
+      "mode": "all",
+      "rules": []
+    },
+    "teamJoin": false,
+    "disconnect": "off",
+    "money": false,
+    "teamAttack": false,
+    "saved": false,
+    "chicken": false,
+    "bombPlanted": false,
+    "planting": false,
+    "defusing": false,
+    "custom": {
+      "enabled": false,
+      "text": [],
+      "hint": [],
+      "radio": []
+    }
+  },
+  "hud": {
+    "radar": false,
+    "killfeed": "off",
+    "teamTags": {
+      "mode": "off",
+      "distance": 150
+    },
+    "legs": false
+  },
+  "sounds": {
+    "music": "off",
+    "footsteps": false,
+    "landing": false,
+    "knife": "off",
+    "knifeEvents": [],
+    "gunshots": "off",
+    "replacement": {
+      "weaponId": 0,
+      "soundType": 9,
+      "itemDefIndex": 61
+    },
+    "custom": {
+      "enabled": false,
+      "events": []
+    }
+  },
+  "chat": {
+    "hideCommands": false,
+    "advertising": {
+      "chat": false,
+      "names": false,
+      "ips": true,
+      "urls": true,
+      "allowedIps": [],
+      "allowedDomains": [],
+      "replacementName": "Player",
+      "notifyFlags": "b",
+      "cooldownSeconds": 10
+    },
+    "dead": {
+      "enabled": false,
+      "readFlags": "b"
+    },
+    "format": {
+      "enabled": false,
+      "templates": {
+        "public": "{prefix}{blue}{name}{grey}: {message}",
+        "team": "{grey}(TEAM) {prefix}{blue}{name}{grey}: {message}",
+        "dead": "{grey}*DEAD* {prefix}{blue}{name}{grey}: {message}",
+        "spectator": "{grey}*SPEC* {prefix}{blue}{name}{grey}: {message}",
+        "traitor": "{grey}(TRAITOR) {prefix}{blue}{name}{grey}: {message}"
+      },
+      "prefixes": [],
+      "teamJoin": {
+        "enabled": false,
+        "includeBots": false,
+        "template": "{blue}Decluttr {grey}» {blue}{name}{grey} joined {yellow}{team}{grey}."
+      },
+      "grenade": {
+        "enabled": false,
+        "includeBots": false,
+        "template": "{blue}{name}{grey} » {yellow}{grenade}{grey} at {yellow}{location}{grey}."
+      }
+    }
+  }
+}

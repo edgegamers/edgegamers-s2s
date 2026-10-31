@@ -2,7 +2,7 @@
 
 [![Checks](https://shieldcn.dev/github/ci/edgegamers/edgegamers-s2s.svg?variant=outline)](https://github.com/edgegamers/edgegamers-s2s/actions)
 [![Node 24](https://shieldcn.dev/badge/Node-24-green.svg?variant=outline&logo=nodedotjs)](https://nodejs.org/)
-[![s2script SDK](https://shieldcn.dev/badge/s2script-0.34.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
+[![s2script SDK](https://shieldcn.dev/badge/s2script-0.35.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
 
 CS2 server plugins maintained by edgegamers. One install, native s2s tooling, independent releases.
 
@@ -13,6 +13,7 @@ CS2 server plugins maintained by edgegamers. One install, native s2s tooling, in
 | [TTT](plugins/ttt/) | `@edgegamers/ttt` | Public bundle · 10 members |
 | [SurfTimer](plugins/surftimer/) | `@edgegamers/surftimer` | Public bundle · timer + HUD |
 | [Jailbreak](plugins/jb/) | `@edgegamers/jailbreak` | Public bundle · 7 members, gangperks optional |
+| [Decluttr](plugins/decluttr/) | `@edgegamers/decluttr` | Public plugin |
 | [Hide](plugins/hide/) | `@edgegamers/s2s-hide` | Public plugin |
 | [MAUL](plugins/maul/) | `@edgegamers/s2s-maul` | Restricted plugin |
 

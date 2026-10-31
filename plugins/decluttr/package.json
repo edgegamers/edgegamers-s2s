@@ -1,0 +1,32 @@
+{
+  "name": "@edgegamers/decluttr",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Configurable CS2 message, HUD and sound cleanup with cooperative game-mode integrations.",
+  "license": "Apache-2.0",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --test-isolation=none test/*.test.mjs"
+  },
+  "s2script": {
+    "game": "cs2",
+    "interfaceProtocol": 2,
+    "publishes": {
+      "@edgegamers/decluttr": "1.0.0"
+    },
+    "optionalPluginDependencies": {
+      "@edgegamers/jailbreak-specialdays": "^1.0.0"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/decluttr"
+  }
+}

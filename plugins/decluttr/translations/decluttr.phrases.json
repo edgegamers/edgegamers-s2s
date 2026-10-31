@@ -1,0 +1,11 @@
+{
+  "advertising_rejected": "{red}Decluttr {grey}» Your message contains a blocked address.",
+  "advertising_alert": "{red}Decluttr {grey}» {blue}{1}{grey} ({yellow}{2}{grey}) attempted: {3}",
+  "legs_hidden": "{blue}Decluttr {grey}» Your legs are now hidden.",
+  "legs_visible": "{blue}Decluttr {grey}» Your legs are now visible.",
+  "legs_disabled": "{red}Decluttr {grey}» The legs toggle is disabled on this server.",
+  "save_pending": "{red}Decluttr {grey}» Your choice changed. Saving will retry while you stay connected.",
+  "reload_ok": "{blue}Decluttr {grey}» Configuration reloaded.",
+  "reload_failed": "{red}Decluttr {grey}» Invalid configuration. The previous settings remain active.",
+  "no_permission": "{red}Decluttr {grey}» You do not have permission to reload the configuration."
+}

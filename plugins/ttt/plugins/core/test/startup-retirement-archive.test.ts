@@ -135,7 +135,10 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
   read('module.exports.OnPluginStart()');
   // Stock sync finalize_loading_plugins marks Core Active, then drains attachments before first PRE.
   phase = 'ACTIVE';
-  if (!missing) for (const { name, callback } of attachments) callback(services[name.split('/')[1].replace(/^ttt-/, '')], { own() {} });
+  if (!missing) for (const { name, callback } of attachments) {
+    const service=services[name.split('/')[1].replace(/^ttt-/, '')];
+    if(service) callback(service, { own() {} });
+  }
   calls.length = 0;
   const frame = (which: string): void => { phase = which; now += 0.015625; for (const row of frames) if (row.phase.toLowerCase() === which.toLowerCase()) row.callback(); };
   return { read, calls, logs, retained, world, items, bodies, players, clients, shop, translation, cf, frames, frame, oldWorldEntities, oldItemEntities, oldBodyEntities, published, get nativeLookups(){return nativeLookups;}, map(){for(const callback of mapCallbacks)callback();},

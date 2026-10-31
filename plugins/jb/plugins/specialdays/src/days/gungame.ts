@@ -1,3 +1,4 @@
+import { killfeedFor } from '../../../../../decluttr/src/owner.ts';
 /**
  * Gun Game: FFA with respawns; each kill advances you down a 10-weapon ladder, knife kills skip a
  * step and demote the victim, a kill on the last weapon wins (GunGameDay). The kill feed is only
@@ -89,14 +90,17 @@ export function gunGameDay(): SpecialDay {
       });
     },
     onDeathPre(ev, ctx) {
-      if (over) return HookResult.Continue;
+      const attackerSlot = ev.getPlayerSlot("attacker");
+      // Every branch uses the same final boundary, including the public winning kill.
+      const hidden = (recipients: number[]) => {
+        SdkEvents.setRecipients(killfeedFor(attackerSlot, recipients));
+        return HookResult.Handled;
+      };
+      const connected = () => Player.allConnected().filter(p => p.ref.isValid()).map(p => p.slot);
+      if (over) return hidden(connected());
       const victim = Player.fromSlot(ev.getPlayerSlot("userid"));
       const attacker = Player.fromSlot(ev.getPlayerSlot("attacker"));
       // Hide the kill feed from everyone but the killer.
-      const hidden = (recipients: number[]) => {
-        SdkEvents.setRecipients(recipients);
-        return HookResult.Handled;
-      };
       if (!victim || !attacker || attacker.slot === victim.slot) return hidden([]);
 
       const result = applyKill(ladder.length, levelOf(attacker.slot), levelOf(victim.slot), ev.getString("weapon").includes("knife"));
@@ -117,7 +121,7 @@ export function gunGameDay(): SpecialDay {
         Server.setCvar("mp_respawn_on_death_t", "0");
         Server.setCvar("mp_respawn_on_death_ct", "0");
         setTimeRemaining(Math.min(timeRemaining(), 30));
-        return HookResult.Continue; // the winning kill is broadcast
+        return hidden(connected()); // the winning kill keeps its public maximum audience
       }
 
       if (result.victimDemoted) toSlot(victim.slot, msg.ggDemotedKnife());

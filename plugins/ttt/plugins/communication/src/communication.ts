@@ -1,3 +1,4 @@
+import { decluttrCall } from '../../../../decluttr/src/owner.ts';
 import {Clients,type Client} from '@s2script/sdk/clients';
 import {Chat} from '@s2script/sdk/chat';
 import {Admin,ADMFLAG} from '@s2script/sdk/admin';
@@ -37,11 +38,14 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
     revision++;signature='';
     for(const slot of [...owned.keys()]) {try{release(slot)}catch(error){log(error)}}
   }
-  function entitled(mode:'dead'|'traitor',speaker:CommunicationPlayer,recipient:CommunicationPlayer):boolean {
+  function entitled(mode:'dead'|'traitor',speaker:CommunicationPlayer,recipient:CommunicationPlayer,teamOnly:boolean):boolean {
     if(mode==='traitor')return speaker.role===TRAITOR&&recipient.role===TRAITOR;
+    const allowed=decluttrCall<boolean|null>(null,provider=>provider.canReadChat(speaker.slot,recipient.slot,teamOnly,speaker.alive,recipient.alive,true));
+    if(allowed!==null)return allowed;
     return !speaker.alive&&(recipient.slot===speaker.slot||!recipient.alive||Admin.forSlot(recipient.slot)?.hasFlags(ADMFLAG.GENERIC)===true);
   }
-  function handleChat(slot:number,text:string):0|2 {
+  function handleChat(slot:number,text:string,teamOnlyWire=0):0|2 {
+    const teamOnly=teamOnlyWire===1;
     if(closed)return 0;
     const snapshot=core.getCommunicationSnapshot();if(snapshot.state!==LIVE)return 0;
     const player=snapshot.players.find(p=>p.slot===slot);if(!player)return 0;
@@ -56,12 +60,19 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
       let now=core.getCommunicationSnapshot();
       let from=current(speaker,now),to=current(recipient,now);
       if(!sameRound(snapshot,now)||!from)break;
-      if(!to||!entitled(mode,from,to))continue;
-      const line=phraseFor(to.slot,mode==='dead'?'DEAD_CHAT_FORMAT':'TRAITOR_CHAT_FORMAT',from.name,body);
+      if(!to||!entitled(mode,from,to,teamOnly))continue;
+      const fromSlot=from.slot,toSlot=to.slot;
+      const line=decluttrCall<string|null>(null,provider=>provider.formatChat(fromSlot,body,teamOnly,toSlot,mode))
+        ?? phraseFor(to.slot,mode==='dead'?'DEAD_CHAT_FORMAT':'TRAITOR_CHAT_FORMAT',from.name,'\uFFFC').replace('\uFFFC',()=>body);
       // Translation/interop and each preceding native send may synchronously reenter.
       now=core.getCommunicationSnapshot();from=current(speaker,now);to=current(recipient,now);
       if(closed||!sameRound(snapshot,now)||!from)break;
-      if(to&&entitled(mode,from,to))Chat.toSlot(to.slot,line);
+      if(!to||!entitled(mode,from,to,teamOnly))continue;
+      // The optional entitlement call can also reenter; validate its captured connection/life/role.
+      const permittedFrom=from,permittedTo=to;
+      now=core.getCommunicationSnapshot();from=current(speaker,now);to=current(recipient,now);
+      if(closed||!sameRound(snapshot,now)||!from)break;
+      if(to&&from.alive===permittedFrom.alive&&from.role===permittedFrom.role&&to.alive===permittedTo.alive&&to.role===permittedTo.role)Chat.toSlot(to.slot,line);
     }
     } catch(error) { try { log(error); } catch { /* diagnostics must not reopen public broadcast */ } }
     return 2;
