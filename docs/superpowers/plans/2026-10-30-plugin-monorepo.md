@@ -1,6 +1,6 @@
 # Plugin Monorepo Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Create the approved minimal five-product repository with native automatic releases and clean community documentation.
 
@@ -34,11 +34,11 @@
 
 **Interfaces:** Consumes the five upstream snapshots listed in the spec. Produces root `build`, `test`, `check`, `changeset`, `version`, `deploy` scripts and native runtime/bundle discovery.
 
-- [ ] Import tracked upstream files without Git metadata, nested lockfiles, active upstream workflows or superseded agent instructions; record exact source commits and notices.
-- [ ] Create root npm and s2s plugin/library/bundle globs; keep bundle descriptors outside npm workspaces. Normalize shared dev dependencies, SurfTimer identities and paths without changing gameplay.
-- [ ] Run `npm install` and `npm run build`; diagnose actual type/lint/interface errors and make only source-compatible migration corrections.
-- [ ] Audit inherited tests: remove source-text/archive-shape assertions while preserving real behavior checks. Wire retained product tests into `npm test`.
-- [ ] Run `npm run check`. Expected: all 21 runtime plugins build and retained behavioral tests pass. Commit the working workspace.
+- [x] Import tracked upstream files without Git metadata, nested lockfiles, active upstream workflows or superseded agent instructions; record exact source commits and notices.
+- [x] Create root npm and s2s plugin/library/bundle globs; keep bundle descriptors outside npm workspaces. Normalize shared dev dependencies, SurfTimer identities and paths without changing gameplay.
+- [x] Run `npm install` and `npm run build`; diagnose actual type/lint/interface errors and make only source-compatible migration corrections.
+- [x] Audit inherited tests: remove source-text/archive-shape assertions while preserving real behavior checks. Wire retained product tests into `npm test`.
+- [x] Run `npm run check`. Expected: all 21 runtime plugins build and retained behavioral tests pass. Commit the working workspace.
 
 ### Task 2: Changesets and automatic releases
 
@@ -46,12 +46,12 @@
 
 **Interfaces:** Consumes Task 1's direct root scripts. Helper consumes `GITHUB_OUTPUT`, current Git checkout and origin main, emits `publish=true/false`, and exits nonzero on a failed commit/push. Workflow deploys only on successful helper output.
 
-- [ ] Write failing behavioral tests for unchanged version results, committed version results, stale main and rejected pushes using temporary real Git repositories.
-- [ ] Run `node --test test/release.test.mjs`. Expected: failure because the release helper does not exist.
-- [ ] Implement the small helper and minimal workflows: native version then lock refresh, essential checks, safe persistence, native deploy. Serialize releases and permit manual retry.
-- [ ] Run the helper tests. Expected: pass with no publication allowed on stale/failed persistence.
-- [ ] In a disposable copy, run `npm run version` with initial patch intent and a private-library-only change. Expected: matching bundle/dependency changes and valid refreshed lockfile. Inspect native deployment plan without uploading if registry capabilities permit.
-- [ ] Validate workflow syntax with actionlint and run `npm run check`. Expected: pass. Commit release automation.
+- [x] Write failing behavioral tests for unchanged version results, committed version results, stale main and rejected pushes using temporary real Git repositories.
+- [x] Run `node --test test/release.test.mjs`. Expected: failure because the release helper does not exist.
+- [x] Implement the small helper and minimal workflows: native version then lock refresh, essential checks, safe persistence, native deploy. Serialize releases and permit manual retry.
+- [x] Run the helper tests. Expected: pass with no publication allowed on stale/failed persistence.
+- [x] In a disposable copy, run `npm run version` with initial patch intent and a private-library-only change. Expected: matching bundle/dependency changes and valid refreshed lockfile. Inspect native deployment plan without uploading if registry capabilities permit.
+- [x] Validate workflow syntax with actionlint and run `npm run check`. Expected: pass. Commit release automation.
 
 ### Task 3: Skill setup, README and community guides
 
@@ -59,8 +59,24 @@
 
 **Interfaces:** Consumes the verified commands and release behavior from Tasks 1–2. Produces accurate contributor/operator instructions, shieldcn badges and a usable private security-reporting route.
 
-- [ ] Complete approved skill setup and create missing default labels. Publish the agreed spec issue with `ready-for-agent` using the to-spec template.
-- [ ] Write a concise shieldcn README showing products, root commands, changesets and token setup; add contribution, conduct and security guides with real reporting routes and per-product license attribution.
-- [ ] Verify README commands, Markdown links, badge HTTP responses and security-report availability; do not retain tests of documentation wording/layout.
-- [ ] Run a clean `npm ci`, `npm run check`, disposable version checks and workflow validation. Expected: pass, with any unavailable live registry/host check explicitly reported.
-- [ ] Commit docs, obtain a fresh whole-branch review, resolve material findings, and prepare the finished local result for final integration review.
+- [x] Complete approved skill setup and create missing default labels. Publish the agreed spec issue with `ready-for-agent` using the to-spec template.
+- [x] Write a concise shieldcn README showing products, root commands, changesets and token setup; add contribution, conduct and security guides with real reporting routes and per-product license attribution.
+- [x] Verify README commands, Markdown links, badge HTTP responses and security-report availability; do not retain tests of documentation wording/layout.
+- [x] Run a clean `npm ci`, `npm run check`, disposable version checks and workflow validation. Expected: pass, with any unavailable live registry/host check explicitly reported.
+- [x] Commit docs, obtain a fresh whole-branch review, resolve material findings, and prepare the finished local result for final integration review.
+
+
+## Verification and handoff
+
+- Clean `npm ci` succeeded; the only tracked install lockfile is at the root.
+- Native SDK build produced all 21 runtime plugin archives.
+- Final retained suites: 940 Node tests and 105 Bun tests passed, including four release-persistence cases.
+- Disposable native version runs verified initial releases and private-library propagation; the versioned copy also built and passed its behavior suites.
+- Native dry-run planned 21 plugin releases and three bundles, including restricted MAUL, without uploading.
+- actionlint passed; root documentation links and all three shieldcn SVGs were checked; GitHub private vulnerability reporting is enabled.
+- Fresh independent review of the complete implementation found no Critical, Important or Minor issues.
+- Spec published at https://github.com/edgegamers/edgegamers-s2s/issues/1.
+
+Implementation choices: work stays in the fresh provided checkout on a new feature branch; TTT baselines follow observed public 2.0.5 so the initial changeset produces 2.0.6. The initial snapshot commit is the local review base; no prior project history is imported.
+
+Integration and real uploads remain pending. The new GitHub repository has no `S2SCRIPT_TOKEN` secret. Before first publication, verify registry scope authority, current restricted MAUL history/access, and any other identities hidden by anonymous 404 responses. This verification covers repository/import behavior and retained tests; live CS2 operation requires the documented operator smoke tests.
