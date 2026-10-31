@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-rtd",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Roll the dice: one random reward per player per round.",
   "main": "src/plugin.ts",
   "s2script": {

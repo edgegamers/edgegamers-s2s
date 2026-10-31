@@ -1,5 +1,12 @@
 # @edgegamers/ttt-reports
 
+## 2.0.7
+
+### Patch Changes
+
+- Updated dependencies [05b5e04]
+  - @edgegamers/ttt-contracts@1.0.2
+
 ## 2.0.6
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-communication",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "type": "module",
   "description": "Existing-port private chat relay and logical-life voice routing",
   "main": "src/plugin.ts",
@@ -21,7 +21,7 @@
       "@edgegamers/decluttr": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.6"
+      "@edgegamers/ttt-core": "^2.0.7"
     }
   },
   "publishConfig": {
@@ -33,6 +33,6 @@
     "directory": "plugins/ttt/plugins/communication"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.0.1"
+    "@edgegamers/ttt-contracts": "1.0.2"
   }
 }

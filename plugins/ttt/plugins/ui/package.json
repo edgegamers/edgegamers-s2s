@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-ui",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "type": "module",
   "description": "Existing-port private hudkit views; Core owns models and actions",
   "main": "src/plugin.ts",
@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.6"
+      "@edgegamers/ttt-core": "^2.0.7"
     }
   },
   "publishConfig": {
@@ -30,6 +30,6 @@
     "directory": "plugins/ttt/plugins/ui"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.0.1"
+    "@edgegamers/ttt-contracts": "1.0.2"
   }
 }

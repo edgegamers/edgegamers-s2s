@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-shop",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "type": "module",
   "description": "Existing-port catalog, wallet and economy owner",
   "main": "src/plugin.ts",
@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.6"
+      "@edgegamers/ttt-core": "^2.0.7"
     },
     "config": {
       "economy": {
@@ -747,6 +747,6 @@
     "directory": "plugins/ttt/plugins/shop"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.0.1"
+    "@edgegamers/ttt-contracts": "1.0.2"
   }
 }
