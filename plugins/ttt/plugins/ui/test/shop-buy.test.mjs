@@ -25,11 +25,11 @@ test('a duplicated delivery, a slow second click or a different row does not buy
 test('Buy defers the shop repaint to the next frame',()=>{
  const f=fixture();f.api.openShop(f.actor(1));f.click(1,'s2_m0_r1');f.clear();
  let views=0;const read=f.core.getUiShop;f.core.getUiShop=a=>{views++;return read(a);};
- f.balance=4;f.button(1,'TTT Shop','Buy');
+ f.balance=4;f.button(1,'UI_SHOP_TITLE','UI_BUY');
  assert.deepEqual(buys(f),[['buy',1,'b']]);
  assert.equal(views,0,'no shop model or repaint in the purchase frame');
  assert.equal(f.writes.some(w=>w.id==='s2_m0_sub'),false);
  f.frame();
  assert.equal(views,1);
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='4 credits'));
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:4'));
 });

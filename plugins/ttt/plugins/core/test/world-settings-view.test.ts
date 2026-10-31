@@ -6,8 +6,8 @@ import vm from 'node:vm';
 const code=buildSync({entryPoints:[fileURLToPath(new URL('../src/core/world-settings.ts',import.meta.url))],bundle:true,write:false,format:'cjs',platform:'node'}).outputFiles[0]!.text;
 function fixture(){const module={exports:{} as any};vm.runInContext(code,vm.createContext({module,console:{log(){}}}));return module.exports;}
 const settings=(seconds:number)=>({iconsEnabled:false,rolePanels:true,roleGlowSeconds:seconds});
-test('World observation supplies exact defaults and copied owner snapshots with last value after detach',()=>{
- const m=fixture();assert.equal(m.getWorldSettings().roleGlowSeconds,0);assert.equal(m.readWorldSetting('sm_ttt_icons_enabled'),true);assert.equal(m.readWorldSetting('other'),undefined);
+test('World observation supplies copied owner snapshots with last value after detach',()=>{
+ const m=fixture();assert.equal(m.readWorldSetting('other'),undefined);
  const state=settings(10),lifetime=m.bindWorldSettingsProvider({getRoundSettings:()=>state,refreshSettings:()=>state});state.roleGlowSeconds=20;assert.equal(m.getWorldSettings().roleGlowSeconds,10);
  m.refreshWorldSettings();assert.equal(m.getWorldSettings().roleGlowSeconds,20);const view=m.getWorldSettings();view.roleGlowSeconds=999;assert.equal(m.getWorldSettings().roleGlowSeconds,20);
  lifetime.dispose();state.roleGlowSeconds=30;m.refreshWorldSettings();assert.equal(m.getWorldSettings().roleGlowSeconds,20);

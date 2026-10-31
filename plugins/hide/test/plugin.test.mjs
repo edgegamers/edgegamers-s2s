@@ -16,8 +16,8 @@ test('original commands and chat aliases toggle only the caller, preserving self
   assert.equal(f.hidden(pawn(f, 0), 1), false);
   f.invoke('hidemodels'); f.frame(); assert.equal(f.rules.size, 0);
   f.invoke('hide'); f.invoke('css_hidemodels'); f.frame(); assert.equal(f.rules.size, 0);
-  assert.match(f.messages[0].text, /turned on/);
-  assert.match(f.messages[1].text, /turned off/);
+  assert.match(f.messages[0].text, /enabled fixture/);
+  assert.match(f.messages[1].text, /disabled fixture/);
 });
 
 for (const [mode, sameTeam, otherTeam] of [['@all', true, true], ['@team', true, false], ['@enemy', false, true], ['typo', true, true]]) {
@@ -115,7 +115,7 @@ test('config reload is root-only and changes mode without changing toggle state'
   assert.equal(f.hidden(pawn(f, 1), 0), true);
   f.invoke('css_hide_reload', 0, true); f.frame();
   assert.equal(f.hidden(pawn(f, 1), 0), false);
-  assert.match(f.messages.at(-1).text, /successfully reloaded/);
+  assert.match(f.messages.at(-1).text, /reloaded fixture/);
 });
 
 test('bad config reload retains working settings and reports the error', () => {
@@ -123,7 +123,7 @@ test('bad config reload retains working settings and reports the error', () => {
   for (const bad of ['{', { who_hidden: 42 }, []]) {
     f.setConfig(bad); f.invoke('css_hide_reload', -1); f.frame();
     assert.equal(f.hidden(pawn(f, 1), 0), true);
-    assert.match(f.messages.at(-1).text, /error occurred/);
+    assert.match(f.messages.at(-1).text, /failed fixture/);
   }
 });
 
@@ -154,9 +154,9 @@ test('unavailable transmission logs a failure and retries instead of caching suc
   f.transmitAvailable = true; f.frame(); assert.equal(f.hidden(pawn(f, 1), 0), true);
 });
 
-test('Russian feedback is translated with no unresolved placeholders', () => {
+test('language-specific feedback is translated with no unresolved placeholders', () => {
   const f = pair(); f.clients.get(0).language = 'ru'; f.invoke('hide');
-  assert.match(f.messages[0].text, /включили/);
+  assert.match(f.messages[0].text, /ru enabled fixture/);
   assert.doesNotMatch(f.messages[0].text, /\{[012]\}/);
 });
 
@@ -164,14 +164,14 @@ test('reload replies use the recipient locale on chat and stay plain on console'
   const f = pair();
   f.clients.get(0).language = 'ru';
   f.invoke('hide_reload', 0, true);
-  assert.match(f.messages.at(-1).text, /перезагруж/);
+  assert.match(f.messages.at(-1).text, /ru reload fixture/);
   f.invoke('hide_reload', -1);
-  assert.match(f.messages.at(-1).text, /^Hide » /);
+  assert.match(f.messages.at(-1).text, /reloaded fixture/);
   assert.doesNotMatch(f.messages.at(-1).text, /\{[a-z]+\}|[\x01-\x10]/);
   f.setConfig('{');
   f.invoke('hide_reload', 0, true);
-  assert.match(f.messages.at(-1).text, /^\{red\}Hide \{grey\}» /);
-  assert.match(f.messages.at(-1).text, /ошибк/);
+  assert.match(f.messages.at(-1).text, /ru failed fixture/);
+  assert.match(f.messages.at(-1).text, /ru failed fixture/);
 });
 
 test('a partial locale override falls back to embedded English for missing feedback', () => {
@@ -180,8 +180,8 @@ test('a partial locale override falls back to embedded English for missing feedb
   f.invoke('hide');
   assert.equal(f.messages.at(-1).text, 'Versteckt');
   f.invoke('hide');
-  assert.match(f.messages.at(-1).text, /\{blue\}Hide \{grey\}» /);
-  assert.match(f.messages.at(-1).text, /hide players/);
+  assert.match(f.messages.at(-1).text, /disabled fixture/);
+  assert.match(f.messages.at(-1).text, /disabled fixture/);
 });
 
 test('stable frames reuse live schema views and disabled viewers need none', () => {

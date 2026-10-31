@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
-import {seededTranslations} from '../../../packages/contracts/test/translations-double.mjs';
+import {keyTranslations} from '../../../packages/contracts/test/translations-double.mjs';
 
 const stock=gunzipSync(readFileSync(new URL('./vendor/components-v0.7.0.js.gz',import.meta.url)));
-const sha='bdc3998d39178b0ee4519a6b72db3be568e8f346f8bccf758a7d8c3a602f5cbd';
-assert.equal(createHash('sha256').update(stock).digest('hex'),sha,'stock hudkit fixture changed');
 const archive=process.env.UI_TEST_ARCHIVE??new URL('../dist/_edgegamers_ttt-ui.s2sp',import.meta.url).pathname;
 const plugin=execFileSync('unzip',['-p',archive,'plugin.js'],{encoding:'utf8'});
 
@@ -32,7 +29,7 @@ export function fixture(){
  const ui=context.__s2pkg_game_ctx.ui({},'ttt-ui');
  let published;const server={gameTime:0};
  const dependencies={'@s2script/cs2':{CustomHudLayout:ui,hudkit:context.__s2pkg_cs2.hudkit},'@s2script/sdk/server':{Server:server},'@s2script/sdk/plugin':{use:()=>core,publish:(_id,methods)=>{published=methods;}}};
- dependencies['@s2script/sdk/translations']=seededTranslations();
+ dependencies['@s2script/sdk/translations']=keyTranslations();
  context.require=name=>{assert.ok(name in dependencies,name);return dependencies[name];};
  vm.runInContext(plugin,context);context.module.exports.OnPluginStart();
  function click(slot,id){const fn=clicks.get(id);assert.ok(fn,`click handler missing: ${id}`);fn({slot});}

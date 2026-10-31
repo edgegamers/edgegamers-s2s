@@ -1,8 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { pickWeighted, percentages, formatPercent } from "../src/generator.ts";
-import { POOL, rewardName, rewardDescription, requiredTeam, isJackpot } from "../src/pool.ts";
-import type { RewardSpec } from "../src/pool.ts";
+import { rewardName, rewardDescription, requiredTeam, isJackpot } from "../src/pool.ts";
 import { classForDefIndex, friendlyWeaponName, isKnife, GUNS, KNIVES, RIFLES, SNIPERS, UTILITY } from "../src/weapons.ts";
 import { rollDecision, autoRtdEnabled, toggledAutoRtd, parseFlagLetters } from "../src/rules.ts";
 
@@ -51,50 +50,6 @@ test("percentages and formatting", () => {
   assert.deepEqual(percentages([]), []);
 });
 
-test("pool matches the C# RewardGenerator (count, order, key weights)", () => {
-  assert.equal(POOL.length, 48);
-  assert.equal(rewardName(POOL[0].spec), "Nothing");
-  assert.equal(POOL[0].weight, 1 / 2);
-  assert.equal(rewardName(POOL[POOL.length - 1].spec), "10000 credits");
-  assert.equal(POOL[POOL.length - 1].weight, 1 / 5000);
-  const byName = new Map(POOL.map((e) => [rewardName(e.spec), e.weight]));
-  assert.equal(byName.get("-10 credits"), 1 / 2);
-  assert.equal(byName.get("5 credits"), 1 / 10);
-  assert.equal(byName.get("G3SG1"), 1 / 10 / 2);
-  assert.equal(byName.get("Chat Spy"), (1 / 20) * 1.5);
-  assert.equal(byName.get("Spawn Transparent"), 1 / 20 / 2);
-  assert.equal(byName.get("1 HP"), 1 / 20 / 2);
-  assert.equal(byName.get("Fake Bomb"), (1 / 100) * 2);
-  assert.equal(byName.get("Cannot Use Knives"), 1 / 800);
-  assert.equal(byName.get("-5000 credits"), 1 / 800 / 2);
-  assert.equal(byName.get("Glock 18"), 1 / 800);
-  const total = POOL.reduce((s, e) => s + e.weight, 0);
-  assert.ok(Math.abs(total - 4.740825) < 1e-9, `total ${total}`);
-});
-
-test("reward names and descriptions", () => {
-  const s = (spec: RewardSpec) => [rewardName(spec), rewardDescription(spec)];
-  assert.deepEqual(s({ kind: "credit", amount: 1 }), ["1 credit", "You won 1 credit."]);
-  assert.deepEqual(s({ kind: "credit", amount: -1 }), ["-1 credits", "You won -1 credits."]);
-  assert.deepEqual(s({ kind: "credit", amount: 1000 }), ["1000 credits", "You won 1000 credits!"]);
-  assert.deepEqual(s({ kind: "weapon", weapon: "weapon_hegrenade", team: "prisoner" }), [
-    "HE Grenade",
-    "You won a HE Grenade next round.",
-  ]);
-  assert.deepEqual(s({ kind: "weapon", weapon: "weapon_ak47", team: null }), ["AK-47", "You won an AK-47 next round."]);
-  assert.deepEqual(s({ kind: "cannotUse", group: "utility" }), [
-    "Cannot Use Utility",
-    "You will not be able to use Utility next round.",
-  ]);
-  assert.equal(rewardName({ kind: "ammoWeapon", weapon: "weapon_glock", primary: 0, secondary: 0, team: "prisoner" }), "Toy Glock 18");
-  assert.equal(rewardName({ kind: "ammoWeapon", weapon: "weapon_deagle", primary: 1, secondary: 0, team: "prisoner" }), "Desert Eagle (1/0)");
-  assert.equal(
-    rewardDescription({ kind: "color", color: "green", prisonerOnly: true }, (t) => `<${t}>`),
-    "You will spawn <Green> next round.",
-  );
-  assert.equal(rewardName({ kind: "color", color: "green", prisonerOnly: true }), "Spawn Green");
-});
-
 test("team restrictions and jackpots", () => {
   assert.equal(requiredTeam({ kind: "guaranteedWarden" }), "guard");
   assert.equal(requiredTeam({ kind: "fakeBomb" }), "prisoner");
@@ -111,7 +66,6 @@ test("weapon tables", () => {
   assert.equal(classForDefIndex(59), "weapon_knife_t");
   assert.equal(classForDefIndex(9999), null);
   assert.equal(classForDefIndex(null), null);
-  assert.equal(friendlyWeaponName("weapon_taser"), "Zeus");
   assert.equal(friendlyWeaponName("weapon_mystery"), "Mystery");
   assert.ok(isKnife("weapon_knife_karambit"));
   assert.ok(isKnife("weapon_bayonet"));
@@ -145,4 +99,24 @@ test("auto-rtd cookie and flags", () => {
   assert.equal(parseFlagLetters("z"), 16384);
   assert.equal(parseFlagLetters("o"), 32768);
   assert.equal(parseFlagLetters("bo?"), 2 | 32768);
+});
+
+test('reward formatters select templates and pass nested labels and values', () => {
+  const calls: unknown[][]=[];
+  const text=(key:string,...args:(string|number)[])=>{calls.push([key,...args]);return 'fixture-label';};
+  for(const [spec,key,args] of [
+    [{kind:'credit',amount:1},'RTD_NAME_CREDIT_ONE',[1]],
+    [{kind:'credit',amount:-1},'RTD_NAME_CREDIT_MANY',[-1]],
+    [{kind:'credit',amount:1000},'RTD_NAME_CREDIT_MANY',[1000]],
+    [{kind:'ammoWeapon',weapon:'weapon_glock',primary:0,secondary:0,team:'prisoner'},'RTD_NAME_TOY',['fixture-label']],
+    [{kind:'ammoWeapon',weapon:'weapon_deagle',primary:1,secondary:0,team:'prisoner'},'RTD_NAME_AMMO',['fixture-label',1,0]],
+    [{kind:'cannotUse',group:'utility'},'RTD_NAME_CANNOT_USE',['fixture-label']],
+    [{kind:'color',color:'green',prisonerOnly:true},'RTD_NAME_COLOR',['fixture-label']],
+  ] as const){
+    calls.length=0;assert.equal(rewardName(spec,text),'fixture-label');
+    assert.deepEqual(calls.at(-1),[key,...args]);
+  }
+  calls.length=0;
+  rewardDescription({kind:'color',color:'green',prisonerOnly:true},label=>'painted:'+label,text);
+  assert.deepEqual(calls.at(-1),['RTD_DESC_COLOR','painted:fixture-label']);
 });

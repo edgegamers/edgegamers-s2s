@@ -4,6 +4,11 @@ import english from "../translations/maul.phrases.json";
 
 const colors: Record<string, string> = {
   blue: ChatColors.Blue, red: ChatColors.Red, grey: ChatColors.Grey, yellow: ChatColors.Yellow,
+  default: ChatColors.Default, white: ChatColors.White, darkred: ChatColors.DarkRed,
+  lightpurple: ChatColors.LightPurple, green: ChatColors.Green, olive: ChatColors.Olive,
+  lime: ChatColors.Lime, silver: ChatColors.Silver, darkblue: ChatColors.DarkBlue,
+  bluegrey: ChatColors.BlueGrey, purple: ChatColors.Purple, lightred: ChatColors.LightRed,
+  orange: ChatColors.Orange,
 };
 export function loadPhrases(): void { Translations.load("maul", english); }
 
@@ -12,7 +17,10 @@ function resolve(slot: number, key: string, args: (string | number)[]): string {
     typeof value === "string" ? value.replace(/[\x01-\x10]/g, "") : value));
 }
 export function phraseFor(slot: number, key: string, ...args: (string | number)[]): string {
-  return resolve(slot, key, args).replace(/\{(blue|red|grey|yellow)\}/g, (_tag, color: string) => colors[color]!);
+  return resolve(slot, key, args).replace(/\{([a-z]+)\}/gi, (tag, color: string) => {
+    const byte = colors[color.toLowerCase()];
+    return typeof byte === "string" ? byte : tag;
+  });
 }
 export function plainPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
   return resolve(slot, key, args).replace(/\{[a-z]+\}|[\x01-\x10]/gi, "");

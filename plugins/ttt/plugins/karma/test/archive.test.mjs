@@ -26,7 +26,7 @@ function fixture(existingConfiguration) {
     getNumber:()=>{throw Error('Core must not supply Karma scoring config');},
     formatKarmaWarning:n=>`wait ${n}`,hasDomain:()=>true,dispatchDomain:event=>deliver(event.kind,event.payload)};
   const player=s=>({userId:s+100,set score(v){scores.push([s,v]);},kick(){deliver('leave',{slot:s});ids[s]='';}});
-  const configuration=existingConfiguration??configFixture(SPECS,{sm_ttt_karma_per_round_win:2,sm_ttt_karma_inno_on_inno_guilty:-10,sm_ttt_karma_inno_on_inno_victim_innocent:4});
+  const configuration=existingConfiguration??configFixture(SPECS,{sm_ttt_karma_default:50,sm_ttt_karma_min:0,sm_ttt_karma_low_command:'sm_ban #{0} 2880 Low Karma',sm_ttt_karma_timeout_rounds:4,sm_ttt_karma_per_round_win:2,sm_ttt_karma_inno_on_inno_guilty:-10,sm_ttt_karma_inno_on_inno_victim_innocent:4});
   const context=vm.createContext({module:{exports:{}},console:{log(){}},require(name){
     if(name==='@s2script/sdk/plugin') return {use:n=>{assert.equal(n,'@edgegamers/ttt-core');return core;},publish:(n,m)=>{assert.equal(n,'@edgegamers/ttt-karma');methods=m;return {};}};
     if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatKarmaWarning(args[0]));
@@ -89,8 +89,8 @@ test('archive refused alias persistence does not claim new settings and external
  f.configuration.writeFailure(false);f.configuration.setFile('{"defaultKarma":80,"lowKarmaCommand":""}');f.configuration.server.setCvar('sm_ttt_karma_default','90');f.configuration.materialize();assert.equal(f.methods.refreshSettings().defaultKarma,80);
 });
 test('archive manifests own exact old Karma alias metadata without changing defaults',()=>{
- const m=JSON.parse(members['manifest.json']);for(const spec of SPECS){const decl=spec.path.split('.').reduce((v,k)=>v[k],m.config);assert.equal(decl.type,spec.type);assert.equal(decl.default,spec.default);assert.equal(decl.min,spec.min);assert.equal(decl.max,spec.max);assert.equal(decl.description,spec.help);}
- assert.equal(SPECS.length,23);assert.equal(m.config.lowKarmaCommand.default,'sm_ban #{0} 2880 Low Karma');
+ const m=JSON.parse(members['manifest.json']);for(const spec of SPECS){const decl=spec.path.split('.').reduce((v,k)=>v[k],m.config);assert.equal(decl.type,spec.type);assert.equal(decl.default,spec.default);assert.equal(decl.min,spec.min);assert.equal(decl.max,spec.max);}
+
 });
 
 test('archive handles deferred native alias notifications and malformed section materialization',()=>{

@@ -1,7 +1,6 @@
 /**
  * `@s2script/sdk/translations` for plugin fixtures: forwards each lookup to the fixture's own
- * formatter, so existing message assertions and interception keep working. Real phrase rendering
- * is covered separately against `translations/ttt.phrases.json` (phrases.test.ts).
+ * formatter. Phrase rendering is covered separately with controlled templates (phrases.test.ts).
  */
 export function translationsVia(format) {
   return { Translations: { load() {}, setDefaultLanguage() {}, translate: (slot, key, ...args) => format(slot, key, args) } };
@@ -10,6 +9,11 @@ export function translationsVia(format) {
 export const ChatColors = new Proxy({}, { get: () => '' });
 
 /** Engine boundary for owners that now load and render their own native phrase set. */
+/** Labels identify actions in tests without depending on deployed wording or presentation. */
+export function keyTranslations() {
+  return translationsVia((_slot, key, args) => key + (args.length ? ':' + args.join('|') : ''));
+}
+
 export function seededTranslations(language = () => '', locales = {}) {
   const sets = new Map();
   return { Translations: {
