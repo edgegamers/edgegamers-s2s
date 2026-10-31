@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4
+
+### Patch Changes
+
+- fef064a: Import the maintained plugins into the shared edgegamers workspace, preserve bundle membership and restricted MAUL distribution, and publish the SurfTimer core/HUD bundle under edgegamers.
+
 ## 1.3.3 — 2026-10-26
 
 - Update to s2script SDK 0.33.0 and CS2 types 0.22.0.

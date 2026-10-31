@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-world",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "type": "module",
   "description": "Existing port world markers, role uniforms and scoreboard tags",
   "main": "src/plugin.ts",
@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.0"
+      "@edgegamers/ttt-core": "^2.0.6"
     },
     "config": {
       "rolePanels": {
@@ -49,6 +49,6 @@
     "directory": "plugins/ttt/plugins/world"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.0.0"
+    "@edgegamers/ttt-contracts": "1.0.1"
   }
 }

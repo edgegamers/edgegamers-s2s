@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-core",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Jailbreak round state, rebels, cells and the round log.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -65,7 +65,7 @@
     "directory": "plugins/jb/plugins/core"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.0"
+    "@edgegamers/jailbreak-shared": "1.0.1"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"

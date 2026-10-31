@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-shared",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Pure helpers shared by the Jailbreak plugins (teams, colours, chat formatting, player queries). Holds no live state.",
   "main": "src/index.ts",

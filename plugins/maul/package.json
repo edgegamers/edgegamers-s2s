@@ -1,11 +1,11 @@
 {
   "name": "@edgegamers/s2s-maul",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "src/plugin.ts",
   "publishConfig": {
     "access": "restricted"
   },
-  "description": "MAUL authentication for CS2 \u2014 an s2script port of edgegamers/maul-actain, speaking either the MAUL v1 or v2 API",
+  "description": "MAUL authentication for CS2 — an s2script port of edgegamers/maul-actain, speaking either the MAUL v1 or v2 API",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgegamers/edgegamers-s2s.git",
@@ -86,12 +86,12 @@
       "presence": {
         "type": "bool",
         "default": false,
-        "description": "v2 only: push this server's live roster to MAUL's presence dashboard over the v2 WebSocket. Off by default \u2014 an upgraded server should not start reporting its roster without being asked."
+        "description": "v2 only: push this server's live roster to MAUL's presence dashboard over the v2 WebSocket. Off by default — an upgraded server should not start reporting its roster without being asked."
       },
       "presence_interval_ms": {
         "type": "int",
         "default": 15000,
-        "description": "How often to send a full roster snapshot, in ms. Reported to MAUL as cadenceMs \u2014 it derives its freshness window from this, so a value far below the default only makes the server look stale when one frame is missed. Floored at 5000."
+        "description": "How often to send a full roster snapshot, in ms. Reported to MAUL as cadenceMs — it derives its freshness window from this, so a value far below the default only makes the server look stale when one frame is missed. Floored at 5000."
       }
     }
   }

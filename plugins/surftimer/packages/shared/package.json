@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/surftimer-shared",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Code shared by the surftimer core and HUD plugins: time formatting, styles, the replay file format.",
   "license": "GPL-3.0-or-later",

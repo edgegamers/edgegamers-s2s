@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-specialdays",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Special days.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -11,7 +11,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.0.0"
+      "@edgegamers/jailbreak-core": "^1.1.1"
     },
     "optionalPluginDependencies": {
       "@edgegamers/jailbreak-warden": "^1.0.0",
@@ -70,14 +70,14 @@
       },
       "sd_ghost_visible_duration": {
         "type": "float",
-        "default": 5.0,
+        "default": 5,
         "description": "Ghost War: seconds players are visible per cycle.",
         "min": 1,
         "max": 30
       },
       "sd_ghost_invisible_duration": {
         "type": "float",
-        "default": 5.0,
+        "default": 5,
         "description": "Ghost War: seconds players are hidden per cycle.",
         "min": 1,
         "max": 30
@@ -101,7 +101,7 @@
       },
       "sd_noscope_gravity": {
         "type": "float",
-        "default": 200.0,
+        "default": 200,
         "description": "No Scope: sv_gravity during the day (default game value is 800).",
         "min": 0
       },
@@ -199,28 +199,28 @@
       },
       "rj_max_distance": {
         "type": "float",
-        "default": 160.0,
+        "default": 160,
         "description": "Rocket Jump: max distance from the blast that still launches you.",
         "min": 1,
         "max": 1000
       },
       "rj_close_jump_distance": {
         "type": "float",
-        "default": 37.0,
+        "default": 37,
         "description": "Rocket Jump: blasts closer than this give a full-force jump.",
         "min": 1,
         "max": 1000
       },
       "rj_jump_force_main": {
         "type": "float",
-        "default": 270.0,
+        "default": 270,
         "description": "Rocket Jump: base push strength.",
         "min": 0,
         "max": 2000
       },
       "rj_jump_force_up": {
         "type": "float",
-        "default": 8.0,
+        "default": 8,
         "description": "Rocket Jump: vertical boost per unit of closeness.",
         "min": 0,
         "max": 500
@@ -248,14 +248,14 @@
       },
       "rj_proj_damage": {
         "type": "float",
-        "default": 65.0,
+        "default": 65,
         "description": "Rocket Jump: blast damage.",
         "min": 1,
         "max": 200
       },
       "rj_proj_damage_radius": {
         "type": "float",
-        "default": 225.0,
+        "default": 225,
         "description": "Rocket Jump: blast radius.",
         "min": 1,
         "max": 1000
@@ -344,7 +344,7 @@
     "directory": "plugins/jb/plugins/specialdays"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.0"
+    "@edgegamers/jailbreak-shared": "1.0.1"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"

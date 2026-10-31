@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-rtd",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Roll the dice: one random reward per player per round.",
   "main": "src/plugin.ts",
   "s2script": {
@@ -9,7 +9,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.0"
+      "@edgegamers/jailbreak-core": "^1.1.1"
     },
     "optionalPluginDependencies": {
       "@edgegamers/jailbreak-warden": "^1.0.0",
@@ -37,7 +37,7 @@
     "directory": "plugins/jb/plugins/rtd"
   },
   "dependencies": {
-    "@edgegamers/jailbreak-shared": "1.0.0"
+    "@edgegamers/jailbreak-shared": "1.0.1"
   },
   "scripts": {
     "test": "node --test test/*.test.ts"
