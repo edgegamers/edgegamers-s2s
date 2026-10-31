@@ -18,7 +18,8 @@ export interface CommunicationCoreMethods {
   formatCommunication(slot: number, key: CommunicationPhrase, args: (string | number)[]): string;
 }
 export interface CommunicationMethods {
-  handleChat(slot: number, text: string): 0 | 2;
+  /** Optional wire flag: 0/public (default), 1/team. Numeric for SDK optional-boolean compatibility. */
+  handleChat(slot: number, text: string, teamOnly?: number): 0 | 2;
   tick(): void;
   reset(): void;
   forget(slot: number): void;

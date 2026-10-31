@@ -165,6 +165,7 @@
     "publishes": "self",
     "interfaceProtocol": 2,
     "optionalPluginDependencies": {
+      "@edgegamers/decluttr": "^1.0.0",
       "@edgegamers/ttt-karma": "^2.0.0",
       "@edgegamers/ttt-special": "^2.0.0",
       "@edgegamers/ttt-ui": "^2.0.0",

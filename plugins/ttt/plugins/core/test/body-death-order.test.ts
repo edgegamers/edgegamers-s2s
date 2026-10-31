@@ -21,6 +21,7 @@ const mocks:Record<string,string>={
  '@s2script/cs2':'export const Player={fromSlot:()=>null},DamageTypes_t={};',
  '@s2script/sdk/events':'export const HookResult={Continue:0,Changed:1,Handled:2,Stop:3},Events={};',
  '@s2script/sdk/server':'export const Server={gameTime:10};',
+ '@s2script/sdk/plugin':'export const watchOptional=()=>({dispose(){}});',
 };
 const contents=readFileSync(cs2+'combat.ts','utf8')+`\nexport {handleDeath};export {bindBodiesProvider} from '../core/body-provider';export * from '../core/preframe';export {createOrderedCoordinator} from '../core/ordered';`;
 const code=(await build({stdin:{contents,loader:'ts',resolveDir:cs2},bundle:true,write:false,format:'cjs',platform:'node',plugins:[{name:'native-boundaries',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:/ui-actor$/.test(a.path)?{path:'actors',namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:a.path==='actors'?'export const captureUiActor=s=>({...fixture.actor,slot:s}),matchesUiActor=a=>a.generation===fixture.actor.generation&&a.roundEpoch===fixture.actor.roundEpoch;':mocks[a.path]}));}}]})).outputFiles[0]!.text;

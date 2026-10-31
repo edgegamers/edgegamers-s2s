@@ -19,7 +19,8 @@
     "plugins/jb/plugins/*",
     "plugins/jb/packages/*",
     "plugins/hide",
-    "plugins/maul"
+    "plugins/maul",
+    "plugins/decluttr"
   ],
   "s2script": {
     "workspace": {
@@ -28,7 +29,8 @@
         "plugins/surftimer/plugins/*",
         "plugins/jb/plugins/*",
         "plugins/hide",
-        "plugins/maul"
+        "plugins/maul",
+        "plugins/decluttr"
       ],
       "bundles": [
         "plugins/ttt",
@@ -47,7 +49,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.1",
-    "@s2script/sdk": "0.34.0",
+    "@s2script/sdk": "0.35.0",
     "@s2script/cs2": "0.22.0",
     "typescript": "5.9.3",
     "esbuild": "0.25.12",

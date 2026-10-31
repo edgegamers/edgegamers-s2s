@@ -1,3 +1,4 @@
+import { watchDecluttr, decluttrCall } from '../../decluttr/src/owner.ts';
 // src/plugin.ts — composition root for the MAUL authentication port.
 //
 // Ports the authentication / admin-permission path of maul-actain to s2script. It speaks EITHER
@@ -88,7 +89,8 @@ export function OnPluginStart(): void {
   // Constructed here rather than further down because presence reports MAUL names and calls into
   // this from its very first snapshot — which `presence.start()` below can reach before the rest of
   // OnPluginStart has run.
-  const names = new NameManager(log);
+  const names = new NameManager(log, (slot, desired) => decluttrCall(desired, provider => provider.sanitizeName(slot, desired)));
+  watchDecluttr(() => names.reapplyAll());
 
   // Presence is a v2-only push channel: it needs the JWT the v2 client already manages, and v1 has
   // no equivalent endpoint. Off unless asked for, so an upgraded server does not silently start
@@ -211,11 +213,11 @@ export function OnPluginStart(): void {
     const client = Clients.fromSlot(slot);
     if (client === null || client.isBot || client.steamId === "0") return;
 
-    const { steamId } = client;
+    const { steamId, userId } = client;
     if (!names.needsEnforcement(steamId, newName)) return;
 
     after(1, () => {
-      if (names.enforce(slot, steamId)) {
+      if (names.enforce(slot, steamId, userId)) {
         log.debug(`re-imposed MAUL name for ${steamId} after rename to "${newName}"`);
       }
     });

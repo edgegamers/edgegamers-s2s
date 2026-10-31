@@ -1,0 +1,10 @@
+Decluttr — edgegamers
+Copyright 2026 edgegamers contributors.
+Licensed under the Apache License, Version 2.0 (see ../../LICENSE).
+
+Selected behavior inspired by cs2-Game-Manager-GoldKingZ by oqyh:
+https://github.com/oqyh/cs2-Game-Manager-GoldKingZ
+
+This is an independent TypeScript implementation, not a source-code translation.
+Upstream command names, Valve notification tokens and native sound IDs were
+consulted as interoperability facts. No upstream C# source is incorporated.

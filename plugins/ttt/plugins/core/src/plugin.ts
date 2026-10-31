@@ -1,3 +1,4 @@
+import { watchDecluttr, decluttrCall } from '../../../../decluttr/src/owner.ts';
 import {bindBodySettingsProvider} from './core/body-settings';
 /**
  * TTT (Trouble in Terrorist Town) — an s2script port of https://github.com/edgegamers/TTT.
@@ -201,6 +202,7 @@ const ordered = createOrderedCoordinator({ log: (line) => console.log(line) });
 const bus = ordered.bus;
 
 export function OnPluginStart(): void {
+  watchDecluttr();
   closeWorldActionAdmission();
   // One scope for every subscription. `Scope` is the only surface that carries the frame PHASE
   // and the client-lifecycle callbacks together; the SourceMod-shaped publics (`OnGameFrame`,
@@ -403,7 +405,11 @@ export function OnPluginStart(): void {
     checkEndConditions();
   });
 
-  scope.clients.onSay((slot, text): HookResultValue | void => handleChat(slot, text));
+  scope.clients.onSay((slot, text, teamOnly): HookResultValue | void => {
+    if (!decluttrCall(true, provider => provider.checkChat(slot, text))) return HookResult.Handled;
+    const handled = handleChat(slot, text, teamOnly);
+    return handled === 2 ? handled : decluttrCall<0 | 2>(0, provider => provider.relayChat(slot, text, teamOnly));
+  });
 
   // ── game events ───────────────────────────────────────────────────────────
   // Seed the gadget-kill path with the bus up front: it drives deaths that no engine event announces

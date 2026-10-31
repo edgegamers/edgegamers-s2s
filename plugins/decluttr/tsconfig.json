@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [],
+    "lib": [
+      "ES2024"
+    ],
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "api.d.ts",
+    "../../node_modules/@s2script/sdk/globals.d.ts",
+    ".s2script/*.d.ts"
+  ]
+}

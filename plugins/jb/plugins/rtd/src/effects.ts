@@ -1,3 +1,4 @@
+import { decluttrCall } from '../../../../decluttr/src/owner.ts';
 /**
  * Round-long reward effects: "Cannot Use …" pickup blocks, the per-frame knife/scope blocks
  * (C# AbstractOnTickReward) and chat spies. Everything is keyed by userId and cleared at round end,
@@ -108,6 +109,7 @@ function teamLabel(teamNum: number | null): string {
 export function onSay(slot: number, text: string, teamonly: boolean): void {
   if (!teamonly || spies.size === 0) return;
   if (Commands.parseChatTrigger(text) !== null) return;
+  if (!decluttrCall(true, provider => provider.checkChat(slot, text))) return;
   const sender = Player.fromSlot(slot);
   if (!sender) return;
   const line = msg.spy(teamLabel(sender.teamNum), sender.playerName ?? "", text);

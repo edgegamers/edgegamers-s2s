@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {translationsVia,ChatColors as testChatColors} from '../../../packages/contracts/test/translations-double.mjs';
 export const copy=x=>JSON.parse(JSON.stringify(x));
 export function fixture(code){
- let methods,callback=()=>{};const chat=[],voice=[],log=[],commands=[],cvars={sv_alltalk:'0',sv_voicecodec:'old_codec'},admins=new Set(),clients=new Map();
+ let methods,attachDecluttr=()=>{},callback=()=>{};const chat=[],voice=[],log=[],commands=[],cvars={sv_alltalk:'0',sv_voicecodec:'old_codec'},admins=new Set(),clients=new Map();
  const snapshot={state:2,epoch:1,players:[]};
  function connect(slot,role=1,alive=true){const previous=clients.get(slot);if(previous)previous.valid=false;const client={slot,valid:true,isValid(){callback('isValid',slot);return this.valid},voiceMuted:false};clients.set(slot,client);const prior=snapshot.players.find(x=>x.slot===slot);snapshot.players=snapshot.players.filter(x=>x.slot!==slot);snapshot.players.push({slot,steamId:`id${slot}`,generation:(prior?.generation??0)+1,name:`p${slot}`,role,alive,participating:role>0&&role<4});snapshot.players.sort((a,b)=>a.slot-b.slot);return client;}
  connect(0,1,true);connect(1,2,true);connect(2,2,false);connect(3,4,false);
  const clock={gameTime:0};
  const core={hasCommunicationDeadPlayers:()=>snapshot.players.some(player=>!player.alive),getCommunicationKey:()=>`${snapshot.epoch}:${snapshot.state}:`+snapshot.players.filter(p=>!p.alive).map(p=>`${p.slot}/${p.generation}/${p.steamId},`).join(''),getCommunicationSnapshot:()=>copy(snapshot),formatCommunication:(slot,key,args)=>{callback('format',slot);return `${slot}:${key}:${args.join('|')}`;}};
  const context=vm.createContext({module:{exports:{}},console:{log:x=>log.push(x)},require(name){
-  if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatCommunication(slot,key,args));if(name==='@s2script/cs2')return{ChatColors:testChatColors};if(name==='@s2script/sdk/plugin')return{use:id=>{assert.equal(id,'@edgegamers/ttt-core');return core},publish:(id,value)=>{assert.equal(id,'@edgegamers/ttt-communication');methods=value;return{}}};
+  if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatCommunication(slot,key,args));if(name==='@s2script/cs2')return{ChatColors:testChatColors};if(name==='@s2script/sdk/plugin')return{watchOptional:(name,attach)=>{assert.equal(name,'@edgegamers/decluttr');attachDecluttr=attach;return{dispose(){}}},use:id=>{assert.equal(id,'@edgegamers/ttt-core');return core},publish:(id,value)=>{assert.equal(id,'@edgegamers/ttt-communication');methods=value;return{}}};
   if(name==='@s2script/sdk/clients')return{Clients:{fromSlot:s=>{callback('capture',s);return clients.get(s)?.valid?clients.get(s):null}}};
   if(name==='@s2script/sdk/chat')return{Chat:{toSlot:(s,text)=>{chat.push([s,text]);callback('chat',s)}}};
   if(name==='@s2script/sdk/admin')return{ADMFLAG:{GENERIC:2},Admin:{forSlot:s=>({hasFlags:()=>admins.has(s)})}};
@@ -18,7 +18,7 @@ export function fixture(code){
   if(name==='@s2script/sdk/server')return{Server:{get gameTime(){return clock.gameTime},getCvar:n=>cvars[n]??'',command:line=>{commands.push(line);const [n,v]=line.split(' ');cvars[n]=v;callback('command',n)},setCvar:(n,v)=>{cvars[n]=v;commands.push(`${n} ${v}`);callback('cvar',n);return true}}};
   throw Error(`Unexpected runtime dependency ${name}`);
  }});vm.runInContext(code,context);context.module.exports.OnPluginStart();
- return{get methods(){return methods},clock,core,context,snapshot,chat,voice,log,commands,cvars,admins,clients,connect,on:fn=>callback=fn};
+ return{attachDecluttr(provider){const cleanup=[];attachDecluttr(provider,{own:value=>cleanup.push(value)});return()=>cleanup.forEach(value=>value.dispose());},get methods(){return methods},clock,core,context,snapshot,chat,voice,log,commands,cvars,admins,clients,connect,on:fn=>callback=fn};
 }
 export function behaviorTests(test,make){
  const counted=f=>{const box={n:0};const read=f.core.getCommunicationSnapshot;f.core.getCommunicationSnapshot=()=>{box.n++;return read();};return box;};

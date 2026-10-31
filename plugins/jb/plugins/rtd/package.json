@@ -12,6 +12,7 @@
       "@edgegamers/jailbreak-core": "^1.1.1"
     },
     "optionalPluginDependencies": {
+      "@edgegamers/decluttr": "^1.0.0",
       "@edgegamers/jailbreak-warden": "^1.0.0",
       "@edgegamers/gangs": "^1.0.0"
     },

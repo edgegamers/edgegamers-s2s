@@ -22,3 +22,30 @@ test('extracted chat matches actual old function bodies across state, role, aliv
   assert.equal(f.methods.handleChat(0,text),result??0,`${state}/${role}/${alive}/${text}`);assert.deepEqual(f.chat,expected);
  }
 });
+
+
+test('Decluttr dead entitlements use logical life, preserve team-only and replace old generic flags',()=>{
+ const f=make(),calls=[];f.admins.add(0);
+ const detach=f.attachDecluttr({on(){},canReadChat(...args){calls.push(args);return args[1]===3;},formatChat(slot,body,teamOnly,recipient,channel){assert.equal(channel,'dead');return `${recipient}:${body}`;}});
+ assert.equal(f.methods.handleChat(2,' clue ',1),2);
+ assert.deepEqual(f.chat,[[3,'3:clue']]);
+ assert.ok(calls.every(args=>args[2]===true&&args[3]===false&&args[5]===true));
+ assert.ok(calls.some(args=>args[1]===0&&args[4]===true));
+ detach();f.chat.length=0;f.methods.handleChat(2,'clue');assert.deepEqual(f.chat.map(row=>row[0]),[0,2,3]);
+});
+test('Decluttr cannot widen private traitor audiences; formatter receives the stripped body',()=>{
+ const f=make();f.admins.add(0);
+ f.attachDecluttr({on(){},canReadChat(){throw Error('private role policy must stay with owner');},formatChat(slot,body,teamOnly,recipient,channel){assert.equal(body,'secret');assert.equal(channel,'traitor');return `${recipient}:${body}`;}});
+ f.methods.handleChat(2,'@secret');assert.deepEqual(f.chat,[[1,'1:secret'],[2,'2:secret']]);
+});
+test('Decluttr formatting reentry cannot disclose to recycled recipients and expired service preserves old policy',()=>{
+ const f=make();f.attachDecluttr({on(){},canReadChat(){throw Error('retired');},formatChat(slot,body,teamOnly,recipient){if(recipient===1)f.connect(1,1,true);return 'private';}});
+ f.methods.handleChat(2,'@secret');assert.deepEqual(f.chat,[[2,'private']]);
+});
+
+
+test('Decluttr entitlement reentry immediately before send cannot disclose to a recycled connection',()=>{
+ const f=make(),seen=new Map();
+ f.attachDecluttr({on(){},canReadChat(sender,receiver){const n=(seen.get(receiver)??0)+1;seen.set(receiver,n);if(receiver===0&&n===2)f.connect(0,1,true);return true;},formatChat(){return 'private';}});
+ f.methods.handleChat(2,'secret',1);assert.ok(!f.chat.some(row=>row[0]===0));
+});

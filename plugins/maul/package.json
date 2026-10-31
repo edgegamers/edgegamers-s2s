@@ -19,6 +19,7 @@
     "id": "maul",
     "game": "cs2",
     "optionalPluginDependencies": {
+      "@edgegamers/decluttr": "^1.0.0",
       "@s2script/basebans": "^1.0.0"
     },
     "interfaceProtocol": 2,

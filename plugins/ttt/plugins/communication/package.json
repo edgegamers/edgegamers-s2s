@@ -17,6 +17,9 @@
       "@edgegamers/ttt-communication": "2.0.0"
     },
     "interfaceProtocol": 2,
+    "optionalPluginDependencies": {
+      "@edgegamers/decluttr": "^1.0.0"
+    },
     "pluginDependencies": {
       "@edgegamers/ttt-core": "^2.0.6"
     }

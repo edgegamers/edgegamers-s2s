@@ -7,13 +7,14 @@ import { Player } from "@s2script/cs2";
 import type { Logger } from "./log.ts";
 
 export class NameManager {
-  private readonly cache = new Map<string, string>();
+  private readonly desired = new Map<string, string>();
+  private readonly effective = new Map<string, string>();
 
-  constructor(private readonly log: Logger) {}
+  constructor(private readonly log: Logger, private readonly sanitize: (slot: number, desired: string) => string = (_slot, desired) => desired) {}
 
   /** True once this SteamID has a verified name on file. */
   has(steamId: string): boolean {
-    return this.cache.has(steamId);
+    return this.desired.has(steamId);
   }
 
   /**
@@ -25,21 +26,21 @@ export class NameManager {
    * recognise — a moderator reading a transcript would be looking for the wrong person.
    */
   nameOf(steamId: string): string | null {
-    return this.cache.get(steamId) ?? null;
+    return this.effective.get(steamId) ?? null;
   }
 
   /** Cache `name` for `steamId` and write it to the player now. */
   apply(slot: number, steamId: string, name: string): void {
-    this.cache.set(steamId, name);
-    this.write(slot, steamId, name);
+    this.desired.set(steamId, name);
+    this.effective.set(steamId, name);
+    this.write(slot, steamId);
   }
 
   /** Reapply every cached name — round_start, after the engine has restored client names. */
   reapplyAll(): void {
-    for (const player of Player.all()) {
-      const name = this.cache.get(player.steamId);
-      if (name !== undefined && player.playerName !== name)
-        this.write(player.slot, player.steamId, name);
+    for (const player of Player.allConnected()) {
+      if (this.desired.has(player.steamId))
+        this.write(player.slot, player.steamId, player.userId);
     }
   }
 
@@ -48,7 +49,7 @@ export class NameManager {
    * False for an unmanaged player, or for the echo of our own corrective write.
    */
   needsEnforcement(steamId: string, newName: string): boolean {
-    const wanted = this.cache.get(steamId);
+    const wanted = this.effective.get(steamId);
     return wanted !== undefined && newName !== wanted;
   }
 
@@ -62,30 +63,40 @@ export class NameManager {
    * Terminates: this write fires another player_changename, but with `newname` equal to the cached
    * name, so needsEnforcement is false on the second pass. No re-entrancy flag needed.
    */
-  enforce(slot: number, steamId: string): boolean {
-    const wanted = this.cache.get(steamId);
+  enforce(slot: number, steamId: string, userId?: number): boolean {
+    const wanted = this.desired.get(steamId);
     if (wanted === undefined) return false;
 
-    this.write(slot, steamId, wanted);
+    this.write(slot, steamId, userId);
     return true;
   }
 
   forget(steamId: string): void {
-    this.cache.delete(steamId);
+    this.desired.delete(steamId);
+    this.effective.delete(steamId);
   }
 
-  private write(slot: number, steamId: string, name: string): void {
+  private write(slot: number, steamId: string, expectedUserId?: number): void {
     const player = Player.fromSlot(slot);
 
     // Slots are reused: a disconnect during an in-flight request must not rename the newcomer.
-    if (player === null || player.steamId !== steamId) {
+    if (player === null || player.steamId !== steamId || (expectedUserId !== undefined && player.userId !== expectedUserId)) {
       this.log.debug(`skipped name write for ${steamId}: slot ${String(slot)} no longer theirs`);
       return;
     }
 
-    if (player.playerName === name) return;
+    const desired = this.desired.get(steamId);
+    if (desired === undefined) return;
+    const userId = player.userId;
+    const name = this.sanitize(slot, desired);
+    // Optional-provider calls may synchronously retire or replace this connection.
+    const current = Player.fromSlot(slot);
+    if (current === null || current.steamId !== steamId || current.userId !== userId || this.desired.get(steamId) !== desired) return;
+    // Publish before setName: the echo of our own corrective event must already be accepted.
+    this.effective.set(steamId, name);
+    if (current.playerName === name) return;
 
-    if (player.setName(name)) this.log.debug(`set name for ${steamId} to "${name}"`);
+    if (current.setName(name)) this.log.debug(`set name for ${steamId} to "${name}"`);
     else this.log.warn(`failed to set name for ${steamId} (stale controller)`);
   }
 }

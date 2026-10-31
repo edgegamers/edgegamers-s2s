@@ -1,3 +1,4 @@
+import { watchDecluttr } from '../../../../decluttr/src/owner.ts';
 /**
  * @edgegamers/jailbreak-specialdays — special days and the speedrun trail (ported from Jailbreak.SpecialDay + Jailbreak.Trail).
  * Wiring only: commands, engine events → the running day, core/warden/zones hookups.
@@ -33,6 +34,7 @@ function hookPawn(ref: EntityRef | null): void {
 }
 
 export function OnPluginStart(): void {
+  watchDecluttr();
   const core = use("@edgegamers/jailbreak-core");
   const handle = publish("@edgegamers/jailbreak-specialdays", {
     isRunning: (): boolean => manager?.isRunning() ?? false,

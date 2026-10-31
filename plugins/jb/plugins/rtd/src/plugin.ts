@@ -1,3 +1,4 @@
+import { watchDecluttr } from '../../../../decluttr/src/owner.ts';
 /**
  * @edgegamers/jailbreak-rtd — roll the dice. Wiring only; see rtd.ts (rolling/rewarding), rewards.ts (what each
  * reward does), pool.ts (the weighted pool), effects.ts (round-long effects), autortd.ts.
@@ -11,6 +12,7 @@ import * as rtd from "./rtd.ts";
 import { cmdAutoRtd, initAutoRtd, onRoundEnd as autoRtdRoundEnd } from "./autortd.ts";
 
 export function OnPluginStart(): void {
+  watchDecluttr();
   const core = use("@edgegamers/jailbreak-core");
   core.on("OnRoundStart", () => {
     rtd.setBetweenRounds(false);
