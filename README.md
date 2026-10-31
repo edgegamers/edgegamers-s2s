@@ -61,4 +61,4 @@ Registry releases do not deploy to game servers or publish Workshop content. Fol
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), our [code of conduct](CODE_OF_CONDUCT.md), and the [security policy](SECURITY.md). Track work in [GitHub Issues](https://github.com/edgegamers/edgegamers-s2s/issues).
 
-Fresh imports are recorded in [UPSTREAMS.md](UPSTREAMS.md). Each product keeps its original license and notices; this collection has no blanket license. Badges are served by [shieldcn](https://shieldcn.dev/).
+Fresh imports are recorded in [UPSTREAMS.md](UPSTREAMS.md). The repository's existing [LICENSE](LICENSE) is preserved; each imported product keeps its original license and notices. Badges are served by [shieldcn](https://shieldcn.dev/).

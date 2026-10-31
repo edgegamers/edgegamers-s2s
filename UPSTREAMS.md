@@ -1,6 +1,6 @@
 # Upstream snapshots
 
-Fresh source imports; upstream Git history is not part of this repository. Each product retains its own license and attribution. No blanket license is assigned to the collection.
+Fresh source imports; upstream Git history is not part of this repository. The fresh repository's existing root LICENSE is preserved. Each imported product retains its own license and attribution.
 
 | Product | Upstream | Imported commit |
 | --- | --- | --- |
