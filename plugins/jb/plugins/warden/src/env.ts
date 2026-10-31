@@ -78,8 +78,8 @@ export function playToAll(path: string): void {
 }
 
 /** Centre/hint text to everyone (C# `.ToAllCenter()`). */
-export function centerAll(text: string): void {
-  for (const p of Player.all()) HintText.to(p.slot, text);
+export function centerAll(text: string | ((slot: number) => string)): void {
+  for (const p of Player.all()) HintText.to(p.slot, typeof text === "string" ? text : text(p.slot));
 }
 
 export function centerTo(slot: number, text: string): void {

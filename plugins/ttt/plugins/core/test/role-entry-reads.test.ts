@@ -7,6 +7,7 @@ import { createContext, runInContext } from 'node:vm';
 // Keep the lifecycle, role deal, registry, actors, teams, queue and bus real. Only the native
 // world, configured settings and unrelated owner boundaries are substituted.
 const boundaries: Record<string, string> = {
+ "../../../../packages/contracts/phrases.ts":"export const plainPhraseFor=(slot,key)=>slot===1&&key===\"Draw\"?\"Unentschieden\":key;",
   '@s2script/sdk/timers': `export const delay = milliseconds => new Promise(resolve =>
     fixture.timers.push({milliseconds, resolve, fired: false}));`,
   '@s2script/sdk/server': `export const Server = {gameTime: 0,

@@ -169,3 +169,7 @@ read it.
 Add a changeset with `npm run changeset` and select `@edgegamers/s2s-maul`.
 The shared Release workflow publishes from `main` with restricted access.
 See [release setup](../../README.md#releases) for the token and retry procedure.
+
+## Translations and messages
+
+See [the shared translations guide](../../docs/translations.md) for catalogs, native locale overrides, startup loading and the required chat/console formatting. English is embedded; copy loose catalogs only to customize wording or add locales. Update existing deployed overrides manually when upgrading.

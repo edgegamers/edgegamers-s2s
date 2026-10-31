@@ -1,8 +1,9 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /** Warday: CTs hold a room, Ts attack; CTs expand later with a buff (WardayDay). */
 import type { SpecialDay } from "../day.ts";
 import { baseSettings } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import { onTeam, setArmor, setHealth, setSpeed, Team, toAll } from "../game.ts";
 
 export function wardayDay(): SpecialDay {
@@ -12,7 +13,7 @@ export function wardayDay(): SpecialDay {
     name,
     description: DESCRIPTIONS.warday,
     // AbstractArmoryRestrictedDay with the default restricted team (prisoners).
-    restrict: { kind: "armory", teamNum: Team.Prisoner, reminder: msg.stayInArmory(name) },
+    restrict: { kind: "armory", teamNum: Team.Prisoner, reminder: (slot:number)=>msgFor(slot).stayInArmory(name) },
     settings: baseSettings({
       allowLastGuard: true,
       tTeleport: "armory",
@@ -24,9 +25,9 @@ export function wardayDay(): SpecialDay {
       ctx.at(35, () => ctx.beginsIn(15));
       ctx.at(45, () => ctx.beginsIn(5));
       ctx.at(50, () => ctx.execute());
-      ctx.at(120, () => toAll(msg.wardayExpandIn(30)));
+      ctx.at(120, () => toAll(forRecipients((recipient,value0) => msgFor(recipient).wardayExpandIn(value0), 30)));
       ctx.at(150, () => {
-        toAll(msg.wardayExpandNow());
+        toAll(recipient => msgFor(recipient).wardayExpandNow());
         for (const ct of onTeam(Team.Guard)) {
           setHealth(ct, 200);
           setArmor(ct, 300);

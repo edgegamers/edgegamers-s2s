@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { liveTicks, runFrame, replayFrame, speedMeter, centerHtml, splitText } from "../src/model.ts";
+import english from '../translations/surftimer-hud.phrases.json' with {type:'json'};
 
 const map = { map: "surf_x", tier: 3, stages: 6, checkpoints: 0, bonuses: 1, tickInterval: 1 / 64, zoneSource: "triggers" };
 const base = { slot: 1, userId: 2, status: "running", track: 0, style: 0, startTick: 1000, pausedTicks: 64, pauseTick: 0, finishTicks: 0, stage: 3, checkpoint: 0, pbTicks: 6400, wrTicks: 6000, rank: 4, rankTotal: 20 };
@@ -29,6 +30,16 @@ test("replay frame clamps to the run", () => {
   assert.equal(replayFrame(bot, map, 50, 1).time, "0:00.0");
   assert.equal(replayFrame(bot, map, 100 + 9999, 1).time, "0:10.0");
   assert.equal(replayFrame({ ...bot, playing: false }, map, 0, 1).sub, "No replay recorded yet");
+});
+
+test('HUD text uses the supplied subject-language resolver without changing timer state', () => {
+  const labels={...english,HUD_PAUSED:'PAUSE',HUD_STAGE:'Etappe {1}/{2}',Normal:'Normal-DE'};
+  const text=(key,...args)=>(labels[key]??key).replace(/\{(\d+)\}/g,(_,n)=>String(args[Number(n)-1]??''));
+  const f=runFrame({...base,status:'paused'},map,10000,2,'Ann',text);
+  assert.equal(f.status,'PAUSE');
+  assert.match(f.sub,/Etappe 3\/6/);
+  assert.equal(f.statusClass,'is-paused');
+  assert.equal(f.time,runFrame({...base,status:'paused'},map,10000,2,'Ann').time);
 });
 
 test("speed meter, splits, center html escaping", () => {

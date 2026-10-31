@@ -1,3 +1,4 @@
+import { plainPhraseFor as tr } from "../../../packages/contracts/phrases.ts";
 import {resetOperation,checked,entityInput,removeBeam} from './lifecycle';
 import type {EntityRef} from '@s2script/sdk/entity';
 import {Transmit} from '@s2script/sdk/transmit';
@@ -389,8 +390,8 @@ export function spendGlove(slot: number, forBody: boolean): boolean {
   tell(
     slot,
     forBody
-      ? msg("SHOP_ITEM_GLOVES_USED_BODY", left - 1, max)
-      : msg("SHOP_ITEM_GLOVES_USED_KILL", left - 1, max),
+      ? msgFor(slot, "SHOP_ITEM_GLOVES_USED_BODY", left - 1, max)
+      : msgFor(slot, "SHOP_ITEM_GLOVES_USED_KILL", left - 1, max),
   );
   if (left - 1 === 0) tell(slot, msgFor(slot, "SHOP_ITEM_GLOVES_WORN_OUT"));
   return true;
@@ -1056,7 +1057,7 @@ export function tryDefuseTripwire(slot: number, dt: number): boolean {
     if (tw.defuseProgress >= total) {
       tw.alive = false;
       if (tw.beam !== null) checked(() => Sound.emit(SND_DEFUSE_DONE, { entity: tw.beam!.ref, volume: 0.2 }));
-      addBalance(slot, n("sm_ttt_shop_tripwire_defuse_reward"), "Defused Tripwire");
+      addBalance(slot, n("sm_ttt_shop_tripwire_defuse_reward"), tr(slot,"CREDIT_REASON_DEFUSED_TRIPWIRE"));
       return true;
     }
     // The C# defuse ran on its own `DefuseRate` timer and beeped once per tick; this runs off the
@@ -1072,7 +1073,7 @@ export function tryDefuseTripwire(slot: number, dt: number): boolean {
     setCenterHud(
       slot,
       hudLine(
-        msg("SHOP_ITEM_TRIPWIRE_DEFUSING", reg.nameOf(slot), Math.ceil(total - tw.defuseProgress)),
+        tr(slot, "SHOP_ITEM_TRIPWIRE_DEFUSING", reg.nameOf(slot), Math.ceil(total - tw.defuseProgress)),
         "#ffdd55",
       ),
     );
@@ -1298,7 +1299,7 @@ function tickCompass(dt: number): void {
     setCenterHud(
       slot,
       hudLine(compassBuf.join(""), "#ffcc00", HUD_FONT_BIG) +
-        `<br>${hudLine(distanceBand(Math.sqrt(bestSq)), "#cccccc", HUD_FONT_SMALL)}`,
+        `<br>${hudLine(distanceBand(Math.sqrt(bestSq),slot), "#cccccc", HUD_FONT_SMALL)}`,
     );
   }
 }
@@ -1340,16 +1341,15 @@ function place(buf: string[], fov: number, start: number, bearing: number, glyph
 }
 
 /**
- * The readout beside the strip — `GetDistanceDescription`. Hard-coded English in the original too
- * (it never went through the localiser), so it is inlined rather than given a phrase key.
+ * The readout beside the strip — `GetDistanceDescription`. Localized for the viewing player; distance thresholds remain unchanged.
  */
-function distanceBand(distance: number): string {
-  if (distance > 2000) return "AWP Distance";
-  if (distance > 1500) return "Scout Distance";
-  if (distance > 1000) return "Rifle Distance";
-  if (distance > 500) return "Pistol";
-  if (distance > 250) return "Nearby";
-  return "Knife Range";
+function distanceBand(distance: number, slot = -1): string {
+  if (distance > 2000) return tr(slot,"DISTANCE_0");
+  if (distance > 1500) return tr(slot,"DISTANCE_1");
+  if (distance > 1000) return tr(slot,"DISTANCE_2");
+  if (distance > 500) return tr(slot,"DISTANCE_3");
+  if (distance > 250) return tr(slot,"DISTANCE_4");
+  return tr(slot,"DISTANCE_5");
 }
 
 // ── the shared tick ──────────────────────────────────────────────────────────
@@ -1462,7 +1462,7 @@ export function installEffects(eventBus: EventBus): void {
         const pawn = pawnOf(victim);
         const hp = pawn?.health ?? 0;
         if (hp <= 0) setHealth(victim, 1);
-        const role = roleName(reg.roleOf(victim));
+        const role = roleName(reg.roleOf(victim),attacker);
         tell(attacker, msgFor(attacker, "TASER_SCANNED", reg.nameOf(victim), role));
         if (hasStickers[attacker] === 1) {
           tell(victim, msgFor(victim, "SHOP_ITEM_STICKERS_HIT"));
@@ -1561,7 +1561,7 @@ function revealRole(slot: number): void {
   const active = reg.activeSlots();
   for (let i = 0; i < active.length; i++) {
     const to = active[i]!;
-    tell(to, msgFor(to, "BODY_IDENTIFIED", "Stickers", reg.nameOf(slot), roleName(role)));
+    tell(to, msgFor(to, "BODY_IDENTIFIED", tr(to,"SHOP_ITEM_STICKERS_NAME"), reg.nameOf(slot), roleName(role,to)));
   }
 }
 

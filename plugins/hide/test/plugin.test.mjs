@@ -160,6 +160,30 @@ test('Russian feedback is translated with no unresolved placeholders', () => {
   assert.doesNotMatch(f.messages[0].text, /\{[012]\}/);
 });
 
+test('reload replies use the recipient locale on chat and stay plain on console', () => {
+  const f = pair();
+  f.clients.get(0).language = 'ru';
+  f.invoke('hide_reload', 0, true);
+  assert.match(f.messages.at(-1).text, /перезагруж/);
+  f.invoke('hide_reload', -1);
+  assert.match(f.messages.at(-1).text, /^Hide » /);
+  assert.doesNotMatch(f.messages.at(-1).text, /\{[a-z]+\}|[\x01-\x10]/);
+  f.setConfig('{');
+  f.invoke('hide_reload', 0, true);
+  assert.match(f.messages.at(-1).text, /^\{red\}Hide \{grey\}» /);
+  assert.match(f.messages.at(-1).text, /ошибк/);
+});
+
+test('a partial locale override falls back to embedded English for missing feedback', () => {
+  const f = pair({ locales: { de: { hideplayers: { 'Player.Hide.Enabled': 'Versteckt' } } } });
+  f.clients.get(0).language = 'de';
+  f.invoke('hide');
+  assert.equal(f.messages.at(-1).text, 'Versteckt');
+  f.invoke('hide');
+  assert.match(f.messages.at(-1).text, /\{blue\}Hide \{grey\}» /);
+  assert.match(f.messages.at(-1).text, /hide players/);
+});
+
 test('stable frames reuse live schema views and disabled viewers need none', () => {
   const f = pair(); f.frame();
   assert.equal(f.schemaWraps, 0, 'default-off must not allocate expensive schema views');

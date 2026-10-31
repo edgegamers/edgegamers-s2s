@@ -16,7 +16,7 @@ import type { LRType } from "../api";
 import { parseLRType } from "./logic";
 import { disableLR, enableLR, initiateLastRequest, isInLR } from "./manager";
 import { showPlayerMenu, showTypeMenu } from "./menus";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 import { startLastGuard } from "./lastguard";
 import { chatTo } from "./lr-command";
 
@@ -25,7 +25,7 @@ const TITLE = "[Debug] Last Request";
 function target(pattern: string, caller: number, reply: (m: string) => void): Player | null {
   const found = Player.target(pattern, caller, true);
   if (found.length === 0) {
-    reply(msg.playerNotFound(pattern));
+    reply(msgFor(caller).playerNotFound(pattern));
     return null;
   }
   return found[0];
@@ -42,17 +42,17 @@ function run(caller: number, typeArg: string, fromArg: string, toArg: string, re
   if (fromArg === "" && toArg === "") {
     switch (typeArg.toLowerCase()) {
       case "enable":
-        reply(enableLR() ? msg.debugEnabled : msg.debugEnableRefused);
+        reply(enableLR() ? msgFor(me.slot).debugEnabled : msgFor(me.slot).debugEnableRefused);
         return;
       case "disable":
         disableLR();
-        reply(msg.debugDisabled);
+        reply(msgFor(me.slot).debugDisabled);
         return;
     }
   }
 
   const type: LRType | null = parseLRType(typeArg);
-  if (type === null) return reply(msg.invalid(typeArg));
+  if (type === null) return reply(msgFor(me.slot).invalid(typeArg));
 
   if (fromArg === "") {
     showPlayerMenu(caller, TITLE, true, isInLR, (t) => run(caller, type, `#${t.userId}`, "", chatTo(caller)));
@@ -72,7 +72,7 @@ function run(caller: number, typeArg: string, fromArg: string, toArg: string, re
 }
 
 export function lrDebugCommand(cmd: CommandInvocation): void {
-  if (cmd.callerSlot < 0) return cmd.reply(msg.debugUsage);
+  if (cmd.callerSlot < 0) return cmd.reply(msgFor(cmd.callerSlot).debugUsage);
   run(cmd.callerSlot, cmd.arg(0), cmd.arg(1), cmd.arg(2), (m) => cmd.reply(m));
 }
 
@@ -81,5 +81,5 @@ export function lgDebugCommand(cmd: CommandInvocation): void {
   if (cmd.argCount >= 1) guard = target(cmd.arg(0), cmd.callerSlot, (m) => cmd.reply(m));
   if (!guard) return;
   const name = guard.playerName ?? "?";
-  cmd.reply(startLastGuard(guard) ? msg.debugLastGuard(name) : msg.debugLastGuardRefused(name));
+  cmd.reply(startLastGuard(guard) ? msgFor(cmd.callerSlot).debugLastGuard(name) : msgFor(cmd.callerSlot).debugLastGuardRefused(name));
 }

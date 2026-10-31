@@ -11,7 +11,7 @@ import {
 import { Player } from "@s2script/cs2";
 import { STYLES, styleById } from "@edgegamers/surftimer-shared";
 import type { Contract, MapInfo, RunState } from "../api";
-import { refreshPrefix } from "./chat";
+import {loadPhrases} from "./phrases";
 import { registerCommands } from "./commands";
 import * as rec from "./records";
 import * as replay from "./replay";
@@ -197,13 +197,13 @@ async function loadTiers(): Promise<void> {
 // --- plugin ---------------------------------------------------------------------------------------
 
 function readConfig(): void {
-  refreshPrefix();
   fakeHeight = config.getFloat("fake_zone_height") || 72;
   hideDefault = config.getBool("hide_players_default");
   replay.configureRecording(config.getInt("replay_max_minutes"), config.getInt("replay_prerun_ticks"), Server.tickInterval || 1 / 64);
 }
 
 export async function OnPluginStart(): Promise<void> {
+  loadPhrases();
   readConfig();
   await rec.openRecords(config.getString("database") || "surftimer");
 

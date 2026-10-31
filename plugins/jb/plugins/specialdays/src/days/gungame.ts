@@ -1,3 +1,4 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 import { killfeedFor } from '../../../../../decluttr/src/owner.ts';
 /**
  * Gun Game: FFA with respawns; each kill advances you down a 10-weapon ladder, knife kills skip a
@@ -9,7 +10,7 @@ import { Player } from "@s2script/cs2";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings, withFriendlyFire, withRespawns } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import { ShuffleBag } from "../geometry.ts";
 import type { Vec3 } from "../geometry.ts";
 import { applyKill, buildProgression, gunGamePickups } from "../rules/gungame.ts";
@@ -106,7 +107,7 @@ export function gunGameDay(): SpecialDay {
       const result = applyKill(ladder.length, levelOf(attacker.slot), levelOf(victim.slot), ev.getString("weapon").includes("knife"));
       if (result.won) {
         over = true;
-        toAll(msg.ggWon(nameOf(attacker)));
+        toAll(forRecipients((recipient,value0) => msgFor(recipient).ggWon(value0), nameOf(attacker)));
         for (const p of alive()) {
           if (p.slot === attacker.slot) continue;
           teleportOnto(p, attacker);
@@ -124,11 +125,11 @@ export function gunGameDay(): SpecialDay {
         return hidden(connected()); // the winning kill keeps its public maximum audience
       }
 
-      if (result.victimDemoted) toSlot(victim.slot, msg.ggDemotedKnife());
+      if (result.victimDemoted) toSlot(victim.slot, msgFor(victim.slot).ggDemotedKnife());
       levels.set(victim.slot, result.victimLevel);
       levels.set(attacker.slot, result.attackerLevel);
-      if (result.reachedLast) toAll(msg.ggLastWeapon(nameOf(attacker)));
-      toSlot(attacker.slot, msg.ggPromoted(friendlyWeaponName(ladder[result.attackerLevel]), ladder.length - result.attackerLevel));
+      if (result.reachedLast) toAll(forRecipients((recipient,value0) => msgFor(recipient).ggLastWeapon(value0), nameOf(attacker)));
+      toSlot(attacker.slot, msgFor(attacker.slot).ggPromoted(friendlyWeaponName(ladder[result.attackerLevel]), ladder.length - result.attackerLevel));
       // Swap the killer's weapon a frame later, outside the death event.
       const userId = attacker.userId;
       ctx.after(1, () => {

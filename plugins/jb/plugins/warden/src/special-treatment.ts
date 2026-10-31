@@ -1,10 +1,13 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {broadcastText} from '@edgegamers/jailbreak-shared';
 import { Chat } from "@s2script/sdk";
 import { Fade, Player } from "@s2script/cs2";
 import { Colors, isAlive, packColor32, setPawnColor } from "@edgegamers/jailbreak-shared";
 import { describe, isRebel, log, unmarkRebel } from "@edgegamers/jailbreak-core";
 import { centerTo, playerRef, pub } from "./env";
 import { assignSpecialIcon, removeSpecialIcon } from "./icons";
-import { msg, who } from "./messages";
+import { msgFor, who } from "./messages";
 
 /**
  * Special treatment (SpecialTreatmentBehavior): a prisoner the warden favours for the round. They
@@ -35,12 +38,12 @@ export function grantSpecialTreatment(slot: number): boolean {
   Fade.to(slot, { duration: Math.round(0.2 * 512), holdTime: 999999 * 512, color: tint, flags: FADE_OUT | PURGE });
 
   const name = who(p.playerName ?? "", p.teamNum);
-  Chat.toSlot(slot, msg.stGranted);
-  centerTo(slot, msg.stGrantedCenter);
-  Chat.toAll(msg.stGrantedTo(name));
+  Chat.toSlot(slot, msgFor(slot).stGranted);
+  centerTo(slot, msgFor(slot).stGrantedCenter);
+  broadcastText(forRecipients((recipient,value0) => msgFor(recipient).stGrantedTo(value0), name));
 
   assignSpecialIcon(slot);
-  log(`${describe(slot)} was granted special treatment.`);
+  log(...logEntry("JB_LOG_WAS_GRANTED_SPECIAL_TREATMENT", [String(describe(slot))]));
   emit(slot, true);
   return true;
 }
@@ -54,11 +57,11 @@ export function revokeSpecialTreatment(slot: number, print: boolean): boolean {
     setPawnColor(p.pawn, Colors.White);
     Fade.to(slot, { duration: Math.round(1.5 * 512), holdTime: 0, color: tint, flags: FADE_IN | PURGE });
     if (print) {
-      Chat.toSlot(slot, msg.stRevoked);
-      centerTo(slot, msg.stRevokedCenter);
-      Chat.toAll(msg.stRevokedFrom(who(p.playerName ?? "", p.teamNum)));
+      Chat.toSlot(slot, msgFor(slot).stRevoked);
+      centerTo(slot, msgFor(slot).stRevokedCenter);
+      broadcastText(forRecipients((recipient,value0) => msgFor(recipient).stRevokedFrom(value0), who(p.playerName ?? "", p.teamNum)));
     }
-    log(`${describe(slot)} lost special treatment.`);
+    log(...logEntry("JB_LOG_LOST_SPECIAL_TREATMENT", [String(describe(slot))]));
   }
   removeSpecialIcon(slot);
   emit(slot, false);

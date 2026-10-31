@@ -1,12 +1,13 @@
+import {phraseFor,plainPhraseFor as textFor,trackNameFor} from './phrases';
 // Run logic: zone touches drive every transition; the per-tick loop only records movement, caps
 // pre-speed and evaluates the Backwards style. Times are integer server ticks end to end.
 import { Server } from "@s2script/sdk";
 import { Pawn } from "@s2script/cs2";
 import {
-  FL_ONGROUND, MOVETYPE_NONE, MOVETYPE_WALK, STYLE_BACKWARDS, STYLES, styleById, formatTicks, formatTickDiff, trackName,
+  FL_ONGROUND, MOVETYPE_NONE, MOVETYPE_WALK, STYLE_BACKWARDS, STYLES, styleById, formatTicks, formatTickDiff,
 } from "@edgegamers/surftimer-shared";
 import type { FinishEvent, RunState, SplitEvent } from "../api";
-import { C, diffColor, hl, tell, tellAll } from "./chat";
+import { tell, tellAll } from "./chat";
 import * as rec from "./records";
 import * as replay from "./replay";
 import {
@@ -112,10 +113,10 @@ export function onEnter(r: Runner, z: ZoneDef, tick: number): void {
     case ZoneKind.Stage: enterStage(r, z.index, tick); break;
     case ZoneKind.Checkpoint: enterCheckpoint(r, z.track < 0 ? r.track : z.track, z.index, tick); break;
     case ZoneKind.Stop:
-      if (r.status === "running" || r.status === "practice") { resetRun(r, "idle"); tell(r.slot, "Timer stopped."); changed(r); }
+      if (r.status === "running" || r.status === "practice") { resetRun(r, "idle"); tell(r.slot, phraseFor(r.slot,"SURF_STOPPED")); changed(r); }
       break;
     case ZoneKind.Reset:
-      tell(r.slot, "Timer reset.");
+      tell(r.slot, phraseFor(r.slot,"SURF_CHAT_TIMER_RESET"));
       teleportToTrack(r, r.track);
       break;
   }
@@ -169,7 +170,7 @@ function enterStage(r: Runner, n: number, tick: number): void {
   r.stageZone = n;
   if (r.status === "running" && r.track === 0 && r.stageRun === 0) {
     if (n === r.stage + 1) stageSplit(r, n, tick);
-    else if (n > r.stage + 1) { resetRun(r, "idle"); tell(r.slot, `Run stopped: skipped to stage ${n}.`); changed(r); }
+    else if (n > r.stage + 1) { resetRun(r, "idle"); tell(r.slot, phraseFor(r.slot,"SURF_CHAT_RUN_STOPPED_SKIPPED_TO_STAGE", String(n))); changed(r); }
     return;
   }
   if ((r.status === "running" || r.status === "practice") && r.stageRun > 0) {
@@ -207,11 +208,15 @@ function stageSplit(r: Runner, n: number, tick: number): void {
     stageTicks, stageRecord,
   };
   emitter.split(ev);
-  let line = `Stage ${hl(n)} ${C.Default}| ${formatTicks(t, tickInterval)}`;
-  if (ev.pbDiffTicks !== null) line += ` PB ${diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval))}`;
-  if (ev.wrDiffTicks !== null) line += ` WR ${diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval))}`;
-  tell(r.slot, line);
+  tellSplit(r.slot, "STAGE", ev);
   changed(r);
+}
+
+function tellSplit(slot: number, kind: "STAGE" | "CP", ev: SplitEvent): void {
+  const suffix = (ev.pbDiffTicks !== null ? "_PB" : "") + (ev.wrDiffTicks !== null ? "_WR" : "");
+  tell(slot, phraseFor(slot, `SURF_${kind}_SPLIT${suffix}`, ev.index, formatTicks(ev.ticks, tickInterval),
+    ev.pbDiffTicks === null ? "" : formatTickDiff(ev.pbDiffTicks, tickInterval),
+    ev.wrDiffTicks === null ? "" : formatTickDiff(ev.wrDiffTicks, tickInterval)));
 }
 
 /** Store a stage time; announce a stage record. Returns whether it is one. */
@@ -221,9 +226,9 @@ function recordStage(r: Runner, stage: number, ticks: number): boolean {
   const st = styleById(r.style);
   if (res.record) {
     const diff = res.previousRecord ? ` (${formatTickDiff(ticks - res.previousRecord, tickInterval)})` : "";
-    tellAll(`${hl(r.name)} set the ${C.Purple}stage ${stage} record${C.Default}${st.id ? " [" + st.tag + "]" : ""}: ${hl(formatTicks(ticks, tickInterval))}${diff}`);
+    tellAll((recipient, value0, value1, value2, value3, value4) => phraseFor(recipient,"SURF_CHAT_SET_THE_STAGE_RECORD", String(value0), String(value1), String(value2), String(value3), String(value4)), r.name, stage, st.id ? " [" + st.tag + "]" : "", formatTicks(ticks, tickInterval), diff);
   } else if (res.pb) {
-    tell(r.slot, `Stage ${stage} PB: ${hl(formatTicks(ticks, tickInterval))}`);
+    tell(r.slot, phraseFor(r.slot,"SURF_CHAT_STAGE_PB", String(stage), String(formatTicks(ticks, tickInterval))));
   }
   return res.record;
 }
@@ -233,7 +238,7 @@ function completeStageRun(r: Runner, tick: number): void {
   const stage = r.stageRun;
   const record = recordStage(r, stage, t);
   const sr = rec.stageRecord(stage, r.style);
-  if (!record) tell(r.slot, `Stage ${stage}: ${hl(formatTicks(t, tickInterval))}${sr ? ` (SR ${formatTicks(sr.ticks, tickInterval)})` : ""}`);
+  if (!record) tell(r.slot, phraseFor(r.slot,"SURF_CHAT_STAGE", String(stage), String(formatTicks(t, tickInterval)), String(sr ? textFor(r.slot, "SURF_STAGE_REFERENCE", formatTicks(sr.ticks, tickInterval)) : "")));
 }
 
 function enterCheckpoint(r: Runner, track: number, n: number, tick: number): void {
@@ -251,10 +256,7 @@ function enterCheckpoint(r: Runner, track: number, n: number, tick: number): voi
     stageTicks: 0, stageRecord: false,
   };
   emitter.split(ev);
-  let line = `CP ${hl(n)} ${C.Default}| ${formatTicks(t, tickInterval)}`;
-  if (ev.pbDiffTicks !== null) line += ` PB ${diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval))}`;
-  if (ev.wrDiffTicks !== null) line += ` WR ${diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval))}`;
-  tell(r.slot, line);
+  tellSplit(r.slot, "CP", ev);
   changed(r);
 }
 
@@ -271,7 +273,7 @@ function enterEnd(r: Runner, track: number, tick: number): void {
     resetRun(r, "idle");
     r.status = "finished";
     r.finishTicks = t;
-    tell(r.slot, `Practice finish: ${hl(formatTicks(t, tickInterval))} (not saved)`);
+    tell(r.slot, phraseFor(r.slot,"SURF_CHAT_PRACTICE_FINISH_NOT_SAVED", String(formatTicks(t, tickInterval))));
     changed(r);
     return;
   }
@@ -301,18 +303,20 @@ function finish(r: Runner, tick: number): void {
   blockInput[r.slot] = 0;
 
   const st = styleById(style);
-  const where = `${trackName(track)}${st.id ? " [" + st.tag + "]" : ""}`;
-  const time = hl(formatTicks(t, tickInterval));
-  const pbDiff = res.previousPbTicks ? ` (PB ${diffColor(t - res.previousPbTicks, formatTickDiff(t - res.previousPbTicks, tickInterval))})` : "";
+  const whereFor = (slot: number) => textFor(slot, "SURF_WHERE", trackNameFor(slot, track), st.id ? " [" + st.tag + "]" : "");
+  const time = formatTicks(t, tickInterval);
+  const pbDelta = res.previousPbTicks ? formatTickDiff(t - res.previousPbTicks, tickInterval) : "";
   if (res.newWr) {
-    const wrDiff = res.previousWrTicks ? ` (${diffColor(t - res.previousWrTicks, formatTickDiff(t - res.previousWrTicks, tickInterval))})` : "";
-    tellAll(`${C.Purple}NEW RECORD${C.Default} ${hl(r.name)} ${where}: ${time}${wrDiff}`);
+    const wrDiff = res.previousWrTicks ? ` (${formatTickDiff(t - res.previousWrTicks, tickInterval)})` : "";
+    tellAll((slot, name, finishedTime, delta) => phraseFor(slot, "SURF_CHAT_NEW_RECORD", name, whereFor(slot), finishedTime, delta), r.name, time, wrDiff);
   } else if (res.newPb && announcePb) {
-    tellAll(`${hl(r.name)} finished ${where} in ${time}${pbDiff} · rank ${hl(res.rank)}/${res.rankTotal}`);
+    tellAll((slot, name, finishedTime, delta, rank, total) => phraseFor(slot, "SURF_CHAT_FINISHED_IN_RANK", name,
+      whereFor(slot), finishedTime, delta ? textFor(slot, "SURF_PB_DIFF", delta) : "", rank, total), r.name, time, pbDelta, res.rank, res.rankTotal);
   } else {
-    tell(r.slot, `Finished ${where} in ${time}${pbDiff} · rank ${hl(res.rank)}/${res.rankTotal}`);
+    tell(r.slot, phraseFor(r.slot, "SURF_CHAT_FINISHED_IN_RANK_2", whereFor(r.slot), time,
+      pbDelta ? textFor(r.slot, "SURF_PB_DIFF", pbDelta) : "", res.rank, res.rankTotal));
   }
-  if (replaySaved) tell(r.slot, "Your run was saved as the replay.");
+  if (replaySaved) tell(r.slot, phraseFor(r.slot,"SURF_CHAT_YOUR_RUN_WAS_SAVED_AS_THE_REPLAY"));
 
   emitter.finish({
     slot: r.slot, userId: r.userId, name: r.name, track, style, ticks: t,
@@ -452,17 +456,17 @@ export function togglePause(r: Runner, now: number): string {
     if (loc) teleportLoc(r, loc, true);
     r.pauseLoc = null;
     changed(r);
-    return "Resumed.";
+    return phraseFor(r.slot,"SURF_CHAT_RESUMED");
   }
-  if (r.status !== "running") return "You can only pause a running timer.";
-  if (!readKin(r, now)) return "No pawn to pause.";
+  if (r.status !== "running") return phraseFor(r.slot,"SURF_CHAT_YOU_CAN_ONLY_PAUSE_A_RUNNING_TIMER");
+  if (!readKin(r, now)) return phraseFor(r.slot,"SURF_CHAT_NO_PAWN_TO_PAUSE");
   r.pauseLoc = snapshotLoc(r.kin);
   r.pauseTick = now;
   r.status = "paused";
   r.pawn!.moveType = MOVETYPE_NONE;
   r.pawn!.setVelocity(0, 0, 0);
   changed(r);
-  return "Paused. Type !pause again to resume.";
+  return phraseFor(r.slot,"SURF_CHAT_PAUSED_TYPE_PAUSE_AGAIN_TO_RESUME");
 }
 
 export function saveLoc(r: Runner, now: number): number {

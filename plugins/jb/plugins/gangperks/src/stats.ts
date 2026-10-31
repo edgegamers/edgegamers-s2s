@@ -15,7 +15,7 @@ import type { WardenEvent, WardenRemovedEvent } from "@edgegamers/jailbreak-ward
 import type { BombDetonatedEvent, RebelEvent } from "@edgegamers/jailbreak-core";
 import type { StatRecordDef } from "./records.ts";
 import { Credits, LG_STAT, LR_STAT, WARDEN_STAT, bumpRecord, rebelKillDefault, rebelWeaponScore } from "./records.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 import { deps, guard, readyGangs } from "./state.ts";
 
 /** How long after a "death" removal/clear we still treat the dead player as warden/rebel. */
@@ -50,7 +50,7 @@ function bump<F extends string>(def: StatRecordDef<F>, steamId: string, field: F
 function grant(p: Player, amount: number, reason: string): void {
   const gangs = readyGangs();
   if (!gangs || !isSteamId64(p.steamId) || amount <= 0) return;
-  if (gangs.grantPlayer(p.steamId, amount, reason) >= 0) Chat.toSlot(p.slot, msg.creditsEarned(amount, reason));
+  if (gangs.grantPlayer(p.steamId, amount, reason) >= 0) Chat.toSlot(p.slot, msgFor(p.slot).creditsEarned(amount, reason));
 }
 
 const humans = (): Player[] => Player.all().filter((p) => isSteamId64(p.steamId));

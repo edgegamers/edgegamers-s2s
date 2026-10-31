@@ -136,3 +136,7 @@ GPL-3.0-only, preserving the upstream license. See [NOTICE](NOTICE) and
 `d9b6ce0008be45ecd983f3c7fa402b0286721e20`. Framework API reference:
 `ec97355e2836336a25709961301355671b0b92c9` from
 [s2script/s2script](https://github.com/s2script/s2script).
+
+## Translations and messages
+
+See [the shared translations guide](../../docs/translations.md) for catalogs, native locale overrides, startup loading and the required chat/console formatting. English is embedded; copy loose catalogs only to customize wording or add locales. Update existing deployed overrides manually when upgrading.

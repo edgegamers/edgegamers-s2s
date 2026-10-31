@@ -1,3 +1,5 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /**
  * SpecialDayManager: who may start a day, starting and ending it, the rounds-since-last counter, and
  * routing engine events to the running day.
@@ -13,7 +15,7 @@ import { DayRun } from "./runner.ts";
 import { checkStart, nextRoundsSince } from "./eligibility.ts";
 import type { StartDenial } from "./eligibility.ts";
 import { parseSDTypeList } from "./sdtype.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 import { timeElapsed, toAll, toSlot } from "./game.ts";
 
 /** The @edgegamers/jailbreak-core methods the manager uses. */
@@ -22,7 +24,7 @@ export interface CoreApi {
   setMode(mode: Mode): boolean;
   disableRebelsForRound(): void;
   openCells(source: string): boolean;
-  log(message: string): void;
+  log(message: string, presentation?: { key: string; args: (string | number)[]; labels?: number[] }): void;
   describe(slot: number): string;
 }
 
@@ -103,19 +105,19 @@ export class Manager {
     if (d === null) return true;
     switch (d.kind) {
       case "not_warden":
-        say(slot, msg.notWarden());
+        say(slot, msgFor(slot).notWarden());
         break;
       case "running":
-        say(slot, msg.running(this.current?.info.name ?? "Unknown"));
+        say(slot, msgFor(slot).running(this.current?.info.name ?? "Unknown"));
         break;
       case "cooldown":
-        say(slot, msg.cooldown(d.rounds));
+        say(slot, msgFor(slot).cooldown(d.rounds));
         break;
       case "too_late":
-        say(slot, msg.tooLate(d.maxSeconds));
+        say(slot, msgFor(slot).tooLate(d.maxSeconds));
         break;
       case "gated":
-        say(slot, msg.cannotCall(config.getString("sd_gated_message")));
+        say(slot, msgFor(slot).cannotCall(config.getString("sd_gated_message")));
         break;
     }
     return false;
@@ -125,7 +127,7 @@ export class Manager {
   start(type: SDType, starterSlot: number): boolean {
     if (this.current) return false;
     if (!this.core.setMode("specialday")) {
-      say(starterSlot, msg.modeRefused());
+      say(starterSlot, msgFor(starterSlot).modeRefused());
       return false;
     }
     const day = DAYS[type]();
@@ -139,18 +141,18 @@ export class Manager {
     };
     this.roundsSince = 0;
     this.current = { run, info };
-    toAll(msg.dayStart(day.name, day.description));
+    toAll(forRecipients((recipient,value0,value1) => msgFor(recipient).dayStart(value0, value1), day.name,day.description));
     try {
       run.start();
     } catch (e) {
       console.log(`[specialdays] ${type} setup failed: ${String(e)}`);
-      this.core.log(`Special day ${day.name} failed to start: ${String(e)}`);
+      this.core.log(...logEntry("JB_LOG_SPECIAL_DAY_FAILED_TO_START", [String(day.name), String(String(e))], [0]));
     }
     // Days that keep last requests (Custom, Bunny Hop) hand the round mode back so an LR can claim it.
     if (day.settings.allowLastRequests) this.core.setMode("normal");
     this.forwards.started({ ...info });
     const by = starterSlot >= 0 ? this.core.describe(starterSlot) : "the server";
-    this.core.log(`Special day started: ${day.name} (by ${by})`);
+    this.core.log(...logEntry("JB_LOG_SPECIAL_DAY_STARTED_BY", [String(day.name), String(by)], [0]));
     return true;
   }
 
@@ -160,9 +162,9 @@ export class Manager {
     if (!cur) return;
     this.current = null;
     cur.run.end();
-    if (announce) toAll(msg.dayEnd(cur.info.name));
+    if (announce) toAll(forRecipients((recipient,value0) => msgFor(recipient).dayEnd(value0), cur.info.name));
     this.forwards.ended({ ...cur.info });
-    this.core.log(`Special day ended: ${cur.info.name}`);
+    this.core.log(...logEntry("JB_LOG_SPECIAL_DAY_ENDED", [String(cur.info.name)], [0]));
   }
 
   // ── event routing ─────────────────────────────────────────────────────────────────────────

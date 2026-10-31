@@ -7,6 +7,7 @@ import {createContext,runInContext} from 'node:vm';
 // Two isolated instances use the real round singleton, registry, actors and reload-state code.
 // Only engine access and unrelated side effects are replaced.
 const boundaries:Record<string,string>={
+ "../../../../packages/contracts/phrases.ts":"export const plainPhraseFor=(slot,key)=>slot===1&&key===\"Draw\"?\"Unentschieden\":key;",
  '@s2script/sdk/server':'export const Server=fixture.server;',
  '@s2script/sdk/clients':'export const Clients={fromSlot:slot=>fixture.players.find(p=>p.slot===slot)?.client??null};',
  '@s2script/sdk/timers':'export const delay=()=>new Promise(()=>{});',
@@ -16,9 +17,9 @@ const boundaries:Record<string,string>={
  '../core/preframe':'export const bindRoundEpoch=()=>{},nextPreFrame=()=>{};',
  '../core/cvars':'export const cfg={},roundDuration=()=>120;',
  '../core/settings':'export const refreshSettings=()=>{};',
- '../core/msgs':'export const msg=()=>"";',
+ '../core/msgs':'export const msg=()=>"",msgFor=()=>"";',
  '../core/reports-provider':'export const owedBy=()=>0;',
- './roles':'export const assignRoles=()=>{},revealTraitorBuddies=()=>{},roleName=()=>"",stripRoundWeapons=()=>{};',
+ './roles':'export const assignRoles=()=>{},revealTraitorBuddies=()=>{},roleName=()=>"",roleNameFor=()=>"",stripRoundWeapons=()=>{};',
  './logger':'export const clearLog=()=>{},printLogs=()=>{};',
  '../cs2/bodies':'export const clearBodies=()=>{};',
  '../cs2/spoof':'export const setSpoofingEnabled=()=>{};',

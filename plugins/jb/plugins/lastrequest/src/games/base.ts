@@ -1,3 +1,4 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
 /**
  * The shape every last-request game shares (C# `AbstractLastRequest`, `TeleportingRequest`,
  * `WeaponizedRequest`). A game owns its timers; they all die when the LR ends.
@@ -7,7 +8,7 @@ import type { Timer } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
 import type { LRInfo, LRResult, LRType } from "../../api";
 import type { Participant } from "../players";
-import { msg } from "../messages";
+import { msgFor } from "../messages";
 
 export type LRState = "pending" | "active" | "completed";
 
@@ -69,9 +70,9 @@ export abstract class LastRequest {
     return slot === this.prisoner.slot ? this.guard : this.prisoner;
   }
 
-  tell(message: string): void {
-    this.prisoner.chat(message);
-    this.guard.chat(message);
+  tell(message: string | ((slot: number) => string)): void {
+    this.prisoner.chat(typeof message === 'function' ? message(this.prisoner.slot) : message);
+    this.guard.chat(typeof message === 'function' ? message(this.guard.slot) : message);
   }
 
   info(): LRInfo {
@@ -146,7 +147,7 @@ export abstract class WeaponizedRequest extends TeleportingRequest {
     this.guard.strip();
     for (let i = 5; i >= 1; i--) {
       const n = i;
-      this.after((5 - i) * 1000, () => this.tell(msg.countdown(n)));
+      this.after((5 - i) * 1000, () => this.tell(forRecipients((recipient,value0) => msgFor(recipient).countdown(value0), n)));
     }
     this.after(5000, () => {
       if (this.state === "pending") this.execute();

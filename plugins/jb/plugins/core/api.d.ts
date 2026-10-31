@@ -145,7 +145,7 @@ export interface JbCore {
   cellsOpened(): boolean;
 
   /** Append a line to this round's log (shown by `!logs` and dumped to consoles at round end). */
-  log(message: string): void;
+  log(message: string, presentation?: { key: string; args: (string | number)[]; labels?: number[] }): void;
   /** A log-friendly label for the player in `slot`, e.g. `"Name [CT]"` / `"Name [T, rebel]"`. */
   describe(slot: number): string;
 }
@@ -164,7 +164,7 @@ export declare function giveBomb(slot: number): boolean;
 export declare function skipRandomBombNextRound(): void;
 export declare function openCells(source: string): boolean;
 export declare function cellsOpened(): boolean;
-export declare function log(message: string): void;
+export declare function log(message: string, presentation?: { key: string; args: (string | number)[]; labels?: number[] }): void;
 export declare function describe(slot: number): string;
 
 export interface Contract {

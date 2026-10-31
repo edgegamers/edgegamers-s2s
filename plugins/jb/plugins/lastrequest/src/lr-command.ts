@@ -1,3 +1,4 @@
+import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 /**
  * `!lr [type] [guard]` (C# `LastRequestCommand`) and `!endrace` (C# `EndRaceCommand`).
  * With no arguments it opens the type menu, with a type the guard menu; menu picks re-run the
@@ -12,48 +13,46 @@ import { isAvailable } from "./games";
 import { lrName, parseLRType } from "./logic";
 import { getActiveLR, initiateLastRequest, isBusy, isEnabled, isInLR } from "./manager";
 import { showPlayerMenu, showTypeMenu, wouldHavePlayers } from "./menus";
-import { guardName, msg } from "./messages";
+import { guardName, msgFor } from "./messages";
 import { isRebelling } from "./lr-rebel";
 
-const TYPE_MENU_TITLE = "Last Request";
-const PLAYER_MENU_TITLE = (type: LRType): string => `${lrName(type)} — choose a guard`;
 
 /** Run the `!lr` flow for `slot`. `reply` goes to the player's chat. */
 export function lastRequest(slot: number, typeArg: string, targetArg: string, reply: (m: string) => void): void {
   const me = Player.fromSlot(slot);
   if (!me) return;
-  if (!isEnabled()) return reply(msg.notEnabled());
-  if (me.teamNum !== Team.Prisoner) return reply(msg.cannotLR("You are not a Prisoner"));
-  if (!isAlive(me)) return reply(msg.cannotLR("You are not alive"));
-  if (!wouldHavePlayers()) return reply(msg.cannotLR("No players available to LR"));
-  if (isBusy(slot) || isRebelling(slot)) return reply(msg.cannotLR("You are already in an LR"));
+  if (!isEnabled()) return reply(msgFor(slot).notEnabled());
+  if (me.teamNum !== Team.Prisoner) return reply(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_YOU_ARE_NOT_A_PRISONER")));
+  if (!isAlive(me)) return reply(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_YOU_ARE_NOT_ALIVE")));
+  if (!wouldHavePlayers()) return reply(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_NO_PLAYERS_AVAILABLE_TO_LR")));
+  if (isBusy(slot) || isRebelling(slot)) return reply(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_YOU_ARE_ALREADY_IN_AN_LR")));
 
   if (typeArg === "") {
-    showTypeMenu(slot, TYPE_MENU_TITLE, isAvailable, (type) => lastRequest(slot, type, "", chatTo(slot)));
+    showTypeMenu(slot, msgFor(slot).typeMenuTitle, isAvailable, (type) => lastRequest(slot, type, "", chatTo(slot)));
     return;
   }
 
   const type = parseLRType(typeArg);
-  if (type === null) return reply(msg.invalid(typeArg));
-  if (!isAvailable(type)) return reply(msg.unavailable(type));
+  if (type === null) return reply(msgFor(slot).invalid(typeArg));
+  if (!isAvailable(type)) return reply(msgFor(slot).unavailable(type));
 
   if (targetArg === "") {
-    showPlayerMenu(slot, PLAYER_MENU_TITLE(type), false, isInLR, (target) =>
+    showPlayerMenu(slot, msgFor(slot).playerMenuTitle(type), false, isInLR, (target) =>
       lastRequest(slot, type, `#${target.userId}`, chatTo(slot)),
     );
     return;
   }
 
   const targets = Player.target(targetArg, slot, false);
-  if (targets.length === 0) return reply(msg.playerNotFound(targetArg));
-  if (targets.length > 1) return reply(msg.playerFoundMultiple(targetArg));
+  if (targets.length === 0) return reply(msgFor(slot).playerNotFound(targetArg));
+  if (targets.length > 1) return reply(msgFor(slot).playerFoundMultiple(targetArg));
   const guard = targets[0];
   const name = guardName(guard.playerName ?? "?");
-  if (guard.teamNum !== Team.Guard) return reply(msg.cannotLRWith(name, "They are not a Guard"));
-  if (!isAlive(guard)) return reply(msg.cannotLRWith(name, "They are not alive"));
-  if (isBusy(guard.slot)) return reply(msg.cannotLRWith(name, "They are already in an LR"));
+  if (guard.teamNum !== Team.Guard) return reply(msgFor(slot).cannotLRWith(name, labelFor(slot,"JB_LASTREQUEST_LABEL_THEY_ARE_NOT_A_GUARD")));
+  if (!isAlive(guard)) return reply(msgFor(slot).cannotLRWith(name, labelFor(slot,"JB_LASTREQUEST_LABEL_THEY_ARE_NOT_ALIVE")));
+  if (isBusy(guard.slot)) return reply(msgFor(slot).cannotLRWith(name, labelFor(slot,"JB_LASTREQUEST_LABEL_THEY_ARE_ALREADY_IN_AN_LR")));
 
-  if (!initiateLastRequest(me, guard, type)) reply(msg.initFailed());
+  if (!initiateLastRequest(me, guard, type)) reply(msgFor(slot).initFailed());
 }
 
 export function lrCommand(cmd: CommandInvocation): void {
@@ -71,8 +70,8 @@ export function endRaceCommand(cmd: CommandInvocation): void {
   const slot = cmd.callerSlot;
   if (slot < 0) return;
   const lr = getActiveLR(slot);
-  if (!lr || lr.type !== "race") return cmd.replyToChat(msg.notInRace());
-  if (lr.state !== "pending") return cmd.replyToChat(msg.notPending());
+  if (!lr || lr.type !== "race") return cmd.replyToChat(msgFor(cmd.callerSlot).notInRace());
+  if (lr.state !== "pending") return cmd.replyToChat(msgFor(cmd.callerSlot).notPending());
   lr.execute();
 }
 

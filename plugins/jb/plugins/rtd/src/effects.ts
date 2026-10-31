@@ -11,7 +11,7 @@ import type { CanAcquireView, Weapon } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";
 import { WEAPON_GROUPS, SNIPERS, classForDefIndex, isKnife } from "./weapons.ts";
 import type { WeaponGroup } from "./weapons.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 
 export type TickBlock = "scope" | "leftKnife" | "rightKnife";
 
@@ -112,10 +112,10 @@ export function onSay(slot: number, text: string, teamonly: boolean): void {
   if (!decluttrCall(true, provider => provider.checkChat(slot, text))) return;
   const sender = Player.fromSlot(slot);
   if (!sender) return;
-  const line = msg.spy(teamLabel(sender.teamNum), sender.playerName ?? "", text);
+  const team = teamLabel(sender.teamNum), name = sender.playerName ?? "";
   for (const userId of spies) {
     const spy = Player.fromUserId(userId);
     if (!spy || spy.slot === slot || spy.teamNum === sender.teamNum) continue;
-    Clients.fromSlot(spy.slot)?.chat(line);
+    Clients.fromSlot(spy.slot)?.chat(msgFor(spy.slot).spy(team,name,text));
   }
 }

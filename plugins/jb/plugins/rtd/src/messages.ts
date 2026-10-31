@@ -1,42 +1,34 @@
+import {loadPhrases,phraseFor,plainPhraseFor} from '@edgegamers/jailbreak-shared';
+import english from '../translations/jb-rtd.phrases.json';
+export function loadMessages():void {loadPhrases('jb-rtd',english);}
 /**
  * Every player-facing RTD string (ported from lang/Jailbreak.English/RTD/*).
  */
-import { ChatColors } from "@s2script/cs2";
-import { tag, hl } from "@edgegamers/jailbreak-shared";
-
-const P = tag("RTD", ChatColors.DarkBlue);
-
-export const msg = {
-  rewardSelected: (name: string): string => `${P}You rolled ${ChatColors.BlueGrey}${name}${ChatColors.Grey}.`,
-  rewardDescription: (description: string): string => `${P}${ChatColors.Grey}${description}`,
-  alreadyRolled: (name: string): string => `${P}You already rolled ${ChatColors.Red}${name}${ChatColors.Grey}.`,
-  cannotRollYet: `${P}You can only roll when round ends or while dead.`,
-  rollingDisabled: `${P}Rolling is disabled.`,
-  /** Not in the C#: the reward refused to be prepared (e.g. Gangs went away mid-roll). */
-  rollFailed: (name: string): string => `${P}Could not roll ${hl(name)} right now, try again.`,
+export function msgFor(slot: number) {
+ return {
+  rewardSelected: (name: string): string => phraseFor(slot, "JB_RTD_REWARD_SELECTED", String(name)),
+  rewardDescription: (description: string): string => phraseFor(slot, "JB_RTD_REWARD_DESCRIPTION", String(description)),
+  alreadyRolled: (name: string): string => phraseFor(slot, "JB_RTD_ALREADY_ROLLED", String(name)),
+  get cannotRollYet() { return phraseFor(slot, "JB_RTD_CANNOT_ROLL_YET"); },
+  get rollingDisabled() { return phraseFor(slot, "JB_RTD_ROLLING_DISABLED"); },
+  rollFailed: (name: string): string => phraseFor(slot, "JB_RTD_ROLL_FAILED", String(name)),
   jackpot: (player: string, credits: number): string =>
-    `${P}${hl(player)} won the jackpot of ${hl(credits)} credits!`,
-
+    phraseFor(slot, "JB_RTD_JACKPOT", String(player), String(credits)),
   autoToggled: (enabled: boolean): string =>
-    `${P}${ChatColors.Grey}You ${enabled ? `${ChatColors.Green}enabled` : `${ChatColors.Red}disabled`} ${ChatColors.Grey}Auto-RTD.`,
-  autoNotSupported: `${P}Toggling Auto-RTD is not supported on this server.`,
-  noPermission: `${P}${ChatColors.Red}You do not have permission to use this command.`,
-
+    phraseFor(slot, "JB_RTD_AUTO_TOGGLED", plainPhraseFor(slot, enabled ? "JB_RTD_ENABLED" : "JB_RTD_DISABLED")),
+  get autoNotSupported() { return phraseFor(slot, "JB_RTD_AUTO_NOT_SUPPORTED"); },
+  get noPermission() { return phraseFor(slot, "JB_RTD_NO_PERMISSION"); },
   invalidParameter: (value: string, expected: string): string =>
-    `${P}${ChatColors.Red}Invalid parameter ${hl(value)}${ChatColors.Red}, expected ${hl(expected)}.`,
-
+    phraseFor(slot, "JB_RTD_INVALID_PARAMETER", String(value), String(expected)),
   statsLine: (index: number, name: string, percent: string): string =>
-    `${ChatColors.Orange}${index}. ${ChatColors.Blue}${name}${ChatColors.Grey}: ${ChatColors.Yellow}${percent}%`,
-  statsConsole: (index: number, name: string, percent: string): string => `${index}. ${name}: ${percent}%`,
-
+    phraseFor(slot, "JB_RTD_STATS_LINE", String(index), String(name), String(percent)),
+  statsConsole: (index: number, name: string, percent: string): string => phraseFor(slot, "JB_RTD_STATS_CONSOLE", String(index), String(name), String(percent)),
   spy: (teamLabel: string, name: string, text: string): string =>
-    `${ChatColors.Grey}[Spy] ${teamLabel === "T" ? ChatColors.LightRed : ChatColors.Blue}(${teamLabel}) ${name}${ChatColors.Default}: ${text}`,
+    phraseFor(slot,"JB_RTD_SPY", plainPhraseFor(slot,teamLabel), name, "\uFFFC").replace("\uFFFC", () => text),
+  get debugMenuTitle() { return plainPhraseFor(slot, "JB_RTD_DEBUG_MENU_TITLE"); },
+  debugMenuItem: (name: string, weight: number): string => plainPhraseFor(slot, "JB_RTD_DEBUG_MENU_ITEM", String(name), String(weight)),
+  debugSet: (name: string): string => phraseFor(slot, "JB_RTD_DEBUG_SET", String(name)),
+ };
+}
 
-  debugMenuTitle: "Debug RTD",
-  debugMenuItem: (name: string, weight: number): string => `${name} - Prob: ${weight}`,
-  debugSet: (name: string): string => `${P}Debug: your next reward is ${hl(name)}.`,
-
-  /** Colour reward names are printed in their colour. */
-  colorCode: { green: ChatColors.Green } as Record<"green", string>,
-  grey: ChatColors.Grey,
-};
+export {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';

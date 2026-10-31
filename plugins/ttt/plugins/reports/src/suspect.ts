@@ -1,3 +1,4 @@
+import english from "../../../translations/ttt.phrases.json" with { type: "json" };
 /**
  * Is this kill worth asking the victim about?
  *
@@ -49,10 +50,10 @@ export function classifyKill(
 }
 
 /** A short, human phrase for the prompt and the report — never a verdict, only what was seen. */
-export function describeKill(k: KillClass): string {
+export function describeKill(k: KillClass, text: (key: string) => string = key => (english as Record<string,string>)[key] ?? key): string {
   switch (k) {
-    case KillClass.SameSide: return "they killed a teammate";
-    case KillClass.UnprovokedOnTraitor: return "they killed you without being attacked first";
+    case KillClass.SameSide: return text("KILL_SAME_SIDE");
+    case KillClass.UnprovokedOnTraitor: return text("KILL_UNPROVOKED");
     default: return "";
   }
 }

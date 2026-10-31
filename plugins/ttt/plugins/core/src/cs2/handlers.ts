@@ -1,3 +1,4 @@
+import {tellAllWith} from "./pawn";
 /**
  * Assorted CS2 glue — the port of `PlayerMuter`, `AfkTimerListener`, `TraitorChatHandler`,
  * `NameDisplayer`, `BuyMenuHandler`, `MapZoneRemover`, `BombPlantSuppressor` and
@@ -33,7 +34,7 @@ import { ROLE_COLORS, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
 import { unspoofAlive } from "./spoof";
 import { game, inProgress, inWarmup } from "../game/game";
-import { roleName } from "../game/roles";
+import { roleName , roleNameFor } from "../game/roles";
 import { logIdentify } from "../game/logger";
 import { isCamouflaged } from "../shop/effects";
 import { tryPurchase, itemById, PurchaseResult } from "../shop/shop";
@@ -232,7 +233,7 @@ export function onItemPurchase(slot: number, weapon: string): boolean {
   // what made buying through the menu feel broken even when it worked.
   if (tryPurchase(slot, item) === PurchaseResult.Success) {
     tell(slot, msgFor(slot, "SHOP_PURCHASED", msgFor(slot, item.nameKey)));
-    const desc = msg(item.descKey);
+    const desc = msgFor(slot, item.descKey);
     if (desc !== "" && desc !== item.descKey) {
       tell(slot, msgFor(slot, "SHOP_PURCHASED_DETAIL", desc));
     }
@@ -650,14 +651,10 @@ export function installHandlers(bus: EventBus<TttEvents>): void {
       const role = body.ownerRole;
       if (role === RoleId.None) return;
 
-      tellAll(
-        msg(
-          "BODY_IDENTIFIED",
-          ev.identifier >= 0 ? reg.nameOf(ev.identifier) : "Someone",
-          body.ownerName,
-          roleName(role),
-        ),
-      );
+      tellAllWith((recipient,identifier,owner,ownerRole)=>msgFor(recipient,"BODY_IDENTIFIED",
+        identifier===null?msgFor(recipient,"BODY_IDENTIFIER_UNKNOWN"):identifier,owner,roleNameFor(recipient,ownerRole)),
+        ev.identifier>=0?reg.nameOf(ev.identifier):null,body.ownerName,role);
+
       logIdentify(ev.identifier, body.ownerName, role);
 
       // The owner stops reading as alive now that their corpse has been found.

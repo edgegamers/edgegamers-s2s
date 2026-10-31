@@ -1,20 +1,18 @@
 import { ChatColors } from "@s2script/cs2";
 
 /**
- * Chat formatting. Every Jailbreak line starts with a coloured `[Tag]` so players can tell the
- * systems apart (`[Warden]`, `[LR]`, …). Colour bytes come from `@s2script/cs2`'s `ChatColors`.
+ * Chat formatting for complete Feature » Message lines. Native catalogs own the text.
  */
-export function tag(name: string, color: string = ChatColors.Green): string {
-  return `${color}[${name}]${ChatColors.Default} `;
+export function tag(name: string, color: string = ChatColors.Blue): string {
+  return `${color === ChatColors.Red ? ChatColors.Red : ChatColors.Blue}${name} ${ChatColors.Grey}» `;
 }
 
-/** Highlight a value inside a message (player names, numbers, durations). */
+/** Highlight an important value inside a message. */
 export function hl(value: string | number, color: string = ChatColors.Yellow): string {
-  return `${color}${value}${ChatColors.Default}`;
+  return `${color}${value}${ChatColors.Grey}`;
 }
 
-/** Colour a player name by team: guards blue, prisoners red-ish, others grey. */
+/** Player names are blue; retain the legacy team argument for callers. */
 export function teamColored(name: string, teamNum: number | null | undefined): string {
-  const color = teamNum === 3 ? ChatColors.Blue : teamNum === 2 ? ChatColors.LightRed : ChatColors.Grey;
-  return `${color}${name}${ChatColors.Default}`;
+  return `${ChatColors.Blue}${name}${ChatColors.Grey}`;
 }

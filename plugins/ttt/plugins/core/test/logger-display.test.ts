@@ -10,7 +10,7 @@ async function setup({ui=true,bots=false,admins=false,shop=false,rdm=false,accep
  const hud={isShopOpen(slot:number){f.ops.push(['shop',slot]);f.onUi?.();return shop;},isRdmOpen(slot:number){f.ops.push(['rdm',slot]);return rdm;},openLogs(slot:number,rows:unknown[]){f.ops.push(['rows',slot,rows]);return accept;}};
  const text=readFileSync(new URL('../src/game/logger.ts',import.meta.url),'utf8');
  // Test-only resource counter at the real row materialization, with render/tone source intact.
- const push='out.push({ a: render(e), tone: toneOf(e) });';
+ const push='out.push({ a: render(e, slot), tone: toneOf(e) });';
  assert.equal(text.split(push).length,2,'one actual log-row materialization seam');
  const source=text.replace(push,'globalThis.fixture.rowBuilds++; '+push);
  const mocks:Record<string,string>={
@@ -18,6 +18,7 @@ async function setup({ui=true,bots=false,admins=false,shop=false,rdm=false,accep
   '@s2script/sdk/server':'export const Server={gameTime:10};',
   '@s2script/sdk/admin':'export const ADMFLAG={GENERIC:1};export const Admin={forSlot:slot=>({hasFlags(){globalThis.fixture.ops.push(["admin",slot]);globalThis.fixture.onAdmin?.();return globalThis.admins;}})};',
   '../core/msgs':'export const msg=key=>key;',
+  '../../../../packages/contracts/phrases.ts': 'const phrases='+JSON.stringify(JSON.parse(readFileSync(new URL('../../../translations/ttt.phrases.json',import.meta.url),'utf8')))+';export const plainPhraseFor=(slot,key,...args)=>key==="ROLE_TRAITOR"&&slot===1?"Verräter":key.startsWith("GAME_LOGS_")?key:(phrases[key]??key).replace(/\\{(\\d+)\\}/g,(_,n)=>String(args[Number(n)-1]??""));',
   '../cs2/ttthud':'export const getTttHud=()=>globalThis.ui;',
   '../core/registry':'export const activeSlots=()=>[0,1],nameOf=slot=>"P"+slot,roleOf=()=>1,steamIdOf=()=>"00000";',
  };
@@ -41,14 +42,14 @@ test('round-end logs do not materialize UI rows for bots, nonadmins, absent UI o
   assert.equal(f.ops.filter(x=>x[0]==='print').length,options.admins&&!options.bots?6:0);
  }
 });
-test('eligible admins share one copied row projection and retain original modal/fallback/console order',async()=>{
+test('eligible admins receive localized copied row projections and retain original modal/fallback/console order',async()=>{
  const {f,api}=await setup({admins:true,accept:false});api.printLogs();
- assert.equal(f.rowBuilds,1);
+ assert.equal(f.rowBuilds,2);
  assert.deepEqual(plain(f.ops),[
   ['admin',0],['shop',0],['rdm',0],['rows',0,[{a:line}]],['print',0,'GAME_LOGS_HEADER'],['print',0,line],['print',0,'GAME_LOGS_FOOTER'],
   ['admin',1],['shop',1],['rdm',1],['rows',1,[{a:line}]],['print',1,'GAME_LOGS_HEADER'],['print',1,line],['print',1,'GAME_LOGS_FOOTER'],...consoleRows,
  ]);
- assert.equal(f.ops[3]![2],f.ops[10]![2]);
+ assert.notEqual(f.ops[3]![2],f.ops[10]![2], "each viewer gets an independently localized projection");
 });
 test('deferred row rendering preserves the entry-time projection when admin/UI callbacks append or clear logs',async()=>{
  for(const seam of ['admin','ui']){
@@ -63,7 +64,7 @@ test('deferred row rendering preserves the entry-time projection when admin/UI c
 });
 test('public log rows still show archived history when the current log is empty',async()=>{
  const {f,api}=await setup({admins:true});api.clearLog(2);api.printLogs();
- assert.equal(f.rowBuilds,1);
+ assert.equal(f.rowBuilds,2);
  assert.deepEqual(plain(f.ops.filter(x=>x[0]==='rows').map(x=>x[2])),[[{a:line}],[{a:line}]]);
  assert.deepEqual(f.ops.filter(x=>x[0]==='console'),[['console','GAME_LOGS_HEADER'],['console','GAME_LOGS_FOOTER']]);
 });
@@ -86,4 +87,10 @@ test('a recipient retired during UI checks keeps its original SDK client fallbac
  assert.equal(f.ops.filter(x=>x[0]==='successor-print').length,0);
  assert.equal(f.ops.filter(x=>x[0]==='print'&&x[1]===1).length,3);
  assert.deepEqual(f.ops.filter(x=>x[0]==='console'),consoleRows);
+});
+
+test('stored role assignments resolve the role label for the log viewer',async()=>{
+ const {api}=await setup();api.logRoleAssigned(0,2,'Server traitor');
+ const row=api.makeLogRows(0,1).find((row:any)=>row.a.includes('Verräter'));
+ assert.ok(row);assert.doesNotMatch(row.a,/Server traitor/);
 });

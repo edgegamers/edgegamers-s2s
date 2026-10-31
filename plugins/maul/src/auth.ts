@@ -5,10 +5,11 @@
 // Ordering and semantics follow sm/maul/scripting/maul_authentication.sp (OnMaulInfoReady);
 // the retry ladder and the round-start reapply come from maul-actain's AuthService.
 
+import { phraseFor, plainPhraseFor } from "./phrases.ts";
 import { Admin } from "@s2script/sdk/admin";
 import { Chat } from "@s2script/sdk/chat";
 import { Clients } from "@s2script/sdk/clients";
-import { ChatColors, Player } from "@s2script/cs2";
+import { Player } from "@s2script/cs2";
 import { delay } from "@s2script/sdk/timers";
 import { computeGrant, shouldRegisterAdmin, taggedName } from "./grant.ts";
 import { stripPort } from "./encoding.ts";
@@ -211,20 +212,7 @@ export class Authenticator {
     this.deps.names.apply(slot, steamId, name);
   }
 
-  /**
-   * The Dedicated Supporter join announcement, ported from sm/maul/scripting/ds_join_message.sp.
-   *
-   * SM style 1 (the default cookie value) is:
-   *     CPrintToChatAll("{green}%s %s {default}%s", DS_SYMBOL_TAG, sClientName, sJoinMessage)
-   *     PrintToConsoleAll("%s %s %s", DS_SYMBOL_TAG, sClientName, sJoinMessage)
-   *
-   * so the tag AND the player's name are green, and only the message itself resets to default.
-   * The name is the player's CURRENT in-game name (SM's GetClientName), which by this point is the
-   * autotagged one — this runs after applyName, exactly as SM's runs after the autotag.
-   *
-   * SM's style 2 (message only, no name) is selected by a per-client clientprefs cookie set from
-   * the DS menu; that menu is not part of this port, so only style 1 is implemented.
-   */
+  /** The current in-game name gets our frame; the remote supporter body stays authored content. */
   private printJoinMessage(slot: number, steamId: string, info: PlayerLookup): void {
     if (!this.deps.getConfig().joinMessage) return;
     if (this.greeted.has(steamId)) return;
@@ -241,8 +229,11 @@ export class Authenticator {
 
     this.greeted.add(steamId);
 
-    Chat.toAll(`${ChatColors.Green}${DS_TAG} ${name} ${ChatColors.Default}${message}`);
-    for (const client of Clients.all()) client.print(`${DS_TAG} ${name} ${message}`);
+    for (const client of Clients.all()) {
+      if (!client.isValid()) continue;
+      Chat.toSlot(client.slot, phraseFor(client.slot, "MAUL_DS_JOIN", name) + message);
+      client.print(plainPhraseFor(client.slot, "MAUL_DS_JOIN", name) + message);
+    }
 
     // Both sinks are player-facing, so without this the server log cannot tell a fired greet from
     // a skipped one — the same blind spot the unauthenticated-SteamID skip used to have.
@@ -257,7 +248,7 @@ export class Authenticator {
       return;
     }
 
-    player.kick(banKickMessage(minutes, reason));
+    player.kick(banKickMessage(minutes, reason, slot));
     this.deps.log.info(`kicked ${steamId} for a current ban (${reason})`);
   }
 

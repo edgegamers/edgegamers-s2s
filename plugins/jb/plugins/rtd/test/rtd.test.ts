@@ -6,6 +6,12 @@ import type { RewardSpec } from "../src/pool.ts";
 import { classForDefIndex, friendlyWeaponName, isKnife, GUNS, KNIVES, RIFLES, SNIPERS, UTILITY } from "../src/weapons.ts";
 import { rollDecision, autoRtdEnabled, toggledAutoRtd, parseFlagLetters } from "../src/rules.ts";
 
+test('reward labels and descriptions resolve templates with their numeric values', () => {
+  const text = (key: string, ...args: (string | number)[]) => key + ':' + args.join(',');
+  assert.equal(rewardName({kind:'credit',amount:3}, text), 'RTD_NAME_CREDIT_MANY:3');
+  assert.equal(rewardDescription({kind:'hp',hp:90}, undefined, text), 'RTD_DESC_HP:90');
+});
+
 const entries = [
   { reward: "a", weight: 1 },
   { reward: "b", weight: 2 },

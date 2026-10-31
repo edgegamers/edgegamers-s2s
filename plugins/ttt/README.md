@@ -25,3 +25,7 @@ Panorama uses the existing first-party hudkit with `observable:false`. UI action
 See the [implementation brief](docs/specs/modular-ttt-port.md), [baseline decision](docs/adr/0003-existing-port-api-upgrade.md), and [upgrade evidence](docs/research/current-api-upgrade.md). The original README remains in [history](docs/history/old-port-readme.md).
 
 Shared MySQL/CSS player-data migration and [receiving-client acceptance](docs/testing/two-client-acceptance.md) remain separate deliverables. Cluster is tied exclusively to the buyer's next HE detonation. Dropping or picking up a grenade does not transfer that entitlement.
+
+## Translations and messages
+
+See [the shared translations guide](../../docs/translations.md) for catalogs, native locale overrides, startup loading and the required chat/console formatting. English is embedded; copy loose catalogs only to customize wording or add locales. Update existing deployed overrides manually when upgrading.

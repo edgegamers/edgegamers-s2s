@@ -100,7 +100,7 @@ export interface PresenceDeps {
    * `onChatSend`: this module stays testable without the game runtime, and the
    * plugin decides how a kick is actually carried out.
    */
-  onKick?: (gameIdValue: string, reason: string) => boolean;
+  onKick?: (gameIdValue: string, reason: string, isDefault?: boolean) => boolean;
   /**
    * MAUL asked us to run a console command (`server.command`).
    *
@@ -280,7 +280,7 @@ export class PresenceReporter {
       : "Kicked by MAUL";
     const by = typeof data.issuedBy === "string" ? data.issuedBy : "unknown";
 
-    const kicked = this.deps.onKick?.(data.gameIdValue, reason) ?? false;
+    const kicked = this.deps.onKick?.(data.gameIdValue, reason, !(typeof data.reason === "string" && data.reason.length > 0)) ?? false;
     if (kicked) {
       this.deps.log.info(`kicked ${data.gameIdValue} at ${by}'s request: ${reason}`);
     } else {

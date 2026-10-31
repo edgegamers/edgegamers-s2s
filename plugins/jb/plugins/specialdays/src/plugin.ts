@@ -1,4 +1,5 @@
 import { watchDecluttr } from '../../../../decluttr/src/owner.ts';
+import {loadMessages} from './messages';
 /**
  * @edgegamers/jailbreak-specialdays — special days and the speedrun trail (ported from Jailbreak.SpecialDay + Jailbreak.Trail).
  * Wiring only: commands, engine events → the running day, core/warden/zones hookups.
@@ -12,7 +13,7 @@ import { buildMenu } from "./menu.ts";
 import { registerPickupGate } from "./pickup.ts";
 import { setZoneProvider } from "./zones.ts";
 import { parseSDType } from "./sdtype.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 import { playerOfPawn } from "./game.ts";
 
 let manager: Manager | null = null;
@@ -35,6 +36,7 @@ function hookPawn(ref: EntityRef | null): void {
 
 export function OnPluginStart(): void {
   watchDecluttr();
+  loadMessages();
   const core = use("@edgegamers/jailbreak-core");
   const handle = publish("@edgegamers/jailbreak-specialdays", {
     isRunning: (): boolean => manager?.isRunning() ?? false,
@@ -59,23 +61,22 @@ export function OnPluginStart(): void {
     scope.own({ dispose: () => setZoneProvider(null) });
   });
 
-  const menu = buildMenu((slot, type) => tryStart(slot, type));
   const sd = (cmd: CommandInvocation): HookResultValue => {
     const slot = cmd.callerSlot;
     const arg = cmd.argString.trim();
     if (arg === "") {
       if (slot < 0) {
-        cmd.reply(msg.usage);
+        cmd.reply(msgFor(cmd.callerSlot).usage);
         return HookResult.Handled;
       }
       const current = m.getCurrent();
-      if (current) say(slot, msg.running(current.name));
-      else menu.display(slot, 30);
+      if (current) say(slot, msgFor(slot).running(current.name));
+      else buildMenu((selectedSlot,type)=>tryStart(selectedSlot,type),slot).display(slot,30);
       return HookResult.Handled;
     }
     const type = parseSDType(arg);
     if (type === null) {
-      say(slot, msg.invalid(arg));
+      say(slot, msgFor(slot).invalid(arg));
       return HookResult.Handled;
     }
     tryStart(slot, type);

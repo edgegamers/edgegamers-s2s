@@ -1,3 +1,6 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {nameFor,descriptionFor} from './rewards';
+import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 /**
  * Rolling and rewarding (C# RTDCommand + RTDRewarder + RewardGenerator.GenerateReward +
  * RTDStatsCommand + Debug/DebugRTD).
@@ -17,7 +20,7 @@ import { formatPercent, percentages, pickWeighted } from "./generator.ts";
 import { REWARDS, enabledRewards } from "./rewards.ts";
 import type { Reward } from "./rewards.ts";
 import { rollDecision } from "./rules.ts";
-import { msg } from "./messages.ts";
+import { msgFor } from "./messages.ts";
 
 /** userId → the reward waiting for that player's next spawn. */
 const pending = new Map<number, Reward>();
@@ -77,9 +80,9 @@ export function roll(player: Player, forced: number | null): void {
     warmup: isWarmup(),
     alive: isAlive(player),
   });
-  if (decision === "already_rolled" && old) return tell(slot, msg.alreadyRolled(old.name));
-  if (decision === "disabled") return tell(slot, msg.rollingDisabled);
-  if (decision === "not_yet") return tell(slot, msg.cannotRollYet);
+  if (decision === "already_rolled" && old) return tell(slot, msgFor(slot).alreadyRolled(nameFor(slot,old)));
+  if (decision === "disabled") return tell(slot, msgFor(slot).rollingDisabled);
+  if (decision === "not_yet") return tell(slot, msgFor(slot).cannotRollYet);
 
   let reward: Reward | null;
   if (forced !== null && forced >= 0) {
@@ -87,11 +90,11 @@ export function roll(player: Player, forced: number | null): void {
   } else {
     reward = generate(player);
   }
-  if (!reward) return tell(slot, msg.rollingDisabled);
+  if (!reward) return tell(slot, msgFor(slot).rollingDisabled);
 
-  if (!setReward(player, reward)) return tell(slot, msg.rollFailed(reward.name));
-  tell(slot, msg.rewardSelected(reward.name));
-  tell(slot, msg.rewardDescription(reward.description));
+  if (!setReward(player, reward)) return tell(slot, msgFor(slot).rollFailed(nameFor(slot,reward)));
+  tell(slot, msgFor(slot).rewardSelected(nameFor(slot,reward)));
+  tell(slot, descriptionFor(slot,reward));
 }
 
 /** `!rtd` / `sm_rtd [index]` (the index is the root-only bypass from the C#). */
@@ -105,13 +108,13 @@ export function cmdRtd(cmd: Command): HookResultValue {
   }
   const raw = cmd.arg(0);
   if (!/^-?\d+$/.test(raw)) {
-    cmd.replyToChat(msg.invalidParameter(raw, "integer"));
+    cmd.replyToChat(msgFor(cmd.callerSlot).invalidParameter(raw, labelFor(cmd.callerSlot,"JB_RTD_LABEL_INTEGER")));
     return HookResult.Handled;
   }
   const index = parseInt(raw, 10);
   const count = enabledRewards().length;
   if (index !== -1 && (index < 0 || index >= count)) {
-    cmd.replyToChat(msg.invalidParameter(raw, `0-${count - 1}`));
+    cmd.replyToChat(msgFor(cmd.callerSlot).invalidParameter(raw, `0-${count - 1}`));
     return HookResult.Handled;
   }
   roll(player, index);
@@ -125,8 +128,8 @@ export function cmdRtdStats(cmd: Command): HookResultValue {
   const pct = percentages(rewards.map((r) => ({ reward: r, weight: r.weight })));
   rewards.forEach((r, i) => {
     const p = formatPercent(pct[i]);
-    cmd.replyToChat(msg.statsLine(i, r.name, p));
-    cmd.replyToConsole(msg.statsConsole(i, r.name, p));
+    cmd.replyToChat(msgFor(cmd.callerSlot).statsLine(i, nameFor(cmd.callerSlot,r), p));
+    cmd.replyToConsole(msgFor(cmd.callerSlot).statsConsole(i, nameFor(cmd.callerSlot,r), p));
   });
   return HookResult.Handled;
 }
@@ -135,15 +138,15 @@ export function cmdRtdStats(cmd: Command): HookResultValue {
 export function cmdDebugRtd(cmd: Command): HookResultValue {
   if (cmd.callerSlot < 0) return HookResult.Handled;
   const rewards = enabledRewards();
-  const menu = new Menu(msg.debugMenuTitle);
+  const menu = new Menu(msgFor(cmd.callerSlot).debugMenuTitle);
   menu.style = MenuStyle.Center;
-  for (const r of rewards) menu.addItem(String(r.poolIndex), msg.debugMenuItem(r.name, r.weight));
+  for (const r of rewards) menu.addItem(String(r.poolIndex), msgFor(cmd.callerSlot).debugMenuItem(nameFor(cmd.callerSlot,r), r.weight));
   menu.onSelect((e) => {
     const reward = REWARDS[Number(e.info)];
     const p = Player.fromSlot(e.slot);
     if (!reward || !p) return;
-    if (setReward(p, reward)) tell(e.slot, msg.debugSet(reward.name));
-    else tell(e.slot, msg.rollFailed(reward.name));
+    if (setReward(p, reward)) tell(e.slot, msgFor(e.slot).debugSet(nameFor(e.slot,reward)));
+    else tell(e.slot, msgFor(e.slot).rollFailed(nameFor(e.slot,reward)));
   });
   menu.display(cmd.callerSlot, 0);
   return HookResult.Handled;
@@ -160,7 +163,7 @@ export function onSpawn(slot: number): void {
   after(40, () => {
     const p = Player.fromUserId(userId);
     if (!p || pending.get(userId) !== reward) return;
-    if (reward.spec.kind !== "nothing") log(`Granted ${reward.name} to ${describe(p.slot)}`);
+    if (reward.spec.kind !== "nothing") log(...logEntry("JB_LOG_GRANTED_TO", [String(reward.name), String(describe(p.slot))], [0]));
     if (isAlive(p)) reward.grant(p);
     pending.delete(userId);
   });

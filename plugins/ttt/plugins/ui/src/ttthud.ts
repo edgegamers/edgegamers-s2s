@@ -1,3 +1,4 @@
+import { plainPhraseFor as tr, loadPhrases } from "../../../packages/contracts/phrases.ts";
 /** Existing-port hudkit surfaces; Core supplies copied models and owns actions. */
 import type { Badge, Components, Modal, ModalSpec, Row, UiSurfaceHandle } from '@s2script/cs2/ui';
 import { CustomHudLayout, hudkit } from '@s2script/cs2';
@@ -15,7 +16,7 @@ const REASON_SECONDS = 120;
 type ReportMode = { kind: 'prompt'; accusedName: string } | { kind: 'pick'; targets: UiReportTarget[] };
 const equal = (a: UiActor | undefined, b: UiActor): boolean => !!a && a.slot === b.slot && a.steamId === b.steamId && a.generation === b.generation && a.roundEpoch === b.roundEpoch;
 interface ShopPaint {actor:UiActor|null;view:UiShopView|null;}
-function ago(filed: number, now: number): string { const s = Math.max(0, Math.floor(now-filed)); return s < 10 ? 'just now' : s < 60 ? `${s}s ago` : `${Math.floor(s/60)}m ago`; }
+function ago(slot: number, filed: number, now: number): string { const s = Math.max(0, Math.floor(now-filed)); return s < 10 ? tr(slot, "UI_JUST_NOW") : s < 60 ? tr(slot, "UI_SECONDS_AGO", s) : tr(slot, "UI_MINUTES_AGO", Math.floor(s/60)); }
 export class TttHud {
   private live = true;
   private readonly ui: Components;
@@ -44,6 +45,7 @@ export class TttHud {
   private readonly lastPick = new Map<number, {index:number;itemId:string|undefined;at:number}>();
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
   constructor(private readonly core: UiModelMethods) {
+    loadPhrases();
     // The kit MUST come from this plugin's own ctx-bound layout, not from the module-level
     // `hudkit`. They are two different ui instances with separate button-handler tables and
     // separate click subscriptions: `hudkit` resolves through `hostKit()`, which builds its base
@@ -71,7 +73,7 @@ export class TttHud {
     // One sheet can serve any number of players the SAME spec — `open(slot)` is per-player — but
     // never different button sets. Surfaces with different footers need different modals.
     this.shopSpec = {
-      title: "TTT Shop",
+      title: (slot) => tr(slot, "UI_SHOP_TITLE"),
       subtitle: (slot) => this.shopSubtitle(slot),
       rows: (slot) => this.shopRows(slot),
       // Clicking a row SELECTS it. Buying is a second, deliberate action — the Buy button or a
@@ -81,21 +83,21 @@ export class TttHud {
       onPick: (slot, index) => { if (this.isDoubleClick(slot, index)) this.buySelected(slot); else this.shop?.invalidate(slot); },
       detail: (slot, row, cursor) => this.shopDetail(slot, cursor),
       width: "sm",
-      buttons: [
-        { text: "Buy", variant: "good", onClick: (slot) => this.buySelected(slot) },
-        { text: "Close", variant: "ghost", onClick: (slot) => this.closeShop(slot) },
+      buttons: (slot) => [
+        { text: tr(slot, "UI_BUY"), variant: "good", onClick: (slot) => this.buySelected(slot) },
+        { text: tr(slot, "UI_CLOSE"), variant: "ghost", onClick: (slot) => this.closeShop(slot) },
       ],
     };
 
     this.logsSpec = {
-      title: "Round Log",
+      title: (slot) => tr(slot, "UI_LOG_TITLE"),
       subtitle: (slot) => {
         if (!this.logAuthorized(slot)) return '';
         const at = this.logAt.get(slot) ?? 0;
         const page = this.logPages.get(slot);
         const n = page?.rows.length ?? 0;
-        return `round ${page?.round ?? 0} - ${n} entr${n === 1 ? "y" : "ies"}` +
-          ((page?.count ?? 0) > 1 ? ` - ${at + 1}/${page?.count ?? 0}` : "");
+        return tr(slot, "UI_LOG_COUNT", page?.round ?? 0, n) +
+          ((page?.count ?? 0) > 1 ? tr(slot, "UI_LOG_PAGE", at + 1, page?.count ?? 0) : "");
       },
       pageSize: LOG_PAGE,
       width: "xl",
@@ -104,15 +106,15 @@ export class TttHud {
       onPick: (slot) => { this.logs?.invalidate(slot); },
       detail: (slot, row) => (!this.logAuthorized(slot) || row === undefined ? [] : [row.a]),
       // Three, because the log always pages and paging claims the trailing two footer slots.
-      buttons: [
-        { text: "Close", variant: "ghost", onClick: (slot) => this.closeLogs(slot) },
-        { text: "Older", variant: "ghost", onClick: (slot) => this.stepLog(slot, +1) },
-        { text: "Newer", variant: "ghost", onClick: (slot) => this.stepLog(slot, -1) },
+      buttons: (slot) => [
+        { text: tr(slot, "UI_CLOSE"), variant: "ghost", onClick: (slot) => this.closeLogs(slot) },
+        { text: tr(slot, "UI_OLDER"), variant: "ghost", onClick: (slot) => this.stepLog(slot, +1) },
+        { text: tr(slot, "UI_NEWER"), variant: "ghost", onClick: (slot) => this.stepLog(slot, -1) },
       ],
     };
 
     this.rdmSpec = {
-      title: "RDM Reports",
+      title: (slot) => tr(slot, "UI_REPORTS_TITLE"),
       subtitle: (slot) => this.reportsSubtitle(slot),
       pageSize: RDM_PAGE,
       width: "lg",
@@ -129,11 +131,11 @@ export class TttHud {
       // make room for Ban. Only the LABELS vary per slot here; the handler SET is identical for
       // every admin, which is what keeps this safe under the shared-footerFns rule above.
       buttons: (slot) => [
-        { text: "Close", variant: "ghost" as const, onClick: (s: number) => this.closeRdm(s) },
-        { text: `Slays: ${this.slaysFor(slot)}`, variant: "ghost" as const, onClick: (s: number) => this.cycleSlays(s) },
-        { text: "Acquit", variant: "good" as const, onClick: (s: number) => this.verdict(s, 'acquit') },
-        { text: "Convict", variant: "bad" as const, onClick: (s: number) => this.verdict(s, 'convict') },
-        { text: this.banArmedFor(slot) ? "Confirm ban" : "Ban", variant: "bad" as const, onClick: (s: number) => this.banStep(s) },
+        { text: tr(slot, "UI_CLOSE"), variant: "ghost" as const, onClick: (s: number) => this.closeRdm(s) },
+        { text: tr(slot, "UI_SLAYS", this.slaysFor(slot)), variant: "ghost" as const, onClick: (s: number) => this.cycleSlays(s) },
+        { text: tr(slot, "UI_ACQUIT"), variant: "good" as const, onClick: (s: number) => this.verdict(s, 'acquit') },
+        { text: tr(slot, "UI_CONVICT"), variant: "bad" as const, onClick: (s: number) => this.verdict(s, 'convict') },
+        { text: this.banArmedFor(slot) ? tr(slot, "UI_CONFIRM_BAN") : tr(slot, "UI_BAN"), variant: "bad" as const, onClick: (s: number) => this.banStep(s) },
       ],
     };
 
@@ -143,15 +145,15 @@ export class TttHud {
     // Chat still carries the reason itself: the HUD has no text entry, so after Report the sheet
     // closes and a callout tells the player to type it.
     this.reportSpec = {
-      title: (slot) => this.reportModes.get(slot)?.kind === 'pick' ? "Report a player" : "Were you RDM'd?",
-      subtitle: (slot) => { const mode = this.reportModes.get(slot); return mode?.kind === 'pick' ? `${mode.targets.length} player${mode.targets.length === 1 ? '' : 's'}` : ''; },
+      title: (slot) => this.reportModes.get(slot)?.kind === 'pick' ? tr(slot, "UI_REPORT_PLAYER") : tr(slot, "UI_RDM_QUESTION"),
+      subtitle: (slot) => { const mode = this.reportModes.get(slot); return mode?.kind === 'pick' ? tr(slot, "UI_PLAYERS", mode.targets.length) : ''; },
       rows: (slot) => this.reportRows(slot),
       onPick: (slot) => { this.report?.invalidate(slot); },
       detail: (slot, row, cursor) => this.reportDetail(slot, cursor),
       width: "sm",
       buttons: (slot) => [
-        { text: "Report", variant: "bad" as const, onClick: (s: number) => this.reportSelected(s) },
-        { text: this.reportModes.get(slot)?.kind === 'pick' ? "Close" : "Not RDM", variant: "ghost" as const, onClick: (s: number) => this.dismissReport(s) },
+        { text: tr(slot, "UI_REPORT"), variant: "bad" as const, onClick: (s: number) => this.reportSelected(s) },
+        { text: this.reportModes.get(slot)?.kind === 'pick' ? tr(slot, "UI_CLOSE") : tr(slot, "UI_NOT_RDM"), variant: "ghost" as const, onClick: (s: number) => this.dismissReport(s) },
       ],
     };
 
@@ -176,7 +178,7 @@ export class TttHud {
   }
   private owns(a: UiActor): boolean { return equal(this.actors.get(a.slot), a) && this.actor(a.slot) !== null; }
   ensure(): string | null { return this.live ? this.ui.ensure() : 'UI provider ended'; }
-  showTraitor(a: UiActor, mates: string[]): void { if (this.capture(a)) this.badge?.show(a.slot, { title: 'TRAITOR', text: mates.length ? mates.join(', ') : 'you work alone' }); }
+  showTraitor(a: UiActor, mates: string[]): void { if (this.capture(a)) this.badge?.show(a.slot, { title: tr(a.slot, "UI_TRAITOR"), text: mates.length ? mates.join(', ') : tr(a.slot, "UI_WORK_ALONE") }); }
   hideTraitor(a: UiActor): void { if (this.owns(a)) this.badge?.hide(a.slot); }
   isShopOpen(a: UiActor): boolean { return this.owns(a) && (this.shop?.isOpen(a.slot) ?? false); }
   openShop(a: UiActor): boolean {
@@ -201,10 +203,10 @@ export class TttHud {
   private shopSubtitle(slot: number): string {
     const paint = this.shopPaints.get(slot);
     try {
-      if(paint)return `${this.shopPaintView(slot,paint).balance} credits`;
+      if(paint)return tr(slot, "UI_CREDITS", this.shopPaintView(slot,paint).balance);
       const a = this.actor(slot); if (!a) return '';
       const view = this.core.getUiShop(a);
-      return view&&view.stamp&&this.core.matchesUiActor(a,view.stamp)&&this.live&&equal(this.actors.get(slot),a)?`${view.balance} credits`:'';
+      return view&&view.stamp&&this.core.matchesUiActor(a,view.stamp)&&this.live&&equal(this.actors.get(slot),a)?tr(slot, "UI_CREDITS", view.balance):'';
     } finally { if (paint && this.shopPaints.get(slot) === paint) this.shopPaints.delete(slot); }
   }
   private shopPaintView(slot:number,paint:ShopPaint):UiShopView {
@@ -219,7 +221,7 @@ export class TttHud {
   }
   private reportsSubtitle(slot: number): string {
     const a = this.actor(slot); if (!a) return '';
-    const view = this.core.getUiReports(a); return view && this.owns(a) ? `${view.rows.length} pending` : '';
+    const view = this.core.getUiReports(a); return view && this.owns(a) ? tr(slot, "UI_PENDING", view.rows.length) : '';
   }
   private shopRows(slot: number): Row[] {
     const paint:ShopPaint = {actor:null,view:null};
@@ -230,7 +232,7 @@ export class TttHud {
       paint.actor=a; paint.view=view;
       const current=this.shopPaintView(slot,paint);
       this.shopViews.set(slot,current);
-      return current.rows.length ? current.rows.map(item => ({ a: item.name, b: `${item.price}c`, c: item.refusal ?? (item.limit ? `limit ${item.limit}` : ''), disabled: item.refusal !== null })) : [{ a: 'No items available right now', b: '', c: '', disabled: true }];
+      return current.rows.length ? current.rows.map(item => ({ a: item.name, b: tr(slot, "UI_PRICE_SHORT", item.price), c: item.refusal ?? (item.limit ? tr(slot, "UI_LIMIT", item.limit) : ''), disabled: item.refusal !== null })) : [{ a: tr(slot, "UI_NO_ITEMS"), b: '', c: '', disabled: true }];
     } catch (error) { if (this.shopPaints.get(slot) === paint) this.shopPaints.delete(slot); throw error; }
   }
   private shopDetail(slot: number, cursor: number): string[] {
@@ -244,7 +246,7 @@ export class TttHud {
         if(view&&(!view.stamp||!this.core.matchesUiActor(a,view.stamp)))return [];
       }
       const item = view?.rows[cursor];
-      return !item ? [] : [item.name, `${item.price} credits - you have ${view!.balance}`, item.refusal ?? 'Double-click or press Buy to purchase', item.description];
+      return !item ? [] : [item.name, tr(slot, "UI_ITEM_PRICE", item.price, view!.balance), item.refusal ?? tr(slot, "UI_BUY_INSTRUCTION"), item.description];
     } catch (error) { if (paint && this.shopPaints.get(slot) === paint) this.shopPaints.delete(slot); throw error; }
   }
   private buySelected(slot: number): void {
@@ -327,13 +329,13 @@ export class TttHud {
     const view = this.core.getUiReports(a);
     if (!view || !this.owns(a)) { this.reportViews.delete(slot); return []; }
     this.reportViews.set(slot, view);
-    return view.rows.map(r => ({ a: `${r.reporterName} vs ${r.accusedName}`, b: `round ${r.round}`, c: ago(r.filed, Date.now()/1000) }));
+    return view.rows.map(r => ({ a: tr(slot, "UI_VERSUS", r.reporterName, r.accusedName), b: tr(slot, "UI_ROUND", r.round), c: ago(slot,r.filed, Date.now()/1000) }));
   }
   private rdmDetail(slot: number, cursor: number): string[] {
     if (!this.reportAuthorized(slot)) return [];
-    const sel = this.reportViews.get(slot)?.rows[cursor]; if (!sel) return ['', '', '', 'select a report'];
+    const sel = this.reportViews.get(slot)?.rows[cursor]; if (!sel) return ['', '', '', tr(slot, "UI_SELECT_REPORT")];
     const n = this.slaysFor(slot), priors = sel.priorGuilty;
-    return [`${sel.reporterName} reported ${sel.accusedName}`, `round ${sel.round} - ${ago(sel.filed, Date.now()/1000)}`, `Convict applies ${n} slay${n===1?'':'s'}`+(priors>0?` - ${priors} prior guilty verdict${priors===1?'':'s'} this map`:''), sel.reason];
+    return [tr(slot, "UI_REPORTED", sel.reporterName, sel.accusedName), tr(slot, "UI_ROUND_AGE", sel.round, ago(slot,sel.filed, Date.now()/1000)), tr(slot, "UI_CONVICT_SLAYS", n)+(priors>0?tr(slot, "UI_PRIORS", priors):''), sel.reason];
   }
   private selected(slot: number): UiReport | undefined { return this.reportAuthorized(slot) && this.rdm?.isOpen(slot) ? this.reportViews.get(slot)?.rows[this.rdm.cursor(slot)] : undefined; }
   private slaysFor(slot: number): number { return this.slayOverride.get(slot) ?? this.selected(slot)?.suggestedSlays ?? this.reportViews.get(slot)?.baseSlays ?? 2; }
@@ -342,7 +344,7 @@ export class TttHud {
   private banStep(slot: number): void {
     const a = this.actor(slot), sel = this.selected(slot); if (!a || !sel) return;
     if (!this.core.getUiReports(a) || !this.owns(a)) return;
-    if (!this.banArmedFor(slot)) { this.banArmed.set(slot,{id:sel.id,binding:sel.binding}); this.ui.toast(slot,{title:'Confirm ban',message:`Press Ban again to ban ${sel.accusedName}`,variant:'warn',holdSeconds:6}); this.rdm?.refresh(slot); return; }
+    if (!this.banArmedFor(slot)) { this.banArmed.set(slot,{id:sel.id,binding:sel.binding}); this.ui.toast(slot,{title:tr(slot, "UI_CONFIRM_BAN"),message:tr(slot, "UI_CONFIRM_BAN_BODY", sel.accusedName),variant:'warn',holdSeconds:6}); this.rdm?.refresh(slot); return; }
     this.verdict(slot,'ban');
   }
   private verdict(slot: number, action: UiReportAction): void {
@@ -359,7 +361,7 @@ export class TttHud {
   refreshRdm(): void {
     for (const a of [...this.actors.values()]) { if (!this.owns(a) || !this.rdm?.isOpen(a.slot)) continue; if (!this.core.getUiReports(a)) { this.closeRdm(a); continue; } if (this.owns(a)) this.rdm.invalidate(a.slot); }
   }
-  notifyAdmins(title: string, message: string): void { if (!this.live) return; for (const a of this.core.getUiAdmins()) { if (!this.core.matchesUiActor(a) || !this.core.getUiReports(a) || !this.core.matchesUiActor(a)) continue; this.ui.toast(a.slot,{title,message,variant:'warn'}); } this.refreshRdm(); }
+  notifyAdmins(title: string, message: string): void { if (!this.live) return; for (const a of this.core.getUiAdmins()) { if (!this.core.matchesUiActor(a) || !this.core.getUiReports(a) || !this.core.matchesUiActor(a)) continue; this.ui.toast(a.slot,{title:tr(a.slot,title),message,variant:'warn'}); } this.refreshRdm(); }
   openReportPrompt(a: UiActor, accusedName: string): boolean {
     if (!this.capture(a) || typeof accusedName !== 'string') return false;
     return this.openReport(a, { kind: 'prompt', accusedName });
@@ -400,14 +402,14 @@ export class TttHud {
   }
   private reportRows(slot: number): Row[] {
     const a = this.actor(slot), mode = this.reportModes.get(slot); if (!a || !mode) return [];
-    if (mode.kind === 'prompt') return [{ id: 'accused', a: mode.accusedName, b: 'killed you' }];
-    return mode.targets.length ? mode.targets.map(t => ({ id: `${t.target.slot}:${t.target.steamId}:${t.target.generation}`, a: t.name })) : [{ a: 'No one to report right now', disabled: true }];
+    if (mode.kind === 'prompt') return [{ id: 'accused', a: mode.accusedName, b: tr(slot, "UI_KILLED_YOU") }];
+    return mode.targets.length ? mode.targets.map(t => ({ id: `${t.target.slot}:${t.target.steamId}:${t.target.generation}`, a: t.name })) : [{ a: tr(slot, "UI_NO_TARGETS"), disabled: true }];
   }
   private reportDetail(slot: number, cursor: number): string[] {
     const a = this.actor(slot), mode = this.reportModes.get(slot); if (!a || !mode) return [];
-    if (mode.kind === 'prompt') return [`${mode.accusedName} killed you`, 'Was this RDM?', 'Report, then type what happened in chat.', ''];
+    if (mode.kind === 'prompt') return [tr(slot, "UI_KILLED_YOU_NAME", mode.accusedName), tr(slot, "UI_WAS_RDM"), tr(slot, "UI_REPORT_INSTRUCTION"), ''];
     const t = mode.targets[cursor];
-    return t ? [t.name, 'Press Report, then type what happened in chat.', '', ''] : [];
+    return t ? [t.name, tr(slot, "UI_PICK_REPORT_INSTRUCTION"), '', ''] : [];
   }
   private reportSelected(slot: number): void {
     const a = this.actor(slot), mode = this.reportModes.get(slot); if (!a || !mode || !this.report?.isOpen(slot)) return;
@@ -419,12 +421,12 @@ export class TttHud {
     if (!this.owns(a) || this.reportModes.get(slot) !== mode) return;
     this.closeReport(slot);
     if (ok) return;
-    this.ui.toast(slot, { title: 'Cannot report', message: mode.kind === 'prompt' ? 'That question has expired' : 'That player is no longer available', variant: 'warn', holdSeconds: 4 });
+    this.ui.toast(slot, { title: tr(slot, "UI_CANNOT_REPORT"), message: mode.kind === 'prompt' ? tr(slot, "UI_QUESTION_EXPIRED") : tr(slot, "UI_TARGET_UNAVAILABLE"), variant: 'warn', holdSeconds: 4 });
   }
   private dismissReport(slot: number): void {
     const a = this.actor(slot), mode = this.reportModes.get(slot); if (!a || !mode) return;
     this.closeReport(slot);
-    // "Not RDM" is an answer Reports must hear; closing the picker is not.
+    // tr(slot, "UI_NOT_RDM") is an answer Reports must hear; closing the picker is not.
     if (mode.kind === 'prompt') this.core.answerUiReportPrompt(a, false);
   }
   private closeReport(slot: number): void { this.reportModes.delete(slot); this.report?.close(slot); }

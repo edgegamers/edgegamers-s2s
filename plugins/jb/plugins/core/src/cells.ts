@@ -1,3 +1,6 @@
+import {logEntry} from '@edgegamers/jailbreak-shared';
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {broadcastText} from '@edgegamers/jailbreak-shared';
 /**
  * Cell doors (MapUtil.OpenCells + the warden's auto-open timer). The opener is a func_button:
  * a zone tagged `cell_button` (from the optional @s2script/zones plugin) marks it exactly;
@@ -22,7 +25,7 @@ import type { ButtonCandidate, Point, SensitivityLevel } from "./cell-logic";
 import { bus } from "./bus";
 import { currentRound, isWarmup } from "./round";
 import { log } from "./logs";
-import { msg } from "./messages";
+import { msgFor } from "./messages";
 
 let opened = false;
 let autoTimer: Timer | null = null;
@@ -89,7 +92,7 @@ export function pressNearest(source: Point | null, start: SensitivityLevel): Sen
   if (!pick) return null;
   const ref = refs.get(pick.button.id);
   if (!ref || !press(ref)) return null;
-  log(`Cell button pressed: ${pick.button.name || "Unlabeled"} -> ${pick.button.target || "None"} (${SENSITIVITY_NAMES[pick.level]})`);
+  log(...logEntry("JB_LOG_CELL_BUTTON_PRESSED", [String(pick.button.name || "Unlabeled"), String(pick.button.target || "None"), String(SENSITIVITY_NAMES[pick.level])], [2]));
   return pick.level;
 }
 
@@ -104,7 +107,7 @@ function tryOpen(): boolean {
 /** core.openCells. */
 export function openCells(source: string): boolean {
   const ok = tryOpen();
-  log(ok ? `Cells opened (${source}).` : `Failed to open the cells (${source}).`);
+  log(...(ok ? logEntry("JB_LOG_CELLS_OPENED", [String(source)], [0]) : logEntry("JB_LOG_FAILED_TO_OPEN_THE_CELLS", [String(source)], [0])));
   if (!ok) return false;
   opened = true;
   bus()?.emit("OnCellsOpened", { round: currentRound(), source });
@@ -129,14 +132,14 @@ function autoOpen(): void {
   const inCells = prisonersInCells().length;
   const snitch = config.getBool("opencells_snitch");
   if (opened) {
-    if (snitch && inCells > 0) Chat.toAll(msg.cellsSnitchPrisoners(inCells));
+    if (snitch && inCells > 0) broadcastText(forRecipients((recipient,value0) => msgFor(recipient).cellsSnitchPrisoners(value0), inCells));
     return;
   }
   // Open regardless of whether anyone is detected inside (for convenience) ...
   openCells("auto");
   // ... but only announce it if prisoners were still in there.
   if (inCells === 0) return;
-  Chat.toAll(snitch ? msg.cellsOpenedWithPrisoners(inCells) : msg.cellsAutoOpened());
+  broadcastText(forRecipients((recipient,value0) => snitch ? msgFor(recipient).cellsOpenedWithPrisoners(value0) : msgFor(recipient).cellsAutoOpened(), inCells));
 }
 
 /** Round start: cells closed again; arm the auto-open timer outside warmup. */

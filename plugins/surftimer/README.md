@@ -174,3 +174,7 @@ npm run check           # native builds and all retained behavior tests
 ## Monorepo identity
 
 The public bundle is `@edgegamers/surftimer`, with required `@edgegamers/surftimer-core` and `@edgegamers/surftimer-hud` members. When adopting these identities from the original `@s2script` plugins, remove the old loaded copies, back up configuration and replay/map data, and migrate the timer file sandbox to `_edgegamers_surftimer-core`. The named database and its tables are unchanged. Verify timing, saved records/replays and both HUD modes on a test server before rollout.
+
+## Translations and messages
+
+See [the shared translations guide](../../docs/translations.md) for catalogs, native locale overrides, startup loading and the required chat/console formatting. English is embedded; copy loose catalogs only to customize wording or add locales. Update existing deployed overrides manually when upgrading.

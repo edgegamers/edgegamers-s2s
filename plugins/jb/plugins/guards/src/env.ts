@@ -54,11 +54,12 @@ export function playerBySteam(steamId: string): Player | null {
   return Player.allConnected().find((p) => p.steamId === steamId) ?? null;
 }
 
-export function broadcast(line: string): void {
-  Chat.toAll(line);
+export function broadcast(line: string | ((slot:number)=>string)): void {
+  if(typeof line==='string')Chat.toAll(line);
+  else for(const p of Player.allConnected())Chat.toSlot(p.slot,line(p.slot));
 }
 
-export function toSteam(steamId: string, line: string): void {
+export function toSteam(steamId: string, line: string | ((slot:number)=>string)): void {
   const p = playerBySteam(steamId);
-  if (p) Chat.toSlot(p.slot, line);
+  if (p) Chat.toSlot(p.slot, typeof line==='function'?line(p.slot):line);
 }

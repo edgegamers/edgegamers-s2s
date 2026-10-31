@@ -22,6 +22,10 @@ Create a branch for your change. Keep it focused and describe the observable beh
 
 When editing Jailbreak's shared library, run `npm run types --workspace @edgegamers/jailbreak-shared` and commit the updated declarations with the source.
 
+## Player/admin text
+
+Before changing player/admin text, phrase catalogs or output routing, read [the translations and message guide](docs/translations.md). Follow its catalog, recipient-language, chat/console and plain UI rules.
+
 ## Changesets
 
 Run `npm run changeset` for changes that affect shipped runtime plugins or their shared libraries. Select those packages and describe the user-visible change. Use patch for compatible fixes, minor for compatible functionality, and major for breaking behavior or public interface changes.

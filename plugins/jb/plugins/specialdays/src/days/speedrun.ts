@@ -1,3 +1,5 @@
+import {forRecipients} from '@edgegamers/jailbreak-shared';
+import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 /**
  * Speedrunners (SpeedrunDay): one player runs somewhere, everyone else must follow; each race the
  * slowest are eliminated until a few remain, and the fastest gets a weapon to finish the rest.
@@ -13,7 +15,7 @@ import type { BeamHandle } from "@s2script/cs2";
 import type { DayContext, SpecialDay } from "../day.ts";
 import { baseSettings, withAutoBhop, withFriendlyFire } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msgFor } from "../messages.ts";
 import type { Vec3 } from "../geometry.ts";
 import { copy, dist, dist2, hdist2 } from "../geometry.ts";
 import {
@@ -182,14 +184,14 @@ export function speedrunDay(): SpecialDay {
         assign(next);
         for (const q of alive()) if (q.slot !== next.slot) teleportOnto(q, next);
         teleport(next, end);
-        toAll(msg.srRunnerAfk(nameOf(next)));
-        toSlot(next.slot, msg.srYouAreRunner(timeRemaining()));
+        toAll(forRecipients((recipient,value0) => msgFor(recipient).srRunnerAfk(value0), nameOf(next)));
+        toSlot(next.slot, msgFor(next.slot).srYouAreRunner(timeRemaining()));
         trail.startTracking(next.userId);
         trail.didntMoveTicks = 0;
         return;
       }
       if (trail.didntMoveTicks < threshold) return;
-      if (trail.didntMoveTicks === threshold) toSlot(current.slot, msg.srStayStill());
+      if (trail.didntMoveTicks === threshold) toSlot(current.slot, msgFor(current.slot).srStayStill());
       if (stillSeconds % 2 === 0) addTimeRemaining(-1);
       if (timeRemaining() <= 0) ctx.execute();
     };
@@ -209,8 +211,8 @@ export function speedrunDay(): SpecialDay {
       }
       assign(next);
       teleport(next, end);
-      toAll(msg.srRunnerLeft(nameOf(next)));
-      toSlot(next.slot, msg.srYouAreRunner(timeRemaining()));
+      toAll(forRecipients((recipient,value0) => msgFor(recipient).srRunnerLeft(value0), nameOf(next)));
+      toSlot(next.slot, msgFor(next.slot).srYouAreRunner(timeRemaining()));
       trail.startTracking(next.userId);
     };
     return trail;
@@ -242,7 +244,7 @@ export function speedrunDay(): SpecialDay {
     const racers = alive();
     aliveAtStart = racers.length;
     round += 1;
-    toAll(msg.srBeginRound(round, eliminationsFor(aliveAtStart), seconds));
+    toAll(forRecipients((recipient,value0,value1,value2) => msgFor(recipient).srBeginRound(value0, value1, value2), round,eliminationsFor(aliveAtStart),seconds));
     setTimeRemaining(seconds + cfg.freezeTime);
     for (const p of racers) {
       teleport(p, start, true);
@@ -267,11 +269,11 @@ export function speedrunDay(): SpecialDay {
     if (bestTime === null || time < bestTime) {
       bestTime = time;
       bestTimeSlot = p.slot;
-      toAll(msg.srBestTime(nameOf(p), time));
+      toAll(forRecipients((recipient,value0,value1) => msgFor(recipient).srBestTime(value0, value1), nameOf(p),time));
       setColor(p, GOLD);
     } else {
       const position = finishers.length + 1;
-      toAll(msg.srFinished(nameOf(p), placeName(position), position, time));
+      toAll(forRecipients((recipient,value0,value1,value2,value3) => msgFor(recipient).srFinished(value0, value1, value2, value3), nameOf(p),placeName(position),position,time));
     }
     finishers.push({ slot: p.slot, finished: true, value: time });
     finishedSlots.add(p.slot);
@@ -304,28 +306,22 @@ export function speedrunDay(): SpecialDay {
   /** The center leaderboard (the C# PrintToCenterHtml view, as plain hint text). */
   function sendBoard(order: Standing[]): void {
     const eliminations = eliminationsFor(aliveAtStart);
-    const lines = order.map((s, i) => {
-      const p = Player.fromSlot(s.slot);
-      const name = p?.playerName ?? "?";
-      return formatStanding(i + 1, name, s, standingMarker(i + 1, s.finished, eliminations, aliveAtStart));
-    });
-    const view = (index: number): string => {
-      const [a, b] = windowAround(lines.length, index);
-      return lines.slice(a, b).join("\n");
+    const rows = order.map((standing,i) => ({...standing,position:i+1,name:Player.fromSlot(standing.slot)?.playerName??"?",marker:standingMarker(i+1,standing.finished,eliminations,aliveAtStart)}));
+    const view = (slot:number,index:number):string => {
+      const [a,b] = windowAround(rows.length,index);
+      return rows.slice(a,b).map(row=>labelFor(slot,row.finished?"JB_SPECIALDAYS_STANDING_FINISHED":"JB_SPECIALDAYS_STANDING_DISTANCE",row.position,row.name,row.finished?row.value.toFixed(3):Math.round(row.value),row.marker?labelFor(slot,"JB_SPECIALDAYS_MARKER_"+row.marker):"")).join("\n");
     };
-    order.forEach((s, i) => {
-      if (Clients.fromSlot(s.slot)?.isBot) return;
-      HintText.to(s.slot, view(i));
+    order.forEach((s,i)=>{
+      if(!Clients.fromSlot(s.slot)?.isBot)HintText.to(s.slot,view(s.slot,i));
     });
-    if (lines.length === 0) return;
-    const top = view(0);
-    for (const p of Player.all()) if (p.pawnIsAlive === false && !Clients.fromSlot(p.slot)?.isBot) HintText.to(p.slot, top);
+    if(rows.length===0)return;
+    for(const p of Player.all())if(p.pawnIsAlive===false&&!Clients.fromSlot(p.slot)?.isBot)HintText.to(p.slot,view(p.slot,0));
   }
 
   function eliminate(p: Player): void {
     setTakesDamage(p, true);
     slay(p);
-    toAll(msg.srEliminated(nameOf(p)));
+    toAll(forRecipients((recipient,value0) => msgFor(recipient).srEliminated(value0), nameOf(p)));
   }
 
   function endRound(ctx: DayContext): void {
@@ -361,7 +357,7 @@ export function speedrunDay(): SpecialDay {
       const other = pick(alive(tMade ? Team.Guard : Team.Prisoner));
       const otherTrail = other ? activeTrails.get(other.slot) : undefined;
       if (other && otherTrail) {
-        toAll(msg.srImpossible(ctMade ? "Prisoners" : "Guards", nameOf(other)));
+        toAll(forRecipients((recipient,value0,value1) => msgFor(recipient).srImpossible(value0, value1), ctMade ? "Prisoners" : "Guards",nameOf(other)));
         otherTrail.stopTracking();
         bestBeams?.kill();
         bestBeams = BeamTrail.fromPath(otherTrail.path, (ms, fn) => ctx.every(ms, fn));
@@ -380,7 +376,7 @@ export function speedrunDay(): SpecialDay {
     order.forEach((s, i) => {
       if (s.finished) return;
       const p = Player.fromSlot(s.slot);
-      if (p) toSlot(p.slot, msg.srDistance(nameOf(p), placeName(i + 1), i + 1, s.value));
+      if (p) toSlot(p.slot, msgFor(p.slot).srDistance(nameOf(p), placeName(i + 1), i + 1, s.value));
     });
 
     if (aliveCount <= cfg.finishAt) {
@@ -390,7 +386,7 @@ export function speedrunDay(): SpecialDay {
 
     const roundTook = roundStartTime === null ? 0 : now() - roundStartTime;
     if (eliminating <= 0) {
-      toAll(msg.srNoneEliminated());
+      toAll(recipient => msgFor(recipient).srNoneEliminated());
       const next = nextRoundSeconds(bestTime, round, roundTook, false);
       ctx.after(3000, () => startRound(next, ctx));
       return;
@@ -432,7 +428,7 @@ export function speedrunDay(): SpecialDay {
     gameOver = true;
     clearCircle();
     const losers = alive().filter((p) => p.slot !== winner.slot);
-    toAll(msg.srWon(nameOf(winner)));
+    toAll(forRecipients((recipient,value0) => msgFor(recipient).srWon(value0), nameOf(winner!)));
     for (const loser of losers) {
       setColor(loser, WHITE);
       if (cfg.teleportType === 1) teleportOnto(loser, winner);
@@ -477,8 +473,8 @@ export function speedrunDay(): SpecialDay {
           return;
         }
         assign(p);
-        toAll(msg.srRunnerAssigned(nameOf(p)));
-        toSlot(p.slot, msg.srYouAreRunner(cfg.initialTime));
+        toAll(forRecipients((recipient,value0) => msgFor(recipient).srRunnerAssigned(value0), nameOf(p)));
+        toSlot(p.slot, msgFor(p.slot).srYouAreRunner(cfg.initialTime));
       });
       ctx.at(cfg.firstFreeze, () => {
         let p = runnerPlayer();
@@ -489,8 +485,8 @@ export function speedrunDay(): SpecialDay {
             return;
           }
           assign(p);
-          toAll(msg.srRunnerLeft(nameOf(p)));
-          toSlot(p.slot, msg.srYouAreRunner(cfg.initialTime));
+          toAll(forRecipients((recipient,value0) => msgFor(recipient).srRunnerLeft(value0), nameOf(p!)));
+          toSlot(p.slot, msgFor(p.slot).srYouAreRunner(cfg.initialTime));
         }
         start = originOf(p);
         unfreeze(p);
@@ -505,12 +501,12 @@ export function speedrunDay(): SpecialDay {
             ctx.panic("Original speedrunner is invalid, and we cannot find a new one");
             return;
           }
-          toSlot(p.slot, msg.srRuntimeLeft(timeRemaining()));
+          toSlot(p.slot, msgFor(p.slot).srRuntimeLeft(timeRemaining()));
         });
       }
       ctx.at(runEnds - 10, () => {
         const p = runnerPlayer();
-        if (target === null && p) toSlot(p.slot, msg.srRuntimeLeft(timeRemaining()));
+        if (target === null && p) toSlot(p.slot, msgFor(p.slot).srRuntimeLeft(timeRemaining()));
       });
       ctx.at(runEnds, () => ctx.execute());
     },
@@ -532,7 +528,7 @@ export function speedrunDay(): SpecialDay {
       target = copy(at);
       drawCircle(target);
       if (!firstTrail) {
-        toAll(msg.error("Execute: bestTrail is null"));
+        toAll(recipient => msgFor(recipient).error(labelFor(recipient,"JB_SPECIALDAYS_LABEL_EXECUTE_BESTTRAIL_IS_NULL")));
         return;
       }
       bestBeams = firstTrail.detachBeams();

@@ -1,3 +1,4 @@
+import {loadPhrases,plainPhraseFor as textFor,phraseFor,trackNameFor} from './phrases';
 // @edgegamers/surftimer-hud — the HUD for @edgegamers/surftimer-core, kept as its own plugin so servers can
 // swap or drop it without touching the timer.
 //
@@ -84,10 +85,10 @@ function refreshWrNames(): void {
 
 function frameFor(slot: number, now: number): HudFrame | null {
   const bot = bots.get(slot);
-  if (bot) return replayFrame(bot, map, now, decimals);
+  if (bot) return replayFrame(bot,map,now,decimals,(key,...args)=>textFor(slot,key,...args));
   const run = runs[slot];
   if (!run) return null;
-  return runFrame(run, map, now, decimals, wrNames.get(run.track * 64 + run.style) ?? "");
+  return runFrame(run, map, now, decimals, wrNames.get(run.track * 64 + run.style) ?? "",(key,...args)=>textFor(slot,key,...args));
 }
 
 // --- Panorama backend ---------------------------------------------------------------------------
@@ -98,7 +99,7 @@ function paintPanorama(p: HudPlayer, v: View, f: HudFrame, speed: number, percen
     p.setClass("st_main", f.statusClass, true);
     v.statusClass = f.statusClass;
   }
-  p.set({ st_status: f.status, st_time: f.time, st_sub: f.sub, st_pb: f.pb, st_wr: f.wr, st_speed: String(speed) });
+  p.set({ st_status: f.status, st_time: f.time, st_sub: f.sub, st_pb: f.pb, st_wr: f.wr, st_speed: String(speed),st_unit:textFor(v.slot,"HUD_UNIT"),st_duck_label:textFor(v.slot,"HUD_DUCK"),st_jump_label:textFor(v.slot,"HUD_JUMP") });
   p.setMeter("speed", percent);
   const delta = speed - v.speedPrev;
   p.setClass("st_speed", "up", delta > 2);
@@ -123,7 +124,7 @@ function paintBoard(slot: number): void {
   const run = runs[slot];
   if (!v.board || !run) { p.hide("st_lb"); return; }
   const rows = timer.getTop(run.track, run.style, 5);
-  const fields: Record<string, string> = { st_lb_title: `${trackName(run.track)} · ${styleById(run.style).name}` };
+  const fields: Record<string, string> = { st_lb_title: textFor(slot,"HUD_REPLAY_SUB",trackNameFor(slot,run.track),textFor(slot,styleById(run.style).name)) };
   for (let i = 0; i < 5; i++) {
     const r = rows[i];
     fields[`st_lb_r${i}_a`] = r ? `#${r.rank} ${r.name}` : "";
@@ -150,7 +151,7 @@ function refresh(slot: number, v: View, pawn: Pawn, now: number): void {
   if (mode === "panorama" && layout) paintPanorama(layout.forSlot(slot), v, f, speed, percent, buttons);
   else if (mode === "center") {
     if (v.flash && now >= v.flashUntil) v.flash = "";
-    v.html = centerHtml(f, speed, buttons, v.keys, v.flash);
+    v.html = centerHtml(f,speed,buttons,v.keys,v.flash,(key,...args)=>textFor(slot,key,...args));
   }
 }
 
@@ -202,7 +203,7 @@ function onRunUpdate(s: RunState): void {
     const pawn = Pawn.forSlot(s.slot);
     if (pawn && pawn.readKinematics(KIN, 0)) {
       const sp = speedMeter(KIN[K_VX], KIN[K_VY], speedMax).speed;
-      flash(s.slot, "Start", `${sp} u/s`, true, 1500, "st_split", { st_split_title: "Start", st_split_time: `${sp} u/s`, st_split_diff: "" });
+      flash(s.slot, textFor(s.slot,"HUD_START_LABEL"), textFor(s.slot,"HUD_SPEED",sp), true, 1500, "st_split", { st_split_title:textFor(s.slot,"HUD_START_LABEL"),st_split_time:textFor(s.slot,"HUD_SPEED",sp), st_split_diff: "" });
     }
   }
 }
@@ -222,18 +223,18 @@ function flash(slot: number, title: string, body: string, good: boolean, ms: num
 }
 
 function onSplit(e: SplitEvent): void {
-  const t = splitText(e.kind, e.index, e.ticks, e.pbDiffTicks ?? e.wrDiffTicks, map.tickInterval);
-  const ref = e.pbDiffTicks !== null ? "PB" : e.wrDiffTicks !== null ? "WR" : "";
-  let diff = t.diff ? `${ref} ${t.diff}` : "";
-  if (e.kind === "stage" && e.stageTicks > 0) diff += `${diff ? " · " : ""}S${e.index - 1} ${formatTicks(e.stageTicks, map.tickInterval)}${e.stageRecord ? " SR!" : ""}`;
+  const t = splitText(e.kind, e.index, e.ticks, e.pbDiffTicks ?? e.wrDiffTicks,map.tickInterval,(key,...args)=>textFor(e.slot,key,...args));
+  const ref = e.pbDiffTicks !== null ? textFor(e.slot,"HUD_PB_LABEL") : e.wrDiffTicks !== null ? textFor(e.slot,"HUD_WR_LABEL") : "";
+  let diff = t.diff ? textFor(e.slot,"HUD_REF_DIFF",ref,t.diff) : "";
+  if (e.kind === "stage" && e.stageTicks > 0) diff += (diff?" · ":"")+textFor(e.slot,"HUD_STAGE_TIME",e.index-1,formatTicks(e.stageTicks,map.tickInterval),e.stageRecord?textFor(e.slot,"HUD_SR"):"");
   flash(e.slot, t.title, `${t.time} ${diff}`, t.good, 2500, "st_split", { st_split_title: t.title, st_split_time: t.time, st_split_diff: diff });
 }
 
 function onFinish(e: FinishEvent): void {
   const iv = map.tickInterval;
-  const title = e.newWr ? "NEW RECORD" : e.newPb ? "PERSONAL BEST" : "FINISHED";
-  const vs = e.previousPbTicks ? ` · ${formatTickDiff(e.ticks - e.previousPbTicks, iv)}` : "";
-  const info = `#${e.rank}/${e.rankTotal} · ${trackName(e.track)} ${styleById(e.style).name}${vs}`;
+  const title = textFor(e.slot,e.newWr?"HUD_NEW_RECORD":e.newPb?"HUD_PERSONAL_BEST":"HUD_FINISHED");
+  const vs = e.previousPbTicks ? textFor(e.slot,"HUD_VS",formatTickDiff(e.ticks-e.previousPbTicks,iv)) : "";
+  const info = textFor(e.slot,"HUD_FINISH_INFO",e.rank,e.rankTotal,trackNameFor(e.slot,e.track),textFor(e.slot,styleById(e.style).name),vs);
   if (mode === "panorama" && layout) {
     const p = layout.forSlot(e.slot);
     p.setClass("st_finish", "wr", e.newWr);
@@ -288,6 +289,7 @@ function readMode(): Mode {
 }
 
 export function OnPluginStart(): void {
+  loadPhrases();
   timer = use("@edgegamers/surftimer-core");
   timer.on("OnRunUpdate", onRunUpdate);
   timer.on("OnSplit", onSplit);
@@ -314,7 +316,7 @@ export function OnPluginStart(): void {
     const v = view(cmd.callerSlot);
     v.enabled = !v.enabled;
     if (layout) { const p = layout.forSlot(cmd.callerSlot); if (v.enabled) p.show("st_main"); else p.hide("st_main"); }
-    cmd.reply(`HUD ${v.enabled ? "on" : "off"}.`);
+    cmd.reply(phraseFor(cmd.callerSlot,"HUD_CHAT_TOGGLE",textFor(cmd.callerSlot,v.enabled?"HUD_ON":"HUD_OFF")));
     return HookResult.Handled;
   });
   command("sm_hudkeys", (cmd) => {
@@ -322,16 +324,16 @@ export function OnPluginStart(): void {
     const v = view(cmd.callerSlot);
     v.keys = !v.keys;
     if (layout) { const p = layout.forSlot(cmd.callerSlot); if (v.keys) p.show("st_keys"); else p.hide("st_keys"); }
-    cmd.reply(`Key display ${v.keys ? "on" : "off"}.`);
+    cmd.reply(phraseFor(cmd.callerSlot,"HUD_CHAT_KEYS",textFor(cmd.callerSlot,v.keys?"HUD_ON":"HUD_OFF")));
     return HookResult.Handled;
   });
   command("sm_hudtop", (cmd) => {
     if (cmd.callerSlot < 0) return HookResult.Handled;
     const v = view(cmd.callerSlot);
     v.board = !v.board;
-    if (mode !== "panorama") { cmd.reply("The live leaderboard needs the Panorama HUD (surftimer-hud.workshop_addon)."); return HookResult.Handled; }
+    if (mode !== "panorama") { cmd.reply(phraseFor(cmd.callerSlot,"HUD_CHAT_BOARD_UNAVAILABLE")); return HookResult.Handled; }
     paintBoard(cmd.callerSlot);
-    cmd.reply(`Leaderboard ${v.board ? "on" : "off"}.`);
+    cmd.reply(phraseFor(cmd.callerSlot,"HUD_CHAT_BOARD",textFor(cmd.callerSlot,v.board?"HUD_ON":"HUD_OFF")));
     return HookResult.Handled;
   });
 

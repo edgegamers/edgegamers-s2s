@@ -6,7 +6,7 @@
 import type { LRResult, LRType } from "../../api";
 import { Colors } from "@edgegamers/jailbreak-shared";
 import { distSq, raceRequiredDistance } from "../logic";
-import { msg } from "../messages";
+import { msgFor } from "../messages";
 import { Ring } from "../fx";
 import { TeleportingRequest } from "./base";
 
@@ -24,8 +24,8 @@ export class Race extends TeleportingRequest {
     super.setup();
     this.prisoner.strip();
     this.guard.strip();
-    for (let i = 0; i < 3; i++) this.prisoner.chat(msg.endRaceInstruction());
-    this.guard.chat(msg.raceStarting(this.prisoner.name));
+    for (let i = 0; i < 3; i++) this.prisoner.chat(msgFor(this.prisoner.slot).endRaceInstruction());
+    this.guard.chat(msgFor(this.guard.slot).raceStarting(this.prisoner.name));
 
     this.start = this.prisoner.origin();
     if (!this.start) return;

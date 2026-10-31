@@ -33,9 +33,10 @@ test('sample and reward due boundaries retain the original ordered queries nativ
  before.length=after.length=0;a.methods.tickEconomy(5);b.methods.tickEconomy(5,2);assert.deepEqual(after,before);
  before.length=after.length=0;a.methods.tickEconomy(20);b.methods.tickEconomy(20,2);assert.deepEqual(after,before);
  assert.deepEqual([0,1,2].map(s=>b.methods.balanceOf(s)),[15,9,2]);assert.deepEqual(b.trace,a.trace);assert.deepEqual(b.chat,a.chat);
- assert.deepEqual(after.map(x=>x.slice(0,2)),[['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['Core','isAlive'],['Core','isAlive'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase']]);
+ // Localization adds viewer-specific lookups; the sample/payout execution order is unchanged.
+ assert.deepEqual(after.filter(x=>!['formatPhrase','formatPhraseFor'].includes(x[1])).map(x=>x.slice(0,2)),[['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['Core','isAlive'],['Core','isAlive'],['Core','dispatchDomain'],['Core','dispatchDomain'],['Core','dispatchDomain']]);
  assert.deepEqual(after.filter(x=>x[1]==='dispatchDomain').map(x=>x[2][0]),[0,1,2].map((slot,i)=>({kind:'balance',payload:{slot,oldBalance:0,newBalance:[15,9,2][i],reason:'SHOP_EXPLORATION',canceled:false}})));
- assert.deepEqual(b.chat,[[0,'CREDITS_GIVEN_REASON|+|15|SHOP_EXPLORATION'],[1,'CREDITS_GIVEN_REASON|+|9|SHOP_EXPLORATION'],[2,'CREDITS_GIVEN_REASON|+|2|SHOP_EXPLORATION']]);
+ assert.deepEqual(b.chat,[[0,'0|CREDITS_GIVEN_REASON|+|15|0|SHOP_EXPLORATION'],[1,'1|CREDITS_GIVEN_REASON|+|9|1|SHOP_EXPLORATION'],[2,'2|CREDITS_GIVEN_REASON|+|2|2|SHOP_EXPLORATION']]);
  const firstReward=after.findIndex(x=>x[1]==='dispatchDomain');assert.ok(firstReward>after.findIndex(x=>x[0]==='SDK'),'sample work precedes reward callbacks');
 });
 
