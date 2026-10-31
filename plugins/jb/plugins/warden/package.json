@@ -1,0 +1,173 @@
+{
+  "name": "@edgegamers/jailbreak-warden",
+  "version": "1.0.0",
+  "description": "The warden: selection, commands, markers, paint, special treatment and peace mute.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "pluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.0.0"
+    },
+    "config": {
+      "hp_equal": {
+        "type": "int",
+        "default": 50,
+        "description": "Guard armor when the first warden is picked and T:CT is exactly the ratio (1-200)."
+      },
+      "hp_outnumber": {
+        "type": "int",
+        "default": 25,
+        "description": "Guard armor when guards outnumber the ratio (1-200)."
+      },
+      "hp_outnumbered": {
+        "type": "int",
+        "default": 100,
+        "description": "Guard armor when prisoners outnumber the ratio (1-200)."
+      },
+      "warden_t_ratio": {
+        "type": "int",
+        "default": 3,
+        "description": "Prisoners per guard considered balanced for the armor buff."
+      },
+      "warden_armor": {
+        "type": "int",
+        "default": 125,
+        "description": "Armor for the round's first warden (1-200)."
+      },
+      "warden_hp": {
+        "type": "int",
+        "default": 125,
+        "description": "Health for the round's first warden (1-200)."
+      },
+      "warden_maxhp": {
+        "type": "int",
+        "default": 100,
+        "description": "Max health for the round's first warden (1-200)."
+      },
+      "warden_sound_killed": {
+        "type": "string",
+        "default": "jb/warden/wardenkilled.vsnd",
+        "description": "Sound (under sounds/) played when the warden dies; empty disables."
+      },
+      "warden_sound_passed": {
+        "type": "string",
+        "default": "jb/warden/wardenpassed.vsnd",
+        "description": "Sound played when the warden passes, is fired or leaves; empty disables."
+      },
+      "warden_sound_new": {
+        "type": "string",
+        "default": "jb/warden/wardennew.vsnd",
+        "description": "Sound played when a warden is assigned; empty disables."
+      },
+      "warden_queue_seconds": {
+        "type": "float",
+        "default": 7,
+        "description": "How long the warden raffle stays open after round start."
+      },
+      "autowarden_flag": {
+        "type": "string",
+        "default": "o",
+        "description": "SourceMod admin flag letters required for !autowarden (empty = everyone)."
+      },
+      "autowarden_delay_interval": {
+        "type": "float",
+        "default": 5,
+        "description": "Seconds after round start before auto-warden players are entered into the raffle."
+      },
+      "warden_open_cooldown": {
+        "type": "int",
+        "default": 25,
+        "description": "Seconds after freeze time before the warden may !open (0-300)."
+      },
+      "warden_count_cooldown": {
+        "type": "int",
+        "default": 30,
+        "description": "Seconds after freeze time before the warden may !count (0-300)."
+      },
+      "warden_countdown_min": {
+        "type": "int",
+        "default": 3,
+        "description": "Shortest !countdown."
+      },
+      "warden_countdown_max": {
+        "type": "int",
+        "default": 15,
+        "description": "Longest !countdown."
+      },
+      "warden_countdown_default": {
+        "type": "int",
+        "default": 5,
+        "description": "!countdown length without an argument."
+      },
+      "peace_cooldown": {
+        "type": "int",
+        "default": 60,
+        "description": "Seconds between !peace uses by the warden / chat admins."
+      },
+      "max_chickens": {
+        "type": "int",
+        "default": 5,
+        "description": "Chickens the warden may spawn per round."
+      },
+      "max_soccers": {
+        "type": "int",
+        "default": 3,
+        "description": "Soccer balls the warden may spawn per round."
+      },
+      "marker_customization_flag": {
+        "type": "string",
+        "default": "o",
+        "description": "SourceMod admin flag letters required for !markertype / !markercolor (empty = everyone)."
+      },
+      "warden_marker_min_radius": {
+        "type": "float",
+        "default": 60,
+        "description": "Marker radius when placed."
+      },
+      "warden_marker_max_radius": {
+        "type": "float",
+        "default": 360,
+        "description": "Largest marker radius when resizing."
+      },
+      "warden_resize_time": {
+        "type": "int",
+        "default": 800,
+        "description": "Milliseconds after placing a marker in which a second ping resizes it."
+      },
+      "warden_marker_segments": {
+        "type": "int",
+        "default": 33,
+        "description": "Beams used for curved marker shapes (16-256)."
+      },
+      "warden_paint_lifetime": {
+        "type": "float",
+        "default": 10,
+        "description": "Seconds each paint segment stays visible."
+      },
+      "warden_paint_max_segments": {
+        "type": "int",
+        "default": 300,
+        "description": "Most paint beams alive at once; the oldest are removed first (10-2000)."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/warden"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

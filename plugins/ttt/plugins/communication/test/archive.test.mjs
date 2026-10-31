@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {fixture,behaviorTests} from './fixture.mjs';
+const archive=process.env.COMMUNICATION_TEST_ARCHIVE??fileURLToPath(new URL('../dist/_edgegamers_ttt-communication.s2sp',import.meta.url));
+const files=JSON.parse(execFileSync('python3',['-c','import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);print(json.dumps({n:z.read(n).decode() for n in z.namelist()}))',archive],{encoding:'utf8'}));
+behaviorTests(test,()=>fixture(files['plugin.js']));

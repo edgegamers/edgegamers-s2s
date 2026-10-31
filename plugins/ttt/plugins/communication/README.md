@@ -1,0 +1,13 @@
+# Communication
+
+This plugin owns the existing port's private chat relay and logical-life voice rules. Core owns the registry and round, supplies copied observations and recipient-localized phrases, and calls the finite methods at the original positions. The plugin has one Protocol2 publication, `@edgegamers/ttt-communication` version2.0.0, and requires Core2.
+
+Ordinary living chat and all out-of-round chat return Continue. During a live round, normal dead chat is delivered to dead players (including spectators), the speaker and GENERIC admins. A traitor's `@` line goes to every traitor, including living and dead traitors. The old dead nontraitor `@` fallthrough is preserved. Empty private lines are suppressed. Core's awaited report-reason command interceptor remains ahead of normal chat. No commands, HUDs, domain registrations or configuration settings are added.
+
+Voice uses logical liveness rather than the spoofed engine scoreboard state. Each dead sender can be heard only by the current dead set. The unchanged set does no writes; a newly restricted connection gets the old reminder phrase. Same-slot reconnects are distinct. Native Voice failures are logged and retried, not cached as success. Core drives tick at the former updateVoice position and calls reset/forget at the existing Finished, teardown and leave positions.
+
+Cleanup removes only captured rules owned by this plugin. It deliberately does not clear `Client.voiceMuted`: this implementation never sets blanket mutes, and clearing them would erase unrelated moderator state. This is a scoped extraction correction to the old blanket cleanup. Captured native Client handles and copied Core generations fence delayed/reentrant work; round/recipient observations are checked again after localization and sends. A private relay failure remains Handled, so it cannot reopen the engine's public broadcast.
+
+`applyServerSettings` preserves the old `sv_alltalk 1` and `sv_voicecodec vaudio_steam` assignments. It captures each baseline once per plugin instance. Unload restores only values this instance changed and only while the current value still equals its assignment. `sv_full_alltalk` remains untouched. These engine assignments are not new owner configuration leaves or legacy aliases.
+
+Tests execute both local bundles and actual CLI archive payloads with substituted host APIs. The differential test compares the unchanged old chat bodies across 200 combinations. These tests do not establish audible client output or live engine ConVar acceptance; those require a separately coordinated staging run. Official stock s2script APIs are the only native dependency.

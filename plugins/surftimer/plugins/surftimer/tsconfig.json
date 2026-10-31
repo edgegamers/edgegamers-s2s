@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src",
+    "api.d.ts",
+    "../../../../node_modules/@s2script/sdk/globals.d.ts",
+    ".s2script/interfaces.d.ts"
+  ]
+}

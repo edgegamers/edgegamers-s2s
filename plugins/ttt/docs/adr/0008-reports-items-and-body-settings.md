@@ -1,0 +1,17 @@
+# ADR0008 — Reports, Items and canonical body settings
+
+Accepted October2,2026. This completes the ten-owner composition from the existing-port baseline and supersedes ADR0007's temporary Core ownership of five body settings.
+
+Reports owns the five existing RDM modules and their canonical stores. Four pure stores are unchanged baseline copies. The existing death/leave handlers, tick/lifecycle positions, report limits, prompt periods, reason escaping, guilt ladder, debt cap and map reset policy remain. The old dormant filing-counter round reset remains dormant. Core owns player authority, native chat/admin/slay/ban operations and presentation routing. Reports returns copied finite records and consumes a pending verdict before local conviction accounting.
+
+Core captures a unique Reports attachment for each query or decision. Private reason capture survives attachment loss as a bounded connection obligation, consuming at most one promised nonblank line. UI report selection and armed ban confirmation include the attachment stamp; an ID reused after reload cannot inherit a ruling. Native operations revalidate authority before entry. A completed slay serves the captured SteamID even if it ends the round; reset cannot restore retired debt. Unknown native results retain accounting without automatically repeating the sanction.
+
+Items owns the old effects/weaponfx tables, charges, gadgets, native resources and cleanup. Shop remains the sole catalog/economy/settings authority. Core keeps the unchanged21 inventory grant branches and finite health/death/body/HUD gateways. Effect grants pin one Items attachment, so a replacement cannot receive the remainder of an earlier purchase. Core's existing three frame segments and bounded PRE queue drive Items; no second timer/queue is introduced.
+
+Body Paint uses an invocation-local Core ticket pinned to the canonical body and both owner lifetimes. It marks the actual body immediately, before the old tint order, and retires the ticket in finally. The ticket is unavailable to UI clients. Physical item queries cannot create a second body store.
+
+The seven-argument HE descriptor moves byte-for-byte from Core into Items; Items receives the derived engine:calls permission. No supplier or framework code changes. A narrow inherited lifecycle fix advances owner admission at the two existing effect resets: a native constructor returning after reset is retired before adoption, and later valid rounds still work. Native recipes and precommit Finished ordering remain unchanged. Cluster retains the buyer-only charge; ADR0009 supersedes the earlier grenade-association proposal.
+
+Bodies now owns its five canonical controls and aliases. Core observes a copied settings view; settle/hide choices promote only at the old aggregate snapshot boundaries. There are169 aliases across six canonical files:20 Core,5 Bodies,23 Karma,11 Special,3 World and107 Shop. The explicit offline importer gives existing Bodies values precedence over old Core body choices, then alias inputs, preserving raw numeric tokens and malformed sections. Old Core data is retained; this is not an implicit startup migration.
+
+Independent producer and Core-boundary reviews approved the composition after retirement fixes. Actual CLI builds, strict source checks, baseline parity and real archive fixtures establish local behavior. Stock native staging and receiving-client acceptance are separate evidence.

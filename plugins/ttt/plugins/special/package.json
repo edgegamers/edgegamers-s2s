@@ -1,0 +1,122 @@
+{
+  "name": "@edgegamers/ttt-special",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "The existing port's seven special rounds, with owned state and cleanup",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-special",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-special": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    },
+    "config": {
+      "selection": {
+        "minimumRoundsBetween": {
+          "type": "int",
+          "default": 3,
+          "description": "Minimum rounds between special rounds",
+          "min": 0,
+          "max": 100
+        },
+        "minimumPlayers": {
+          "type": "int",
+          "default": 5,
+          "description": "Minimum players for a special round",
+          "min": 0,
+          "max": 64
+        },
+        "minimumRoundsAfterMap": {
+          "type": "int",
+          "default": 2,
+          "description": "Rounds after a map change before a special",
+          "min": 0,
+          "max": 100
+        },
+        "chance": {
+          "type": "float",
+          "default": 0.2,
+          "description": "Chance of a special round",
+          "min": 0,
+          "max": 1
+        },
+        "additionalRoundChance": {
+          "type": "float",
+          "default": 0.33,
+          "description": "Chance of stacking another special round",
+          "min": 0,
+          "max": 1
+        }
+      },
+      "lowGravity": {
+        "multiplier": {
+          "type": "float",
+          "default": 0.5,
+          "description": "Gravity multiplier for the Low Grav round",
+          "min": 0.05,
+          "max": 1
+        }
+      },
+      "speed": {
+        "initialSeconds": {
+          "type": "int",
+          "default": 40,
+          "description": "Speed round initial seconds",
+          "min": 5,
+          "max": 600
+        },
+        "secondsPerKill": {
+          "type": "int",
+          "default": 8,
+          "description": "Speed round seconds added per kill",
+          "min": 0,
+          "max": 120
+        },
+        "maximumSeconds": {
+          "type": "int",
+          "default": 90,
+          "description": "Speed round maximum seconds",
+          "min": 10,
+          "max": 600
+        }
+      },
+      "rich": {
+        "startingCreditMultiplier": {
+          "type": "float",
+          "default": 2,
+          "description": "Rich round starting-credit multiplier",
+          "min": 1,
+          "max": 10
+        },
+        "earnedCreditMultiplier": {
+          "type": "float",
+          "default": 3,
+          "description": "Rich round in-round gain multiplier",
+          "min": 1,
+          "max": 10
+        }
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/special"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

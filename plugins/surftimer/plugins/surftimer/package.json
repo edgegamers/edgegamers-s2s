@@ -1,0 +1,103 @@
+{
+  "name": "@edgegamers/surftimer-core",
+  "version": "0.1.0",
+  "description": "SurfTimer for s2script: map-trigger and SharpTimer-format zones, tick-exact timing, records, replays, styles.",
+  "license": "GPL-3.0-or-later",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "dependencies": {
+    "@edgegamers/surftimer-shared": "0.1.0"
+  },
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "config": {
+      "chat_prefix": {
+        "type": "string",
+        "default": "Surf",
+        "description": "Chat prefix label (shown as [label] in colour)."
+      },
+      "database": {
+        "type": "string",
+        "default": "surftimer",
+        "description": "Named database connection (databases.json); SQLite by default."
+      },
+      "max_prespeed": {
+        "type": "float",
+        "default": 290,
+        "description": "Max 2D speed when leaving a start zone (velocity is scaled down to this). 0 disables."
+      },
+      "max_prespeed_bonus": {
+        "type": "float",
+        "default": 290,
+        "description": "Same for bonus start zones."
+      },
+      "prespeed_cap_in_zone": {
+        "type": "bool",
+        "default": true,
+        "description": "Also cap speed every few ticks while inside a start zone (anti-prehop)."
+      },
+      "fake_zone_height": {
+        "type": "float",
+        "default": 72,
+        "description": "Height added above SharpTimer-format JSON zone corners (they are floor-level)."
+      },
+      "replays": {
+        "type": "bool",
+        "default": true,
+        "description": "Record runs and save the best one per track/style."
+      },
+      "replay_bots": {
+        "type": "int",
+        "default": 1,
+        "description": "Replay bots to keep on the server (0 = none). Bot 1 plays the map WR; extra bots cycle bonus WRs."
+      },
+      "replay_max_minutes": {
+        "type": "int",
+        "default": 45,
+        "description": "Stop recording (and do not save) runs longer than this."
+      },
+      "replay_prerun_ticks": {
+        "type": "int",
+        "default": 128,
+        "description": "Ticks of start-zone movement kept before the timer starts (replay pre-strafe)."
+      },
+      "hide_players_default": {
+        "type": "bool",
+        "default": false,
+        "description": "Hide other players for new joiners (toggle with !hide)."
+      },
+      "announce_pb": {
+        "type": "bool",
+        "default": true,
+        "description": "Announce personal bests to everyone, not only world records."
+      },
+      "top_limit": {
+        "type": "int",
+        "default": 50,
+        "description": "Leaderboard rows cached per track/style."
+      },
+      "map_tiers_file": {
+        "type": "string",
+        "default": "maptiers.json",
+        "description": "Tier data under the plugin's file sandbox (SharpTimer remote_data format)."
+      },
+      "map_tiers_url": {
+        "type": "string",
+        "default": "https://raw.githubusercontent.com/SharpTimer/SharpTimer/main/remote_data/surf_.json",
+        "description": "Download SharpTimer-format map tiers on load (off-thread) and cache them in map_tiers_file. Empty disables."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/surftimer/plugins/surftimer"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

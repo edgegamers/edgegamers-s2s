@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ES2024",
+    "lib": [
+      "ES2024"
+    ],
+    "types": [],
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
+  }
+}

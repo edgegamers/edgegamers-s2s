@@ -1,0 +1,65 @@
+{
+  "baseline": "s2s-ttt-port-old bd2c382, updated API source snapshot; AST-captured callback text",
+  "handlers": [
+    {
+      "file": "cs2/handlers.ts",
+      "line": 754,
+      "install": "installHandlers",
+      "event": "damage",
+      "localOrdinal": 1,
+      "options": "{ priority: Priority.HIGHEST }",
+      "handler": "(ev) => {\n      if (inWarmup()) return;\n      if (game.state !== GameState.InProgress && game.state !== GameState.Finished) {\n        ev.canceled = true;\n      }\n    }",
+      "sourceSha256": "06ceb759b7cabd50f791a8aaaf78a7e95282792810c3745f9fc3ea869225a0d0"
+    },
+    {
+      "file": "cs2/icons.ts",
+      "line": 968,
+      "install": "installIcons",
+      "event": "damage",
+      "localOrdinal": 4,
+      "options": "{ priority: Priority.MONITOR }",
+      "handler": "(ev) => {\n      if (!ev.canceled || !inProgress()) return;\n      const attacker = ev.attacker;\n      if (attacker < 0 || attacker >= MAX_SLOTS || stickers[attacker] !== 1) return;\n      if (!ev.weapon.includes(\"taser\")) return;\n      revealIconToAll(ev.slot);\n    }",
+      "sourceSha256": "220acdaff208ea2feb715a69951e322f834e0984c80fa3116626c0efc3f5e770"
+    },
+    {
+      "file": "karma/karma.ts",
+      "line": 474,
+      "install": "installKarma",
+      "event": "damage",
+      "localOrdinal": 1,
+      "options": "default",
+      "handler": "(ev) => {\n    // Deliberately NOT gated on `ev.canceled`. `OnHurt` carries a bare [EventHandler], and the C#\n    // bus skips a handler only when it opts in with `IgnoreCanceled` \u2014 so a hit nullified by the\n    // Taser or by friendly-fire blocking still puts the attacker on record as the aggressor. Bail\n    // out on that flag and being tased stops counting as \"they shot first\", which flips the guilty\n    // verdict (and the karma either way) on every kill that follows. The round-state test is the\n    // guard `OnHurt` actually has; it is also what the out-of-round canceler was standing in for.\n    if (ev.attacker < 0 || game.state !== GameState.InProgress) return;\n    noteDamage(ev.attacker, ev.slot);\n  }",
+      "sourceSha256": "a9001b5828ee68b0216823f162a9e89bfefa7e469a57aba15c531d6601a20710"
+    },
+    {
+      "file": "shop/economy.ts",
+      "line": 218,
+      "install": "installEconomy",
+      "event": "damage",
+      "localOrdinal": 4,
+      "options": "{ priority: Priority.HIGH }",
+      "handler": "(ev) => {\n    if (game.state !== GameState.InProgress) return;\n    // Substring, for the same reason as the scan itself in effects.ts: `player_hurt` reports `taser`\n    // while the pre-hook reports `weapon_taser`, so equality misses the live path.\n    if (ev.attacker < 0 || !ev.weapon.includes(\"taser\")) return;\n    ev.canceled = true;\n    addBalance(ev.attacker, 30, \"Successful Tase\");\n  }",
+      "sourceSha256": "899c082579e956f3bebd8523629593c1c18dabcd3a61494459a0fb5d445abf8a"
+    },
+    {
+      "file": "shop/effects.ts",
+      "line": 1404,
+      "install": "installEffects",
+      "event": "damage",
+      "localOrdinal": 1,
+      "options": "{ priority: Priority.HIGH }",
+      "handler": "(ev) => {\n      if (!inProgress() || ev.attacker < 0) return;\n      const attacker = ev.attacker;\n      const victim = ev.slot;\n\n      // The Taser is checked BEFORE the `canceled` guard below, because a canceled tase is the\n      // NORMAL case: `@s2script`-side, `economy.ts` subscribes at Priority.HIGH to pay out\n      // \"Successful Tase\" and cancels the damage there \u2014 so by the time this listener ran, `canceled`\n      // was already true and the early return skipped the reveal entirely. The player got the payout\n      // message and never learned the role, which is exactly the bug. Cancellation is what a tase is\n      // SUPPOSED to do, so it must not suppress the scan.\n      //\n      // The cancel must survive the `player_hurt` fallback path, where the hit has ALREADY landed:\n      // if it took the victim below zero they are dead before anything can refund it, and the\n      // \"scan\" would have killed the person it is meant to identify. Force them back to a safe\n      // floor as well as cancelling, so a tase is never lethal.\n      // SUBSTRING match, not equality. The weapon string's shape depends on which path delivered the\n      // damage: the entity pre-hook reports the class (`weapon_taser`) while the `player_hurt`\n      // fallback reports the engine's short name (`taser`) \u2014 and the fallback is the live path here.\n      // An `=== \"weapon_taser\"` test therefore silently never matched a real tase, so the scan\n      // reported nothing at all. The C# guarded with `Contains(\"taser\")` for exactly this reason, and\n      // `icons.ts` already uses `includes` on the same event.\n      // Gated on the WEAPON only, never on an \"owns the taser\" flag.\n      //\n      // This required `hasTaser[attacker] === 1`, and the flag is per-round state cleared by\n      // `resetEffects` \u2014 so it went to zero on every plugin reload and every round boundary, while the\n      // taser stayed in the player's hands. Measured on a live server: a real tase arrived with\n      // `hasTaser=0` and the reveal was skipped, yet `economy.ts` (which checks only the weapon\n      // string) still paid out \"Successful Tase\". A tase that pays credits and reveals nothing is the\n      // worst of both.\n      //\n      // The C# `TaserListenCanceler` has no such flag: it reveals for any hit whose weapon contains\n      // \"taser\" and lets HOLDING one be the gate, which is also what makes a taser picked up off the\n      // ground behave the same as a bought one.\n      if (ev.weapon.includes(\"taser\")) {\n        ev.canceled = true;\n        const pawn = pawnOf(victim);\n        const hp = pawn?.health ?? 0;\n        if (hp <= 0) setHealth(victim, 1);\n        const role = roleName(reg.roleOf(victim));\n        tell(attacker, msgFor(attacker, \"TASER_SCANNED\", reg.nameOf(victim), role));\n        if (hasStickers[attacker] === 1) {\n          tell(victim, msgFor(victim, \"SHOP_ITEM_STICKERS_HIT\"));\n          revealRole(victim);\n        }\n        return;\n      }\n\n      // Everything past this point is real damage handling, which a cancel legitimately voids.\n      if (ev.canceled) return;\n\n      // One-Shot Revolver: an instant kill, or suicide on a teammate.\n      //\n      // CS2 reports the weapon as `weapon_deagle` even when the player is holding a revolver \u2014 the\n      // C# carried an explicit alias for exactly this, and it matters more here because the live\n      // path is `player_hurt`, whose weapon string comes straight from the engine field.\n      if (hasRevolver[attacker] === 1 && isOneShotWeapon(ev.weapon)) {\n        const sameTeam = (reg.roleOf(attacker) === RoleId.Traitor) === (reg.roleOf(victim) === RoleId.Traitor);\n        if (sameTeam && !b(\"sm_ttt_shop_onedeagle_ff\")) {\n          hasRevolver[attacker] = 0;\n          ev.canceled = true;\n          tell(attacker, msgFor(attacker, \"SHOP_ITEM_DEAGLE_HIT_FF\"));\n          if (b(\"sm_ttt_shop_onedeagle_kill_shooter_on_ff\")) setHealth(attacker, 0);\n          return;\n        }\n        hasRevolver[attacker] = 0; // one shot only, matching the C# RemoveItem on first hit\n        ev.damage = 1000;\n        tell(victim, msgFor(victim, \"SHOP_ITEM_DEAGLE_VICTIM\"));\n        return;\n      }\n\n      // One-Hit Knife: consumed on the next knife strike.\n      if (hasOneHitKnife[attacker] === 1 && KNIVES.has(ev.weapon)) {\n        const sameTeam = (reg.roleOf(attacker) === RoleId.Traitor) === (reg.roleOf(victim) === RoleId.Traitor);\n        if (sameTeam && !b(\"sm_ttt_shop_onehitknife_friendly_fire\")) return;\n        hasOneHitKnife[attacker] = 0;\n        ev.damage = 1000;\n        return;\n      }\n\n      // Poison Shots: a pistol hit applies poison. The charge was already spent on FIRE (see\n      // `onWeaponFire` in weaponfx.ts) \u2014 the C# `OnDamage` only READS the counter, which is why the\n      // shot that spends the last charge lands without poisoning. This is also the source that\n      // flashes the victim's screen; Poison Smoke (in `weaponfx.ts`) is the silent one.\n      if (poisonShotsLeft(attacker) > 0 && isPistol(ev.weapon)) {\n        applyPoison(victim, attacker, false);\n        tell(attacker, msgFor(attacker, \"SHOP_ITEM_POISON_HIT\", reg.nameOf(victim)));\n      }\n    }",
+      "sourceSha256": "68eb810618cb9490f78ea7ab15c0df4bfd905ddcd2a836cc1d10b14180a23053"
+    },
+    {
+      "file": "special/rounds.ts",
+      "line": 314,
+      "install": "installSpecialRounds",
+      "event": "damage",
+      "localOrdinal": 5,
+      "options": "{ priority: Priority.HIGHEST }",
+      "handler": "(ev) => {\n    if (!isActive(\"pistol\") || ev.attacker < 0) return;\n    if (RIFLES.has(ev.weapon)) ev.canceled = true;\n  }",
+      "sourceSha256": "76044a627875f1a6aee45900c54d4772c233513e767c4dcb815e0283d6d5eca8"
+    }
+  ]
+}

@@ -1,0 +1,5975 @@
+{
+ "bhop_15m": {
+  "Tier": 3
+ },
+ "bhop_162": {
+  "Tier": 2
+ },
+ "bhop_1derland": {
+  "Tier": 1
+ },
+ "bhop_1n5an3": {
+  "Tier": 1
+ },
+ "bhop_24": {
+  "Tier": 3
+ },
+ "bhop_2_S4RO": {
+  "Tier": 4
+ },
+ "bhop_2flocci2furious_rg2": {
+  "Tier": 4
+ },
+ "bhop_3_easy": {
+  "Tier": 1
+ },
+ "bhop_3d": {
+  "Tier": 2
+ },
+ "bhop_48": {
+  "Tier": 1
+ },
+ "bhop_4U": {
+  "Tier": 1
+ },
+ "bhop_4appa": {
+  "Tier": 3
+ },
+ "bhop_4colors": {
+  "Tier": 3
+ },
+ "bhop_98sync": {
+  "Tier": 1
+ },
+ "bhop_Evolve": {
+  "Tier": 3
+ },
+ "bhop_Fluffy_Panda": {
+  "Tier": 2
+ },
+ "bhop_Mukiology": {
+  "Tier": 2
+ },
+ "bhop_Z": {
+  "Tier": 2
+ },
+ "bhop_abandoned_sr": {
+  "Tier": 1
+ },
+ "bhop_abriller": {
+  "Tier": 2
+ },
+ "bhop_abstraction": {
+  "Tier": 1
+ },
+ "bhop_abyss_fix": {
+  "Tier": 4
+ },
+ "bhop_accelerate": {
+  "Tier": 2
+ },
+ "bhop_addict_v2": {
+  "Tier": 3
+ },
+ "bhop_adrino_fix": {
+  "Tier": 2
+ },
+ "bhop_adventure_2": {
+  "Tier": 3
+ },
+ "bhop_adventure_final": {
+  "Tier": 2
+ },
+ "bhop_ahlie": {
+  "Tier": 1
+ },
+ "bhop_aimers_hell": {
+  "Tier": 6
+ },
+ "bhop_akiragave": {
+  "Tier": 3
+ },
+ "bhop_aks": {
+  "Tier": 2
+ },
+ "bhop_ala_laupapa": {
+  "Tier": 2
+ },
+ "bhop_alba": {
+  "Tier": 4
+ },
+ "bhop_alien_ruins": {
+  "Tier": 2
+ },
+ "bhop_all_the_way": {
+  "Tier": 2
+ },
+ "bhop_alley": {
+  "Tier": 1
+ },
+ "bhop_alone": {
+  "Tier": 3
+ },
+ "bhop_alt_jestas": {
+  "Tier": 1
+ },
+ "bhop_alt_joutsen": {
+  "Tier": 1
+ },
+ "bhop_alt_kirves": {
+  "Tier": 1
+ },
+ "bhop_alt_kuutio": {
+  "Tier": 1
+ },
+ "bhop_alt_olohuone": {
+  "Tier": 1
+ },
+ "bhop_alt_paskin": {
+  "Tier": 1
+ },
+ "bhop_alt_saimaa": {
+  "Tier": 1
+ },
+ "bhop_alt_salmari": {
+  "Tier": 1
+ },
+ "bhop_alt_tammikuu": {
+  "Tier": 2
+ },
+ "bhop_alt_terassi": {
+  "Tier": 1
+ },
+ "bhop_alt_univaje": {
+  "Tier": 1
+ },
+ "bhop_alt_vaahtera": {
+  "Tier": 1
+ },
+ "bhop_alvo": {
+  "Tier": 5
+ },
+ "bhop_alvo2": {
+  "Tier": 5
+ },
+ "bhop_alwaystranslucent": {
+  "Tier": 1
+ },
+ "bhop_amaranthglow": {
+  "Tier": 1
+ },
+ "bhop_ambience": {
+  "Tier": 1
+ },
+ "bhop_ametisti": {
+  "Tier": 2
+ },
+ "bhop_ample": {
+  "Tier": 1
+ },
+ "bhop_angst_go": {
+  "Tier": 4
+ },
+ "bhop_anini": {
+  "Tier": 2
+ },
+ "bhop_ankha": {
+  "Tier": 2
+ },
+ "bhop_another20secstrafemap": {
+  "Tier": 1
+ },
+ "bhop_antosha_twitch1": {
+  "Tier": 1
+ },
+ "bhop_anyyy": {
+  "Tier": 1
+ },
+ "bhop_aow_blackout": {
+  "Tier": 1
+ },
+ "bhop_aow_whiteout": {
+  "Tier": 2
+ },
+ "bhop_aphrodite": {
+  "Tier": 2
+ },
+ "bhop_arcane2_a06": {
+  "Tier": 3
+ },
+ "bhop_arcane_v1": {
+  "Tier": 3
+ },
+ "bhop_arcturus": {
+  "Tier": 4
+ },
+ "bhop_areaportal_nmp": {
+  "Tier": 3
+ },
+ "bhop_arfsa": {
+  "Tier": 2
+ },
+ "bhop_arid": {
+  "Tier": 2
+ },
+ "bhop_aroma": {
+  "Tier": 2
+ },
+ "bhop_asiimov": {
+  "Tier": 2
+ },
+ "bhop_asko": {
+  "Tier": 2
+ },
+ "bhop_astral": {
+  "Tier": 4
+ },
+ "bhop_at_night": {
+  "Tier": 1
+ },
+ "bhop_atmospheric": {
+  "Tier": 2
+ },
+ "bhop_atom": {
+  "Tier": 1
+ },
+ "bhop_atrium": {
+  "Tier": 1
+ },
+ "bhop_audree_final": {
+  "Tier": 2
+ },
+ "bhop_aura": {
+  "Tier": 2
+ },
+ "bhop_aurum": {
+  "Tier": 2
+ },
+ "bhop_autism": {
+  "Tier": 2
+ },
+ "bhop_autobadges": {
+  "Tier": 1
+ },
+ "bhop_aux_a9": {
+  "Tier": 5
+ },
+ "bhop_aztec": {
+  "Tier": 1
+ },
+ "bhop_babes": {
+  "Tier": 1
+ },
+ "bhop_backstreet": {
+  "Tier": 2
+ },
+ "bhop_bad_imagination": {
+  "Tier": 3
+ },
+ "bhop_badges": {
+  "Tier": 5
+ },
+ "bhop_badges_mini": {
+  "Tier": 4
+ },
+ "bhop_badly_v1": {
+  "Tier": 4
+ },
+ "bhop_badmapever": {
+  "Tier": 1
+ },
+ "bhop_bedtime": {
+  "Tier": 1
+ },
+ "bhop_beginner_castle": {
+  "Tier": 1
+ },
+ "bhop_behemoth": {
+  "Tier": 3
+ },
+ "bhop_behomeby10": {
+  "Tier": 1
+ },
+ "bhop_behomeby11": {
+  "Tier": 2
+ },
+ "bhop_believe": {
+  "Tier": 2
+ },
+ "bhop_belkapeace": {
+  "Tier": 1
+ },
+ "bhop_beollao": {
+  "Tier": 2
+ },
+ "bhop_biff": {
+  "Tier": 1
+ },
+ "bhop_bigdink_speedrun": {
+  "Tier": 1
+ },
+ "bhop_bitches": {
+  "Tier": 3
+ },
+ "bhop_blackglow": {
+  "Tier": 1
+ },
+ "bhop_blackrockshooter": {
+  "Tier": 2
+ },
+ "bhop_blackshit": {
+  "Tier": 1
+ },
+ "bhop_blacktop": {
+  "Tier": 2
+ },
+ "bhop_blankbody": {
+  "Tier": 2
+ },
+ "bhop_blend": {
+  "Tier": 4
+ },
+ "bhop_bless": {
+  "Tier": 1
+ },
+ "bhop_bliss": {
+  "Tier": 3
+ },
+ "bhop_bloc": {
+  "Tier": 1
+ },
+ "bhop_blocker": {
+  "Tier": 1
+ },
+ "bhop_blockworld2": {
+  "Tier": 3
+ },
+ "bhop_bloclean": {
+  "Tier": 2
+ },
+ "bhop_blois_fix": {
+  "Tier": 2
+ },
+ "bhop_blue_abstract": {
+  "Tier": 2
+ },
+ "bhop_blue_aux": {
+  "Tier": 2
+ },
+ "bhop_blue_shade": {
+  "Tier": 1
+ },
+ "bhop_blueglow": {
+  "Tier": 2
+ },
+ "bhop_bluemoon": {
+  "Tier": 3
+ },
+ "bhop_bluerace": {
+  "Tier": 2
+ },
+ "bhop_bobop": {
+  "Tier": 1
+ },
+ "bhop_bofa": {
+  "Tier": 1
+ },
+ "bhop_boopsnow": {
+  "Tier": 1
+ },
+ "bhop_borders": {
+  "Tier": 1
+ },
+ "bhop_boredom": {
+  "Tier": 1
+ },
+ "bhop_bram_halloween": {
+  "Tier": 1
+ },
+ "bhop_breath": {
+  "Tier": 2
+ },
+ "bhop_bridge": {
+  "Tier": 1
+ },
+ "bhop_brodinski": {
+  "Tier": 2
+ },
+ "bhop_bubblegum": {
+  "Tier": 2
+ },
+ "bhop_bug100": {
+  "Tier": 2
+ },
+ "bhop_bug100_2nd": {
+  "Tier": 2
+ },
+ "bhop_bugga": {
+  "Tier": 4
+ },
+ "bhop_bw": {
+  "Tier": 1
+ },
+ "bhop_byrem": {
+  "Tier": 4
+ },
+ "bhop_cad_mini1": {
+  "Tier": 1
+ },
+ "bhop_calming": {
+  "Tier": 2
+ },
+ "bhop_carotte": {
+  "Tier": 1
+ },
+ "bhop_cartoons": {
+  "Tier": 2
+ },
+ "bhop_castle": {
+  "Tier": 2
+ },
+ "bhop_castletown": {
+  "Tier": 1
+ },
+ "bhop_cc": {
+  "Tier": 2
+ },
+ "bhop_cc2": {
+  "Tier": 3
+ },
+ "bhop_ceekay": {
+  "Tier": 3
+ },
+ "bhop_celestial": {
+  "Tier": 3
+ },
+ "bhop_ch4": {
+  "Tier": 2
+ },
+ "bhop_challenjour_v2": {
+  "Tier": 5
+ },
+ "bhop_chaser": {
+  "Tier": 1
+ },
+ "bhop_cheesemania": {
+  "Tier": 3
+ },
+ "bhop_chen_sr": {
+  "Tier": 1
+ },
+ "bhop_cherry": {
+  "Tier": 3
+ },
+ "bhop_cherryblossom": {
+  "Tier": 1
+ },
+ "bhop_chillim": {
+  "Tier": 2
+ },
+ "bhop_christmas": {
+  "Tier": 2
+ },
+ "bhop_chronology": {
+  "Tier": 3
+ },
+ "bhop_cityscape": {
+  "Tier": 3
+ },
+ "bhop_cks_easy": {
+  "Tier": 1
+ },
+ "bhop_classic": {
+  "Tier": 1
+ },
+ "bhop_climbit": {
+  "Tier": 1
+ },
+ "bhop_cloudburst": {
+  "Tier": 2
+ },
+ "bhop_clove": {
+  "Tier": 1
+ },
+ "bhop_clrs2": {
+  "Tier": 2
+ },
+ "bhop_cobblestones": {
+  "Tier": 1
+ },
+ "bhop_colorshit_v2": {
+  "Tier": 2
+ },
+ "bhop_colour": {
+  "Tier": 2
+ },
+ "bhop_coma_x": {
+  "Tier": 1
+ },
+ "bhop_comfort_dev1": {
+  "Tier": 3
+ },
+ "bhop_comingwinter": {
+  "Tier": 1
+ },
+ "bhop_community_jump2": {
+  "Tier": 5
+ },
+ "bhop_communityjump": {
+  "Tier": 4
+ },
+ "bhop_compact_city_v2": {
+  "Tier": 2
+ },
+ "bhop_concrete_pickle": {
+  "Tier": 1
+ },
+ "bhop_conquest": {
+  "Tier": 3
+ },
+ "bhop_conquest2": {
+  "Tier": 3
+ },
+ "bhop_cover": {
+  "Tier": 2
+ },
+ "bhop_crash_egypt": {
+  "Tier": 3
+ },
+ "bhop_crates_crates_pastiche": {
+  "Tier": 1
+ },
+ "bhop_craton": {
+  "Tier": 2
+ },
+ "bhop_crystal": {
+  "Tier": 1
+ },
+ "bhop_cuteboys": {
+  "Tier": 3
+ },
+ "bhop_cuteconcretes": {
+  "Tier": 1
+ },
+ "bhop_cutekittenz": {
+  "Tier": 5
+ },
+ "bhop_cutetraps": {
+  "Tier": 3
+ },
+ "bhop_cw_collab": {
+  "Tier": 4
+ },
+ "bhop_cw_journey": {
+  "Tier": 4
+ },
+ "bhop_cyan": {
+  "Tier": 1
+ },
+ "bhop_cyanglow": {
+  "Tier": 1
+ },
+ "bhop_cyber": {
+  "Tier": 2
+ },
+ "bhop_cynical": {
+  "Tier": 1
+ },
+ "bhop_cyon": {
+  "Tier": 2
+ },
+ "bhop_cyphisonia": {
+  "Tier": 2
+ },
+ "bhop_dango": {
+  "Tier": 2
+ },
+ "bhop_dangobango_v2": {
+  "Tier": 2
+ },
+ "bhop_danmark": {
+  "Tier": 3
+ },
+ "bhop_daolang2": {
+  "Tier": 4
+ },
+ "bhop_daolang_go": {
+  "Tier": 4
+ },
+ "bhop_dark_ascension": {
+  "Tier": 4
+ },
+ "bhop_darkink": {
+  "Tier": 2
+ },
+ "bhop_darkness": {
+  "Tier": 1
+ },
+ "bhop_daylight": {
+  "Tier": 2
+ },
+ "bhop_deeper": {
+  "Tier": 2
+ },
+ "bhop_definitely": {
+  "Tier": 2
+ },
+ "bhop_degree": {
+  "Tier": 3
+ },
+ "bhop_desolation_rg1": {
+  "Tier": 2
+ },
+ "bhop_despair": {
+  "Tier": 2
+ },
+ "bhop_despondent": {
+  "Tier": 2
+ },
+ "bhop_dezza": {
+  "Tier": 2
+ },
+ "bhop_dim": {
+  "Tier": 2
+ },
+ "bhop_dimensional": {
+  "Tier": 3
+ },
+ "bhop_dipl": {
+  "Tier": 1
+ },
+ "bhop_dipliu69": {
+  "Tier": 1
+ },
+ "bhop_diremaul": {
+  "Tier": 1
+ },
+ "bhop_disarray": {
+  "Tier": 3
+ },
+ "bhop_disco": {
+  "Tier": 2
+ },
+ "bhop_discovery": {
+  "Tier": 3
+ },
+ "bhop_dispute": {
+  "Tier": 2
+ },
+ "bhop_distant_tnn": {
+  "Tier": 2
+ },
+ "bhop_distilled": {
+  "Tier": 3
+ },
+ "bhop_distraction": {
+  "Tier": 3
+ },
+ "bhop_doh": {
+  "Tier": 2
+ },
+ "bhop_dom": {
+  "Tier": 2
+ },
+ "bhop_domi_final": {
+  "Tier": 3
+ },
+ "bhop_dontneedaname": {
+  "Tier": 1
+ },
+ "bhop_dontvote": {
+  "Tier": 1
+ },
+ "bhop_downdowndown": {
+  "Tier": 1
+ },
+ "bhop_dream": {
+  "Tier": 1
+ },
+ "bhop_dream2": {
+  "Tier": 3
+ },
+ "bhop_drip": {
+  "Tier": 2
+ },
+ "bhop_duality": {
+  "Tier": 1
+ },
+ "bhop_dunedash": {
+  "Tier": 1
+ },
+ "bhop_dunes": {
+  "Tier": 3
+ },
+ "bhop_dungeon": {
+  "Tier": 3
+ },
+ "bhop_dust_temple": {
+  "Tier": 1
+ },
+ "bhop_earnest": {
+  "Tier": 2
+ },
+ "bhop_easy": {
+  "Tier": 1
+ },
+ "bhop_easycheese": {
+  "Tier": 3
+ },
+ "bhop_eazy_4xl": {
+  "Tier": 1
+ },
+ "bhop_eazy_hd": {
+  "Tier": 1
+ },
+ "bhop_edge_re": {
+  "Tier": 2
+ },
+ "bhop_egyptian_balls": {
+  "Tier": 1
+ },
+ "bhop_egyptiantemple_sr": {
+  "Tier": 4
+ },
+ "bhop_emevaelx": {
+  "Tier": 1
+ },
+ "bhop_emevaelx3": {
+  "Tier": 2
+ },
+ "bhop_emevaelx_2": {
+  "Tier": 1
+ },
+ "bhop_empty_eyes": {
+  "Tier": 3
+ },
+ "bhop_enigma": {
+  "Tier": 3
+ },
+ "bhop_enigma2": {
+  "Tier": 3
+ },
+ "bhop_enlightened2": {
+  "Tier": 4
+ },
+ "bhop_epiphany": {
+  "Tier": 4
+ },
+ "bhop_epoch": {
+  "Tier": 3
+ },
+ "bhop_esther": {
+  "Tier": 4
+ },
+ "bhop_exceptional": {
+  "Tier": 5
+ },
+ "bhop_exodus_fix": {
+  "Tier": 5
+ },
+ "bhop_experience": {
+  "Tier": 4
+ },
+ "bhop_extasis": {
+  "Tier": 2
+ },
+ "bhop_facility_2": {
+  "Tier": 1
+ },
+ "bhop_fantasy_speedrun": {
+  "Tier": 2
+ },
+ "bhop_fast_hop_v1": {
+  "Tier": 1
+ },
+ "bhop_fatol": {
+  "Tier": 1
+ },
+ "bhop_feelerz2": {
+  "Tier": 2
+ },
+ "bhop_feyn": {
+  "Tier": 3
+ },
+ "bhop_flashbacks": {
+  "Tier": 3
+ },
+ "bhop_flat": {
+  "Tier": 2
+ },
+ "bhop_flatzone_fix": {
+  "Tier": 3
+ },
+ "bhop_flavum": {
+  "Tier": 2
+ },
+ "bhop_flocci": {
+  "Tier": 5
+ },
+ "bhop_floccidrift": {
+  "Tier": 5
+ },
+ "bhop_flow": {
+  "Tier": 2
+ },
+ "bhop_fly_lovers": {
+  "Tier": 3
+ },
+ "bhop_flyingcolors": {
+  "Tier": 1
+ },
+ "bhop_focus": {
+  "Tier": 3
+ },
+ "bhop_foggybon": {
+  "Tier": 2
+ },
+ "bhop_foliage_fix": {
+  "Tier": 2
+ },
+ "bhop_fool": {
+  "Tier": 3
+ },
+ "bhop_fool_2": {
+  "Tier": 4
+ },
+ "bhop_foollatio_final": {
+  "Tier": 4
+ },
+ "bhop_forest": {
+  "Tier": 1
+ },
+ "bhop_forevertranslucent": {
+  "Tier": 1
+ },
+ "bhop_forstrafe": {
+  "Tier": 2
+ },
+ "bhop_forstrafe2": {
+  "Tier": 2
+ },
+ "bhop_fort_update": {
+  "Tier": 1
+ },
+ "bhop_fps_max_sr": {
+  "Tier": 4
+ },
+ "bhop_freakin": {
+  "Tier": 4
+ },
+ "bhop_fresh": {
+  "Tier": 3
+ },
+ "bhop_friday_nite": {
+  "Tier": 2
+ },
+ "bhop_friendsjump": {
+  "Tier": 5
+ },
+ "bhop_friskv2": {
+  "Tier": 2
+ },
+ "bhop_fronk": {
+  "Tier": 2
+ },
+ "bhop_fruits2": {
+  "Tier": 5
+ },
+ "bhop_fuckdream": {
+  "Tier": 1
+ },
+ "bhop_fuji": {
+  "Tier": 4
+ },
+ "bhop_fur_fix": {
+  "Tier": 3
+ },
+ "bhop_fury": {
+  "Tier": 4
+ },
+ "bhop_fury_2": {
+  "Tier": 5
+ },
+ "bhop_future_city": {
+  "Tier": 3
+ },
+ "bhop_fy": {
+  "Tier": 2
+ },
+ "bhop_galaxy": {
+  "Tier": 1
+ },
+ "bhop_gateway": {
+  "Tier": 2
+ },
+ "bhop_gismo": {
+  "Tier": 1
+ },
+ "bhop_glacial": {
+  "Tier": 1
+ },
+ "bhop_gloom": {
+  "Tier": 2
+ },
+ "bhop_glxy": {
+  "Tier": 2
+ },
+ "bhop_go_boom": {
+  "Tier": 2
+ },
+ "bhop_godlike2_rg1": {
+  "Tier": 2
+ },
+ "bhop_godlike5": {
+  "Tier": 2
+ },
+ "bhop_gottagofast": {
+  "Tier": 1
+ },
+ "bhop_grapefruit": {
+  "Tier": 2
+ },
+ "bhop_grassland_speedrun": {
+  "Tier": 1
+ },
+ "bhop_grassyass": {
+  "Tier": 1
+ },
+ "bhop_gravityfun": {
+  "Tier": 2
+ },
+ "bhop_grayshit": {
+  "Tier": 1
+ },
+ "bhop_great_unknown": {
+  "Tier": 2
+ },
+ "bhop_green": {
+  "Tier": 2
+ },
+ "bhop_green_shade": {
+  "Tier": 2
+ },
+ "bhop_greenglow": {
+  "Tier": 2
+ },
+ "bhop_greenroom": {
+  "Tier": 5
+ },
+ "bhop_greenshit": {
+  "Tier": 1
+ },
+ "bhop_greentex": {
+  "Tier": 1
+ },
+ "bhop_greystuff": {
+  "Tier": 1
+ },
+ "bhop_grid": {
+  "Tier": 4
+ },
+ "bhop_grove": {
+  "Tier": 1
+ },
+ "bhop_gunoi": {
+  "Tier": 3
+ },
+ "bhop_haarukka": {
+  "Tier": 3
+ },
+ "bhop_haddock": {
+  "Tier": 3
+ },
+ "bhop_hades": {
+  "Tier": 3
+ },
+ "bhop_hahalol": {
+  "Tier": 1
+ },
+ "bhop_hamel": {
+  "Tier": 4
+ },
+ "bhop_hathor": {
+  "Tier": 1
+ },
+ "bhop_hatred": {
+  "Tier": 1
+ },
+ "bhop_haunt": {
+  "Tier": 2
+ },
+ "bhop_hellish_dream": {
+  "Tier": 3
+ },
+ "bhop_helvete": {
+  "Tier": 1
+ },
+ "bhop_hexag0n_cool": {
+  "Tier": 2
+ },
+ "bhop_hi_im_sozu_first_fixx": {
+  "Tier": 2
+ },
+ "bhop_highfly": {
+  "Tier": 3
+ },
+ "bhop_hima": {
+  "Tier": 2
+ },
+ "bhop_hood2": {
+  "Tier": 1
+ },
+ "bhop_hopi": {
+  "Tier": 3
+ },
+ "bhop_horoshechnenko": {
+  "Tier": 1
+ },
+ "bhop_huar2": {
+  "Tier": 1
+ },
+ "bhop_huni": {
+  "Tier": 2
+ },
+ "bhop_hyable_go": {
+  "Tier": 4
+ },
+ "bhop_icecapades": {
+  "Tier": 1
+ },
+ "bhop_icetrap": {
+  "Tier": 2
+ },
+ "bhop_iconic": {
+  "Tier": 2
+ },
+ "bhop_icosa": {
+  "Tier": 2
+ },
+ "bhop_ideal": {
+  "Tier": 1
+ },
+ "bhop_idiosyncrasy": {
+  "Tier": 4
+ },
+ "bhop_ihanvitunpaskamappi": {
+  "Tier": 2
+ },
+ "bhop_ihate_devmaps": {
+  "Tier": 4
+ },
+ "bhop_illusionary": {
+  "Tier": 4
+ },
+ "bhop_impatience": {
+  "Tier": 2
+ },
+ "bhop_indistinct": {
+  "Tier": 3
+ },
+ "bhop_inline": {
+  "Tier": 1
+ },
+ "bhop_inmomentum_gfl_final": {
+  "Tier": 5
+ },
+ "bhop_insanelyserz": {
+  "Tier": 5
+ },
+ "bhop_inta": {
+  "Tier": 3
+ },
+ "bhop_interest_fix": {
+  "Tier": 2
+ },
+ "bhop_interloper": {
+  "Tier": 5
+ },
+ "bhop_interstellar": {
+  "Tier": 3
+ },
+ "bhop_intra": {
+  "Tier": 2
+ },
+ "bhop_ion": {
+  "Tier": 3
+ },
+ "bhop_isanmaa_fixed": {
+  "Tier": 2
+ },
+ "bhop_isomer": {
+  "Tier": 1
+ },
+ "bhop_istolefrompcpie": {
+  "Tier": 3
+ },
+ "bhop_j4f_speedrun": {
+  "Tier": 1
+ },
+ "bhop_japan": {
+  "Tier": 2
+ },
+ "bhop_jay_first": {
+  "Tier": 1
+ },
+ "bhop_jegg_adventure": {
+  "Tier": 2
+ },
+ "bhop_jumalauta": {
+  "Tier": 2
+ },
+ "bhop_jump_academy": {
+  "Tier": 1
+ },
+ "bhop_jungle3k": {
+  "Tier": 1
+ },
+ "bhop_jx": {
+  "Tier": 1
+ },
+ "bhop_k1": {
+  "Tier": 1
+ },
+ "bhop_k3": {
+  "Tier": 1
+ },
+ "bhop_kaina": {
+  "Tier": 1
+ },
+ "bhop_kaisa": {
+  "Tier": 1
+ },
+ "bhop_kamapulya": {
+  "Tier": 2
+ },
+ "bhop_kanto": {
+  "Tier": 3
+ },
+ "bhop_kasvihuone": {
+  "Tier": 2
+ },
+ "bhop_kaunisnimi_fix": {
+  "Tier": 1
+ },
+ "bhop_khonsu": {
+  "Tier": 2
+ },
+ "bhop_khufu": {
+  "Tier": 2
+ },
+ "bhop_kiitovittu": {
+  "Tier": 1
+ },
+ "bhop_kinni": {
+  "Tier": 3
+ },
+ "bhop_kitum": {
+  "Tier": 1
+ },
+ "bhop_kiwi_cwfx": {
+  "Tier": 1
+ },
+ "bhop_klassno": {
+  "Tier": 1
+ },
+ "bhop_kloom": {
+  "Tier": 2
+ },
+ "bhop_knox": {
+  "Tier": 2
+ },
+ "bhop_kore": {
+  "Tier": 1
+ },
+ "bhop_kotodama": {
+  "Tier": 2
+ },
+ "bhop_kotodama2": {
+  "Tier": 2
+ },
+ "bhop_kripsterhoholfull": {
+  "Tier": 2
+ },
+ "bhop_kuiva": {
+  "Tier": 1
+ },
+ "bhop_kukliii_e_rock": {
+  "Tier": 1
+ },
+ "bhop_kuukkeli": {
+  "Tier": 2
+ },
+ "bhop_kuusipuu": {
+  "Tier": 1
+ },
+ "bhop_kyle": {
+  "Tier": 2
+ },
+ "bhop_l_speedrun": {
+  "Tier": 1
+ },
+ "bhop_lade_v2": {
+  "Tier": 1
+ },
+ "bhop_laf": {
+  "Tier": 3
+ },
+ "bhop_lahna": {
+  "Tier": 1
+ },
+ "bhop_lahna2": {
+  "Tier": 1
+ },
+ "bhop_lapster_revisited": {
+  "Tier": 4
+ },
+ "bhop_larena_nodoors": {
+  "Tier": 2
+ },
+ "bhop_leaf": {
+  "Tier": 1
+ },
+ "bhop_leet_bh": {
+  "Tier": 3
+ },
+ "bhop_legion": {
+  "Tier": 2
+ },
+ "bhop_legit": {
+  "Tier": 1
+ },
+ "bhop_lego": {
+  "Tier": 1
+ },
+ "bhop_lego1": {
+  "Tier": 3
+ },
+ "bhop_lego2": {
+  "Tier": 4
+ },
+ "bhop_lego3": {
+  "Tier": 5
+ },
+ "bhop_lego_journey": {
+  "Tier": 4
+ },
+ "bhop_lego_rnm": {
+  "Tier": 2
+ },
+ "bhop_legoflix1": {
+  "Tier": 3
+ },
+ "bhop_legomyego": {
+  "Tier": 1
+ },
+ "bhop_leios": {
+  "Tier": 2
+ },
+ "bhop_lessthandirt": {
+  "Tier": 1
+ },
+ "bhop_lightsout": {
+  "Tier": 2
+ },
+ "bhop_lime": {
+  "Tier": 2
+ },
+ "bhop_linear_concrete": {
+  "Tier": 1
+ },
+ "bhop_littlequeen": {
+  "Tier": 2
+ },
+ "bhop_lm": {
+  "Tier": 1
+ },
+ "bhop_lord_m4dara": {
+  "Tier": 3
+ },
+ "bhop_lost_world": {
+  "Tier": 4
+ },
+ "bhop_lowg": {
+  "Tier": 1
+ },
+ "bhop_lucky": {
+  "Tier": 1
+ },
+ "bhop_lumin": {
+  "Tier": 2
+ },
+ "bhop_lunti": {
+  "Tier": 2
+ },
+ "bhop_lupadamadami": {
+  "Tier": 1
+ },
+ "bhop_lush": {
+  "Tier": 3
+ },
+ "bhop_lyhytmappi": {
+  "Tier": 2
+ },
+ "bhop_madness": {
+  "Tier": 1
+ },
+ "bhop_magic_cave": {
+  "Tier": 2
+ },
+ "bhop_magnoir": {
+  "Tier": 2
+ },
+ "bhop_malabar10": {
+  "Tier": 2
+ },
+ "bhop_malabar7": {
+  "Tier": 2
+ },
+ "bhop_malabar9": {
+  "Tier": 1
+ },
+ "bhop_manpoo": {
+  "Tier": 1
+ },
+ "bhop_matans": {
+  "Tier": 1
+ },
+ "bhop_mauve": {
+  "Tier": 2
+ },
+ "bhop_mbs": {
+  "Tier": 2
+ },
+ "bhop_medium_v1": {
+  "Tier": 2
+ },
+ "bhop_medusozoa": {
+  "Tier": 2
+ },
+ "bhop_melancholy": {
+  "Tier": 1
+ },
+ "bhop_meliodas_v1": {
+  "Tier": 4
+ },
+ "bhop_mellowmood": {
+  "Tier": 2
+ },
+ "bhop_meme1": {
+  "Tier": 2
+ },
+ "bhop_memory": {
+  "Tier": 5
+ },
+ "bhop_metal_v2_sr": {
+  "Tier": 1
+ },
+ "bhop_metalhack_v1": {
+  "Tier": 1
+ },
+ "bhop_metra": {
+  "Tier": 1
+ },
+ "bhop_metra2": {
+  "Tier": 3
+ },
+ "bhop_microwave": {
+  "Tier": 1
+ },
+ "bhop_midnight": {
+  "Tier": 3
+ },
+ "bhop_miku": {
+  "Tier": 1
+ },
+ "bhop_miles": {
+  "Tier": 1
+ },
+ "bhop_mine": {
+  "Tier": 4
+ },
+ "bhop_minecraft": {
+  "Tier": 2
+ },
+ "bhop_miracle": {
+  "Tier": 3
+ },
+ "bhop_mixed_journeys": {
+  "Tier": 1
+ },
+ "bhop_mixempire": {
+  "Tier": 1
+ },
+ "bhop_mixtape": {
+  "Tier": 1
+ },
+ "bhop_monotonous": {
+  "Tier": 2
+ },
+ "bhop_monster_jam": {
+  "Tier": 3
+ },
+ "bhop_monument_valley": {
+  "Tier": 2
+ },
+ "bhop_monument_valley_2": {
+  "Tier": 2
+ },
+ "bhop_monument_valley_3": {
+  "Tier": 3
+ },
+ "bhop_moonlight": {
+  "Tier": 1
+ },
+ "bhop_motionless": {
+  "Tier": 2
+ },
+ "bhop_movetothetrees": {
+  "Tier": 2
+ },
+ "bhop_mp_stairs_hq": {
+  "Tier": 1
+ },
+ "bhop_muchfast_fix_fix": {
+  "Tier": 3
+ },
+ "bhop_mult": {
+  "Tier": 1
+ },
+ "bhop_mustapaska": {
+  "Tier": 2
+ },
+ "bhop_needyou": {
+  "Tier": 3
+ },
+ "bhop_neonhop": {
+  "Tier": 1
+ },
+ "bhop_nervosity": {
+  "Tier": 2
+ },
+ "bhop_nervosity2": {
+  "Tier": 2
+ },
+ "bhop_nevertranslucent": {
+  "Tier": 2
+ },
+ "bhop_newga_fix": {
+  "Tier": 2
+ },
+ "bhop_nila": {
+  "Tier": 2
+ },
+ "bhop_nira": {
+  "Tier": 1
+ },
+ "bhop_niver": {
+  "Tier": 1
+ },
+ "bhop_nobody": {
+  "Tier": 1
+ },
+ "bhop_nona": {
+  "Tier": 1
+ },
+ "bhop_nono2": {
+  "Tier": 2
+ },
+ "bhop_noobhop": {
+  "Tier": 1
+ },
+ "bhop_noodles_v2": {
+  "Tier": 1
+ },
+ "bhop_nosotros": {
+  "Tier": 1
+ },
+ "bhop_not_a_defrag_map": {
+  "Tier": 1
+ },
+ "bhop_nubia_fix": {
+  "Tier": 2
+ },
+ "bhop_nuclear": {
+  "Tier": 2
+ },
+ "bhop_nukkumaanmenoaika_fix": {
+  "Tier": 2
+ },
+ "bhop_null": {
+  "Tier": 5
+ },
+ "bhop_nup": {
+  "Tier": 1
+ },
+ "bhop_nup2": {
+  "Tier": 2
+ },
+ "bhop_nux": {
+  "Tier": 2
+ },
+ "bhop_nyrobs": {
+  "Tier": 1
+ },
+ "bhop_oceanic": {
+  "Tier": 4
+ },
+ "bhop_oer": {
+  "Tier": 2
+ },
+ "bhop_ohboy": {
+  "Tier": 3
+ },
+ "bhop_oldschool": {
+  "Tier": 3
+ },
+ "bhop_omn": {
+  "Tier": 3
+ },
+ "bhop_omnitopia": {
+  "Tier": 2
+ },
+ "bhop_onehunnidemoji": {
+  "Tier": 3
+ },
+ "bhop_orbital": {
+  "Tier": 3
+ },
+ "bhop_orgrimmar": {
+  "Tier": 2
+ },
+ "bhop_orionsbelt_go": {
+  "Tier": 1
+ },
+ "bhop_overline": {
+  "Tier": 1
+ },
+ "bhop_overthinker_go": {
+  "Tier": 4
+ },
+ "bhop_oxom": {
+  "Tier": 2
+ },
+ "bhop_p05_go": {
+  "Tier": 4
+ },
+ "bhop_p06_go": {
+  "Tier": 5
+ },
+ "bhop_pahin": {
+  "Tier": 1
+ },
+ "bhop_paisaweeaboo_beta4": {
+  "Tier": 3
+ },
+ "bhop_pandora": {
+  "Tier": 3
+ },
+ "bhop_pandora2_fix": {
+  "Tier": 4
+ },
+ "bhop_paradigm": {
+  "Tier": 2
+ },
+ "bhop_paskamappi": {
+  "Tier": 2
+ },
+ "bhop_peachrace": {
+  "Tier": 3
+ },
+ "bhop_persepillu": {
+  "Tier": 2
+ },
+ "bhop_pharaoh": {
+  "Tier": 3
+ },
+ "bhop_pharma": {
+  "Tier": 4
+ },
+ "bhop_phew": {
+  "Tier": 2
+ },
+ "bhop_pickles": {
+  "Tier": 1
+ },
+ "bhop_pikkulauantai": {
+  "Tier": 2
+ },
+ "bhop_pims_cwfx": {
+  "Tier": 1
+ },
+ "bhop_pinkglow": {
+  "Tier": 2
+ },
+ "bhop_pinky_fix": {
+  "Tier": 1
+ },
+ "bhop_pisco": {
+  "Tier": 2
+ },
+ "bhop_ponpon": {
+  "Tier": 5
+ },
+ "bhop_popcornforadmin_fix": {
+  "Tier": 2
+ },
+ "bhop_primal": {
+  "Tier": 2
+ },
+ "bhop_prometheus": {
+  "Tier": 4
+ },
+ "bhop_prux_fix": {
+  "Tier": 3
+ },
+ "bhop_puf": {
+  "Tier": 2
+ },
+ "bhop_pure_betafix": {
+  "Tier": 3
+ },
+ "bhop_purpleglow": {
+  "Tier": 1
+ },
+ "bhop_purpleheart": {
+  "Tier": 2
+ },
+ "bhop_puzazutop": {
+  "Tier": 1
+ },
+ "bhop_pyle": {
+  "Tier": 3
+ },
+ "bhop_pym": {
+  "Tier": 3
+ },
+ "bhop_pyxkeriafix": {
+  "Tier": 2
+ },
+ "bhop_qmpa": {
+  "Tier": 1
+ },
+ "bhop_qportal": {
+  "Tier": 3
+ },
+ "bhop_quaker": {
+  "Tier": 2
+ },
+ "bhop_quaker2": {
+  "Tier": 2
+ },
+ "bhop_quickie": {
+  "Tier": 3
+ },
+ "bhop_quiet": {
+  "Tier": 2
+ },
+ "bhop_quiet2": {
+  "Tier": 3
+ },
+ "bhop_qwerty": {
+  "Tier": 2
+ },
+ "bhop_rabbit": {
+  "Tier": 1
+ },
+ "bhop_racer": {
+  "Tier": 1
+ },
+ "bhop_ragepoop_rev": {
+  "Tier": 1
+ },
+ "bhop_ragequit": {
+  "Tier": 5
+ },
+ "bhop_rapidfire": {
+  "Tier": 2
+ },
+ "bhop_ratmeat_final": {
+  "Tier": 3
+ },
+ "bhop_rebound": {
+  "Tier": 1
+ },
+ "bhop_redglow": {
+  "Tier": 3
+ },
+ "bhop_redshit": {
+  "Tier": 1
+ },
+ "bhop_resonance": {
+  "Tier": 1
+ },
+ "bhop_retrowave": {
+  "Tier": 3
+ },
+ "bhop_reverie": {
+  "Tier": 1
+ },
+ "bhop_rgbglow": {
+  "Tier": 1
+ },
+ "bhop_rgbglow_sr": {
+  "Tier": 3
+ },
+ "bhop_rikudo": {
+  "Tier": 2
+ },
+ "bhop_ripdream": {
+  "Tier": 2
+ },
+ "bhop_rippcpie": {
+  "Tier": 2
+ },
+ "bhop_rising": {
+  "Tier": 2
+ },
+ "bhop_riverland": {
+  "Tier": 1
+ },
+ "bhop_rockthevote3": {
+  "Tier": 4
+ },
+ "bhop_rockthevote4": {
+  "Tier": 3
+ },
+ "bhop_rose": {
+  "Tier": 2
+ },
+ "bhop_rotebal2_go": {
+  "Tier": 4
+ },
+ "bhop_royal": {
+  "Tier": 1
+ },
+ "bhop_ruins": {
+  "Tier": 2
+ },
+ "bhop_runbhopper_sr": {
+  "Tier": 1
+ },
+ "bhop_sacred": {
+  "Tier": 2
+ },
+ "bhop_safehaven": {
+  "Tier": 2
+ },
+ "bhop_sahara": {
+  "Tier": 2
+ },
+ "bhop_saisei": {
+  "Tier": 2
+ },
+ "bhop_same": {
+  "Tier": 3
+ },
+ "bhop_sandtrap": {
+  "Tier": 2
+ },
+ "bhop_sandtrap2": {
+  "Tier": 2
+ },
+ "bhop_sandtrap3": {
+  "Tier": 2
+ },
+ "bhop_sandyshores_rg1": {
+  "Tier": 1
+ },
+ "bhop_sativa": {
+  "Tier": 2
+ },
+ "bhop_sauvakavely": {
+  "Tier": 2
+ },
+ "bhop_scape": {
+  "Tier": 2
+ },
+ "bhop_scarlet": {
+  "Tier": 2
+ },
+ "bhop_screelee_fix": {
+  "Tier": 3
+ },
+ "bhop_scrollcity_sr": {
+  "Tier": 1
+ },
+ "bhop_sdc01": {
+  "Tier": 1
+ },
+ "bhop_second": {
+  "Tier": 3
+ },
+ "bhop_seiz": {
+  "Tier": 2
+ },
+ "bhop_series_one": {
+  "Tier": 2
+ },
+ "bhop_serv": {
+  "Tier": 2
+ },
+ "bhop_shades": {
+  "Tier": 1
+ },
+ "bhop_shitper": {
+  "Tier": 4
+ },
+ "bhop_shitshow": {
+  "Tier": 1
+ },
+ "bhop_shitstrafe": {
+  "Tier": 2
+ },
+ "bhop_shutdown2": {
+  "Tier": 4
+ },
+ "bhop_silly": {
+  "Tier": 5
+ },
+ "bhop_sina": {
+  "Tier": 5
+ },
+ "bhop_sketchy_v4": {
+  "Tier": 2
+ },
+ "bhop_sky_realm_v3": {
+  "Tier": 1
+ },
+ "bhop_skylook": {
+  "Tier": 1
+ },
+ "bhop_skylook2": {
+  "Tier": 2
+ },
+ "bhop_skyruins": {
+  "Tier": 1
+ },
+ "bhop_sleepless_lg": {
+  "Tier": 1
+ },
+ "bhop_smallmap": {
+  "Tier": 2
+ },
+ "bhop_smally": {
+  "Tier": 3
+ },
+ "bhop_smth": {
+  "Tier": 1
+ },
+ "bhop_smudge": {
+  "Tier": 1
+ },
+ "bhop_snowy": {
+  "Tier": 2
+ },
+ "bhop_soaatana": {
+  "Tier": 2
+ },
+ "bhop_soft": {
+  "Tier": 2
+ },
+ "bhop_something": {
+  "Tier": 1
+ },
+ "bhop_sonni_v2": {
+  "Tier": 2
+ },
+ "bhop_space": {
+  "Tier": 2
+ },
+ "bhop_spacerooms": {
+  "Tier": 2
+ },
+ "bhop_speedrun_cyberlose": {
+  "Tier": 1
+ },
+ "bhop_speedrun_fluid": {
+  "Tier": 1
+ },
+ "bhop_speedrun_lyned2": {
+  "Tier": 1
+ },
+ "bhop_speedrun_lyned3": {
+  "Tier": 1
+ },
+ "bhop_speedrun_spacelegofive": {
+  "Tier": 1
+ },
+ "bhop_speedrun_suka47": {
+  "Tier": 1
+ },
+ "bhop_speedrun_suka48": {
+  "Tier": 1
+ },
+ "bhop_speedrun_valley_b2": {
+  "Tier": 2
+ },
+ "bhop_speedrun_vasya34ru": {
+  "Tier": 1
+ },
+ "bhop_spentrol": {
+  "Tier": 1
+ },
+ "bhop_spiteful": {
+  "Tier": 3
+ },
+ "bhop_spookyland": {
+  "Tier": 2
+ },
+ "bhop_spring_chill": {
+  "Tier": 2
+ },
+ "bhop_sqee": {
+  "Tier": 5
+ },
+ "bhop_static": {
+  "Tier": 1
+ },
+ "bhop_station_altair_fix": {
+  "Tier": 3
+ },
+ "bhop_stoitnamalchika": {
+  "Tier": 2
+ },
+ "bhop_stoneage": {
+  "Tier": 1
+ },
+ "bhop_stonez": {
+  "Tier": 2
+ },
+ "bhop_straa_babylon": {
+  "Tier": 1
+ },
+ "bhop_straa_forest": {
+  "Tier": 1
+ },
+ "bhop_straa_space": {
+  "Tier": 1
+ },
+ "bhop_strafe_matans": {
+  "Tier": 2
+ },
+ "bhop_strafing_in_egypt": {
+  "Tier": 1
+ },
+ "bhop_strafing_in_heaven": {
+  "Tier": 1
+ },
+ "bhop_strafing_in_hell": {
+  "Tier": 1
+ },
+ "bhop_strafing_in_japan": {
+  "Tier": 1
+ },
+ "bhop_strafing_in_space": {
+  "Tier": 1
+ },
+ "bhop_strafinggobrr": {
+  "Tier": 1
+ },
+ "bhop_stref_amazon": {
+  "Tier": 1
+ },
+ "bhop_stref_asleep": {
+  "Tier": 1
+ },
+ "bhop_stref_cairo": {
+  "Tier": 1
+ },
+ "bhop_stref_shanghai": {
+  "Tier": 1
+ },
+ "bhop_stref_siberia": {
+  "Tier": 1
+ },
+ "bhop_stref_wat": {
+  "Tier": 1
+ },
+ "bhop_subdivide": {
+  "Tier": 2
+ },
+ "bhop_sugarspeed": {
+  "Tier": 3
+ },
+ "bhop_suicide_pls": {
+  "Tier": 1
+ },
+ "bhop_suitsuke": {
+  "Tier": 2
+ },
+ "bhop_summerland": {
+  "Tier": 3
+ },
+ "bhop_superdooperhard_speedrun": {
+  "Tier": 4
+ },
+ "bhop_supernova": {
+  "Tier": 3
+ },
+ "bhop_surf_qvo_v2": {
+  "Tier": 2
+ },
+ "bhop_svenA": {
+  "Tier": 1
+ },
+ "bhop_symphony": {
+  "Tier": 2
+ },
+ "bhop_synthetic": {
+  "Tier": 5
+ },
+ "bhop_szaq2": {
+  "Tier": 1
+ },
+ "bhop_tangos4fags": {
+  "Tier": 2
+ },
+ "bhop_tanker3": {
+  "Tier": 3
+ },
+ "bhop_tasku_b3": {
+  "Tier": 1
+ },
+ "bhop_techno_easy": {
+  "Tier": 3
+ },
+ "bhop_tehoputki": {
+  "Tier": 2
+ },
+ "bhop_tentacion": {
+  "Tier": 2
+ },
+ "bhop_terry": {
+  "Tier": 3
+ },
+ "bhop_thc": {
+  "Tier": 3
+ },
+ "bhop_thc_gold_rg1": {
+  "Tier": 4
+ },
+ "bhop_thc_platinum_final_rg2": {
+  "Tier": 5
+ },
+ "bhop_the_distance": {
+  "Tier": 4
+ },
+ "bhop_the_journey_lyned2": {
+  "Tier": 4
+ },
+ "bhop_tiainen": {
+  "Tier": 2
+ },
+ "bhop_timescalehack_v2": {
+  "Tier": 2
+ },
+ "bhop_toc": {
+  "Tier": 3
+ },
+ "bhop_together": {
+  "Tier": 4
+ },
+ "bhop_topgay": {
+  "Tier": 1
+ },
+ "bhop_torqwaz": {
+  "Tier": 2
+ },
+ "bhop_toxic": {
+  "Tier": 3
+ },
+ "bhop_tramadol": {
+  "Tier": 3
+ },
+ "bhop_trampislow": {
+  "Tier": 5
+ },
+ "bhop_tran": {
+  "Tier": 1
+ },
+ "bhop_translucidity_v2": {
+  "Tier": 3
+ },
+ "bhop_traveling_dreams": {
+  "Tier": 3
+ },
+ "bhop_treehouse2": {
+  "Tier": 3
+ },
+ "bhop_treehouse3": {
+  "Tier": 3
+ },
+ "bhop_treehouse4": {
+  "Tier": 3
+ },
+ "bhop_tron": {
+  "Tier": 1
+ },
+ "bhop_tron_evolution": {
+  "Tier": 3
+ },
+ "bhop_tumi": {
+  "Tier": 2
+ },
+ "bhop_tupasplash": {
+  "Tier": 2
+ },
+ "bhop_twilight_tile": {
+  "Tier": 2
+ },
+ "bhop_twisty": {
+  "Tier": 2
+ },
+ "bhop_tyrian": {
+  "Tier": 3
+ },
+ "bhop_ultra": {
+  "Tier": 2
+ },
+ "bhop_underground_crypt": {
+  "Tier": 4
+ },
+ "bhop_unreal_space": {
+  "Tier": 3
+ },
+ "bhop_unrealverse2": {
+  "Tier": 3
+ },
+ "bhop_vagabond": {
+  "Tier": 2
+ },
+ "bhop_vaporwave": {
+  "Tier": 1
+ },
+ "bhop_velstand": {
+  "Tier": 2
+ },
+ "bhop_verbena": {
+  "Tier": 3
+ },
+ "bhop_vergogna": {
+  "Tier": 1
+ },
+ "bhop_verisimilitude": {
+  "Tier": 5
+ },
+ "bhop_verness": {
+  "Tier": 1
+ },
+ "bhop_vertex_fast": {
+  "Tier": 1
+ },
+ "bhop_violet": {
+  "Tier": 1
+ },
+ "bhop_voxel": {
+  "Tier": 3
+ },
+ "bhop_voyage": {
+  "Tier": 3
+ },
+ "bhop_warmzsteon": {
+  "Tier": 3
+ },
+ "bhop_white_sr": {
+  "Tier": 1
+ },
+ "bhop_whiteglow": {
+  "Tier": 2
+ },
+ "bhop_whitepillar": {
+  "Tier": 2
+ },
+ "bhop_whiteshit": {
+  "Tier": 1
+ },
+ "bhop_whoevenbhops_final": {
+  "Tier": 1
+ },
+ "bhop_wild_rgb": {
+  "Tier": 2
+ },
+ "bhop_wildcard": {
+  "Tier": 3
+ },
+ "bhop_winter": {
+  "Tier": 1
+ },
+ "bhop_winterland": {
+  "Tier": 2
+ },
+ "bhop_wire": {
+  "Tier": 3
+ },
+ "bhop_wonderland_fix": {
+  "Tier": 3
+ },
+ "bhop_wood_notsowoodremake": {
+  "Tier": 1
+ },
+ "bhop_woodenxd": {
+  "Tier": 2
+ },
+ "bhop_worldwar": {
+  "Tier": 1
+ },
+ "bhop_x": {
+  "Tier": 2
+ },
+ "bhop_xeimon": {
+  "Tier": 2
+ },
+ "bhop_xmas": {
+  "Tier": 1
+ },
+ "bhop_xof": {
+  "Tier": 1
+ },
+ "bhop_xulazu": {
+  "Tier": 2
+ },
+ "bhop_y": {
+  "Tier": 2
+ },
+ "bhop_zegypt": {
+  "Tier": 2
+ },
+ "bhop_zentic": {
+  "Tier": 2
+ },
+ "bhop_zipfag": {
+  "Tier": 3
+ },
+ "bhop_zittern2_remake": {
+  "Tier": 2
+ },
+ "bhop_zygos": {
+  "Tier": 1
+ },
+ "bhop_zyper": {
+  "Tier": 3
+ },
+ "kz_bhop_global_fix": {
+  "Tier": 5
+ },
+ "surf_004": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_1day": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_2012": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_25_lighters": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_2pacisalive": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_3": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_4dimensional": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_4head": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_6": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_666": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_81st_network": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_8bit": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_a": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_abandoned": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_abstinens": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_abstract_final": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_ace": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_acerbus": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_acp": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_activation": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_adrift": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_adtr_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_advanced": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_adventure": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_aeron": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_aether": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_again_njv": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_agony": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_aircontrol": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_aircontrol_ksf": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_airflow": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_akai": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_alend": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_amaro": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_amateur_v2b": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ambient_njv": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_amir": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_amplitude_apex": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_amplitude_encore": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_amplitude_light": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_and_destroy": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_android": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_andromeda": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_angst": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_animals": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_anime_fun": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_annoyance_njv": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_anoobis": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_anthropomorphic": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_antimatter2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_antimatter_v2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_anubis": {
+  "Tier": 8,
+  "Type": "Staged"
+ },
+ "surf_anything": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_anzchamps": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_aphelion": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_apollo": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_apollonian": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_aqua": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_aqua_fix": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_aquaflow": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_arcade": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_arctic": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_ardon": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_arghmyeyes_retexture": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_artifex": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_artois": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_aser": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_asrown": {
+  "Tier": 3,
+  "Type": "Hybrid"
+ },
+ "surf_assail": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_astra": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_ataque": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_atlas": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_atrium": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_aura": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_auroria": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_auroria2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_autism": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_autonomy": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_autumn": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_aux": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_awakening": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_aweles_inferno_fix": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_awp_sk337_v3": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_axil": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_axiom": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_b_r_o_x_x_x": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_banana": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_banger": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_barbies_malibu_adventure": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_bbb": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_be_gentle": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_beeps": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_beginner": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_beginner2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_beginner_hell": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_believe": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_benevolent": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_beverages_remix": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_beverages_remix_go": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_beyer": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_beyer2": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_beyond": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_beyond2": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_blackout": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_blackside": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_blub": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_bluewall": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_bluewall_v2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_bluewinter": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_bnw_njv": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_bob": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_bombix_v2": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_bonk": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_bonkers_v2": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_borderlands": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_borderlands_h": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_boreas": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_boring": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_bork_nbv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_botanica": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_brodderlands": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_brutalist": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_bugs": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_bumpybusride": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_calamity2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_calamity_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_calibration": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_calycate": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_calycate2": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_calycate2_cs2": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_calycate_cs2": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_calzone": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_canisius": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_canisius2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_cannonball": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_capsule": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_cartoon": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_castlewalls": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_catalyst": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_catalyst2": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_cavemissile": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_celestial": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_cement": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_chaos": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_chasm": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_chateau": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_christmas": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_christmas2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_chungus_fungus": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_cinnamon": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_classics": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_classics2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_clavius": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_collaboration": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_collection_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_color": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_colors_final": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_colum_2": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_colum_up": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_commune": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_commune_too": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_compact": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_compulsive_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_compulsive_njv_h": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_concept": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_concretejungle": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_conserve": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_consistenza_diversa": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_constrictor_remix": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_construction": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_cookiejar": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_coralis": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_cordelia": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_core": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_corruption": {
+  "Tier": 8,
+  "Type": "Linear"
+ },
+ "surf_cosmo": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_cozy": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_creation": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_crimson": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_crush": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_crush2": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_crystal": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_crzyfrog_reloaded": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_cubic": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_cuboid": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_curious": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_cyanide": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_cyberwave": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_cyka": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_cyka_ksf": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_damn": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_damnation": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_deadline": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_deathstar": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_deceptive": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_decked": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_deity": {
+  "Tier": 8,
+  "Type": "Staged"
+ },
+ "surf_delight": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_delta": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_delusional": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_demise": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_deoa": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_depressing": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_depths": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_derpis": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_desolate": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_destinyed": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_destruction": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_deteriorate": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_devil": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_devs": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_dhyana": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_diamond": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_diamond_beta1": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_diminsion": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_dionysus": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_disaster": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_discovery": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_disneyland": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_distraction_v2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_diverge": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_divided": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_dojo": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_domain": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_doodles_njv": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_dova": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_dragon": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_drift": {
+  "Tier": 5,
+  "Type": "Hybrid"
+ },
+ "surf_drifting": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_driftless": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_duggywuggy": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_dusk": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_dynamicsed": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_dynasty": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_ebony": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_echo": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_eclipse": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_ecosystem": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_edge": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_efficacy": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_eggplant": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_egypt2": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_elements": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_elites_v2": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_elixor": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_elysium": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_elysium2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_elysium3": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_elysium3_cs2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_elysium4": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_elysium4_cs2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_ember": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ember2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_embrace": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_endeavour": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_enlightened": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_entropy_hardmode": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_entropyv2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_eon": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_epic": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_epicube": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_epiphany": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_epithet": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_eryr": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_eryr2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_escape_final": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_eternal": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_ethereal": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_eunoia": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_euphoria": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_everdark": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_evo": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_exclave": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_exclave_fix": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_executioner": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_exile": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_exocube": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_exocube_h": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_exogenesis": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_exonic": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_extremex": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_extremex2_5": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_exurbia2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_exurbia_v2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_exxak": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ezclap": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ezpz_syntax": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_fabas": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_facility": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_faint": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_fantasy": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_fast": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_feudal": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_feverdream": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_fiellu": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_finesse": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_fire_eye": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_first": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_flatliners": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_flow": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_flyin_fortress": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_for_all": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_forbidden_tomb": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_forbidden_tomb2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_forbidden_tomb3": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_forbidden_tomb4": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_forbidden_ways": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_forgotten": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_fornax": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_forsaken": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_fortress": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_fortum": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_fractal": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_freaky": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_freedom": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_frequency_njv": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_frey2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_frey_remake": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_friday": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_froots": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_froots2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_frost": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_frostedge": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_fruits": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_fruits2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_fuckyall": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_fungus": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_funhouse2": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_funhouse_v1": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_furios": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_galaxy_easy": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_garden": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_garden_h": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_gary_barlow": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_gauntlet": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_gekar": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_genesis": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_germania": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_ghost_busters": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_gigapede": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_giza": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_glass7": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_glass9": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_gleam": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_gleam2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_globalchaos": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_gloomy": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_glow": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_goldarn": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_golden": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_goliath": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_grandad": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_graphia": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_grassland": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_greenhouse": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_greensway": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_grid": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_grotto": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_guitar_hi": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_gurus": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_hades": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_hades2": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_halloween": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_halloween_tf2": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_happyhands": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_happyhands2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_happyhands3": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_happyhands4": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_happyhands5": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_happyhug": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_hardline": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_harmony": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_healthy": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_hearth": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_heaven_njv": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_hektik": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_helium": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_hellenic": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_helloworld": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_hero": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_het": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_highlands": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_hob": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_holiday": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_hollow": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_hologram": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_hologram2": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_hope": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_horizon_njv": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_hotwheels": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_hourglass": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_how2surf": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_huh": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_hurrr": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_hydrogen": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_hyper": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_hyper2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_hyzer": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_iceworld": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_illumination": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_illumination2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_illusion": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_imagine": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_imex": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_impact": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_impact_tnn": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_in_space": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_indecisive": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_industries": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_infamous": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_infected": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_infected_h": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_inferno": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_infrared": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_ing": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_injection_njv": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_inner": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_innokia": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_inrage": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_inrage2": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_insideout": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_insignia_b1": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_inspire": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_instantdeath": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_intense": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_interceptor": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_interference": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_intra": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_intro": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_inui": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_island": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_ivory": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_ixtab": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_izded": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_jade": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_jagerbomb": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_jaqen": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_jaqen2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_jenocide": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_jive": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_jizznipples": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_journeys": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_jumble": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_junglespic": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_jusched": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_juturna": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_kaaba": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_kairo": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_kalium": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_kalium2": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_kawaii": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_kepler": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_kismet": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_kitsune": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_kitsune2": {
+  "Tier": 3,
+  "Type": "Hybrid"
+ },
+ "surf_kloakk": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_klue": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_koa": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_korn": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_krow10": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_kultur": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_kvas": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_kz_mix_journeys": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_kz_protraining": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_lab": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_lament": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_lavaflow": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_lax": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_leesriize": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_leet_xl": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_leet_xl_beta7z": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_legendary": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_legends": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_legends_lite": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_lepidus": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_lessons": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_liberation": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_liberation2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_lies": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_life_of_cow": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_lighthouse": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_like_this": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_limbo": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_listless": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_lithium": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_lithium2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_lockdown": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_lodypreview": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_loentra": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_lolrevlis": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_lolrevlis2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_longreach": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_looksmodern": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_lore": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_lost": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_lost2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_loves_spliff": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_lovetunnel": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_low_production": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_loweffort": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_lowestbidder": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_lt_omnific": {
+  "Tier": 6,
+  "Type": "Hybrid"
+ },
+ "surf_lt_unicorn": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_lullaby": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_luminaris": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_lux": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_mads": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_map_h": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_map_njv": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_marah": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_marbleblast_intermediate": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_mash-up": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_masonry": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_mate": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_mdrn": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_me": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_medley": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_mellow": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_meme": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_memories": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_mephobia": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_mesa_aether": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_mesa_mine": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_mesa_revo": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_metallic": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_metalwall": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_methadone": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_midsommar": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_milkyway": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_minecraft": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_minecraft_2016_final": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_mineshaft": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_minigolf": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_minimumwage": {
+  "Tier": 3,
+  "Type": "Hybrid"
+ },
+ "surf_minuet": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_minuet_njv": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_misc": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_missing_no": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_mom": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_momentum": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_monotony": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_moonkingdom": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_morbid": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_morbid2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_mudkip": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_mushroom": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_mwag_reloaded": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_mynah": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_nac": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_nebula": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_nemesis": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_neon_final": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_neoplasma": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_neoteric_retexture": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_nesquik": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_network2008": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_network_2009": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_network_2013": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_networked": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_newbie": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_nightmare": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_nikolo": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_ninja": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_noble": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_nocturn": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_north": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_nostromo": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_not_quite_goliath": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_not_so_disaster": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_not_so_generated": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_not_so_hentai": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_not_so_prosurf": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_not_so_quick": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_not_so_sinister": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_not_so_zen": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_nova": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_nuclear": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_ny_advance": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ny_momentum2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_ny_momentum_v3_1": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_ny_platinum": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_ny_superhappiest_b3": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_nyx": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_nyze": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_oasis": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_oddworld": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_odyssey": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_offskill": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_ofrenda": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_ofsfice": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_olympics": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_omnibus": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_oompa2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_oompa_loompa": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_orbion": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_ori_l": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_original": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_orthodox": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_our": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_outra": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_outside": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_overgrowth": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_overgrowth2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_pagoda": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_palais": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_palette": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_palm": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_pancake": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_pandemonium_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_pandora": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_pantheon": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_papertown": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_paradigm": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_paradise": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_paranoid_enigma": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_parc_colore": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_parrot_selector": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_parrot_selector_h": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_pathfinder": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_pavilion": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_perennial": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_perforated_restored": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_perihelion": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_petrus": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_physics": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_placid": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_plaguelands": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_platinum": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_plethora": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_plethora_fix": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_pls": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_pogchamp": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_polonia": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_polygon": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_polytron": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_porn": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_porn_fix": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_portal_game4": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_pox": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_prelude": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_prelude_ksf": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_premium": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_presmon": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_prevail": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_prime_time_r3vamp": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_primero": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_primero_njv": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_prisma": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_prismatic": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_progress": {
+  "Tier": 2,
+  "Type": "Hybrid"
+ },
+ "surf_proliferation": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_prolix": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_prosaic": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_prosperity_v2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_prosurf": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_proximity": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_psied": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_psychedelia": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_psycho": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_pure": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_purgatory": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_pyzire": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_qlimax_q": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_quantum_njv": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_quarantine": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_quark": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_quartus": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_quasar": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_quattro": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_queen_of_the_ween": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_quickie": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_quilavar": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_quirky": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_race": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_ragequit": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_rands": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_raphaello": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_rapid": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_ravine": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_razer": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_reactor": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_rebel_resistance": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_rebel_resistance_njv": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_rebel_scaz": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_redemption_b1": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_refraxis": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_remeanian": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_replicant": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_reprise": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_resort": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_resource": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_retroartz": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_revolution": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_rewind": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_reytx": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_rez": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_rez2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_rezity": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_rgb": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_ripper": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_riva": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_rocco_v2": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_roman_v2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_rooftopsv2": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_rookie": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_royal": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_royal_fix": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_rst": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_rubiks_cube": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_runewords": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_runewords2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_runewords2_lod": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_rustic_v2": {
+  "Tier": 4,
+  "Type": "Hybrid"
+ },
+ "surf_s_t_a_t_i_o_n": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sacrifice": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_salient": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_salient2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_salvador": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_salvation": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_sanctuary": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_sandbrick": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sanding": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sandman_v2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sandstorm2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sandtrap": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_sandtrap2": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_sanguine": {
+  "Tier": 3,
+  "Type": "Hybrid"
+ },
+ "surf_santorini2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_santorini_ksf": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_satellite": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_saturday": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_savant_njv": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sc_colours": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sc_essence_v2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_scarlet": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_school": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_school_kzg": {
+  "Tier": 1,
+  "Type": "Hybrid"
+ },
+ "surf_sci_fi": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_scorch": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_seaside": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_seaworld": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_secluded": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_second": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_selenka": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_semesterbreak": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_sempar_njv": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sensation": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sentient": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_sequoia": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_seraph": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_serenity": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_serenity2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sewers": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_sexplizooimed": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sexyartz_njv": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_sh": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_shade": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_shady_h": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_shambles": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_shibboleth": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_shodan": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_shoria": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_simpsons_cs2": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_sinister2": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_sinister_evil": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_sinner": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sinsane": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_sinsane2": {
+  "Tier": 7,
+  "Type": "Linear"
+ },
+ "surf_sinsane_ez": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_sinsane_ksf": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_sippysip": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_siren": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_sirius": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_sketchy": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_skill8": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_skill8_h": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_skipalot": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_sky_ages": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_slob": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_slob2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_slobs": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sluice": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_sluice2": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_smaragd": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_smile_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_smol": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_snowfort": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_solace": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_southpark": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_spacejam": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_spaceship": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_spectra": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_spectrum_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_spookly": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_squirrelsonvacation": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_stagejuan": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_static": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_stick": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_stickybutt_alpha": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_stitched": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_stonework": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_stonework2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_stonework3": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_stonework4": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_stonks": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_strafe": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_strike": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_subway": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_summer": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_summit": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_sunday": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sundown_njv": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_sunnyhappylove": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_sunset": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_sunset2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_surprise": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_swagtoast": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_sylvan": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_symbiosis": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_synada": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_syria": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_syria_again": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_take1": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_taq": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_technique": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_techsune_css": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_teho_v1": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_tempest": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_tempest2": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_tenacious": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_tendies": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_tensile_njv": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_tensor": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_tensor2": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_tequila": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_the_distance": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_the_gloaming": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_the_gloaming_njv": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_the_internet": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_thembrium_njv": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_theme": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_themeless": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_thesteve": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_theunexpected": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_this_njv": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_threnody": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_tiltberg": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_timewarp": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_togo": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_togo_njv": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_tomb_redone": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_torque": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_torque2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_trance": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_tranquil": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_transient": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_trapped": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_trapped2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_trazhtec": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_treefort": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_treespam": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_triggered": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_trihard": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_tron_njv": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_tronia": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_tronic_njv": {
+  "Tier": 5,
+  "Type": "Linear"
+ },
+ "surf_tundra_v2": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_tuscany": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_twilight_njv": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_two_colour": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_tycho": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_ultimate": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_ultimatum": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_undergrowth": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_underworld": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_unitflex": {
+  "Tier": 8,
+  "Type": "Staged"
+ },
+ "surf_unraveled": {
+  "Tier": 3,
+  "Type": "Hybrid"
+ },
+ "surf_unreal2": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_unreal_njv": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_utopia_njv": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_vale": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_vale2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_valpect": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_vast": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_vector": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_vegetables": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_velocity": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_verge": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_vienna": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_void": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_volcanic": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_volvic": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_voteforthisone": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_wank": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_warped": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_wasteland": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_wasteland2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_water-run_banjo_skill": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_water_run": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_waterworks": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_wazor": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_wew": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_whatever": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_whiteout": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_whoknows": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_whoknows2": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_whoknows3": {
+  "Tier": 4,
+  "Type": "Linear"
+ },
+ "surf_whynot": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_whynot2": {
+  "Tier": 6,
+  "Type": "Linear"
+ },
+ "surf_wicked": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_wizard": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_wood": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_x": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_y": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_year3000": {
+  "Tier": 1,
+  "Type": "Staged"
+ },
+ "surf_yellow": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_z": {
+  "Tier": 5,
+  "Type": "Staged"
+ },
+ "surf_zbig": {
+  "Tier": 2,
+  "Type": "Staged"
+ },
+ "surf_zbig2": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_zealand": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_zeitgeist": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_zen": {
+  "Tier": 6,
+  "Type": "Staged"
+ },
+ "surf_zen2": {
+  "Tier": 7,
+  "Type": "Staged"
+ },
+ "surf_zenith": {
+  "Tier": 2,
+  "Type": "Linear"
+ },
+ "surf_zeonine": {
+  "Tier": 4,
+  "Type": "Staged"
+ },
+ "surf_zion": {
+  "Tier": 3,
+  "Type": "Staged"
+ },
+ "surf_zoomathon": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "surf_zoomboys": {
+  "Tier": 3,
+  "Type": "Linear"
+ },
+ "surf_zor": {
+  "Tier": 1,
+  "Type": "Linear"
+ },
+ "winsurf": {
+  "Tier": 1,
+  "Type": "Linear"
+ }
+}

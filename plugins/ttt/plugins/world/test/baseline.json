@@ -1,0 +1,6 @@
+{
+  "plugins/core/src/cs2/icons.ts": "220acdaff208ea2feb715a69951e322f834e0984c80fa3116626c0efc3f5e770",
+  "plugins/core/src/cs2/pawn.ts": "bad94d90cb46b24a5b4016a40ece3a180d86ae33d062ab4da0a623b88dd0d3ba",
+  "plugins/core/src/core/preframe.ts": "4b9e6ff997da80d25b4114b83a0be75faa9ea6700e5ba612ccf778b1a2c7e8ab",
+  "packages/contracts/ordered-plan.ts": "79f4e39f981e4b1848b45698120375de6b3b1b2457fee90c96b6fc6c30db8310"
+}

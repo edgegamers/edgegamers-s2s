@@ -1,0 +1,5 @@
+{
+  "Player.Hide.Enabled": "{orange}[Hide]{default} You {green}turned on{default} hide players!",
+  "Player.Hide.Disabled": "{orange}[Hide]{default} You {lightred}turned off{default} hide players!",
+  "Player.SaveFailed": "{orange}[Hide]{default} Your setting changed, but could not be saved yet. Retrying while you stay connected."
+}

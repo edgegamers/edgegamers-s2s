@@ -1,0 +1,35 @@
+{
+  "name": "@edgegamers/ttt-items",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Existing port item effects, charges, gadgets and weapon effects",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-items",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-items": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/items"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

@@ -1,0 +1,60 @@
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {translationsVia,ChatColors as testChatColors} from '../../../packages/contracts/test/translations-double.mjs';
+export const copy=x=>JSON.parse(JSON.stringify(x));
+export function fixture(code){
+ let methods,callback=()=>{};const chat=[],voice=[],log=[],commands=[],cvars={sv_alltalk:'0',sv_voicecodec:'old_codec'},admins=new Set(),clients=new Map();
+ const snapshot={state:2,epoch:1,players:[]};
+ function connect(slot,role=1,alive=true){const previous=clients.get(slot);if(previous)previous.valid=false;const client={slot,valid:true,isValid(){callback('isValid',slot);return this.valid},voiceMuted:false};clients.set(slot,client);const prior=snapshot.players.find(x=>x.slot===slot);snapshot.players=snapshot.players.filter(x=>x.slot!==slot);snapshot.players.push({slot,steamId:`id${slot}`,generation:(prior?.generation??0)+1,name:`p${slot}`,role,alive,participating:role>0&&role<4});snapshot.players.sort((a,b)=>a.slot-b.slot);return client;}
+ connect(0,1,true);connect(1,2,true);connect(2,2,false);connect(3,4,false);
+ const clock={gameTime:0};
+ const core={hasCommunicationDeadPlayers:()=>snapshot.players.some(player=>!player.alive),getCommunicationKey:()=>`${snapshot.epoch}:${snapshot.state}:`+snapshot.players.filter(p=>!p.alive).map(p=>`${p.slot}/${p.generation}/${p.steamId},`).join(''),getCommunicationSnapshot:()=>copy(snapshot),formatCommunication:(slot,key,args)=>{callback('format',slot);return `${slot}:${key}:${args.join('|')}`;}};
+ const context=vm.createContext({module:{exports:{}},console:{log:x=>log.push(x)},require(name){
+  if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatCommunication(slot,key,args));if(name==='@s2script/cs2')return{ChatColors:testChatColors};if(name==='@s2script/sdk/plugin')return{use:id=>{assert.equal(id,'@edgegamers/ttt-core');return core},publish:(id,value)=>{assert.equal(id,'@edgegamers/ttt-communication');methods=value;return{}}};
+  if(name==='@s2script/sdk/clients')return{Clients:{fromSlot:s=>{callback('capture',s);return clients.get(s)?.valid?clients.get(s):null}}};
+  if(name==='@s2script/sdk/chat')return{Chat:{toSlot:(s,text)=>{chat.push([s,text]);callback('chat',s)}}};
+  if(name==='@s2script/sdk/admin')return{ADMFLAG:{GENERIC:2},Admin:{forSlot:s=>({hasFlags:()=>admins.has(s)})}};
+  if(name==='@s2script/sdk/voice')return{Voice:{setAudibleTo:(s,receivers)=>{voice.push(['set',s,[...receivers]]);const answer=callback('voice',s);return answer!==false},reset:s=>{voice.push(['reset',s]);callback('reset',s);return true},resetAll:()=>{throw Error('blanket voice reset prohibited')}}};
+  if(name==='@s2script/sdk/server')return{Server:{get gameTime(){return clock.gameTime},getCvar:n=>cvars[n]??'',command:line=>{commands.push(line);const [n,v]=line.split(' ');cvars[n]=v;callback('command',n)},setCvar:(n,v)=>{cvars[n]=v;commands.push(`${n} ${v}`);callback('cvar',n);return true}}};
+  throw Error(`Unexpected runtime dependency ${name}`);
+ }});vm.runInContext(code,context);context.module.exports.OnPluginStart();
+ return{get methods(){return methods},clock,core,context,snapshot,chat,voice,log,commands,cvars,admins,clients,connect,on:fn=>callback=fn};
+}
+export function behaviorTests(test,make){
+ const counted=f=>{const box={n:0};const read=f.core.getCommunicationSnapshot;f.core.getCommunicationSnapshot=()=>{box.n++;return read();};return box;};
+ test('a settled round skips native snapshots until the registry key changes',()=>{const f=make();f.methods.tick();const applied=f.voice.length;assert.ok(applied>0);const snaps=counted(f);
+  for(let n=0;n<60;n++){f.clock.gameTime+=0.01;f.methods.tick();}
+  assert.equal(snaps.n,0,'unchanged key and settled rules take no snapshot');assert.equal(f.voice.length,applied);
+  f.snapshot.players.find(p=>p.slot===0).alive=false;f.methods.tick();
+  assert.ok(snaps.n>0,'a new death takes the full path');assert.ok(f.voice.some(row=>row[0]==='set'&&row[1]===0),'the new dead player is muted');});
+ test('a settled round still takes one full native pass per second',()=>{const f=make();f.methods.tick();const snaps=counted(f);
+  f.clock.gameTime=0.5;f.methods.tick();assert.equal(snaps.n,0);
+  f.clock.gameTime=1.0;f.methods.tick();assert.equal(snaps.n,1,'the safety pass runs');
+  f.clock.gameTime=1.2;f.methods.tick();assert.equal(snaps.n,1,'and settles again');});
+ test('forget and reset force a full pass even with an unchanged key',()=>{for(const how of ['forget','reset']){const f=make();f.methods.tick();const snaps=counted(f);
+  if(how==='forget')f.methods.forget(2);else f.methods.reset();f.methods.tick();assert.ok(snaps.n>0,how);}});
+ test('a failed voice application is retried every frame, not skipped',()=>{const f=make();f.on(kind=>kind==='voice'?false:undefined);f.methods.tick();const snaps=counted(f);f.methods.tick();assert.ok(snaps.n>0);});
+ test('all-alive empty ownership suppresses native snapshots but preserves private living traitor chat',()=>{const f=make();for(const player of f.snapshot.players)player.alive=true;let snapshots=0;const capture=f.core.getCommunicationSnapshot;f.core.getCommunicationSnapshot=()=>{snapshots++;return capture();};for(let n=0;n<64;n++)f.methods.tick();assert.equal(snapshots,0);assert.deepEqual(f.voice,[]);assert.deepEqual(f.chat,[]);assert.equal(f.methods.handleChat(1,'@secret'),2);assert.ok(snapshots>0);assert.deepEqual(f.chat.map(row=>row[0]),[1,2]);});
+ test('an owner reset or disposal during a preflight crossing retires that invocation before capture',()=>{for(const dispose of [false,true]){const f=make();let snapshots=0;f.core.getCommunicationSnapshot=()=>{snapshots++;return copy(f.snapshot);};f.core.hasCommunicationDeadPlayers=()=>{if(dispose)f.context.module.exports.OnPluginEnd();else f.methods.reset();return true;};f.methods.tick();assert.equal(snapshots,0);assert.deepEqual(f.voice,[]);assert.deepEqual(f.chat,[]);}});
+ test('ordinary living chat and all out-of-round chat pass through',()=>{const f=make();assert.equal(f.methods.handleChat(0,'hello'),0);assert.equal(f.chat.length,0);f.snapshot.state=0;assert.equal(f.methods.handleChat(2,'@secret'),0);assert.equal(f.chat.length,0)});
+ test('dead normal chat preserves trim, localized format, dead/spectator/self/admin recipients',()=>{const f=make();f.admins.add(0);assert.equal(f.methods.handleChat(2,'  clue  '),2);assert.deepEqual(f.chat,[[0,'0:DEAD_CHAT_FORMAT:p2|clue'],[2,'2:DEAD_CHAT_FORMAT:p2|clue'],[3,'3:DEAD_CHAT_FORMAT:p2|clue']]);assert.equal(f.methods.handleChat(2,'  '),2);assert.equal(f.chat.length,3)});
+ test('old @ route reaches every traitor, including living/dead, but not detective/admin',()=>{const f=make();f.admins.add(0);assert.equal(f.methods.handleChat(2,'@  secret  '),2);assert.deepEqual(f.chat,[[1,'1:TRAITOR_CHAT_FORMAT:p2|secret'],[2,'2:TRAITOR_CHAT_FORMAT:p2|secret']]);assert.equal(f.methods.handleChat(1,'@ '),2);assert.equal(f.chat.length,2);assert.equal(f.methods.handleChat(3,'@ordinary'),0)});
+ test('recycled speaker or recipient during formatting never receives private text',()=>{const f=make();f.on((kind,s)=>{if(kind==='format'&&s===1)f.connect(1,1,true)});assert.equal(f.methods.handleChat(2,'@secret'),2);assert.deepEqual(f.chat,[[2,'2:TRAITOR_CHAT_FORMAT:p2|secret']]);const g=make();g.on(kind=>{if(kind==='format')g.connect(2,2,false)});assert.equal(g.methods.handleChat(2,'@secret'),2);assert.equal(g.chat.length,0)});
+ test('recipient entitlement is checked again after a nested send changes role',()=>{const f=make();f.on(kind=>{if(kind==='chat')f.snapshot.players.find(x=>x.slot===2).role=1});f.methods.handleChat(1,'@secret');assert.deepEqual(f.chat,[[1,'1:TRAITOR_CHAT_FORMAT:p1|secret']])});
+ test('round change during formatter blocks stale private sends',()=>{const f=make();f.on(kind=>{if(kind==='format')f.snapshot.epoch++});assert.equal(f.methods.handleChat(2,'hello'),2);assert.equal(f.chat.length,0)});
+ test('dead voice has exact recipients, reminders once, unchanged signature does no native writes',()=>{const f=make();f.methods.tick();assert.deepEqual(f.voice,[['set',2,[2,3]],['set',3,[2,3]]]);assert.deepEqual(f.chat,[[2,'2:DEAD_MUTE_REMINDER:'],[3,'3:DEAD_MUTE_REMINDER:']]);f.methods.tick();assert.equal(f.voice.length,2);assert.equal(f.chat.length,2)});
+ test('revival removes only owned sender rule and updates remaining dead recipients',()=>{const f=make();f.methods.tick();f.snapshot.players.find(x=>x.slot===2).alive=true;f.methods.tick();assert.deepEqual(f.voice.slice(2),[['set',3,[3]],['reset',2]])});
+ test('same-slot same-SteamID reconnect updates signature without touching stale client',()=>{const f=make();f.methods.tick();f.connect(2,2,false);f.methods.tick();assert.equal(f.voice.filter(x=>x[0]==='set'&&x[1]===2).length,2);assert.equal(f.chat.filter(x=>x[0]===2).length,2)});
+ test('reset is idempotent and preserves independent blanket moderator mutes',()=>{const f=make();f.clients.get(0).voiceMuted=true;f.methods.tick();f.methods.reset();assert.deepEqual(f.voice.slice(2),[['reset',2],['reset',3]]);f.methods.reset();assert.equal(f.voice.length,4);assert.equal(f.clients.get(0).voiceMuted,true)});
+ test('forget retires only the owned slot; replaced native connection is not reset',()=>{const f=make();f.methods.tick();f.connect(2,1,true);f.methods.forget(2);assert.equal(f.voice.length,2);f.methods.forget(3);assert.deepEqual(f.voice.at(-1),['reset',3])});
+ test('failed native rule is not treated as applied; next tick retries',()=>{const f=make();f.on(kind=>kind==='voice'?false:undefined);f.methods.tick();assert.equal(f.chat.length,0);f.on(()=>{});f.methods.tick();assert.equal(f.chat.length,2)});
+ test('nested voice tick cannot duplicate partially applied plan',()=>{const f=make();f.on(kind=>{if(kind==='voice')f.methods.tick()});f.methods.tick();assert.equal(f.voice.length,2)});
+ test('map/reset reentry while applying voice retires the just-written rule',()=>{const f=make();let once=true;f.on(kind=>{if(kind==='voice'&&once){once=false;f.snapshot.epoch++;f.methods.reset()}});f.methods.tick();assert.ok(f.voice.some(x=>x[0]==='reset'&&x[1]===2));assert.equal(f.chat.length,0)});
+ test('unload restores only its still-current engine assignments, preserves intervening operator edits',()=>{const f=make();f.methods.applyServerSettings();assert.equal(f.cvars.sv_alltalk,'1');assert.equal(f.cvars.sv_voicecodec,'vaudio_steam');f.methods.applyServerSettings();f.cvars.sv_alltalk='2';f.methods.tick();f.context.module.exports.OnPluginEnd();assert.equal(f.cvars.sv_alltalk,'2');assert.equal(f.cvars.sv_voicecodec,'old_codec');assert.ok(f.voice.some(x=>x[0]==='reset'));assert.equal(f.methods.handleChat(2,'hello'),0);f.methods.tick();assert.equal(f.chat.length,2)});
+test('a private relay formatting failure remains Handled, preserving public suppression',()=>{const f=make();f.on(kind=>{if(kind==='format')throw Error('formatter unavailable')});assert.equal(f.methods.handleChat(2,'private'),2);assert.equal(f.chat.length,0)});
+test('cleanup attempts remaining owned rules and policy after a native reset throws',()=>{const f=make();f.methods.applyServerSettings();f.methods.tick();f.on((kind,s)=>{if(kind==='reset'&&s===2)throw Error('reset failed')});f.context.module.exports.OnPluginEnd();assert.ok(f.voice.some(x=>x[0]==='reset'&&x[1]===3));assert.equal(f.cvars.sv_voicecodec,'old_codec')});
+for(const operation of ['capture','isValid']) {
+ test(`private speaker ${operation} failure remains Handled`,()=>{const f=make();f.on((kind,slot)=>{if(kind===operation&&slot===2)throw Error('speaker capture failed')});assert.equal(f.methods.handleChat(2,'private'),2);assert.equal(f.chat.length,0)});
+ test(`private recipient ${operation} failure halts the captured list but remains Handled`,()=>{const f=make();f.on((kind,slot)=>{if(kind===operation&&slot===1)throw Error('recipient capture failed')});assert.equal(f.methods.handleChat(2,'@private'),2);assert.equal(f.chat.length,0)});
+}
+}

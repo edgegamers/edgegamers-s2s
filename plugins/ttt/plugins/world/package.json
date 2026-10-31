@@ -1,0 +1,54 @@
+{
+  "name": "@edgegamers/ttt-world",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Existing port world markers, role uniforms and scoreboard tags",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-world",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-world": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    },
+    "config": {
+      "rolePanels": {
+        "type": "bool",
+        "default": false,
+        "description": "Floating worldtext role panels above marked players"
+      },
+      "roleGlowSeconds": {
+        "type": "int",
+        "default": 0,
+        "description": "Seconds the role glow stays up (0 = never fade)",
+        "min": 0,
+        "max": 120
+      },
+      "iconsEnabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Role icons above heads (transmit-filtered). Off = bisect"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/world"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

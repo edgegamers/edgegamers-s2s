@@ -1,0 +1,193 @@
+{
+  "name": "@edgegamers/ttt-core",
+  "version": "2.0.0",
+  "main": "src/plugin.ts",
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --project tsconfig.source.json",
+    "build": "s2s build ."
+  },
+  "s2script": {
+    "id": "ttt-core",
+    "game": "cs2",
+    "config": {
+      "phrases_file": {
+        "type": "string",
+        "default": ""
+      },
+      "round": {
+        "countdownSeconds": {
+          "type": "int",
+          "default": 15,
+          "description": "Time to wait before starting a round",
+          "min": 1,
+          "max": 60
+        },
+        "minimumPlayers": {
+          "type": "int",
+          "default": 2,
+          "description": "Minimum number of players to start a round",
+          "min": 2,
+          "max": 64
+        },
+        "baseSeconds": {
+          "type": "int",
+          "default": 60,
+          "description": "Base round duration in seconds",
+          "min": 30,
+          "max": 600
+        },
+        "secondsPerPlayer": {
+          "type": "int",
+          "default": 15,
+          "description": "Extra round seconds per player",
+          "min": 0,
+          "max": 60
+        },
+        "maximumSeconds": {
+          "type": "int",
+          "default": 300,
+          "description": "Maximum round duration in seconds",
+          "min": 60,
+          "max": 600
+        },
+        "timeBetweenRounds": {
+          "type": "int",
+          "default": 1,
+          "description": "Time to wait between rounds in seconds",
+          "min": 1,
+          "max": 60
+        },
+        "postRoundSeconds": {
+          "type": "int",
+          "default": 5,
+          "description": "Seconds of free roam after a round ends, before the respawn",
+          "min": 1,
+          "max": 30
+        }
+      },
+      "roles": {
+        "traitor": {
+          "health": {
+            "type": "int",
+            "default": 100,
+            "description": "Traitor starting health",
+            "min": 1,
+            "max": 1000
+          },
+          "armor": {
+            "type": "int",
+            "default": 0,
+            "description": "Traitor starting armor",
+            "min": 0,
+            "max": 1000
+          },
+          "weapons": {
+            "type": "string",
+            "default": "",
+            "description": "Traitor starting weapons (comma-separated)"
+          }
+        },
+        "detective": {
+          "health": {
+            "type": "int",
+            "default": 100,
+            "description": "Detective starting health",
+            "min": 1,
+            "max": 1000
+          },
+          "armor": {
+            "type": "int",
+            "default": 0,
+            "description": "Detective starting armor",
+            "min": 0,
+            "max": 1000
+          },
+          "weapons": {
+            "type": "string",
+            "default": "weapon_taser,weapon_m4a1_silencer,weapon_revolver",
+            "description": "Detective starting weapons (comma-separated)"
+          }
+        },
+        "innocent": {
+          "health": {
+            "type": "int",
+            "default": 100,
+            "description": "Innocent starting health",
+            "min": 1,
+            "max": 1000
+          },
+          "armor": {
+            "type": "int",
+            "default": 0,
+            "description": "Innocent starting armor",
+            "min": 0,
+            "max": 1000
+          },
+          "weapons": {
+            "type": "string",
+            "default": "",
+            "description": "Innocent starting weapons (comma-separated)"
+          }
+        }
+      },
+      "feedback": {
+        "roleFlashSeconds": {
+          "type": "int",
+          "default": 4,
+          "description": "Seconds the role-colour screen wash lasts (0 = off)",
+          "min": 0,
+          "max": 30
+        },
+        "showNames": {
+          "type": "bool",
+          "default": true,
+          "description": "Show the name of the player you are looking at"
+        }
+      },
+      "players": {
+        "afkSeconds": {
+          "type": "int",
+          "default": 180,
+          "description": "Seconds before an unmoved player is moved to spectator (0 = never)",
+          "min": 0,
+          "max": 600
+        }
+      },
+      "loadout": {
+        "stripOnAssign": {
+          "type": "bool",
+          "default": true,
+          "description": "Strip primaries/utility (keep knife + pistol) at round end and on spawn"
+        }
+      }
+    },
+    "publishes": "self",
+    "interfaceProtocol": 2,
+    "optionalPluginDependencies": {
+      "@edgegamers/ttt-karma": "^2.0.0",
+      "@edgegamers/ttt-special": "^2.0.0",
+      "@edgegamers/ttt-ui": "^2.0.0",
+      "@edgegamers/ttt-world": "^2.0.0",
+      "@edgegamers/ttt-communication": "^2.0.0",
+      "@edgegamers/ttt-shop": "^2.0.0",
+      "@edgegamers/ttt-bodies": "^2.0.0",
+      "@edgegamers/ttt-reports": "^2.0.0",
+      "@edgegamers/ttt-items": "^2.0.0"
+    }
+  },
+  "description": "Current-API upgrade of s2s-ttt-port-old; Core extraction starts from the existing behavior.",
+  "type": "module",
+  "types": "api.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/core"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

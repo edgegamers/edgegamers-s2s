@@ -1,0 +1,202 @@
+{
+  "name": "@edgegamers/ttt-karma",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Existing-port Karma policy and SteamID persistence, extracted from Core",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-karma",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-karma": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    },
+    "config": {
+      "databaseConnection": {
+        "type": "string",
+        "default": "karma",
+        "description": "Database connection name for karma storage"
+      },
+      "defaultKarma": {
+        "type": "int",
+        "default": 50,
+        "description": "Default karma for new or reset players",
+        "min": 0,
+        "max": 1000
+      },
+      "minimumKarma": {
+        "type": "int",
+        "default": 0,
+        "description": "Minimum karma; below this the low-karma command runs",
+        "min": 0,
+        "max": 1000
+      },
+      "lowKarmaCommand": {
+        "type": "string",
+        "default": "sm_ban #{0} 2880 Low Karma",
+        "description": "Command run when karma falls below the minimum ({0} = user id)"
+      },
+      "timeoutThreshold": {
+        "type": "int",
+        "default": 20,
+        "description": "Karma below which a player sits out",
+        "min": 0,
+        "max": 1000
+      },
+      "timeoutRounds": {
+        "type": "int",
+        "default": 4,
+        "description": "Rounds a low-karma player sits out",
+        "min": 0,
+        "max": 100
+      },
+      "warningWindowHours": {
+        "type": "int",
+        "default": 24,
+        "description": "Hours between repeat karma warnings",
+        "min": 0,
+        "max": 720
+      },
+      "perRound": {
+        "type": "int",
+        "default": 1,
+        "description": "Karma gained per round played",
+        "min": -100,
+        "max": 100
+      },
+      "perRoundWin": {
+        "type": "int",
+        "default": 1,
+        "description": "Karma gained per round won",
+        "min": -100,
+        "max": 100
+      },
+      "scoring": {
+        "innocentOnTraitor": {
+          "type": "int",
+          "default": 3,
+          "description": "Karma for a non-Traitor killing a Traitor",
+          "min": -100,
+          "max": 100
+        },
+        "traitorOnDetective": {
+          "type": "int",
+          "default": 1,
+          "description": "Karma for a Traitor killing a Detective",
+          "min": -100,
+          "max": 100
+        },
+        "innocentOnInnocent": {
+          "killerInnocent": {
+            "type": "int",
+            "default": 0,
+            "description": "Inno kills Inno, retaliating",
+            "min": -100,
+            "max": 100
+          },
+          "killerGuilty": {
+            "type": "int",
+            "default": -4,
+            "description": "Inno kills Inno, unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimInnocent": {
+            "type": "int",
+            "default": 1,
+            "description": "Inno victim, killer unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimGuilty": {
+            "type": "int",
+            "default": -2,
+            "description": "Inno victim, they started it",
+            "min": -100,
+            "max": 100
+          }
+        },
+        "traitorOnTraitor": {
+          "killerInnocent": {
+            "type": "int",
+            "default": -3,
+            "description": "Traitor kills Traitor, retaliating",
+            "min": -100,
+            "max": 100
+          },
+          "killerGuilty": {
+            "type": "int",
+            "default": -5,
+            "description": "Traitor kills Traitor, unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimInnocent": {
+            "type": "int",
+            "default": 1,
+            "description": "Traitor victim, killer unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimGuilty": {
+            "type": "int",
+            "default": -2,
+            "description": "Traitor victim, they started it",
+            "min": -100,
+            "max": 100
+          }
+        },
+        "innocentOnDetective": {
+          "killerInnocent": {
+            "type": "int",
+            "default": -4,
+            "description": "Inno kills Detective, retaliating",
+            "min": -100,
+            "max": 100
+          },
+          "killerGuilty": {
+            "type": "int",
+            "default": -6,
+            "description": "Inno kills Detective, unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimInnocent": {
+            "type": "int",
+            "default": 1,
+            "description": "Detective victim, killer unprovoked",
+            "min": -100,
+            "max": 100
+          },
+          "victimGuilty": {
+            "type": "int",
+            "default": -1,
+            "description": "Detective victim, they started it",
+            "min": -100,
+            "max": 100
+          }
+        }
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/karma"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

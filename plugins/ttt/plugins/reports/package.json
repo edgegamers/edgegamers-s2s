@@ -1,0 +1,35 @@
+{
+  "name": "@edgegamers/ttt-reports",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Existing-port report, prompt and per-map sanction owner",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.ts test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-reports",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-reports": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/reports"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

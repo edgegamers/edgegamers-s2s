@@ -1,0 +1,20 @@
+HidePlayers for s2script
+
+Derived from CS2-HidePlayers 1.3.2 by xstage and its contributors:
+https://github.com/edgegamers/CS2-HidePlayers
+Reference commit: d9b6ce0008be45ecd983f3c7fa402b0286721e20
+
+Modified 2026-10-11: ported from C#/CounterStrikeSharp to TypeScript/s2script;
+uses native Transmit rules and Cookies/clientprefs, with s2script lifecycle,
+command registration, config access, translations, tests and packaging.
+
+This derived work is distributed under the GNU General Public License version 3.
+The full license is in LICENSE. The release includes corresponding source under
+addons/s2script/docs/s2s-hide/source. There is no warranty.
+
+Modified 2026-10-26: updated s2script dependencies, registry packaging metadata,
+and GitHub Actions build/publish automation. Gameplay behavior is unchanged.
+
+s2script SDK 0.33.0 and CS2 types 0.22.0 are development dependencies, licensed
+MIT OR Apache-2.0 by their authors. The framework is installed separately and is
+not bundled in this release.

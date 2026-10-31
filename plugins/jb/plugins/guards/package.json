@@ -1,0 +1,118 @@
+{
+  "name": "@edgegamers/jailbreak-guards",
+  "version": "1.0.0",
+  "description": "Guard queue, prisoner:guard ratio, playtime priority and CT bans (port of EdgeGamers CTBans).",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "pluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.1.0"
+    },
+    "config": {
+      "prisoner_to_guard_ratio": {
+        "type": "float",
+        "default": 2.0,
+        "description": "Prisoners per guard (CTBans PrisonerToGuardRatio)."
+      },
+      "min_priority_for_ct": {
+        "type": "int",
+        "default": 120,
+        "description": "Priority (minutes alive) needed to guard; eG+ are exempt (MinimumPriorityForCT)."
+      },
+      "priority_caps": {
+        "type": "string",
+        "default": "default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750",
+        "description": "group=cap pairs; a player's cap is the highest of their groups' caps, else default (MaximumPriority)."
+      },
+      "rank_groups": {
+        "type": "string",
+        "default": "e=ego/e,eg=ego/eg,ego=ego/ego,advisor=ego/advisor,manager=ego/manager,srmanager=ego/srmanager,commgr=ego/commgr,root=ego/root",
+        "description": "rank=admin group pairs (MAUL ranks)."
+      },
+      "allow_dangerous_ctbans": {
+        "type": "bool",
+        "default": false,
+        "description": "Let manager/srmanager/commgr issue uncapped and permanent CT bans (AllowDangerousCTBans)."
+      },
+      "guard_cooldown_seconds": {
+        "type": "int",
+        "default": 30,
+        "description": "Seconds between !guard uses."
+      },
+      "restart_delay_seconds": {
+        "type": "int",
+        "default": 5,
+        "description": "mp_restartgame delay when the first guard queues into an empty CT."
+      },
+      "priority_tick_seconds": {
+        "type": "int",
+        "default": 60,
+        "description": "Seconds per +1 priority for alive players."
+      },
+      "priority_min_players": {
+        "type": "int",
+        "default": 5,
+        "description": "Real players needed for priority to accrue (unless a chat admin is online)."
+      },
+      "revoke_minutes": {
+        "type": "int",
+        "default": 15,
+        "description": "Length of a !revoke CT ban."
+      },
+      "ctban_max_minutes": {
+        "type": "int",
+        "default": 60,
+        "description": "Longest CT ban below manager rank."
+      },
+      "ctban_max_minutes_manager": {
+        "type": "int",
+        "default": 20160,
+        "description": "Longest CT ban for manager/srmanager/commgr (unless allow_dangerous_ctbans)."
+      },
+      "ctban_immediate_move_minutes": {
+        "type": "int",
+        "default": 15,
+        "description": "Bans longer than this move the target to T immediately."
+      },
+      "penalty_window_hours": {
+        "type": "int",
+        "default": 8,
+        "description": "Repeat-ban penalty window."
+      },
+      "penalty_min_bans": {
+        "type": "int",
+        "default": 2,
+        "description": "Bans within the window that trigger the priority penalty."
+      },
+      "prune_after_days": {
+        "type": "int",
+        "default": 90,
+        "description": "Delete non-permanent bans that ended this long ago (on map start)."
+      },
+      "db_retry_seconds": {
+        "type": "int",
+        "default": 30,
+        "description": "Seconds between DB reconnect attempts."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/guards"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@edgegamers/jailbreak-gangperks",
+  "version": "1.1.0",
+  "description": "Bridges Gangs into Jailbreak: gang perks (icons, colours, bomb icon) and Jailbreak gang stats.",
+  "main": "src/plugin.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "pluginDependencies": {
+      "@edgegamers/gangs": "^1.0.0"
+    },
+    "optionalPluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.1.0",
+      "@edgegamers/jailbreak-warden": "^1.0.0",
+      "@edgegamers/jailbreak-lastrequest": "^1.0.0",
+      "@edgegamers/jailbreak-specialdays": "^1.0.0"
+    },
+    "config": {
+      "min_players_for_credits": {
+        "type": "int",
+        "default": 5,
+        "description": "Minimum connected players before Jailbreak actions (LR reached/won, guard/warden/rebel kills) earn gang credits (css_edgegamers_jailbreak-min_players_for_credits)."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/gangperks"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

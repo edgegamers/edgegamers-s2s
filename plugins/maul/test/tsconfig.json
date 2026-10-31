@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "bun"
+    ],
+    "lib": [
+      "ES2024"
+    ],
+    "target": "ES2024"
+  },
+  "include": [
+    "../src",
+    ".",
+    "../.s2script/interfaces.d.ts"
+  ]
+}

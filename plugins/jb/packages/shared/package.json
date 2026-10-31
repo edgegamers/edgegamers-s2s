@@ -1,0 +1,15 @@
+{
+  "name": "@edgegamers/jailbreak-shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pure helpers shared by the Jailbreak plugins (teams, colours, chat formatting, player queries). Holds no live state.",
+  "main": "src/index.ts",
+  "types": "types/index.d.ts",
+  "s2script": {
+    "kind": "library"
+  },
+  "scripts": {
+    "types": "tsc -p tsconfig.build.json",
+    "test": "node --test test/*.test.ts"
+  }
+}

@@ -1,0 +1,62 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,writeFileSync,readFileSync,existsSync,mkdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+const cli=fileURLToPath(new URL('../import-legacy.mjs',import.meta.url));
+const parse=text=>JSON.parse(text.split('\n').filter(line=>!line.trimStart().startsWith('//')).join('\n'));
+function f(){const dir=mkdtempSync(join(tmpdir(),'ttt-config-import-'));const input=join(dir,'ttt.cfg'),out=join(dir,'out');const text='sm_ttt_karma_default 1200\nsm_ttt_karma_low_command ""\nsm_ttt_special_chance 0.7\nexec "SHOULD_NOT_EXECUTE"\n';writeFileSync(input,text);return {dir,input,out,text};}
+function run(a,...args){assert.ok(existsSync(cli),'offline importer is implemented');return JSON.parse(execFileSync(process.execPath,[cli,'--input',a.input,'--out-dir',a.out,...args],{encoding:'utf8'}));}
+test('default dry-run maps exact legacy names and hashes input without writing',()=>{const a=f(),r=run(a);assert.equal(r.inputSha256,createHash('sha256').update(a.text).digest('hex'));assert.equal(r.dryRun,true);assert.equal(existsSync(a.out),false);assert.equal(r.files.find(x=>x.owner==='karma').values.defaultKarma,1000);assert.equal(r.files.find(x=>x.owner==='karma').values.lowKarmaCommand,'');assert.equal(r.files.find(x=>x.owner==='special').values.selection.chance,.7);assert.equal(r.ignored.length,1);});
+test('write is bounded and existing canonical files win by default',()=>{const a=f();mkdirSync(a.out);const kp=join(a.out,'_edgegamers_ttt-karma.json');writeFileSync(kp,'{"defaultKarma":71}');const r=run(a,'--write','--receipt',join(a.dir,'receipt.json'));assert.equal(readFileSync(kp,'utf8'),'{"defaultKarma":71}');assert.equal(r.files.find(x=>x.owner==='karma').status,'preserved');assert.equal(parse(readFileSync(join(a.out,'_edgegamers_ttt-special.json'),'utf8')).selection.chance,.7);assert.equal(JSON.parse(readFileSync(join(a.dir,'receipt.json'),'utf8')).inputSha256,r.inputSha256);assert.equal(existsSync(join(a.dir,'SHOULD_NOT_EXECUTE')),false);});
+test('explicit merge fills only missing imported keys and preserves canonical choices',()=>{const a=f();mkdirSync(a.out);const kp=join(a.out,'_edgegamers_ttt-karma.json');writeFileSync(kp,'{"defaultKarma":71,"custom":"keep"}');run(a,'--write','--merge-missing');const v=parse(readFileSync(kp,'utf8'));assert.equal(v.defaultKarma,71);assert.equal(v.lowKarmaCommand,'');assert.equal(v.custom,'keep');});
+test('malformed existing merge or oversized input refuses rather than replacing',()=>{assert.ok(existsSync(cli),'offline importer is implemented');const a=f();mkdirSync(a.out);const kp=join(a.out,'_edgegamers_ttt-karma.json');writeFileSync(kp,'broken');assert.notEqual(spawnSync(process.execPath,[cli,'--input',a.input,'--out-dir',a.out,'--write','--merge-missing']).status,0);assert.equal(readFileSync(kp,'utf8'),'broken');writeFileSync(a.input,'x'.repeat(1024*1024+1));assert.notEqual(spawnSync(process.execPath,[cli,'--input',a.input,'--out-dir',a.out]).status,0);});
+
+test('merge preserves an existing scalar section instead of replacing its contents',()=>{const a=f();writeFileSync(a.input,'sm_ttt_special_speed_initial 66\n');mkdirSync(a.out);const p=join(a.out,'_edgegamers_ttt-special.json');writeFileSync(p,'{"speed":5}');run(a,'--write','--merge-missing');assert.equal(parse(readFileSync(p,'utf8')).speed,5);});
+
+test('merge preserves existing null and array ancestors',()=>{for(const speed of [null,[]]){const a=f();writeFileSync(a.input,'sm_ttt_special_speed_initial 66\n');mkdirSync(a.out);const p=join(a.out,'_edgegamers_ttt-special.json');writeFileSync(p,JSON.stringify({speed}));run(a,'--write','--merge-missing');assert.deepEqual(parse(readFileSync(p,'utf8')).speed,speed);}});
+
+import {SPECS as karmaSpecs} from '../../../plugins/karma/src/settings-specs.ts';
+import {SPECS as specialSpecs} from '../../../plugins/special/src/settings-specs.ts';
+import {SPECS as shopSpecs} from '../../../plugins/shop/src/settings-specs.ts';
+test('prior141 exact legacy inventory remains mapped without executing lines',()=>{const a=f();const specs=[...karmaSpecs,...specialSpecs,...shopSpecs];assert.equal(specs.length,141);assert.equal(new Set(specs.map(s=>s.name)).size,141);writeFileSync(a.input,specs.map(s=>`${s.name} ${JSON.stringify(String(s.default))}`).join('\n')+'\nexec "NEVER"\n');const r=run(a);assert.deepEqual(r.files.map(f=>f.owner),['karma','special','shop','core','world','bodies']);assert.equal(r.files.reduce((n,f)=>n+f.imported.length,0),141);assert.equal(r.ignored.length,1);assert.equal(existsSync(a.out),false);for(const [owner,ownerSpecs]of [['karma',karmaSpecs],['special',specialSpecs],['shop',shopSpecs]]){const values=r.files.find(f=>f.owner===owner).values;for(const s of ownerSpecs)assert.equal(s.path.split('.').reduce((v,k)=>v[k],values),s.default,s.name);}});
+test('Shop booleans use exact legacy0/1/false/blank rules including false-like strings',()=>{for(const [text,want]of [['0',false],['1',true],['false',false],['FALSE',false],['false-like',true],['off',true],['',true]]){const a=f();writeFileSync(a.input,`sm_ttt_shop_tripwire_glow ${JSON.stringify(text)}\nsm_ttt_dna_glow 1\n`);const values=run(a).files.find(f=>f.owner==='shop').values;assert.equal(values.items.tripwireGlow,want,text);assert.equal(values.dna.glow,true);}});
+test('flat export admits real booleans only for actual boolean aliases, retaining old numeric parsing',()=>{const a=f();writeFileSync(a.input,'{"sm_ttt_shop_tripwire_glow":false,"sm_ttt_dna_glow":true,"sm_ttt_shop_armor_amount":"80.5","sm_ttt_karma_default":false}');const r=run(a),s=r.files.find(f=>f.owner==='shop').values;assert.equal(s.items.tripwireGlow,false);assert.equal(s.dna.glow,true);assert.equal(s.items.armorAmount,80);assert.equal(r.files.find(f=>f.owner==='karma').values.defaultKarma,50);assert.ok(r.ignored.includes('sm_ttt_karma_default'));});
+test('Shop canonical bytes win by default and explicit missing merge preserves false and integer lexemes',()=>{const a=f();mkdirSync(a.out);const p=join(a.out,'_edgegamers_ttt-shop.json');const old='// preserve operator choice\n{"items":{"tripwireGlow":false,"armorAmount":80.0},"dna":null}\n';writeFileSync(p,old);writeFileSync(a.input,'sm_ttt_shop_tripwire_glow 1\nsm_ttt_shop_armor_amount 100\nsm_ttt_shop_armor_price 88\nsm_ttt_shop_start_innocent 90\nsm_ttt_dna_glow 1\n');run(a,'--write');assert.equal(readFileSync(p,'utf8'),old);run(a,'--write','--merge-missing');const text=readFileSync(p,'utf8'),v=parse(text);assert.equal(v.items.tripwireGlow,false);assert.match(text,/"armorAmount"\s*:\s*80\.0/);assert.equal(v.items.armorPrice,88);assert.equal(v.economy.startInnocent,90);assert.equal(v.dna,null);});
+test('Shop malformed ancestors remain chosen, while absent parents are created',()=>{for(const items of [null,[],5,false,'bad']){const a=f();mkdirSync(a.out);const p=join(a.out,'_edgegamers_ttt-shop.json');writeFileSync(p,JSON.stringify({items}));writeFileSync(a.input,'sm_ttt_shop_armor_price 88\nsm_ttt_dna_glow 1\n');run(a,'--write','--merge-missing');const v=parse(readFileSync(p,'utf8'));assert.deepEqual(v.items,items);assert.equal(v.dna.glow,true);}});
+test('existing Karma integer lexical type survives a merge of unrelated fields',()=>{const a=f();mkdirSync(a.out);const p=join(a.out,'_edgegamers_ttt-karma.json');writeFileSync(p,'{"defaultKarma":80.0}');run(a,'--write','--merge-missing');assert.match(readFileSync(p,'utf8'),/"defaultKarma"\s*:\s*80\.0/);});
+
+
+test('complete169 aliases include Core20 plus Bodies5 and World3 with canonical-only phrases and old effective defaults',async()=>{
+ const {SPECS:core}=await import('../../../plugins/core/src/core/settings-specs.ts');
+ const {SPECS:world}=await import('../../../plugins/world/src/settings-specs.ts');
+ const {SPECS:karma}=await import('../../../plugins/karma/src/settings-specs.ts');
+ const {SPECS:special}=await import('../../../plugins/special/src/settings-specs.ts');
+ const {SPECS:shop}=await import('../../../plugins/shop/src/settings-specs.ts');
+ const {SPECS:bodies}=await import('../../../plugins/bodies/src/settings-specs.ts');
+ const all=[...core,...world,...karma,...special,...shop,...bodies];assert.equal(all.length,169);assert.equal(new Set(all.map(s=>s.name)).size,169);
+ const a=f();writeFileSync(a.input,all.map(s=>`${s.name} ${JSON.stringify(String(s.default))}`).join('\n'));const r=run(a);
+ assert.equal(r.files.reduce((n,f)=>n+f.imported.length,0),169);assert.equal(r.ignored.length,0);
+ const c=r.files.find(x=>x.owner==='core').values,w=r.files.find(x=>x.owner==='world').values;
+ assert.equal(c.phrases_file,'');assert.equal(c.players.afkSeconds,180);assert.equal(c.loadout.stripOnAssign,true);assert.equal(w.roleGlowSeconds,0);assert.equal(existsSync(a.out),false);
+});
+test('Core and World merges preserve phrases, malformed parents and integer tokens',()=>{
+ const a=f();mkdirSync(a.out);writeFileSync(join(a.out,'_edgegamers_ttt-core.json'),'// existing\n{"phrases_file":"custom.json","round":null,"players":{"afkSeconds":180.0},"bodies":{"settle":false}}');writeFileSync(join(a.out,'_edgegamers_ttt-world.json'),'{"iconsEnabled":false,"roleGlowSeconds":8e1}');
+ writeFileSync(a.input,'sm_ttt_minimum_players 8\nsm_ttt_afk_seconds 99\nsm_ttt_prop_pickup 0\nsm_ttt_role_panels false\nsm_ttt_role_glow_seconds 20\nsm_ttt_icons_enabled true\n');
+ const keep=readFileSync(join(a.out,'_edgegamers_ttt-core.json'),'utf8');run(a,'--write');assert.equal(readFileSync(join(a.out,'_edgegamers_ttt-core.json'),'utf8'),keep);
+ run(a,'--write','--merge-missing');const text=readFileSync(join(a.out,'_edgegamers_ttt-core.json'),'utf8'),c=parse(text),wt=readFileSync(join(a.out,'_edgegamers_ttt-world.json'),'utf8'),w=parse(wt);
+ assert.equal(c.phrases_file,'custom.json');assert.equal(c.round,null);assert.equal(parse(readFileSync(join(a.out,'_edgegamers_ttt-bodies.json'),'utf8')).bodies.propPickup,false);assert.equal(c.bodies.settle,false);assert.match(text,/180\.0/);assert.match(wt,/8e1/);assert.equal(w.iconsEnabled,false);assert.equal(w.rolePanels,false);
+});
+
+test('explicit Bodies migration gives existing owner then old Core choices precedence over aliases',()=>{
+ const a=f();mkdirSync(a.out);const old='{"phrases_file":"keep","bodies":{"enabled":false,"settle":false,"carryOffset":4e1}}';writeFileSync(join(a.out,'_edgegamers_ttt-core.json'),old);writeFileSync(join(a.out,'_edgegamers_ttt-bodies.json'),'{"bodies":{"settle":true}}');writeFileSync(a.input,'sm_ttt_bodies_enabled 1\nsm_ttt_body_settle 0\nsm_ttt_carry_body_offset 99\nsm_ttt_prop_pickup 0');
+ const r=run(a,'--write','--merge-missing','--migrate-body-settings');const text=readFileSync(join(a.out,'_edgegamers_ttt-bodies.json'),'utf8'),v=parse(text);assert.equal(v.bodies.enabled,false);assert.equal(v.bodies.settle,true);assert.equal(v.bodies.propPickup,false);assert.match(text,/4e1/);assert.equal(readFileSync(join(a.out,'_edgegamers_ttt-core.json'),'utf8'),old);assert.equal(r.files.length,6);
+});
+test('Bodies migration is explicit and preserves malformed canonical ancestors',()=>{
+ for(const choice of [null,[],false,8,'bad']){const a=f();mkdirSync(a.out);writeFileSync(join(a.out,'_edgegamers_ttt-core.json'),JSON.stringify({bodies:choice}));writeFileSync(a.input,'sm_ttt_bodies_enabled 0');const r=run(a,'--merge-missing','--migrate-body-settings');assert.deepEqual(r.files.find(x=>x.owner==='bodies').values.bodies,choice);assert.equal(existsSync(join(a.out,'_edgegamers_ttt-bodies.json')),false);}
+ const a=f();assert.notEqual(spawnSync(process.execPath,[cli,'--input',a.input,'--out-dir',a.out,'--migrate-body-settings']).status,0);assert.equal(existsSync(a.out),false);
+});
+test('new Bodies file inherits legacy Core choices without replacing the Core file',()=>{const a=f();mkdirSync(a.out);const old='// old operator settings\n{"bodies":{"enabled":false,"carryOffset":-0.0},"phrases_file":"x"}';writeFileSync(join(a.out,'_edgegamers_ttt-core.json'),old);writeFileSync(a.input,'sm_ttt_bodies_enabled 1\nsm_ttt_carry_body_offset 80');run(a,'--write','--merge-missing','--migrate-body-settings');const text=readFileSync(join(a.out,'_edgegamers_ttt-bodies.json'),'utf8');assert.equal(parse(text).bodies.enabled,false);assert.match(text,/-0\.0/);assert.equal(readFileSync(join(a.out,'_edgegamers_ttt-core.json'),'utf8'),old);});

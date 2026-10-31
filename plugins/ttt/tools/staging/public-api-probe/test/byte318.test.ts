@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readPawnByte318} from '../src/byte318.ts';
+test('only fixed public UInt8 read; no pointer or write',()=>{const calls:number[]=[];const ref:any={isValid:()=>true,readUInt8:(o:number)=>{calls.push(o);return 255}};assert.equal(readPawnByte318(ref),255);assert.deepEqual(calls,[0x318]);});
+test('retired ref and invalid byte fail closed',()=>{let live=true;const ref:any={isValid:()=>live,readUInt8:()=>{live=false;return 5}};assert.equal(readPawnByte318(ref),null);for(const v of [null,-1,256,NaN])assert.equal(readPawnByte318({isValid:()=>true,readUInt8:()=>v} as any),null);});

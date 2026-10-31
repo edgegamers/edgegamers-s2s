@@ -1,0 +1,58 @@
+{
+  "name": "@edgegamers/plugins",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.19.0",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git"
+  },
+  "workspaces": [
+    "plugins/ttt/plugins/*",
+    "plugins/ttt/packages/*",
+    "plugins/surftimer/plugins/*",
+    "plugins/surftimer/packages/*",
+    "plugins/jb/plugins/*",
+    "plugins/jb/packages/*",
+    "plugins/hide",
+    "plugins/maul"
+  ],
+  "s2script": {
+    "workspace": {
+      "plugins": [
+        "plugins/ttt/plugins/*",
+        "plugins/surftimer/plugins/*",
+        "plugins/jb/plugins/*",
+        "plugins/hide",
+        "plugins/maul"
+      ],
+      "bundles": [
+        "plugins/ttt",
+        "plugins/surftimer",
+        "plugins/jb"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "s2s build",
+    "test": "npm test --workspaces --if-present",
+    "check": "npm run build && npm test",
+    "changeset": "changeset",
+    "version": "s2s version && npm install --package-lock-only --ignore-scripts",
+    "deploy": "s2s deploy --ci"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.31.1",
+    "@s2script/sdk": "0.34.0",
+    "@s2script/cs2": "0.22.0",
+    "typescript": "5.9.3",
+    "esbuild": "0.25.12",
+    "fflate": "0.8.3",
+    "bun": "1.4.4",
+    "@types/bun": "1.3.14"
+  }
+}

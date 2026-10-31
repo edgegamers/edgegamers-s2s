@@ -1,0 +1,13 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {resolve} from 'node:path';
+import vm from 'node:vm';
+import {SPECS,CANONICAL_FIELDS} from '../src/core/settings-specs.ts';
+import {configFixture} from '../../../packages/contracts/test/config-runtime.mjs';
+const archive=resolve(process.env.TTT_TEST_ARCHIVE??'dist/_edgegamers_ttt-core.s2sp');
+const members=JSON.parse(execFileSync('python3',['-c','import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);print(json.dumps({n:z.read(n).decode() for n in z.namelist()}))',archive],{encoding:'utf8',maxBuffer:8*1024*1024}));
+function fixture(){const cf=configFixture([...SPECS,...CANONICAL_FIELDS]);const unused=new Proxy(function(){},{get:(_t,k)=>k===Symbol.toPrimitive?()=>'unused':unused,apply:()=>{throw Error('unexpected host operation');},construct:()=>({})});const context=vm.createContext({module:{exports:{}},console:{log(){}},require(name){if(name==='@s2script/sdk/unsafe')return {Engine:{function:()=>({available:false,status:{reason:'config fixture'}})}};if(name==='@s2script/sdk/config')return {config:cf.config};if(name==='@s2script/sdk/server')return {Server:cf.server};return unused;}});vm.runInContext(members['plugin.js'],context);vm.runInContext('registerCvars(); refresh();',context);return {cf,context,read:expression=>vm.runInContext(expression,context)};}
+test('Core actual archive declares exact20 aliases plus canonical-only phrases schema',()=>{const m=JSON.parse(members['manifest.json']);for(const s of [...SPECS,...CANONICAL_FIELDS]){const f=s.path.split('.').reduce((v,k)=>v?.[k],m.config);assert.ok(f,s.path);for(const k of ['type','default','min','max'])assert.equal(f[k],s[k],s.path+'.'+k);}assert.equal(m.config.iconsEnabled,undefined);});
+test('Core actual archive uses typed canonical initial values and pending refresh boundaries',()=>{const f=fixture();assert.equal(f.cf.aliases.size,20);assert.equal(f.read('cfg.afkSeconds'),180);assert.equal(f.read('cfg.stripOnAssign'),true);f.cf.edit('round.minimumPlayers',7);assert.equal(f.read('cfg.minPlayers'),2);f.read('refresh()');assert.equal(f.read('cfg.minPlayers'),7);f.cf.edit('phrases_file','archive.json');f.cf.server.setCvar('sm_ttt_minimum_players','10');assert.match(f.cf.getFile(),/archive.json/);assert.equal(f.read('cfg.minPlayers'),7);f.read('refresh()');assert.equal(f.read('cfg.minPlayers'),10);});
+test('Core actual archive disposal prevents old callbacks from persisting alias edits',()=>{const f=fixture();f.read('disposeCvars()');const before=f.cf.getFile();f.cf.server.setCvar('sm_ttt_minimum_players','9');assert.equal(f.cf.getFile(),before);assert.ok([...f.cf.hooks.values()].every(v=>v.length===0));});

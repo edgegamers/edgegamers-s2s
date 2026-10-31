@@ -1,0 +1,66 @@
+{
+  "name": "@edgegamers/ttt-bodies",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Existing port canonical corpses and USE interactions",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-bodies",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-bodies": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    },
+    "config": {
+      "bodies": {
+        "enabled": {
+          "type": "bool",
+          "default": true,
+          "description": "Corpses on death. Off = bisect"
+        },
+        "hidePawn": {
+          "type": "bool",
+          "default": true,
+          "description": "Hide the victim's pawn once the corpse exists. Off = bisect"
+        },
+        "settle": {
+          "type": "bool",
+          "default": true,
+          "description": "Settle pass (ClearParent + MoveType + teleport) on the corpse. Off = bisect"
+        },
+        "carryOffset": {
+          "type": "float",
+          "default": 36,
+          "description": "Carried corpse centring offset (units)",
+          "min": -128,
+          "max": 128
+        },
+        "propPickup": {
+          "type": "bool",
+          "default": true,
+          "description": "Allow players to carry props and bodies with USE"
+        }
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/bodies"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

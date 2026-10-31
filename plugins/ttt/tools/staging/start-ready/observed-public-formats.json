@@ -1,0 +1,47 @@
+{
+  "sources": [
+    {
+      "path": "/tmp/s2s-ttt-current-join-readiness-20261004.json",
+      "sha256": "b020c52d39fb7753294b0e46844fa86603f1a7d7d0b15209bf43f9d198cd2c20"
+    },
+    {
+      "path": "/tmp/s2s-ttt-tripwire-single-mapcycle-recovery-20261004.json",
+      "sha256": "e085fd126c9a52a0829dfc6d8300aa107c95f98aaace891ab2ae4bdb0b37fc2b"
+    }
+  ],
+  "plugin_lines": [
+    "[s2script]   1 \"@edgegamers/ttt-bodies\" (running)",
+    "[s2script]   2 \"@edgegamers/ttt-communication\" (running)",
+    "[s2script]   3 \"@edgegamers/ttt-core\" (running)",
+    "[s2script]   4 \"@edgegamers/ttt-items\" (running)",
+    "[s2script]   5 \"@edgegamers/ttt-karma\" (running)",
+    "[s2script]   6 \"@edgegamers/ttt-public-api-probe\" (running)",
+    "[s2script]   7 \"@edgegamers/ttt-reports\" (running)",
+    "[s2script]   8 \"@edgegamers/ttt-shop\" (running)",
+    "[s2script]   9 \"@edgegamers/ttt-special\" (running)",
+    "[s2script]   10 \"@edgegamers/ttt-ui\" (running)",
+    "[s2script]   11 \"@edgegamers/ttt-world\" (running)",
+    "[s2script]   12 \"@s2script/adminhelp\" (running)",
+    "[s2script]   13 \"@s2script/adminmenu\" (running)",
+    "[s2script]   14 \"@s2script/antiflood\" (running)",
+    "[s2script]   15 \"@s2script/basebans\" (running)",
+    "[s2script]   16 \"@s2script/basechat\" (running)",
+    "[s2script]   17 \"@s2script/basecomm\" (running)",
+    "[s2script]   18 \"@s2script/basecommands\" (running)",
+    "[s2script]   19 \"@s2script/basetriggers\" (running)",
+    "[s2script]   20 \"@s2script/basevotes\" (running)",
+    "[s2script]   21 \"@s2script/clientprefs\" (running)",
+    "[s2script]   22 \"@s2script/funcommands\" (running)",
+    "[s2script]   23 \"@s2script/playercommands\" (running)",
+    "[s2script]   24 \"@s2script/reservedslots\" (running)",
+    "[s2script]   25 \"@s2script/zones\" (running)"
+  ],
+  "meta_lines": [
+    "  [01] MultiAddonManager (v1.6.1-0-gcf61a1c) by xen",
+    "  [02] s2script (0.7.0+interop-fix.10379521277a) by s2script"
+  ],
+  "lifecycle_lines": [
+    "2026-10-04T22:32:19.598917298Z [s2script] map start: de_inferno (maxClients=12)",
+    "2026-10-04T22:32:21.509804170Z Host activate: Changelevel (de_inferno)"
+  ]
+}

@@ -1,0 +1,352 @@
+{
+  "name": "@edgegamers/jailbreak-specialdays",
+  "version": "1.0.0",
+  "description": "Special days.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "pluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.0.0"
+    },
+    "optionalPluginDependencies": {
+      "@edgegamers/jailbreak-warden": "^1.0.0",
+      "@s2script/zones": "^1.0.0"
+    },
+    "config": {
+      "sd_round_cooldown": {
+        "type": "int",
+        "default": 5,
+        "description": "Rounds between special days (wardens; admins with the rcon flag bypass).",
+        "min": 0
+      },
+      "sd_max_elapsed_time": {
+        "type": "int",
+        "default": 30,
+        "description": "Max seconds into a round a warden may still call a special day.",
+        "min": 0
+      },
+      "sd_gated_days": {
+        "type": "string",
+        "default": "hns,speedrun",
+        "description": "Days only players with sd_gate_flag (or root) may start; comma-separated day names, empty = none. Was the EdgeGamers Silver Supporter check."
+      },
+      "sd_gate_flag": {
+        "type": "string",
+        "default": "custom1",
+        "description": "Admin flag that unlocks the gated days.",
+        "enum": [
+          "reservation",
+          "generic",
+          "kick",
+          "ban",
+          "unban",
+          "slay",
+          "changemap",
+          "convars",
+          "config",
+          "chat",
+          "vote",
+          "password",
+          "rcon",
+          "cheats",
+          "root",
+          "custom1",
+          "custom2",
+          "custom3",
+          "custom4",
+          "custom5",
+          "custom6"
+        ]
+      },
+      "sd_gated_message": {
+        "type": "string",
+        "default": "You must be a Silver Supporter to start this day.",
+        "description": "Shown when a player lacks sd_gate_flag."
+      },
+      "sd_ghost_visible_duration": {
+        "type": "float",
+        "default": 5.0,
+        "description": "Ghost War: seconds players are visible per cycle.",
+        "min": 1,
+        "max": 30
+      },
+      "sd_ghost_invisible_duration": {
+        "type": "float",
+        "default": 5.0,
+        "description": "Ghost War: seconds players are hidden per cycle.",
+        "min": 1,
+        "max": 30
+      },
+      "sd_noscope_weapon": {
+        "type": "string",
+        "default": "weapon_ssg08",
+        "description": "No Scope: weapon(s) given to everyone, comma-separated."
+      },
+      "sd_noscope_allowedweapons": {
+        "type": "string",
+        "default": "weapon_healthshot,item_assaultsuit,item_kevlar,weapon_diversion,weapon_breachcharge,weapon_bumpmine,weapon_c4,weapon_tablet,weapon_taser,weapon_shield,weapon_snowball,weapon_decoy,weapon_firebomb,weapon_flashbang,weapon_hegrenade,weapon_incgrenade,weapon_molotov,weapon_smokegrenade,weapon_tagrenade,weapon_frag,weapon_ssg08,weapon_knife",
+        "description": "No Scope: weapons players may pick up and fire, comma-separated; empty = no restriction."
+      },
+      "sd_noscope_knife_delay": {
+        "type": "int",
+        "default": 120,
+        "description": "No Scope: seconds after setup until everyone gets a knife; 0 disables.",
+        "min": 0,
+        "max": 500
+      },
+      "sd_noscope_gravity": {
+        "type": "float",
+        "default": 200.0,
+        "description": "No Scope: sv_gravity during the day (default game value is 800).",
+        "min": 0
+      },
+      "sd_oitc_weapon": {
+        "type": "string",
+        "default": "weapon_deagle",
+        "description": "One in the Chamber: the one-bullet weapon."
+      },
+      "sd_oitc_additionalweapon": {
+        "type": "string",
+        "default": "weapon_knife",
+        "description": "One in the Chamber: extra (non-ammo restricted) weapon; empty for none."
+      },
+      "sd_hns_hide_hp_t": {
+        "type": "int",
+        "default": 300,
+        "description": "Hide and Seek: prisoner health during hide time; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_hide_hp_ct": {
+        "type": "int",
+        "default": 150,
+        "description": "Hide and Seek: guard health during hide time; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_hide_armor_t": {
+        "type": "int",
+        "default": 200,
+        "description": "Hide and Seek: prisoner armor during hide time; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_hide_armor_ct": {
+        "type": "int",
+        "default": 300,
+        "description": "Hide and Seek: guard armor during hide time; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_seek_hp_t": {
+        "type": "int",
+        "default": 300,
+        "description": "Hide and Seek: prisoner health once seeking starts.",
+        "min": 1,
+        "max": 1000
+      },
+      "sd_hns_seek_hp_ct": {
+        "type": "int",
+        "default": 25,
+        "description": "Hide and Seek: guard health once seeking starts.",
+        "min": 1,
+        "max": 1000
+      },
+      "sd_hns_seek_armor_t": {
+        "type": "int",
+        "default": 500,
+        "description": "Hide and Seek: prisoner armor once seeking starts; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_seek_armor_ct": {
+        "type": "int",
+        "default": -1,
+        "description": "Hide and Seek: guard armor once seeking starts; -1 = unchanged.",
+        "min": -1,
+        "max": 1000
+      },
+      "sd_hns_weapons_ct": {
+        "type": "string",
+        "default": "weapon_deagle,weapon_elite,weapon_fiveseven,weapon_glock,weapon_hkp2000,weapon_p250,weapon_usp_silencer,weapon_tec9,weapon_cz75a,weapon_revolver,weapon_healthshot,item_assaultsuit,item_kevlar,weapon_diversion,weapon_breachcharge,weapon_bumpmine,weapon_c4,weapon_tablet,weapon_taser,weapon_shield,weapon_snowball,weapon_decoy,weapon_firebomb,weapon_flashbang,weapon_hegrenade,weapon_incgrenade,weapon_molotov,weapon_smokegrenade,weapon_tagrenade,weapon_frag",
+        "description": "Hide and Seek: weapons guards may pick up, comma-separated; empty = no restriction."
+      },
+      "sd_hns_weapons_t": {
+        "type": "string",
+        "default": "",
+        "description": "Hide and Seek: weapons prisoners may pick up, comma-separated; empty = no restriction."
+      },
+      "sd_hns_seekers": {
+        "type": "string",
+        "default": "t",
+        "description": "Hide and Seek: the seeking team (restricted to the armory).",
+        "enum": [
+          "t",
+          "ct"
+        ]
+      },
+      "sd_hns_seektime": {
+        "type": "int",
+        "default": 45,
+        "description": "Hide and Seek: seconds the hiders get to hide.",
+        "min": 5,
+        "max": 120
+      },
+      "rj_max_distance": {
+        "type": "float",
+        "default": 160.0,
+        "description": "Rocket Jump: max distance from the blast that still launches you.",
+        "min": 1,
+        "max": 1000
+      },
+      "rj_close_jump_distance": {
+        "type": "float",
+        "default": 37.0,
+        "description": "Rocket Jump: blasts closer than this give a full-force jump.",
+        "min": 1,
+        "max": 1000
+      },
+      "rj_jump_force_main": {
+        "type": "float",
+        "default": 270.0,
+        "description": "Rocket Jump: base push strength.",
+        "min": 0,
+        "max": 2000
+      },
+      "rj_jump_force_up": {
+        "type": "float",
+        "default": 8.0,
+        "description": "Rocket Jump: vertical boost per unit of closeness.",
+        "min": 0,
+        "max": 500
+      },
+      "rj_jump_force_forward": {
+        "type": "float",
+        "default": 1.2,
+        "description": "Rocket Jump: scale when launched along your movement.",
+        "min": 0,
+        "max": 10
+      },
+      "rj_jump_force_backward": {
+        "type": "float",
+        "default": 1.25,
+        "description": "Rocket Jump: scale when launched against your movement.",
+        "min": 0,
+        "max": 10
+      },
+      "rj_run_force_main": {
+        "type": "float",
+        "default": 0.8,
+        "description": "Rocket Jump: multiplier when launched from the ground.",
+        "min": 0,
+        "max": 10
+      },
+      "rj_proj_damage": {
+        "type": "float",
+        "default": 65.0,
+        "description": "Rocket Jump: blast damage.",
+        "min": 1,
+        "max": 200
+      },
+      "rj_proj_damage_radius": {
+        "type": "float",
+        "default": 225.0,
+        "description": "Rocket Jump: blast radius.",
+        "min": 1,
+        "max": 1000
+      },
+      "speedrun_initial_time": {
+        "type": "int",
+        "default": 20,
+        "description": "Speedrunners: seconds the runner gets to set the goal.",
+        "min": 1
+      },
+      "speedrun_first_round_freeze": {
+        "type": "int",
+        "default": 6,
+        "description": "Speedrunners: seconds to read the rules before the runner starts.",
+        "min": 4
+      },
+      "speedrun_freeze_time": {
+        "type": "int",
+        "default": 2,
+        "description": "Speedrunners: freeze before each race.",
+        "min": 0
+      },
+      "speedrun_win_time_base": {
+        "type": "int",
+        "default": 25,
+        "description": "Speedrunners: base seconds the winner gets to hunt the rest.",
+        "min": 1
+      },
+      "speedrun_win_time_bonus": {
+        "type": "int",
+        "default": 5,
+        "description": "Speedrunners: extra seconds per remaining competitor.",
+        "min": 0
+      },
+      "speedrun_win_max": {
+        "type": "int",
+        "default": 60,
+        "description": "Speedrunners: max seconds for the winner, regardless of bonus.",
+        "min": 1
+      },
+      "speedrun_win_weapons": {
+        "type": "string",
+        "default": "weapon_knife,weapon_negev",
+        "description": "Speedrunners: weapons given to the winner, comma-separated."
+      },
+      "speedrun_loser_weapons": {
+        "type": "string",
+        "default": "",
+        "description": "Speedrunners: weapons given to the losers, comma-separated."
+      },
+      "speedrun_winner_damageable": {
+        "type": "bool",
+        "default": false,
+        "description": "Speedrunners: whether the winner can be damaged."
+      },
+      "speedrun_loser_damageable": {
+        "type": "bool",
+        "default": true,
+        "description": "Speedrunners: whether the losers can be damaged."
+      },
+      "speedrun_teleport_type": {
+        "type": "int",
+        "default": 2,
+        "description": "Speedrunners: at the end, 0 = no teleport, 1 = losers to the winner, 2 = winner to the losers.",
+        "enum": [
+          0,
+          1,
+          2
+        ]
+      },
+      "speedrun_finish_at": {
+        "type": "int",
+        "default": 2,
+        "description": "Speedrunners: players left when a winner is declared.",
+        "min": 2,
+        "max": 10
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/specialdays"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}
