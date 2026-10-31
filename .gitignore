@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.superpowers/
+**/.s2script/interfaces.d.ts
+**/.s2script/gamedata.d.ts
+.env
+.env.*
+!.env.example
