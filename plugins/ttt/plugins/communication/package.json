@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-communication",
-  "version": "2.0.0",
+  "version": "2.0.5",
   "type": "module",
   "description": "Existing-port private chat relay and logical-life voice routing",
   "main": "src/plugin.ts",

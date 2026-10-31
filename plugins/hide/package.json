@@ -20,7 +20,6 @@
   "files": [
     "src/",
     "translations/",
-    "scripts/",
     "test/",
     "tsconfig.json",
     "NOTICE"
@@ -29,9 +28,7 @@
     "build": "s2s build .",
     "test": "node --test --test-isolation=none test/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "package": "npm run build && node scripts/package.mjs",
-    "registry:pack": "s2s pack --dry-run",
-    "deploy": "s2s deploy --ci"
+    "registry:pack": "s2s pack --dry-run"
   },
   "engines": {
     "node": ">=22.13.0"

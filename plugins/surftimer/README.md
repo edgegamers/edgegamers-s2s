@@ -1,3 +1,5 @@
+> Development in this monorepo: run `npm ci` and `npm run check` from the repository root. The root owns releases and dependencies. See [the current contributor guide](../../CONTRIBUTING.md).
+
 # s2s-surftimer
 
 SurfTimer for [s2script](https://github.com/s2script/s2script): a surf/bhop timer for CS2 built for
@@ -111,10 +113,10 @@ The design rule is that the game thread only does work that must happen on it.
 
 1. Install s2script, version 0.33 or later. It needs the engine surface from
    [s2script#290](https://github.com/s2script/s2script/pull/290).
-2. Build the plugins with `npm install`, then `npx s2s build`. Copy
-   `plugins/surftimer/dist/*.s2sp` and `plugins/surftimer-hud/dist/*.s2sp` to
+2. From the repository root, run `npm ci` and `npm run build -- --filter '@edgegamers/surftimer-*'`. Copy
+   `plugins/surftimer/plugins/surftimer/dist/*.s2sp` and `plugins/surftimer/plugins/surftimer-hud/dist/*.s2sp` to
    `addons/s2script/plugins/`.
-3. Optional: copy the contents of `data/` to `addons/s2script/data/files/_s2script_surftimer/`.
+3. Optional: copy the contents of `data/` to `addons/s2script/data/files/_edgegamers_surftimer-core/`.
    That gives you `mapdata/<map>.json` (SharpTimer MapData) and `maptiers.json`. Tiers are also
    downloaded automatically (`map_tiers_url`).
 4. Optional, for the Panorama HUD: compile and publish `hud/workshop` as a workshop addon (see
@@ -165,7 +167,10 @@ GPL-3.0-or-later, the same licence as SurfTimer and SharpTimer. `data/mapdata/*.
 ## Development
 
 ```bash
-npm install            # links the workspace; needs @s2script/sdk >= 0.33 and @s2script/cs2 >= 0.22
-npx s2s build          # typecheck gate + bundle both plugins
-npm test               # pure-module tests (zone names, recorder, replay format, HUD model)
+npm ci                 # from the repository root
+npm run check           # native builds and all retained behavior tests
 ```
+
+## Monorepo identity
+
+The public bundle is `@edgegamers/surftimer`, with required `@edgegamers/surftimer-core` and `@edgegamers/surftimer-hud` members. When adopting these identities from the original `@s2script` plugins, remove the old loaded copies, back up configuration and replay/map data, and migrate the timer file sandbox to `_edgegamers_surftimer-core`. The named database and its tables are unchanged. Verify timing, saved records/replays and both HUD modes on a test server before rollout.

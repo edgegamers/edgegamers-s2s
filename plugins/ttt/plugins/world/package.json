@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-world",
-  "version": "2.0.0",
+  "version": "2.0.5",
   "type": "module",
   "description": "Existing port world markers, role uniforms and scoreboard tags",
   "main": "src/plugin.ts",

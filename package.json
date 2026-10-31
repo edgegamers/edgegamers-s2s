@@ -39,7 +39,7 @@
   },
   "scripts": {
     "build": "s2s build",
-    "test": "npm test --workspaces --if-present",
+    "test": "node --test test/*.test.mjs && npm test --workspaces --if-present",
     "check": "npm run build && npm test",
     "changeset": "changeset",
     "version": "s2s version && npm install --package-lock-only --ignore-scripts",

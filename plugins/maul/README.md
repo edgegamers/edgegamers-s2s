@@ -1,3 +1,5 @@
+> Development in this monorepo: run `npm ci` and `npm run check` from the repository root. The root owns releases and dependencies. See [the current contributor guide](../../CONTRIBUTING.md).
+
 # maul — MAUL authentication for CS2
 
 An [s2script](https://github.com/s2script) port of edgeGamers' MAUL authentication plugin
@@ -19,14 +21,14 @@ config key. See [API versions](#api-versions) for what differs.
 ## Install
 
 ```sh
-bun install
-bun test          # unit tests over the pure surface
-s2s build .       # -> dist/_edgegamers_s2s-maul.s2sp
+npm ci                         # from the repository root
+npm run check
+npm run build -- --filter @edgegamers/s2s-maul
 ```
 
 Drop the built `.s2sp` into the server's plugin directory and set at minimum `maul_key`.
 
-Builds against `@s2script/sdk` 0.29 / `@s2script/cs2` 0.19.4 and needs an s2script runtime with host
+Builds against the shared `@s2script/sdk` 0.34.0 / `@s2script/cs2` 0.22.0 and needs an s2script runtime with host
 API 3 (protocol-2 plugin interop). Ban routing uses `@s2script/basebans` 1.x, whose contract is
 vendored at `.s2script/types/@s2script/basebans/index.d.ts` — an exact copy of s2script's
 `plugins/basebans/api.d.ts`; refresh it with `s2s add @s2script/basebans` once the registry
@@ -154,11 +156,8 @@ verified by inspection and live server runs.
 
 ## Development
 
-```sh
-bun test
-npx eslint .    # @s2script/eslint-plugin rules
-s2s build .
-```
+Use `npm test --workspace @edgegamers/s2s-maul` from the repository root for the
+Bun behavior tests. `npm run check` also runs the native SDK type/safety build.
 
 ## Publishing
 
@@ -167,7 +166,6 @@ Published to the s2script registry as **`@edgegamers/s2s-maul`**, a *restricted*
 installs it with `s2s install @edgegamers/s2s-maul`, with `S2SCRIPT_TOKEN` set to a token that can
 read it.
 
-CI (`.github/workflows/ci.yml`) builds, lints, typechecks and tests every PR and push. It deploys
-on a `v*` tag, or when run by hand with `deploy` ticked, using the `S2SCRIPT_TOKEN` repository
-secret. The registry refuses a version that already exists, so bump `version` in `package.json`
-before tagging.
+Add a changeset with `npm run changeset` and select `@edgegamers/s2s-maul`.
+The shared Release workflow publishes from `main` with restricted access.
+See [release setup](../../README.md#releases) for the token and retry procedure.

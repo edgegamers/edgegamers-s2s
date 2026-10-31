@@ -1,3 +1,5 @@
+> Development in this monorepo: run `npm ci` and `npm run check` from the repository root. The root owns releases and dependencies. See [the current contributor guide](../../CONTRIBUTING.md).
+
 # HidePlayers for s2script
 
 A TypeScript port of [edgegamers/CS2-HidePlayers 1.3.2](https://github.com/edgegamers/CS2-HidePlayers)
@@ -8,18 +10,14 @@ s2script's bundled **clientprefs** module.
 
 Requires a Linux CS2 server with a current [s2script](https://www.s2script.com/)
 runtime supporting host API **3**, the `Transmit` API, post-frame callbacks, and
-the boolean-returning `Cookies.set` API. Built against SDK **0.33.0** and CS2
-types **0.22.0** (latest published packages checked on 2026-10-26).
+the boolean-returning `Cookies.set` API. Built against the shared SDK **0.34.0** and CS2 types **0.22.0**.
 Keep the framework and its bundled clientprefs at matching
 versions; this port does not need CounterStrikeSharp or Cruze03's Clientprefs.
 
 1. Ensure the bundled `@s2script/clientprefs` plugin is running and its database
    opens successfully. The framework's default local SQLite database is enough.
-2. Build locally or download the artifact from a successful
-   [GitHub Actions run](https://github.com/ShookEagle/s2s-hide/actions). Extract
-   `s2s-hide-1.3.3.zip` into `game/csgo/` on your server. It
-   installs `addons/s2script/plugins/_edgegamers_s2s-hide.s2sp`, English/Russian translations,
-   and documentation/source under `addons/s2script/docs/s2s-hide/`.
+2. Run `npm run build -- --filter @edgegamers/s2s-hide` from the repository root,
+   then copy the built archive and translations as described below.
 3. s2script loads the plugin automatically. Check `sm plugins list` and server
    logs. On first load, it creates `addons/s2script/configs/HidePlayers.json`.
 
@@ -35,7 +33,7 @@ so both copies do not run together. The config and clientprefs cookie are unchan
 After the first registry publication, `s2s install @edgegamers/s2s-hide` installs the plugin
 from the registry. The registry installs the `.s2sp`, which includes English
 fallback messages. For Russian and editable phrase files, also copy
-`translations/` into `addons/s2script/translations/`, or use the full install ZIP.
+`translations/` into `addons/s2script/translations/`.
 
 ## Commands and configuration
 
@@ -98,21 +96,16 @@ cleared on map changes and unload. A transmit failure is logged and retried.
 
 ## Build and verify
 
-Use Node.js 22.13+ (tested with 24) and npm.
+From the repository root, use Node 24 and npm 11.19.0:
 
 ```sh
 npm ci
-npm test
-npm run typecheck
-npm run package
+npm run check
 ```
 
-`npm run build` produces `dist/_edgegamers_s2s-hide.s2sp` using the official `s2s` compiler.
-`npm run package` also creates the install ZIP with translations, license, and
-corresponding source. Dependencies are locked in `package-lock.json`.
-The registry's source tarball follows npm packing rules and excludes lockfiles;
-use `npm install` when building that tarball, or `npm ci` from this repository
-or the full install ZIP's included source.
+`npm run build -- --filter @edgegamers/s2s-hide` produces
+`plugins/hide/dist/_edgegamers_s2s-hide.s2sp`. The shared repository and root
+lockfile are the source checkout for reproducible development.
 
 Automated tests execute the bundled plugin against simulated engine boundaries.
 They cover filtering, observers, dead pawns, bots, commands/admin registration,
@@ -129,49 +122,12 @@ Before putting it on a populated server, check with two clients:
 4. Confirm non-root users cannot reload config and Russian clients get Russian
    feedback. Check logs for transmit and clientprefs errors.
 
-## Automatic registry publishing
+## Registry publishing
 
-Create a deploy token with **publish access to the `edgegamers` organization** at
-[s2script → Deploy tokens](https://www.s2script.com/account/tokens). In this
-repository, open **Settings → Secrets and variables → Actions → Secrets → New
-repository secret** and add:
-
-| Secret name | Value |
-| --- | --- |
-| `S2SCRIPT_TOKEN` | Your s2script deploy token (`s2s_…`) |
-
-Use a repository **secret**, not a plain Actions variable. No other custom
-secret or variable is required. The package publishes as **`@edgegamers/s2s-hide`**;
-the token must be authorized for that organization scope. Do not paste the token into
-source, issue comments, or chat.
-
-The [publishing workflow](.github/workflows/publish.yml) tests, typechecks,
-packages, and then runs the pinned SDK's `s2s deploy --ci`. It publishes both
-the `.s2sp` and corresponding source to the public s2script registry.
-
-- **First publish:** after adding the secret, open **Actions → Publish to
-  s2script registry → Run workflow**, select `main`, and run it. This publishes
-  the version currently in `package.json` (initially `1.3.3`).
-- **Later releases:** bump the version, commit `package.json` and
-  `package-lock.json`, then push a matching tag. For example, after `1.3.3`:
-
-  ```sh
-  npm version patch --no-git-tag-version
-  git add package.json package-lock.json
-  git commit -m "Release 1.3.4"
-  git tag v1.3.4
-  git push origin main
-  git push origin v1.3.4
-  ```
-
-Tag names must be exactly `v` plus the package version. For a first tag-based
-publish instead of the manual button, use `v1.3.3`. Choose one method for each
-version: published registry versions cannot be overwritten. Re-running after a
-successful publish, or subsequently tagging the same version, will be rejected
-by the registry; bump the version to publish new content.
-
-The separate [CI workflow](.github/workflows/ci.yml) runs on pushes to `main`
-and pull requests. It needs no registry token and does not publish.
+Add a changeset with `npm run changeset` and select `@edgegamers/s2s-hide`.
+The root Release workflow publishes the public plugin after changes reach `main`.
+See [release setup](../../README.md#releases) for the shared token and retry procedure.
+The old standalone ZIP and tag-publishing workflow are superseded by the native registry release.
 
 ## Attribution
 

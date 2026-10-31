@@ -1,3 +1,5 @@
+> Development in this monorepo: run `npm ci` and `npm run check` from the repository root. The root owns releases and dependencies. See [the current contributor guide](../../CONTRIBUTING.md).
+
 # s2s-jb — Jailbreak for CS2 on s2script
 
 EdgeGamers' [Jailbreak](https://github.com/edgegamers/Jailbreak) game mode, ported from
@@ -18,9 +20,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how they fit together.
 ## Build
 
 ```bash
-npm install
-npx s2s build            # every plugin → plugins/<name>/dist/_edgegamers_jailbreak-<name>.s2sp
-./scripts/check.sh       # the full gate (what CI runs)
+npm ci                  # from the repository root
+npm run check            # shared build and behavior checks
+npm run build -- --filter '@edgegamers/jailbreak-*'
 ```
 
 ## Install

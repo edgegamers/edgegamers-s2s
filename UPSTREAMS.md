@@ -11,3 +11,7 @@ Fresh source imports; upstream Git history is not part of this repository. Each 
 | maul | https://github.com/GabeHirakawa/s2s-maul | `aaaaabb6cb2af2b4a092559805d28baf1449d3c7` |
 
 Keep source changes in this repository. Select future upstream changes deliberately, then add changesets for affected release units. Superseded upstream install/release/agent configuration and historical engineering evidence are omitted; gameplay, required assets and useful product documentation are retained.
+
+TTT upstream declares 2.0.0; public registry metadata on 2026-10-30 already contains 2.0.5 for its bundle and all ten members. Local baselines use 2.0.5 so the initial patch changeset publishes 2.0.6. Jailbreak and Hide baselines match public metadata. Anonymous 404 responses for MAUL, SurfTimer and Jailbreak guards do not establish name availability or absence; the first authenticated release must reconcile their current registry state.
+
+The standalone Hide ZIP publisher and Jailbreak repository check wrapper are superseded by root native builds/checks and Changesets releases. They are omitted rather than maintained as additional release paths.

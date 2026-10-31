@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-special",
-  "version": "2.0.0",
+  "version": "2.0.5",
   "type": "module",
   "description": "The existing port's seven special rounds, with owned state and cleanup",
   "main": "src/plugin.ts",

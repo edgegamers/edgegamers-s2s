@@ -1,3 +1,5 @@
+> Development in this monorepo: run `npm ci` and `npm run check` from the repository root. The root owns releases and dependencies. See [the current contributor guide](../../CONTRIBUTING.md).
+
 # s2script TTT
 
 Upgrade of `s2s-ttt-port-old` to s2script 0.7.0, SDK 0.27.1 and CS2 0.19.1. The old port supplies the gameplay and visuals. Use public framework APIs and official, unmodified Metamod/KHook suppliers.
@@ -8,7 +10,7 @@ The latest [Body and Core observation fix](docs/evidence/staging/body-input-work
 
 Core owns the registry, round, combat and ordered decisions. Karma, the existing seven special rounds, private Panorama HUD, World visuals, Communication, Shop, Bodies, Reports and Items each have separate archives. Shared source contains pure helpers; feature state has one owner. The catalog retains the old port's21 items.
 
-Build/test tooling requires Node24+ and Python3 for the staging-probe contract preparer. Run `npm ci`, `npm test`, and `npm run typecheck`. The real SDK CLI builds all ten archives before archive tests run. Install each `plugins/<owner>/dist/_edgegamers_ttt-<owner>.s2sp` for the normal preset; the staging probe is a separate operator tool. Use archives from one build so their Protocol2 declarations match.
+Build/test tooling requires Node24+ and Python3 for the staging-probe contract preparer. From the repository root, run `npm ci` and `npm run check`. The real SDK CLI builds all ten archives before archive tests run. Install each `plugins/<owner>/dist/_edgegamers_ttt-<owner>.s2sp` for the normal preset; the staging probe is a separate operator tool. Use archives from one build so their Protocol2 declarations match.
 
 Player-facing text uses the s2script translations library. `translations/ttt.phrases.json` is the English phrase set (SDK syntax: `{1}` arguments, `{colour}` tags); each archive bundles it as the built-in default, and every plugin formats locally. Deploy it to `addons/s2script/translations/ttt.phrases.json` to edit wording without a rebuild, and add `addons/s2script/translations/<code>/ttt.phrases.json` (for example `de`) for other languages; players get their `cl_language`, falling back to English per phrase. Core's old `phrases_file` setting is still accepted in config files but ignored with a warning: its `%KEY%`/`%s%`/`%an%` syntax is not the SDK's.
 

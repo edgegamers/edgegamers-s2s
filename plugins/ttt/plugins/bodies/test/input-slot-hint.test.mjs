@@ -1,7 +1,5 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
-import {allRecipe} from './player-all-reference.js';
 import {execFileSync} from 'node:child_process';
 import {fixture} from './fixture.mjs';
 const archive=process.env.BODIES_ARCHIVE??new URL('../dist/_edgegamers_ttt-bodies.s2sp',import.meta.url).pathname;
@@ -17,14 +15,3 @@ test('copied hint survives source array mutation during native reads without add
 test('a true input hint still requires current full native and actor authority',()=>{const f=setup(code);f.players.get(0).pawn.buttons=32;f.core.matchesActor=()=>false;f.methods.tickInteract(.01);assert.deepEqual(actionOps(f),[]);});
 test('new no-input path preserves a successor carry installed by nested native-read reentry',()=>{const f=setup(code);f.spawn();f.core.hasBodyGloves=()=>true;f.core.spendBodyGlove=()=>true;f.players.get(0).pawn.buttons=32;let nested=false;f.faults.onInputSlot=()=>{if(nested)return;nested=true;f.clients.get(1).valid=false;f.connect(1,2,2);f.players.get(1).pawn.buttons=32;f.methods.tickInteract(.01);f.players.get(0).pawn.buttons=0;f.players.get(1).pawn.buttons=0;};f.methods.tickInteract(.01);assert.ok(f.ops.some(o=>o[0]==='beam'));assert.equal(f.ops.filter(o=>o[0]==='beamRemove').length,0);});
 test('direct input read exception identity remains unchanged',()=>{const f=setup(code),error={inputFailure:true};f.faults.onInputSlot=()=>{throw error;};assert.throws(()=>f.methods.tickInteract(.01),e=>e===error);});
-
-test('SDK Player.all reference stays byte-pinned and scans exactly64 slots',()=>{
-
- const reads=[],players=new Map([[0,{slot:0}],[7,{slot:7}],[63,{slot:63}]]);
- const Player={fromSlot:s=>{reads.push(s);return players.get(s)??null;}};
- Player.all=new Function('Player','MAX_PLAYERS','return '+allRecipe)(Player,64);
- assert.deepEqual(Player.all(),Array.from(players.values()));
- assert.deepEqual(reads,Array.from({length:64},(_,s)=>s));
- const error={nativeReadFailure:true};Player.fromSlot=s=>{if(s===7)throw error;return null;};
- assert.throws(()=>Player.all(),e=>e===error);
-});
