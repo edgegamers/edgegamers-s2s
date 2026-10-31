@@ -1,0 +1,7 @@
+{
+  "upstream": "be0a3e33041e921ec113203d4e14a22c996deab7",
+  "source": "core/js/prelude.js",
+  "sourceSha256": "38aef431826c24cd456426b4bae666b7bf8ed2f4d895087e46b50e0c6a85e797",
+  "excerpts": "78-80 with object close;293-300",
+  "fixtureSha256": "812bdd54889937ce08e631e8654e8862acacb18fd1aa2f6bb24d6e1352e36636"
+}

@@ -1,0 +1,144 @@
+{
+  "name": "@edgegamers/jailbreak-lastrequest",
+  "version": "1.0.0",
+  "description": "Last requests and last guard.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "pluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.0.0",
+      "@edgegamers/jailbreak-warden": "^1.0.0"
+    },
+    "config": {
+      "lr_activate_lr_at": {
+        "type": "int",
+        "default": 2,
+        "description": "Living prisoners at or below which LR turns on (1-32)."
+      },
+      "lr_time_base": {
+        "type": "int",
+        "default": 60,
+        "description": "Round time (seconds) to set when LR turns on; 0 leaves the clock alone."
+      },
+      "lr_time_per_lr": {
+        "type": "int",
+        "default": 20,
+        "description": "Seconds added to the round per decided LR (capped by max_time_for_lr)."
+      },
+      "lr_time_per_guard": {
+        "type": "int",
+        "default": 0,
+        "description": "Seconds added per living guard when LR turns on."
+      },
+      "max_time_for_lr": {
+        "type": "int",
+        "default": 60,
+        "description": "Maximum round time during LR (the per-LR bonus never goes past it)."
+      },
+      "lr_b4b_kill_by_health": {
+        "type": "bool",
+        "default": true,
+        "description": "Shot for shot / mag for mag: after 60s the player with less health dies."
+      },
+      "lr_race_enabled": {
+        "type": "bool",
+        "default": false,
+        "description": "Offer the Race LR (off by default, as in the original plugin)."
+      },
+      "rebel_on": {
+        "type": "bool",
+        "default": true,
+        "description": "Allow the last prisoner to !rebel instead of taking an LR."
+      },
+      "rebel_t_weapon": {
+        "type": "string",
+        "default": "weapon_m249",
+        "description": "Weapon given to an LR rebel."
+      },
+      "rebel_ct_max_hp": {
+        "type": "int",
+        "default": 200,
+        "description": "Max HP each living guard contributes to an LR rebel's health (1-1000)."
+      },
+      "rebel_t_hp_ratio": {
+        "type": "float",
+        "default": 0.7,
+        "description": "LR rebel health = pooled guard HP x this ratio."
+      },
+      "rebel_t_max_hp": {
+        "type": "int",
+        "default": 800,
+        "description": "Cap on an LR rebel's health (1-1000)."
+      },
+      "lg_min_cts": {
+        "type": "int",
+        "default": 2,
+        "description": "Guards alive at round start needed for last guard to be possible (1-32)."
+      },
+      "lg_time_base": {
+        "type": "int",
+        "default": 30,
+        "description": "Round time to set when last guard starts; 0 disables last guard."
+      },
+      "lg_time_per_prisoner": {
+        "type": "int",
+        "default": 10,
+        "description": "Seconds added per living prisoner when last guard starts."
+      },
+      "lg_time_per_kill": {
+        "type": "int",
+        "default": 10,
+        "description": "Seconds added per prisoner killed during last guard."
+      },
+      "lg_time_max": {
+        "type": "int",
+        "default": 90,
+        "description": "Maximum round time during last guard."
+      },
+      "lg_ct_hp_ratio": {
+        "type": "float",
+        "default": 0.7,
+        "description": "Last guard health = pooled prisoner HP x this ratio."
+      },
+      "lg_t_max_hp": {
+        "type": "int",
+        "default": 200,
+        "description": "Max HP each living prisoner contributes to the last guard's health (1-1000)."
+      },
+      "lg_max_hp": {
+        "type": "int",
+        "default": 125,
+        "description": "If the last guard keeps their own (higher) health, cap it at this."
+      },
+      "lg_apply_lower_hp": {
+        "type": "bool",
+        "default": false,
+        "description": "Always set the last guard to the pooled health, even when lower."
+      },
+      "lg_t_weapon": {
+        "type": "string",
+        "default": "",
+        "description": "Weapon given to every prisoner when last guard starts (empty = none)."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/lastrequest"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  // MAUL rank -> admin group + name tag. Ported from sm/maul/configs/maul/authentication.cfg.
+  //
+  //   "group"   - a group name defined in the SERVER's admin_groups.json. Flags and immunity come
+  //               from there; a name missing from that file is warned about once and skipped.
+  //   "tag"     - the name tag for this rank. Applied to the PRIMARY rank only, as "<tag> <name>".
+  //   "special" - event-gated: only granted when the plugin's "eventserver" config is true.
+  //
+  // Rank 95 additionally inherits the "root" group. DS tiers inherit donator_tier1..N.
+  // A malformed edit keeps the last-good table rather than dropping every rank.
+  "ranks": {
+    "10": { "group": "e",         "tag": "=(e)="   },
+    "20": { "group": "eg",        "tag": "=(eG)="  },
+    "30": { "group": "ego",       "tag": "=(eGO)=" },
+    "31": { "group": "trainer",   "special": true  },
+    "32": { "group": "event",     "special": true  },
+    "50": { "group": "advisor",   "tag": "=(eGO)=" },
+    "60": { "group": "manager",   "tag": "=(eGO)=" },
+    "70": { "group": "srmanager", "tag": "=(eGO)=" },
+    "90": { "group": "commgr",    "tag": "=(eGO)=" },
+    "91": { "group": "director",  "tag": "=(eGO)=" }
+  }
+}

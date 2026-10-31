@@ -1,0 +1,35 @@
+// Plugin-owned CS2 facts for the genuine Cluster HE factory; stock s2script v2 API.
+// Audited libserver.so SHA256 d81faffb3e3a5f2001932b3b55a96c4ac05c2ed4b99702b06fc416b6e9bb5300.
+// Unique executable entry VA 0xd28710; +25 references "hegrenade_projectile".
+{
+  "schemaVersion": 2,
+  "functions": {
+    "createHeGrenade": {
+      "target": {
+        "module": "libserver.so",
+        "pattern": "55 4C 89 C1 48 89 E5 41 57 49 89 FF 41 56 49 89 D6 48 89 F2 48 89 FE 41 55",
+        "validate": {
+          "prologue": "55 4C 89 C1 48 89 E5 41 57 49 89 FF 41 56 49 89 D6 48 89 F2 48 89 FE 41 55",
+          "string-xref": { "at": 25, "dispOff": 3, "instrLen": 7, "expect": "hegrenade_projectile" }
+        }
+      },
+      "receiver": { "type": "none" },
+      // Native command caller 0xd28c30 supplies all four vectors in its stack frame
+      // (-0x60/-0x54/-0x48/-0x3c), calls this factory at 0xd28d0c, then immediately
+      // releases that frame. The factory synchronously copies position/angles/velocity;
+      // it does not retain those caller buffers. This build ignores angular velocity.
+      // Preserve the old seven-argument ABI; team is derived from thrower on this build.
+      "parameters": [
+        { "name": "position", "type": "vector", "ownership": "callee-borrowed" },
+        { "name": "angles", "type": "vector", "ownership": "callee-borrowed" },
+        { "name": "velocity", "type": "vector", "ownership": "callee-borrowed" },
+        { "name": "velocityAngles", "type": "vector", "ownership": "callee-borrowed" },
+        { "name": "thrower", "type": "entity" },
+        { "name": "weaponId", "type": "i32" },
+        { "name": "team", "type": "i32" }
+      ],
+      "returns": "entity?",
+      "surfaces": ["call"]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "plugins/core/src/cs2/bodies.ts": "8823e6441e6002aa7cbef120f058a1462962ad4e2eb9ea3aeff9562ad5df6d51",
+  "plugins/core/src/cs2/interact.ts": "f951efcbcdd2e140914cca663c91e0fe96ee9de2b5d9f493fb8e90a2b64cb71b",
+  "plugins/core/src/cs2/combat.ts": "e8075583b3eb60edac8d108d4dff1428ec50a08bad17741252cbfd3cf140dd10",
+  "plugins/core/src/core/ordered.ts": "fbbd051fcc0d9b9f72ddfdcf7756df4bc9c432bb0467e48d25852bc78c16871a",
+  "plugins/core/src/shop/effects.ts": "68eb810618cb9490f78ea7ab15c0df4bfd905ddcd2a836cc1d10b14180a23053",
+  "plugins/core/src/shop/weaponfx.ts": "2f3ee6beb82e8bf4c5e155c4258cb2a70e94a31fdc5862a766d0839a5707b9ae"
+}

@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": false,
+    "outDir": "types",
+    "rootDir": "src",
+    "target": "ES2024",
+    "lib": [
+      "ES2024"
+    ]
+  },
+  "include": [
+    "src"
+  ]
+}

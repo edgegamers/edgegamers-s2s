@@ -1,0 +1,24 @@
+{
+  "name": "@edgegamers/ttt-public-api-probe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/plugin.ts",
+  "s2script": {
+    "id": "ttt-public-api-probe",
+    "game": "cs2",
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0",
+      "@edgegamers/ttt-karma": "^2.0.0",
+      "@edgegamers/ttt-special": "^2.0.0",
+      "@edgegamers/ttt-world": "^2.0.0",
+      "@edgegamers/ttt-bodies": "^2.0.0",
+      "@edgegamers/ttt-shop": "^2.0.0",
+      "@edgegamers/ttt-ui": "^2.0.0",
+      "@edgegamers/ttt-communication": "^2.0.0",
+      "@edgegamers/ttt-reports": "^2.0.0",
+      "@edgegamers/ttt-items": "^2.0.0"
+    },
+    "interfaceProtocol": 2
+  }
+}

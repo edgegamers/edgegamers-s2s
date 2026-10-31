@@ -1,0 +1,5 @@
+{
+  "Player.Hide.Enabled": "{orange}[Hide]{default} Вы {green}включили{default} скрытие игроков!",
+  "Player.Hide.Disabled": "{orange}[Hide]{default} Вы {lightred}выключили{default} скрытие игроков!",
+  "Player.SaveFailed": "{orange}[Hide]{default} Настройка изменена, но пока не сохранена. Повторяем сохранение, пока вы подключены."
+}

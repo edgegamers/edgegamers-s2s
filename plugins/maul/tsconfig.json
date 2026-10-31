@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ES2024",
+    "lib": [
+      "ES2024"
+    ],
+    "types": [],
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src",
+    ".s2script/gamedata.d.ts",
+    "../../node_modules/@s2script/sdk/globals.d.ts",
+    ".s2script/interfaces.d.ts"
+  ]
+}

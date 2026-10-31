@@ -1,0 +1,223 @@
+/*
+  SurfTimer HUD stylesheet. Server-side we can only flip classes and set strings, so every runtime
+  state is a pre-declared class. Flow layout only (no flex, no top/left): position with align +
+  margin. Validate by loading in game once after every change — the client is the only CSS checker.
+*/
+
+@define accent: #5ce1e6;
+@define good: #7cfc9a;
+@define bad: #ff6b6b;
+@define warn: #ffd166;
+@define purple: #c39bff;
+@define replay: #80d8ff;
+@define dim: #9aa4b2;
+@define panel: #0b0f17d0;
+
+.st-root { width: 100%; height: 100%; }
+
+.st-hidden { opacity: 0; transform: translateY( 8px ); }
+
+/* ---------------------------------------------------------------- main timer block ----------- */
+
+.st-main {
+	horizontal-align: center;
+	vertical-align: bottom;
+	margin-bottom: 150px;
+	width: 360px;
+	flow-children: down;
+	padding: 10px 16px 12px 16px;
+	border-radius: 10px;
+	background-color: panel;
+	box-shadow: #000000a0 0px 4px 18px 0px;
+	border-top: 3px solid #ffffff30;
+	transition-property: opacity, border-top-color, transform;
+	transition-duration: 0.2s;
+}
+
+.st-main.is-running  { border-top-color: good; }
+.st-main.is-start    { border-top-color: accent; }
+.st-main.is-paused   { border-top-color: warn; }
+.st-main.is-practice { border-top-color: purple; }
+.st-main.is-finished { border-top-color: #ffffff; }
+.st-main.is-replay   { border-top-color: replay; }
+
+.st-status {
+	horizontal-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	letter-spacing: 2px;
+	color: dim;
+	text-transform: uppercase;
+}
+.is-start .st-status    { color: accent; }
+.is-paused .st-status   { color: warn; }
+.is-practice .st-status { color: purple; }
+.is-replay .st-status   { color: replay; }
+
+.st-time {
+	horizontal-align: center;
+	font-size: 46px;
+	font-weight: black;
+	color: #ffffff;
+	text-shadow: 0px 2px 6px 2.0 #000000;
+}
+.is-running .st-time  { color: #ffffff; }
+.is-paused .st-time   { color: warn; animation-name: st-blink; animation-duration: 1.2s; animation-iteration-count: infinite; }
+.is-practice .st-time { color: purple; }
+.is-finished .st-time { color: good; }
+.is-replay .st-time   { color: replay; }
+.is-idle .st-time     { color: #ffffff80; }
+
+@keyframes st-blink {
+	0%   { opacity: 1; }
+	50%  { opacity: 0.45; }
+	100% { opacity: 1; }
+}
+
+.st-sub {
+	horizontal-align: center;
+	font-size: 15px;
+	color: #e6e9ef;
+	margin-bottom: 4px;
+}
+
+.st-compare { horizontal-align: center; flow-children: right; }
+.st-pb { font-size: 14px; color: good; margin-right: 14px; }
+.st-wr { font-size: 14px; color: purple; }
+
+.st-speedrow { horizontal-align: center; flow-children: right; margin-top: 6px; }
+.st-speed {
+	font-size: 26px;
+	font-weight: bold;
+	color: #ffffff;
+	transition-property: color;
+	transition-duration: 0.15s;
+}
+.st-speed.up   { color: good; }
+.st-speed.down { color: bad; }
+.st-speed-unit { font-size: 13px; color: dim; vertical-align: bottom; margin-left: 4px; margin-bottom: 5px; }
+
+.st-meter {
+	width: 100%;
+	height: 6px;
+	margin-top: 4px;
+	border-radius: 3px;
+	background-color: #ffffff18;
+}
+.st-meter-fill {
+	height: 100%;
+	border-radius: 3px;
+	background-color: gradient( linear, 0% 0%, 100% 0%, from( #5ce1e6 ), to( #c39bff ) );
+	transition-property: width;
+	transition-duration: 0.1s;
+}
+.s2-w0 { width: 0%; }
+.s2-w1 { width: 10%; }
+.s2-w2 { width: 20%; }
+.s2-w3 { width: 30%; }
+.s2-w4 { width: 40%; }
+.s2-w5 { width: 50%; }
+.s2-w6 { width: 60%; }
+.s2-w7 { width: 70%; }
+.s2-w8 { width: 80%; }
+.s2-w9 { width: 90%; }
+.s2-w10 { width: 100%; }
+
+/* ---------------------------------------------------------------- keys ----------------------- */
+
+.st-keys { horizontal-align: center; flow-children: down; margin-top: 8px; transition-property: opacity; transition-duration: 0.2s; }
+.st-keyrow { horizontal-align: center; flow-children: right; }
+.st-key {
+	width: 34px;
+	height: 26px;
+	margin: 2px;
+	border-radius: 4px;
+	font-size: 14px;
+	font-weight: bold;
+	text-align: center;
+	color: #ffffff50;
+	background-color: #ffffff10;
+	transition-property: background-color, color;
+	transition-duration: 0.05s;
+}
+.st-key-wide { width: 58px; font-size: 12px; }
+.st-key.on { color: #0b0f17; background-color: accent; }
+
+/* ---------------------------------------------------------------- split popup ---------------- */
+
+.st-split {
+	horizontal-align: center;
+	vertical-align: bottom;
+	margin-bottom: 500px;	/* just above the timer block (150px + its ~330px height), clear of the crosshair */
+	flow-children: down;
+	padding: 8px 18px;
+	border-radius: 8px;
+	background-color: panel;
+	transition-property: opacity, transform;
+	transition-duration: 0.18s;
+}
+.st-split-title { horizontal-align: center; font-size: 14px; color: dim; letter-spacing: 1px; text-transform: uppercase; }
+.st-split-time { horizontal-align: center; font-size: 24px; font-weight: bold; color: #ffffff; }
+.st-split-diff { horizontal-align: center; font-size: 18px; font-weight: bold; color: #ffffff; }
+.st-split-diff.good { color: good; }
+.st-split-diff.bad  { color: bad; }
+
+/* ---------------------------------------------------------------- finish card ---------------- */
+
+.st-finish {
+	horizontal-align: center;
+	vertical-align: top;
+	margin-top: 120px;
+	width: 520px;
+	flow-children: down;
+	padding: 14px 20px;
+	border-radius: 12px;
+	background-color: panel;
+	border: 2px solid #ffffff40;
+	box-shadow: #000000b0 0px 6px 24px 0px;
+	transition-property: opacity, transform;
+	transition-duration: 0.25s;
+}
+.st-finish.pb { border: 2px solid #7cfc9a; }
+.st-finish.wr {
+	border: 2px solid #c39bff;
+	box-shadow: #c39bff80 0px 0px 28px 4px;
+	animation-name: st-glow;
+	animation-duration: 1.4s;
+	animation-iteration-count: infinite;
+}
+@keyframes st-glow {
+	0%   { box-shadow: #c39bff60 0px 0px 18px 2px; }
+	50%  { box-shadow: #c39bffc0 0px 0px 36px 8px; }
+	100% { box-shadow: #c39bff60 0px 0px 18px 2px; }
+}
+.st-fin-title { horizontal-align: center; font-size: 20px; font-weight: black; letter-spacing: 3px; color: #ffffff; }
+.st-finish.pb .st-fin-title { color: good; }
+.st-finish.wr .st-fin-title { color: purple; }
+.st-fin-time { horizontal-align: center; font-size: 44px; font-weight: black; color: #ffffff; }
+.st-fin-info { horizontal-align: center; font-size: 15px; color: #e6e9ef; }
+
+/* ---------------------------------------------------------------- leaderboard ---------------- */
+
+.st-lb {
+	horizontal-align: right;
+	vertical-align: center;
+	margin-right: 24px;
+	width: 260px;
+	flow-children: down;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background-color: panel;
+	transition-property: opacity, transform;
+	transition-duration: 0.2s;
+}
+.st-lb-title { font-size: 13px; color: dim; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.st-lb-row { width: 100%; flow-children: right; margin-top: 2px; }
+.st-lb-a { width: fill-parent-flow( 1 ); font-size: 14px; color: #ffffff; text-overflow: ellipsis; white-space: nowrap; }
+.st-lb-b { font-size: 14px; color: accent; }
+.st-lb-row:first-child .st-lb-a { color: purple; }
+
+/* Keep the HUD out of the way of the scoreboard and buy menu (engine-supplied ancestor classes). */
+.HUD_SCOREBOARD_VISIBLE .st-main,
+.HUD_SCOREBOARD_VISIBLE .st-lb,
+.HUD_BUYMENU_VISIBLE .st-main { opacity: 0; }

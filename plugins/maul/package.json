@@ -1,0 +1,98 @@
+{
+  "name": "@edgegamers/s2s-maul",
+  "version": "0.1.1",
+  "main": "src/plugin.ts",
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "description": "MAUL authentication for CS2 \u2014 an s2script port of edgegamers/maul-actain, speaking either the MAUL v1 or v2 API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/maul"
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "test": "bun test"
+  },
+  "s2script": {
+    "id": "maul",
+    "game": "cs2",
+    "optionalPluginDependencies": {
+      "@s2script/basebans": "^1.0.0"
+    },
+    "interfaceProtocol": 2,
+    "config": {
+      "maul_url": {
+        "type": "string",
+        "default": "https://maul3.edgegamers.com/api",
+        "description": "MAUL API root. Requests go to {root}/v1/... or {root}/v2/... per api_version; a trailing /v1 or /v2 is stripped, so https://maul3.edgegamers.com/api/v2 also works."
+      },
+      "maul_key": {
+        "type": "string",
+        "default": "",
+        "description": "MAUL API key, sent raw in the AUTHORIZATION header. Empty = authentication disabled."
+      },
+      "api_version": {
+        "type": "string",
+        "default": "v1",
+        "description": "Which MAUL API to speak: 'v1' (legacy base64-path) or 'v2' (maul3 JSON). Changing it needs a plugin reload."
+      },
+      "server_ip": {
+        "type": "string",
+        "default": "",
+        "description": "v1 only: override for the REQUEST_IP header. Empty = derive from the hostip/ip cvars. v2 identifies the server from its API key."
+      },
+      "server_port": {
+        "type": "int",
+        "default": 0,
+        "description": "v1 only: override for the REQUEST_PORT header. 0 = derive from the hostport cvar."
+      },
+      "ip_arg_encoding": {
+        "type": "string",
+        "default": "plain",
+        "description": "v1 only: encoding of the client-IP arg on info: 'plain' (maul-legacy), 'base64' (maul3), or 'omit'."
+      },
+      "user_agent": {
+        "type": "string",
+        "default": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36",
+        "description": "User-Agent sent with API calls. Required for maul3 (Cloudflare 403s unrecognised agents). Empty = send none."
+      },
+      "eventserver": {
+        "type": "bool",
+        "default": false,
+        "description": "Grant event-gated ranks (those marked \"special\" in the ranks table)."
+      },
+      "autotag": {
+        "type": "bool",
+        "default": true,
+        "description": "Rename players to \"<rank tag> <MAUL name>\"."
+      },
+      "join_message": {
+        "type": "bool",
+        "default": true,
+        "description": "Broadcast a Dedicated Supporter's join message on their first join."
+      },
+      "http_timeout_ms": {
+        "type": "int",
+        "default": 8000,
+        "description": "Per-request timeout for MAUL API calls."
+      },
+      "debug": {
+        "type": "bool",
+        "default": false,
+        "description": "Verbose logging, including request URLs and response bodies."
+      },
+      "presence": {
+        "type": "bool",
+        "default": false,
+        "description": "v2 only: push this server's live roster to MAUL's presence dashboard over the v2 WebSocket. Off by default \u2014 an upgraded server should not start reporting its roster without being asked."
+      },
+      "presence_interval_ms": {
+        "type": "int",
+        "default": 15000,
+        "description": "How often to send a full roster snapshot, in ms. Reported to MAUL as cadenceMs \u2014 it derives its freshness window from this, so a value far below the default only makes the server look stale when one frame is missed. Floored at 5000."
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "@edgegamers/jailbreak-core",
+  "version": "1.1.0",
+  "description": "Jailbreak round state, rebels, cells and the round log.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "s2script": {
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "libraries": {
+      "@edgegamers/jailbreak-shared": "^1.0.0"
+    },
+    "optionalPluginDependencies": {
+      "@s2script/zones": "^1.0.0"
+    },
+    "config": {
+      "rebel_time": {
+        "type": "int",
+        "default": 45,
+        "description": "Seconds a prisoner stays a rebel after hurting a guard (css_edgegamers_jailbreak-rebel_time)."
+      },
+      "c4_give": {
+        "type": "bool",
+        "default": true,
+        "description": "Give a random prisoner a jihad C4 at the start of every round (css_edgegamers_jailbreak-c4_give)."
+      },
+      "c4_delay": {
+        "type": "float",
+        "default": 0.75,
+        "description": "Seconds between arming the jihad C4 and the explosion (css_edgegamers_jailbreak-c4_delay)."
+      },
+      "c4_radius": {
+        "type": "float",
+        "default": 350,
+        "description": "Jihad C4 explosion radius in units (css_edgegamers_jailbreak-c4_radius)."
+      },
+      "c4_damage": {
+        "type": "float",
+        "default": 340,
+        "description": "Jihad C4 damage at the centre; falls off linearly to 0 at the radius (css_edgegamers_jailbreak-c4_damage)."
+      },
+      "opencells_delay": {
+        "type": "int",
+        "default": 60,
+        "description": "Seconds after round start to auto-open the cells; -1 disables (css_edgegamers_jailbreak-warden_opencells_delay)."
+      },
+      "opencells_snitch": {
+        "type": "bool",
+        "default": false,
+        "description": "When cells auto-open, say how many prisoners were still inside (css_edgegamers_jailbreak-warden_auto_snitch)."
+      },
+      "logs_allow_dead": {
+        "type": "bool",
+        "default": false,
+        "description": "Also let dead players use !logs (the C# only allowed admins)."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/jb/plugins/core"
+  },
+  "dependencies": {
+    "@edgegamers/jailbreak-shared": "1.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.ts"
+  }
+}

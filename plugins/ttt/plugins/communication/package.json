@@ -1,0 +1,35 @@
+{
+  "name": "@edgegamers/ttt-communication",
+  "version": "2.0.5",
+  "type": "module",
+  "description": "Existing-port private chat relay and logical-life voice routing",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "id": "ttt-communication",
+    "game": "cs2",
+    "publishes": {
+      "@edgegamers/ttt-communication": "2.0.0"
+    },
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/ttt-core": "^2.0.0"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/ttt/plugins/communication"
+  },
+  "dependencies": {
+    "@edgegamers/ttt-contracts": "1.0.0"
+  }
+}

@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: registry-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm install --global npm@11.19.0
+      - run: npm ci
+      - run: npm run version
+      - run: npm run check
+      - name: Persist release versions
+        id: versions
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          bash .github/scripts/commit-release.sh
+      - name: Publish to s2script
+        if: steps.versions.outputs.publish == 'true'
+        env:
+          S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+        run: npm run deploy

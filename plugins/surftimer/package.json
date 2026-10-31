@@ -1,0 +1,12 @@
+{
+  "name": "@edgegamers/surftimer",
+  "description": "SurfTimer for CS2, including the timer and HUD.",
+  "license": "GPL-3.0-or-later",
+  "s2script": {
+    "kind": "bundle"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.1.0"
+}

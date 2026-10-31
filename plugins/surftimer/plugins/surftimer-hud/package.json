@@ -1,0 +1,54 @@
+{
+  "name": "@edgegamers/surftimer-hud",
+  "version": "0.1.0",
+  "description": "Panorama HUD for @edgegamers/surftimer-core: live timer, splits, speed meter, keys, finish cards, leaderboard and spectator/replay views, with a center-HTML fallback.",
+  "license": "GPL-3.0-or-later",
+  "main": "src/plugin.ts",
+  "dependencies": {
+    "@edgegamers/surftimer-shared": "0.1.0"
+  },
+  "s2script": {
+    "interfaceProtocol": 2,
+    "pluginDependencies": {
+      "@edgegamers/surftimer-core": "^0.1.0"
+    },
+    "config": {
+      "mode": {
+        "type": "string",
+        "default": "auto",
+        "description": "auto | panorama | center | off. auto uses Panorama when workshop_addon is set, else the center-HTML panel."
+      },
+      "workshop_addon": {
+        "type": "string",
+        "default": "",
+        "description": "Workshop id of the published hud/workshop addon (clients mount it via MultiAddonManager)."
+      },
+      "rate_hz": {
+        "type": "int",
+        "default": 10,
+        "description": "HUD refreshes per second per player (staggered across ticks). 4-32."
+      },
+      "speed_max": {
+        "type": "float",
+        "default": 3500,
+        "description": "Speed (u/s) that fills the speed meter."
+      },
+      "time_decimals": {
+        "type": "int",
+        "default": 2,
+        "description": "Decimals on the live timer (0-3)."
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/surftimer/plugins/surftimer-hud"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

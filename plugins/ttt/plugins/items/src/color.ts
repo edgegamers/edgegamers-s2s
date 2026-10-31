@@ -1,0 +1,90 @@
+import {entityInput} from './lifecycle';
+/**
+ * Entity tint and transparency — the port of `PlayerExtensions.SetColor` and its callers.
+ *
+ * The C# wrote `m_clrRender` directly. That field is not in the s2script generated schema, so this
+ * goes through the entity's own `Color` / `Alpha` inputs instead (`AddEntityIOEvent`, exposed as
+ * `EntityRef.acceptInput`) — the same inputs a map would use on a `prop_dynamic`. Source parses the
+ * value string per the input's field type, so `Color` takes `"R G B"` and `Alpha` takes `"0".."255"`.
+ *
+ * What this is used for, all of it player-visible:
+ *   - a dead player's pawn is made fully transparent, so nobody sees a corpse-less body standing
+ *     around before the ragdoll is found (`BodySpawner.OnDeath`);
+ *   - a ragdoll is tinted with its owner's role colour once identified (`BodyPickupListener`);
+ *   - Camouflage lowers a Traitor's alpha (`Items/Camouflage`).
+ */
+
+import type { EntityRef } from "@s2script/sdk/entity";
+import { RoleId } from "./runtime";
+import { pawnOf } from "./runtime";
+
+/** An RGB triple. */
+export interface Rgb {
+  r: number;
+  g: number;
+  b: number;
+}
+
+/** Role colours, matching the C# `IRole.Color` values. */
+export const ROLE_COLORS: Readonly<Record<number, Rgb>> = {
+  [RoleId.Innocent]: { r: 50, g: 205, b: 50 }, // LimeGreen
+  [RoleId.Traitor]: { r: 255, g: 0, b: 0 }, // Red
+  [RoleId.Detective]: { r: 30, g: 144, b: 255 }, // DodgerBlue
+  [RoleId.Spectator]: { r: 128, g: 128, b: 128 }, // Gray
+};
+
+/** Plain white, fully opaque — the reset state. */
+export const WHITE: Rgb = { r: 255, g: 255, b: 255 };
+
+/** Tint an entity. Returns false if the input could not be fired. */
+export function setEntityColor(ref: EntityRef, c: Rgb): boolean {
+  return entityInput(ref, "Color", `${c.r | 0} ${c.g | 0} ${c.b | 0}`);
+}
+
+/** Set an entity's opacity, 0 (invisible) to 255 (opaque). */
+export function setEntityAlpha(ref: EntityRef, alpha: number): boolean {
+  const a = alpha < 0 ? 0 : alpha > 255 ? 255 : alpha | 0;
+  return entityInput(ref, "Alpha", String(a));
+}
+
+/** Tint a player's pawn. */
+export function setPawnColor(slot: number, c: Rgb): boolean {
+  const pawn = pawnOf(slot);
+  if (pawn === null || !pawn.isValid) return false;
+  return setEntityColor(pawn.ref, c);
+}
+
+/** Set a player pawn's opacity. */
+export function setPawnAlpha(slot: number, alpha: number): boolean {
+  const pawn = pawnOf(slot);
+  if (pawn === null || !pawn.isValid) return false;
+  return setEntityAlpha(pawn.ref, alpha);
+}
+
+/** Restore a pawn to opaque white (round start, respawn). */
+export function resetPawnColor(slot: number): void {
+  setPawnColor(slot, WHITE);
+  setPawnAlpha(slot, 255);
+}
+
+/**
+ * Tint a corpse.
+ *
+ * A TTT corpse is TWO entities: the tracked `prop_ragdoll` anchor (invisible on this build — its
+ * character model never becomes resident) and the victim's own pawn ragdoll, which is the body
+ * players actually see. Tinting only the anchor is a no-op on screen, so both are coloured: the
+ * anchor for consistency if a future runtime ever renders it, the pawn because that is the one with
+ * pixels.
+ *
+ * The pawn tint is undone by `resetPawnColor` when its owner respawns.
+ */
+export function colorCorpse(ref: EntityRef, ownerSlot: number, c: Rgb): void {
+  setEntityColor(ref, c);
+  setPawnColor(ownerSlot, c);
+}
+
+/** Tint a corpse with the role its owner turned out to be. */
+export function colorBody(ref: EntityRef, ownerSlot: number, role: RoleId): void {
+  const c = ROLE_COLORS[role];
+  if (c !== undefined) colorCorpse(ref, ownerSlot, c);
+}

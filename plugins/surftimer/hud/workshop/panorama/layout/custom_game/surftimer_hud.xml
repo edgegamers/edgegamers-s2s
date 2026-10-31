@@ -1,0 +1,81 @@
+<!--
+  SurfTimer HUD — custom_hud_layout for @s2script/surftimer-hud.
+
+  The server drives this only through dialog variables ({s:…}) and classes; there is no client
+  script. Every panel id below is also its dialog variable name, which is what HudPlayer.set uses.
+  Status (is-*), speed trend (up/down), key (on), split (good/bad) and finish (wr/pb) states are
+  classes so a state change costs one class flip, not a restyle.
+
+  Include MUST be file://{resources}/… pointing at the source .css (an s2r:// include compiles
+  clean and ships unstyled). The root Panel may not carry an id.
+-->
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/surftimer_hud.css" />
+	</styles>
+	<Panel class="st-root">
+		<Panel id="st_main" class="st-main is-idle">
+			<Label id="st_status" class="st-status" text="{s:st_status}" />
+			<Label id="st_time" class="st-time" text="{s:st_time}" />
+			<Label id="st_sub" class="st-sub" text="{s:st_sub}" />
+			<Panel class="st-compare">
+				<Label id="st_pb" class="st-pb" text="{s:st_pb}" />
+				<Label id="st_wr" class="st-wr" text="{s:st_wr}" />
+			</Panel>
+			<Panel class="st-speedrow">
+				<Label id="st_speed" class="st-speed" text="{s:st_speed}" />
+				<Label class="st-speed-unit" text="u/s" />
+			</Panel>
+			<Panel class="st-meter">
+				<Panel id="st_speedfill" class="st-meter-fill s2-w0" />
+			</Panel>
+			<Panel id="st_keys" class="st-keys">
+				<Panel class="st-keyrow">
+					<Label id="k_w" class="st-key" text="W" />
+				</Panel>
+				<Panel class="st-keyrow">
+					<Label id="k_a" class="st-key" text="A" />
+					<Label id="k_s" class="st-key" text="S" />
+					<Label id="k_d" class="st-key" text="D" />
+				</Panel>
+				<Panel class="st-keyrow">
+					<Label id="k_duck" class="st-key st-key-wide" text="DUCK" />
+					<Label id="k_jump" class="st-key st-key-wide" text="JUMP" />
+				</Panel>
+			</Panel>
+		</Panel>
+		<Panel id="st_split" class="st-split st-hidden">
+			<Label id="st_split_title" class="st-split-title" text="{s:st_split_title}" />
+			<Label id="st_split_time" class="st-split-time" text="{s:st_split_time}" />
+			<Label id="st_split_diff" class="st-split-diff" text="{s:st_split_diff}" />
+		</Panel>
+		<Panel id="st_finish" class="st-finish st-hidden">
+			<Label id="st_fin_title" class="st-fin-title" text="{s:st_fin_title}" />
+			<Label id="st_fin_time" class="st-fin-time" text="{s:st_fin_time}" />
+			<Label id="st_fin_info" class="st-fin-info" text="{s:st_fin_info}" />
+		</Panel>
+		<Panel id="st_lb" class="st-lb st-hidden">
+			<Label id="st_lb_title" class="st-lb-title" text="{s:st_lb_title}" />
+			<Panel id="st_lb_r0" class="st-lb-row">
+				<Label id="st_lb_r0_a" class="st-lb-a" text="{s:st_lb_r0_a}" />
+				<Label id="st_lb_r0_b" class="st-lb-b" text="{s:st_lb_r0_b}" />
+			</Panel>
+			<Panel id="st_lb_r1" class="st-lb-row">
+				<Label id="st_lb_r1_a" class="st-lb-a" text="{s:st_lb_r1_a}" />
+				<Label id="st_lb_r1_b" class="st-lb-b" text="{s:st_lb_r1_b}" />
+			</Panel>
+			<Panel id="st_lb_r2" class="st-lb-row">
+				<Label id="st_lb_r2_a" class="st-lb-a" text="{s:st_lb_r2_a}" />
+				<Label id="st_lb_r2_b" class="st-lb-b" text="{s:st_lb_r2_b}" />
+			</Panel>
+			<Panel id="st_lb_r3" class="st-lb-row">
+				<Label id="st_lb_r3_a" class="st-lb-a" text="{s:st_lb_r3_a}" />
+				<Label id="st_lb_r3_b" class="st-lb-b" text="{s:st_lb_r3_b}" />
+			</Panel>
+			<Panel id="st_lb_r4" class="st-lb-row">
+				<Label id="st_lb_r4_a" class="st-lb-a" text="{s:st_lb_r4_a}" />
+				<Label id="st_lb_r4_b" class="st-lb-b" text="{s:st_lb_r4_b}" />
+			</Panel>
+		</Panel>
+	</Panel>
+</root>

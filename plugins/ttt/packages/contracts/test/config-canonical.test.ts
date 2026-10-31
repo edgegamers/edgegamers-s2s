@@ -1,0 +1,9 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createOwnerConfig,parseJsonc} from '../config.ts';
+const aliases=[{name:'sm_ttt_minimum_players',path:'round.minimumPlayers',type:'int',default:2,min:2,max:64,help:'Players'}];
+const extra=[{path:'phrases_file',type:'string',default:''}];
+function fixture(){let file='{"round":{"minimumPlayers":2},"phrases_file":"operator.phrases.json"}';const registered=[],values=new Map(),hooks=new Map();const io={read:()=>file,write:s=>{file=s},register:s=>{registered.push(s.name);values.set(s.name,String(s.default))},getAlias:n=>values.get(n)??'',setAlias:(n,v)=>{const old=values.get(n)??'';values.set(n,v);hooks.get(n)?.(n,v,old)},watchAlias:(n,h)=>{hooks.set(n,h);return {dispose:()=>hooks.delete(n)}},log(){}};const a=createOwnerConfig(aliases,parseJsonc(file),io,extra);return {a,io,registered,hooks,get file(){return file},disk:s=>{file=s}};}
+test('canonical-only phrases_file survives alias persistence without an invented engine alias',()=>{const f=fixture();f.io.setAlias('sm_ttt_minimum_players','5');assert.equal(parseJsonc(f.file).phrases_file,'operator.phrases.json');assert.deepEqual(f.registered,['sm_ttt_minimum_players']);assert.equal(f.a.refresh().round.minimumPlayers,5);});
+test('pending canonical-only edit is preserved by later alias writes',()=>{const f=fixture();f.disk('{"round":{"minimumPlayers":2},"phrases_file":"next.json"}');f.a.acceptMaterialized(parseJsonc(f.file));f.io.setAlias('sm_ttt_minimum_players','6');assert.equal(parseJsonc(f.file).phrases_file,'next.json');});
+test('duplicate canonical paths are rejected before any alias registration',()=>{let count=0;assert.throws(()=>createOwnerConfig(aliases,{}, {read:()=>null,write(){},register(){count++},getAlias:()=>'',setAlias(){},watchAlias:()=>({dispose(){}}),log(){}},[{path:'round.minimumPlayers',type:'int',default:8}]),/duplicate/i);assert.equal(count,0);});
