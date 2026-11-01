@@ -1,5 +1,12 @@
 # @edgegamers/s2s-maul
 
+## 0.1.5
+
+### Patch Changes
+
+- 4d3e62a: Render all SDK chat color tags in MAUL phrase overrides, including green and white, while preserving authored supporter message bodies. Decouple behavior tests from editable catalogs and presentation choices.
+- e34c762: Match old Colors of DS Join Message
+
 ## 0.1.4
 
 ### Patch Changes
