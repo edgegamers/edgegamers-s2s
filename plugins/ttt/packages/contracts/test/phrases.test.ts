@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {createContext, runInContext} from 'node:vm';
 import {build} from 'esbuild';
 
-// The shared formatter and the real phrase file, against a copy of the s2script prelude's
+// The shared formatter with controlled templates, against a copy of the s2script prelude's
 // Translations (load/translate/format, including its brace strip on substituted values).
 const sdk = `
 const reg = {}; const fileRoot = globalThis.fixture.root; const langs = globalThis.fixture.langs;
@@ -39,10 +38,15 @@ const bundle = await build({
       a.path === '@s2script/sdk/chat' ? 'export const Chat={toSlot:(slot,text)=>{fixture.messages.push({slot,text});fixture.onSend?.();},toAll:text=>fixture.messages.push({slot:-1,text})};' : colors, loader: 'js'}));
   }}],
 });
-const file = JSON.parse(readFileSync(new URL('../../../translations/ttt.phrases.json', import.meta.url), 'utf8'));
+const templates = {
+  ROLE_ASSIGNED: 'Assigned <role> {yellow}{1}{grey}', COMMAND_BALANCE: 'Funds {yellow}{1}{grey}',
+  GAME_STATE_STARTING: 'Wait {yellow}{1}{grey}', SHOP_ITEM_TRIPWIRE_DEFUSING: 'Defuse {1}: {2}',
+  BODY_IDENTIFIED: '{blue}{1}{grey} / {2} / {3}', SHOP_INACTIVE: 'Closed fixture',
+  ROLE_TRAITOR: 'Fixture role', LOGS_VIEWED_ALIVE: 'Viewer {1}',
+};
 
 function load(root: Record<string, Record<string, string>> = {}, langs: Record<string, Record<string, Record<string, string>>> = {}) {
-  const fixture = {root, langs, language: {} as Record<number, string>, messages: [] as {slot:number,text:string}[]};
+  const fixture = {root: {ttt: {...templates, ...root.ttt}}, langs, language: {} as Record<number, string>, messages: [] as {slot:number,text:string}[]};
   const module = {exports: {} as any};
   runInContext(bundle.outputFiles[0]!.text, createContext({module, exports: module.exports, fixture}));
   module.exports.loadPhrases();
@@ -51,10 +55,10 @@ function load(root: Record<string, Record<string, string>> = {}, langs: Record<s
 
 test('phrases render through the SDK with colours, arguments and number formatting', () => {
   const p = load();
-  assert.match(p.phraseFor(-1, 'ROLE_ASSIGNED', 'Traitor'), /Your role: <Yellow>Traitor<Grey>/);
+  assert.match(p.phraseFor(-1, 'ROLE_ASSIGNED', 'Traitor'), /Assigned <role> <Yellow>Traitor<Grey>/);
   assert.match(p.phraseFor(-1, 'COMMAND_BALANCE', 3), /<Yellow>3<Grey>/);
-  assert.match(p.phraseFor(-1, 'GAME_STATE_STARTING', 2.5), /<Yellow>2.5 seconds<Grey>/);
-  assert.equal(p.phraseFor(-1, 'SHOP_ITEM_TRIPWIRE_DEFUSING', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
+  assert.match(p.phraseFor(-1, 'GAME_STATE_STARTING', 2.5), /<Yellow>2.5<Grey>/);
+  assert.equal(p.phraseFor(-1, 'SHOP_ITEM_TRIPWIRE_DEFUSING', 'Bob', 1.23456), 'Defuse Bob: 1.23');
   assert.equal(p.phraseFor(-1, 'NO_SUCH_PHRASE'), 'NO_SUCH_PHRASE', 'an unknown key renders as itself');
 });
 
@@ -70,14 +74,14 @@ test('the deployed file and per-language files override the bundled English', ()
   p.fixture.language[3] = 'de';
   assert.equal(p.phraseFor(-1, 'COMMAND_BALANCE', 7), 'Balance: 7');
   assert.equal(p.phraseFor(3, 'COMMAND_BALANCE', 7), 'Guthaben: 7');
-  assert.match(p.phraseFor(3, 'SHOP_INACTIVE'), /shop is currently closed/, 'missing translation falls back to English');
+  assert.match(p.phraseFor(3, 'SHOP_INACTIVE'), /Closed fixture/, 'missing translation falls back to English');
 });
 
 test('plain sinks resolve the same locale without chat colors or leaking color arguments', () => {
   const p = load({}, { de: { ttt: { DNA_TRACK_IDENTIFIED: 'Erkannt: {1}' } } });
   p.fixture.language[3] = 'de';
   assert.equal(p.plainPhraseFor(3, 'DNA_TRACK_IDENTIFIED', '{red}Eve'), 'Erkannt: redEve');
-  assert.equal(p.plainPhraseFor(-1, 'ROLE_TRAITOR'), 'Traitor');
+  assert.equal(p.plainPhraseFor(-1, 'ROLE_TRAITOR'), 'Fixture role');
   assert.doesNotMatch(p.plainPhraseFor(-1, 'BODY_IDENTIFIED', 'Alice', 'Bob', 'Traitor'), /<Blue>|<Grey>|<Yellow>|\{[a-z]+\}|[\x01-\x10]/);
 });
 
@@ -89,7 +93,7 @@ test('one broadcast resolves each recipient independently with English fallback'
   assert.equal(p.fixture.messages[0].slot, 3);
   assert.equal(p.fixture.messages[0].text, 'Guthaben: 7');
   assert.equal(p.fixture.messages[1].slot, 4);
-  assert.match(p.fixture.messages[1].text, /7.*point/);
+  assert.match(p.fixture.messages[1].text, /Funds <Yellow>7<Grey>/);
 });
 
 test('event broadcasts keep captured names when a native send reenters and renames the actor',()=>{

@@ -40,4 +40,6 @@ Test external behavior at the highest useful boundary. Keep coverage for gamepla
 
 Temporary tests and development probes are welcome. Remove them after use when they only freeze source text, folder layout, command wording, snapshots of implementation details or other noncritical choices. A permanent test should catch a real regression while allowing the implementation to change.
 
+Give behavior tests controlled phrases, settings, prices and display data. Routine edits to shipped wording, translations, colors, labels, layout, catalog size, prices or default values must not require test updates. Verify the behavior using those inputs: recipient language and fallback, argument substitution, escaping, private audiences, authorization, debits/grants, persistence and lifecycle boundaries. Keep exact assertions for protocol identifiers and persisted data contracts. Before retaining an assertion, name the bug it would catch; remove assertions that only record an editable product choice.
+
 Run `npm run check` before submitting. A native build includes SDK type and safety checks; a passing local suite does not replace testing a plugin on a compatible game host.

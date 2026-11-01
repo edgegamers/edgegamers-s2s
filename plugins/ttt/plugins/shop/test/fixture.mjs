@@ -4,7 +4,32 @@ import {configFixture} from '../../../packages/contracts/test/config-runtime.mjs
 import {SPECS} from '../src/settings-specs.ts';
 import {translationsVia,ChatColors as testChatColors} from '../../../packages/contracts/test/translations-double.mjs';
 export const copy=x=>JSON.parse(JSON.stringify(x));
-export function fixture(code,configuration=configFixture(SPECS)){
+const economyInputs={
+  "sm_ttt_shop_start_innocent": 60,
+  "sm_ttt_shop_start_traitor": 100,
+  "sm_ttt_shop_start_detective": 120,
+  "sm_ttt_shop_inno_v_inno": -4,
+  "sm_ttt_shop_inno_v_traitor": 8,
+  "sm_ttt_shop_inno_v_detective": -6,
+  "sm_ttt_shop_traitor_v_traitor": -5,
+  "sm_ttt_shop_traitor_v_inno": 4,
+  "sm_ttt_shop_traitor_v_detective": 6,
+  "sm_ttt_shop_detective_v_detective": -8,
+  "sm_ttt_shop_detective_v_inno": -6,
+  "sm_ttt_shop_detective_v_traitor": 8,
+  "sm_ttt_shop_any_kill": 2,
+  "sm_ttt_shop_assist_multiplier": 0.5,
+  "sm_ttt_shop_solo_kill_multiplier": 1.5,
+  "sm_ttt_shop_reward_interval": 30,
+  "sm_ttt_shop_reward_min": 2,
+  "sm_ttt_shop_reward_max": 15,
+  "sm_ttt_shop_armor_price": 75,
+  "sm_ttt_shop_healthshot_price": 40,
+  "sm_ttt_shop_healthstation_price": 50,
+  "sm_ttt_shop_onedeagle_price": 130,
+  "sm_ttt_shop_c4_price": 130
+};
+export function fixture(code,configuration=configFixture(SPECS,economyInputs)){
  let methods;const trace=[],chat=[],slots=[0,1,2],roles=[1,2,3],alive=[true,true,true],connected=[true,true,true],karma=[50,100,90],positions=[{x:0,y:0,z:0},{x:0,y:0,z:0},{x:0,y:0,z:0}];
  const game={state:2,winner:0,startedAt:0,participants:3,roundsThisMap:1,epoch:1};
  const sdkPlayer={fromSlot:s=>connected[s]?{pawn:{origin:positions[s]}}:null};

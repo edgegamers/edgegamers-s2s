@@ -1,5 +1,4 @@
 import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
 import {
   DEFAULT_RANK_TABLE,
   RANK_TABLE_TEMPLATE,
@@ -28,23 +27,7 @@ describe("RANK_TABLE_TEMPLATE", () => {
     expect(parseRankTable(RANK_TABLE_TEMPLATE)).toEqual(DEFAULT_RANK_TABLE);
   });
 
-  it("matches the file shipped in configs/", () => {
-    const shipped = readFileSync(
-      new URL("../configs/maul_authentication.json", import.meta.url),
-      "utf8",
-    );
-    expect(parseRankTable(shipped)).toEqual(DEFAULT_RANK_TABLE);
-  });
-
-  it("carries the ranks the SM authentication.cfg defines", () => {
-    // sm/maul/configs/maul/authentication.cfg
-    expect(Object.keys(DEFAULT_RANK_TABLE.ranks).sort()).toEqual(
-      ["10", "20", "30", "31", "32", "50", "60", "70", "90", "91"].sort(),
-    );
-    expect(DEFAULT_RANK_TABLE.ranks["31"]).toEqual({ group: "trainer", special: true });
-    expect(DEFAULT_RANK_TABLE.ranks["30"]).toEqual({ group: "ego", tag: "=(eGO)=" });
-  });
-});
+    });
 
 describe("parseRankTable", () => {
   it("accepts SM's \"1\"/\"0\" strings for special", () => {

@@ -8,13 +8,13 @@ test('shop uses at most one fresh model per stock paint plus its initial open va
  f.core.getUiShop=a=>{views++;return read(a);};
  assert.equal(f.api.openShop(f.actor(1)),true);
  assert.equal(views,2,'initial validation plus one collected paint');
- assert.equal(f.titles('TTT Shop',1).length,1);
+ assert.equal(f.titles('UI_SHOP_TITLE',1).length,1);
  f.clear();views=0;f.balance=6;f.items[1].description='Fresh detail';
  f.click(1,'s2_m0_r1');
  assert.equal(views,1,'selection must collect one full shop model');
- assert.equal(f.titles('TTT Shop',1).length,1);
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='6 credits'));
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_d3'&&w.value==='Fresh detail'));
+ assert.equal(f.titles('UI_SHOP_TITLE',1).length,1);
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:6'));
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.value==='Fresh detail'));
  f.clear();views=0;f.frame();assert.equal(views,0);assert.equal(f.writes.length,0);
 });
 
@@ -24,12 +24,12 @@ test('one paint uses a copied collection while its next paint and purchase read 
  f.core.getUiShop=a=>{const view=read(a);afterRead=true;return view;};
  f.core.matchesUiActor=a=>{if(afterRead&&++checks===2){f.balance=99;f.items[1].name='Later';}return match(a);};
  f.click(1,'s2_m0_r1');
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='10 credits'));
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_d0'&&w.value==='Beta'));
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:10'));
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.value==='Beta'));
  f.clear();f.click(1,'s2_m0_r1');
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='99 credits'));
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_d0'&&w.value==='Later'));
- f.button(1,'TTT Shop','Buy');assert.deepEqual(f.calls[0],['buy',1,'b']);
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:99'));
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.value==='Later'));
+ f.button(1,'UI_SHOP_TITLE','UI_BUY');assert.deepEqual(f.calls[0],['buy',1,'b']);
 });
 
 test('nested same-slot stock paint supersedes the outer copied projection',()=>{
@@ -41,10 +41,10 @@ test('nested same-slot stock paint supersedes the outer copied projection',()=>{
   return match(a);
  };
  f.click(1,'s2_m0_r1');
- assert.equal(f.titles('TTT Shop',1).length,1);
- assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='31 credits'));
- assert.equal(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='10 credits'),false);
- f.clear();f.click(1,'s2_m0_r1');assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_d0'&&w.value==='Nested'));
+ assert.equal(f.titles('UI_SHOP_TITLE',1).length,1);
+ assert.ok(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:31'));
+ assert.equal(f.writes.some(w=>w.op==='set'&&w.id==='s2_m0_sub'&&w.value==='UI_CREDITS:10'),false);
+ f.clear();f.click(1,'s2_m0_r1');assert.ok(f.writes.some(w=>w.op==='set'&&w.value==='Nested'));
 });
 
 test('paint collection retires on successor, later round, reset, or owner end before native submission',()=>{

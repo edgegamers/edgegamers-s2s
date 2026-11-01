@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {messages} from '../../../packages/shared/test/message-fixture.mjs';
 
 test('LR outcome selection uses the result code when a participant has left', async () => {
-  const msg=await messages('lastrequest');
+  const msg=await messages('lastrequest',{JB_LASTREQUEST_DECIDED_3:'{1}: prisoner left'});
   const line=msg.decided('prisoner_win','Alice','Bob',false,true);
   assert.match(line,/Bob/);
   assert.match(line,/prisoner left/);

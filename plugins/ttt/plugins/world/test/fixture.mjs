@@ -34,7 +34,7 @@ export function nativeReadCounter(f) {
  return {counts,get interopCalls(){return interopCalls;},reset(){interopCalls=0;for(const key of Object.keys(counts))counts[key]=0;},total(){return Object.entries(counts).filter(([key])=>key!=='observations'&&key!=='contextCaptures'&&key!=='contextGuards'&&key!=='matches').reduce((total,[,count])=>total+count,0);}};
 }
 export function fixture(code, existingConfig=null) {
- const cf=existingConfig??configFixture(SPECS);
+ const cf=existingConfig??configFixture(SPECS,{sm_ttt_icons_enabled:true,sm_ttt_role_panels:false,sm_ttt_role_glow_seconds:0});
  let methods;let serial=100;let filtering=true;const ops=[],entities=[],timers=[],precache=[],players=new Map(),clients=new Map();
  const game={state:2,participants:3,roundsThisMap:1,winner:0,startedAt:0,epoch:1};
  const settings=new Proxy({}, {get:(_target,key)=>methods.getRoundSettings()[key],set:(_target,key,value)=>{cf.edit(key,value);methods.refreshSettings();return true;}});

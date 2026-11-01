@@ -19,6 +19,6 @@ test('archive settings promotion preserves pre-boundary values, then reloads can
  f.configuration.server.setCvar('sm_ttt_special_speed_initial','55');f.context.module.exports.OnPluginEnd();f.configuration.materialize();const g=fixture(members['plugin.js'],f.configuration);assert.equal(g.methods.getRoundSettings().speed.initialSeconds,55);
 });
 test('archive exact Special schema uses SDK defaults for invalid JSON and legacy clamp for aliases',()=>{
- const m=JSON.parse(members['manifest.json']);for(const spec of SPECS){const decl=spec.path.split('.').reduce((v,k)=>v[k],m.config);assert.equal(decl.type,spec.type);assert.equal(decl.default,spec.default);assert.equal(decl.min,spec.min);assert.equal(decl.max,spec.max);assert.equal(decl.description,spec.help);}assert.equal(SPECS.length,11);
- const f=fixture(members['plugin.js']);f.configuration.edit('speed.initialSeconds',999);assert.equal(f.methods.refreshSettings().speed.initialSeconds,40);f.configuration.server.setCvar('sm_ttt_special_speed_initial','999');assert.equal(f.methods.refreshSettings().speed.initialSeconds,600);
+ const m=JSON.parse(members['manifest.json']);for(const spec of SPECS){const decl=spec.path.split('.').reduce((v,k)=>v[k],m.config);assert.equal(decl.type,spec.type);assert.equal(decl.default,spec.default);assert.equal(decl.min,spec.min);assert.equal(decl.max,spec.max);}
+ const spec=SPECS.find(s=>s.path==='speed.initialSeconds'),invalid=spec.max+1;const f=fixture(members['plugin.js']);f.configuration.edit('speed.initialSeconds',invalid);assert.equal(f.methods.refreshSettings().speed.initialSeconds,spec.default);f.configuration.server.setCvar('sm_ttt_special_speed_initial',String(invalid));assert.equal(f.methods.refreshSettings().speed.initialSeconds,spec.max);
 });

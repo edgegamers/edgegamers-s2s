@@ -6,7 +6,7 @@ import {allRecipe} from './player-all-reference.js';
 import assert from 'node:assert/strict';
 export const copy=v=>JSON.parse(JSON.stringify(v));
 export function fixture(code,existingConfig=null){
- const cf=existingConfig??configFixture(SPECS,{sm_ttt_carry_body_offset:32});
+ const cf=existingConfig??configFixture(SPECS,{sm_ttt_carry_body_offset:32,sm_ttt_bodies_enabled:true,sm_ttt_body_settle:true,sm_ttt_body_hidepawn:true,sm_ttt_prop_pickup:true});
  let methods,serial=100;const ops=[],entities=[],players=new Map(),clients=new Map(),roster=[],native=new Map();let queue=[];
  const game={state:2,epoch:1};const server={...cf.server,gameTime:10,mapName:'de_dust2'};
  const paths={bodiesEnabled:'bodies.enabled',bodySettle:'bodies.settle',bodyHidePawn:'bodies.hidePawn',propPickup:'bodies.propPickup',carryBodyOffset:'bodies.carryOffset'};

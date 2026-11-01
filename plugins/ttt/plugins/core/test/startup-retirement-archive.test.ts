@@ -49,7 +49,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
   const clients = new Map<number, any>(), players = new Map<number, any>(), eventHandlers = new Map<string, Function[]>();
   let nativeLookups=0; const mapCallbacks:Function[]=[];
   let phase = 'LOAD', published: any, now = 10, phrases: Record<string, string> = {};
-  const translation={onRead:null as ((slot:number,key:string)=>void)|null};
+  const translation={onRead:null as ((slot:number,key:string)=>void)|null,overrides:{} as Record<string,string>};
   const retained = { panels: 1, communication: 2, wallet: 50, prompt: 1, reports: 2, slays: 3, karma: 74, firstDamage: 1 };
   const settings = readValues(SHOP_SPECS, spec => spec.default);
   const record = (operation: string): void => { calls.push({ operation, phase }); };
@@ -125,7 +125,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
       if (name === '@s2script/sdk/clients') return { Clients: { fromSlot: (slot: number) => {nativeLookups++;return clients.get(slot) ?? null;} } };
       if (name === '@s2script/sdk/entity') return { Entity: { findByClass: () => [] } };
       if (name === '@s2script/sdk/usermessages') return { UserMessages: { onPre: noRegistration } };
-      if (name === '@s2script/sdk/translations') return { Translations: { load(_name: string, seed: Record<string, string>) { phrases = seed; }, translate(slot: number, key: string) { translation.onRead?.(slot,key); return phrases[key] ?? key; } } };
+      if (name === '@s2script/sdk/translations') return { Translations: { load(_name: string, seed: Record<string, string>) { phrases = seed; }, translate(slot: number, key: string) { translation.onRead?.(slot,key); return translation.overrides[key] ?? phrases[key] ?? key; } } };
       if (name === '@s2script/cs2') return new Proxy({ Pawn: { forSlot: (slot: number) => {nativeLookups++;return players.get(slot)?.pawn ?? null;} }, Player: { fromSlot: (slot: number) => {nativeLookups++;return players.get(slot) ?? null;}, allConnected: () => [...players.values()] }, items: { onCanAcquire: noRegistration }, GameRules: { get: () => ({ warmupPeriod: true }) } }, { get: (target, key) => Reflect.get(target, key) ?? unsupported });
       return unsupported;
     },
@@ -320,8 +320,8 @@ test('actual Core Shop and stock HUD collect bounded fresh views and do not pain
  f.read('setRole(1,2);setParticipating(1,true);setAlive(1,true);game.state=2;');f.shop!.fund(1,100);
  const ui=hudFixture();const actor=f.published.getWorldPlayers(1)[0].actor;ui.actors.set(1,actor);let views=0;
  for(const name of Object.keys(ui.core))ui.core[name]=(...args:unknown[])=>{if(name==='getUiShop')views++;return f.published[name](...args);};
- assert.equal(ui.api.openShop(actor),true);assert.equal(views,2);assert.equal(ui.titles('TTT Shop',1).length,1);
- views=0;ui.clear();ui.click(1,'s2_m0_r1');assert.equal(views,1);assert.equal(ui.titles('TTT Shop',1).length,1);
+ assert.equal(ui.api.openShop(actor),true);assert.equal(views,2);assert.equal(ui.titles('UI_SHOP_TITLE',1).length,1);
+ views=0;ui.clear();ui.click(1,'s2_m0_r1');assert.equal(views,1);assert.equal(ui.titles('UI_SHOP_TITLE',1).length,1);
  ui.clear();const callback=f.shop!.core.canGrantShopItem;let replaced=false;
  f.shop!.core.canGrantShopItem=(...args:unknown[])=>{const value=callback(...args);if(!replaced){replaced=true;f.clients.get(1).valid=false;}return value;};
  ui.click(1,'s2_m0_r1');assert.equal(replaced,true);assert.equal(ui.writes.filter((w:any)=>w.op==='set').length,0);
@@ -373,11 +373,13 @@ test('actual shop stamps share startup and teardown admission and reject malform
 test('actual same-actor nested stock paint survives retirement of its outer role projection',()=>{
  const f=startup({actualShop:true});f.frame('PRE');f.frame('PRE');f.read('setRole(1,2);setAlive(1,true);setParticipating(1,true);game.state=2;');f.shop!.fund(1,100);
  const ui=hudFixture(),actor=f.published.getWorldPlayers(1)[0].actor;ui.actors.set(1,actor);let views=0,armed=false,nested=false;
+ for(const key of ['SHOP_ITEM_C4','SHOP_ITEM_GLOVES','SHOP_ITEM_CAMO','SHOP_ITEM_BODY_PAINT'])f.translation.overrides[key]='restricted-fixture:'+key;
+ assert.ok(f.published.getUiShop(actor).rows.some((row:any)=>row.name.startsWith('restricted-fixture:')));
  for(const name of Object.keys(ui.core))ui.core[name]=(...args:unknown[])=>{const value=f.published[name](...args);if(name==='getUiShop'&&++views===2)armed=true;return value;};
  const get=f.players.get.bind(f.players);f.players.get=(slot:number)=>{const player=get(slot);if(slot===1&&armed&&!nested){nested=true;armed=false;f.read('setRole(1,1);');assert.equal(ui.api.openShop(actor),true);}return player;};
- ui.api.openShop(actor);assert.equal(nested,true);assert.equal(ui.titles('TTT Shop',1).length,1);
- assert.equal(ui.writes.some((w:any)=>w.op==='set'&&/C4 Explosive|Gloves|Camouflage|Body Paint/.test(String(w.value))),false);
- ui.clear();ui.click(1,'s2_m0_r1');assert.equal(ui.titles('TTT Shop',1).length,1,'outer retirement did not erase the newer action table');
+ ui.api.openShop(actor);assert.equal(nested,true);assert.equal(ui.titles('UI_SHOP_TITLE',1).length,1);
+ assert.equal(ui.writes.some((w:any)=>w.op==='set'&&/restricted-fixture:/.test(String(w.value))),false);
+ ui.clear();ui.click(1,'s2_m0_r1');assert.equal(ui.titles('UI_SHOP_TITLE',1).length,1,'outer retirement did not erase the newer action table');
 });
 
 test('actual generic and stamped native identity callbacks seal same-Steam and bot registry successors',()=>{

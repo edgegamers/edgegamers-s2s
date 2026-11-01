@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOMB_ICON, LR_COLOR, PAINT_COLOR, SD_COLOR, WARDEN_ICON } from "../src/perks.ts";
+import { BOMB_ICON as bomb, LR_COLOR as lr, PAINT_COLOR as paint, SD_COLOR as sd, WARDEN_ICON as warden } from "../src/perks.ts";
 import type { EnumPerkDef, PerkOption } from "../src/perks.ts";
 import {
   decide, encodeGangData, findOption, freeBits, isUnlocked, menuOrder, minRankName, parseEquipped,
@@ -8,6 +8,11 @@ import {
   resolveIcon, unlock, unlockedMask,
 } from "../src/enum-perk.ts";
 
+const controlled = (def: EnumPerkDef): EnumPerkDef => ({...def,options:def.options.map(o=>({...o,
+  cost:o.kind==='default'?0:o.name==='KING'?7000:o.name==='BLUE'?10000:o.name==='BISHOP'?2500:1000,
+  value:o.name==='KING'?'fixture-king':o.name==='DOGE'?'fixture-doge':o.value,
+}))});
+const BOMB_ICON=controlled(bomb),LR_COLOR=controlled(lr),PAINT_COLOR=controlled(paint),SD_COLOR=controlled(sd),WARDEN_ICON=controlled(warden);
 const opt = (def: EnumPerkDef, name: string): PerkOption => def.options.find((o) => o.name === name)!;
 const first = (): number => 0;
 const last = (): number => 0.999999;
@@ -101,7 +106,7 @@ test("resolveIcon: default when not owned, random draws from owned (incl. defaul
   const king = opt(WARDEN_ICON, "KING");
   const random = opt(WARDEN_ICON, "RANDOM");
   assert.equal(resolveIcon(WARDEN_ICON, unlockedMask(WARDEN_ICON, 0), king, first), null);
-  assert.equal(resolveIcon(WARDEN_ICON, unlockedMask(WARDEN_ICON, king.bit), king, first)?.value, "♔");
+  assert.equal(resolveIcon(WARDEN_ICON, unlockedMask(WARDEN_ICON, king.bit), king, first)?.value, "fixture-king");
   assert.equal(resolveIcon(WARDEN_ICON, unlockedMask(WARDEN_ICON, 0), null, first), null);
   const owned = unlockedMask(WARDEN_ICON, king.bit | random.bit);
   assert.equal(resolveIcon(WARDEN_ICON, owned, random, first)?.name, "DEFAULT");
@@ -132,7 +137,7 @@ test("resolveGangColor: equipped colour, else random from unlocked", () => {
 
 test("resolveGangIcon: equipped icon, default/none → null", () => {
   const doge = opt(BOMB_ICON, "DOGE");
-  assert.equal(resolveGangIcon(BOMB_ICON, { Unlocked: doge.bit, Equipped: doge.bit })?.value, "doge");
+  assert.equal(resolveGangIcon(BOMB_ICON, { Unlocked: doge.bit, Equipped: doge.bit })?.value, "fixture-doge");
   assert.equal(resolveGangIcon(BOMB_ICON, { Unlocked: doge.bit, Equipped: opt(BOMB_ICON, "DEFAULT").bit }), null);
   assert.equal(resolveGangIcon(BOMB_ICON, { Unlocked: doge.bit, Equipped: 0 }), null);
   assert.equal(resolveGangIcon(BOMB_ICON, null), null);
