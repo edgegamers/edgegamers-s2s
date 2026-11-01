@@ -2,7 +2,13 @@ name: Check
 
 on:
   pull_request:
-    branches: [main]
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Optional promotion PR number to check as merged
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -13,6 +19,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.pull_request && format('refs/pull/{0}/merge', inputs.pull_request) || github.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version

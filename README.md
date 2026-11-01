@@ -43,12 +43,15 @@ Player/admin text follows [the translations and message guide](docs/translations
 
 ## Releases
 
+Feature PRs target `dev`. Its workflow builds and tests the workspace, then publishes affected dev snapshots and requests configured dev-server restarts once native snapshot support is enabled. **Actions → Promote dev** opens the batch `dev` → `main` release PR. Use a merge commit for that promotion. See the [feature-to-production guide](docs/releases.md) for commands, activation prerequisites and retries.
+
 Add a changeset for each changed runtime plugin or shared library. After it reaches `main`, the release workflow:
 
 1. Applies `s2s version` and refreshes the root lockfile.
 2. Builds and tests the resulting versions.
 3. Commits version changes when `main` has not advanced.
 4. Runs `s2s deploy --ci`, publishing members before their bundles.
+5. Merges the published `main` back into `dev` and explicitly starts dev validation.
 
 Versions are independent. Each bundle advances with its own changed members. Already published versions are skipped, so a failed release can be retried using **Actions → Release → Run workflow**. Version commits do not start another workflow run.
 
