@@ -11,7 +11,7 @@ npm ci
 npm run check
 ```
 
-Create a branch for your change. Keep it focused and describe the observable behavior, why it changes, and how you checked it in the pull request. For game behavior, include relevant manual CS2 smoke-test results or identify what still needs live verification.
+Create a feature branch from `dev` and target its PR at `dev`. Keep it focused and describe the observable behavior, why it changes, and how you checked it. For game behavior, include relevant manual CS2 smoke-test results or identify what still needs live verification. The [release guide](docs/releases.md) walks through development, dev-server testing and batch promotion to production.
 
 ## Workspace rules
 
@@ -32,7 +32,9 @@ Run `npm run changeset` for changes that affect shipped runtime plugins or their
 
 Bundle descriptors are handled by native s2s versioning: select their affected members rather than inventing separate npm packages for bundles. A private shared-library changeset must reach its consuming plugins; keep the declared dependency edges accurate. Documentation-only changes normally need no changeset.
 
-CI verifies pull requests. Merged changesets are versioned and published automatically from `main`; there is no separate release PR. Let the workflow commit its generated versions and refresh the lockfile. Retry a failed publication through the Release workflow, retaining the same committed versions.
+CI verifies pull requests. Promoted changesets are versioned and published automatically from `main`, without an extra version-bump PR. Let the workflow commit its generated versions and refresh the lockfile. Retry a failed publication through the Release workflow, retaining the same committed versions.
+
+The `dev` to `main` promotion PR releases the whole tested batch and must use a merge commit. Feature PRs into `dev` may squash. Dev snapshot versions stay in CI; preserve stable changesets until promotion. After stable publication, automation merges `main` back into `dev`; a conflict needs a human resolution, never a forced push. CODEOWNERS and branch-review policy are managed separately.
 
 ## Tests
 

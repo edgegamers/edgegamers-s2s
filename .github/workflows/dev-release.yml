@@ -1,0 +1,60 @@
+name: Dev release
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: registry-release
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm install --global npm@11.19.0
+      - run: npm ci
+      - name: Configure release identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Prepare native dev snapshots
+        if: vars.DEV_RELEASES_ENABLED == 'true'
+        id: prepare
+        run: node .github/scripts/dev-state.mjs prepare
+      - run: npm run check
+      - name: Check whether dev advanced during validation
+        if: vars.DEV_RELEASES_ENABLED == 'true'
+        id: current
+        run: node .github/scripts/dev-state.mjs current
+      - name: Publish affected dev versions
+        if: steps.current.outputs.latest == 'true' && steps.prepare.outputs.changed == 'true'
+        env:
+          S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+        run: npm run deploy
+      - name: Record successful dev publication
+        if: steps.current.outputs.latest == 'true'
+        run: node .github/scripts/dev-state.mjs record
+      - name: Request dev server restarts
+        if: steps.current.outputs.latest == 'true' && steps.prepare.outputs.changed == 'true'
+        env:
+          DEV_RESTART_WEBHOOKS: ${{ secrets.DEV_RESTART_WEBHOOKS }}
+        run: node .github/scripts/restart-dev.mjs .superpowers/releases/dev-release.json
+      - name: Explain activation status
+        if: vars.DEV_RELEASES_ENABLED != 'true'
+        run: echo 'Dev checks passed. Native snapshot publication awaits SDK support and DEV_RELEASES_ENABLED=true.'
