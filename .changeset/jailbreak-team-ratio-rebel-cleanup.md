@@ -14,3 +14,6 @@ round end, and prevent post-round damage from reapplying red before the next rou
 Clear special-treatment green model/screen tint and no-warden blue at round boundaries.
 Expire RTD and special-day colors/transparency without requiring respawn, restoring only
 the pawns tinted by those effects.
+
+Spawn the first eligible player joining an empty CT team immediately as a guard, without waiting
+for a new round. Existing CT bans, loading checks and occupied-team queue rules still apply.

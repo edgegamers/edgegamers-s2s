@@ -38,8 +38,8 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, round mode for sp
 | `!ctbans` / `!cthistory <target \| SteamID>` (`sm_ctbans`, `sm_cthistory`) | eG+ | Full ban history with Revoked / Expired / minutes left / Permanent annotations. |
 
 `!guard` from the team menu (choosing CT while CT is occupied) runs the same `!guard` logic with
-chat replies. When CT is empty the team menu joins CT directly (and leaves the queue), as long as the
-player's data is loaded and they are not CT banned; a CT-banned or not-yet-loaded player is redirected
+chat replies. When CT is empty the team menu switches the player to CT, leaves the queue and respawns
+them immediately, as long as their data is loaded and they are not CT banned; a CT-banned or not-yet-loaded player is redirected
 to the `!guard` logic instead (ban reminder, or "priority couldn't be loaded yet"). "Empty" means no
 real player on CT: bots don't count, unverified players do. A player whose SteamID is not verified yet
 cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
@@ -180,7 +180,8 @@ the queue.
 
 - [ ] `!guard` below 120 priority is refused and eG+ bypasses
 - [ ] queue order follows priority and a DS above 480 can skip
-- [ ] CT from the team menu redirects to the queue (and is allowed when CT is empty)
+- [ ] CT from the team menu redirects to the queue; when CT is empty the first eligible player
+      switches and spawns as CT immediately, including from spectator or a dead prisoner
 - [ ] a guard re-picking CT from the team menu is a no-op
 - [ ] round start fills CT to `floor(T/2)`
 - [ ] round end trims to `ceil(T/2)` and re-queues

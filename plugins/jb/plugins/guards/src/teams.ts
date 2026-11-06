@@ -39,10 +39,12 @@ export function onJoinTeam(slot: number, team: number): HookResultValue {
     return HookResult.Continue;
   }
   if (p.teamNum === Team.Guard) return HookResult.Stop;
-  // Empty CT: join directly, but only once the player's ban state is known (loaded) and clean.
+  // Empty CT: join and spawn now, once the player's ban state is known (loaded) and clean.
   if (ctEmpty() && entry(p.steamId)?.loaded === true && !activeBan(p.steamId)) {
     leaveQueue(p.steamId);
-    return HookResult.Continue;
+    p.changeTeam(Team.Guard);
+    if (p.teamNum === Team.Guard) p.respawn();
+    return HookResult.Stop;
   }
   // Otherwise the !guard logic decides (banned → reminder, not loaded → "priority unavailable").
   p.changeTeam(Team.Prisoner);
