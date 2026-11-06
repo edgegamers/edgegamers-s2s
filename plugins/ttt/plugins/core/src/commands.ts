@@ -1,5 +1,3 @@
-import {tellAllWith} from "./cs2/pawn";
-import { plainPhraseFor as tr, phraseFor } from "../../../packages/contracts/phrases.ts";
 /**
  * Chat/console commands — the port of `CommandManager`, `TTTCommand`, `LogsCommand`,
  * `KarmaCommand`, `ShopCommand`, `BuyCommand`, `ListCommand`, `BalanceCommand` and the test
@@ -112,10 +110,10 @@ function openShopMenu(slot: number): void {
 
   const items = sortedFor(slot, listBuffer);
   const bal = balanceOf(slot);
-  tell(slot, msgFor(slot, "SHOP_LIST_FOOTER", roleNameFor(slot, role), bal));
+  tell(slot, msgFor(slot, "SHOP_LIST_FOOTER", roleName(role), bal));
   if (items.length === 0) return;
 
-  const m = new Menu(tr(slot, "SHOP_MENU_TITLE"));
+  const m = new Menu(msgFor(slot, "SHOP_MENU_TITLE"));
   m.style = MenuStyle.Chat; // non-freezing: the player is mid-round and being hunted
   for (let i = 0; i < items.length; i++) {
     const item = items[i]!;
@@ -127,7 +125,14 @@ function openShopMenu(slot: number): void {
     // be bought and red when it cannot — the same read as the old flat listing.
     const ok = canPurchase(slot, item) === PurchaseResult.Success && item.price <= bal;
     const name = msgFor(slot, item.nameKey);
-    m.addItem(item.id, tr(slot, ok ? "SHOP_MENU_ITEM" : "SHOP_MENU_ITEM_UNAFFORDABLE", item.price, name), { disabled: !ok });
+    const price = `${ChatColors.Grey}[${ChatColors.Yellow}${item.price}${ChatColors.Grey}]`;
+    m.addItem(
+      item.id,
+      ok
+        ? `${price} ${ChatColors.Green}${name}`
+        : `${ChatColors.Grey}[${ChatColors.DarkRed}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name} - (cannot afford)`,
+      { disabled: !ok },
+    );
   }
 
   // Picking a row does NOT spend anything — it opens the confirm step below. The Panorama shop has
@@ -164,10 +169,10 @@ function confirmPurchase(slot: number, item: ShopItem): void {
     return;
   }
 
-  const m = new Menu(tr(slot, "SHOP_CONFIRM_TITLE", tr(slot, item.nameKey), item.price));
+  const m = new Menu(msgFor(slot, "SHOP_CONFIRM_TITLE", msgFor(slot, item.nameKey), item.price));
   m.style = MenuStyle.Chat;   // non-freezing, same as the shop it came from
-  m.addItem("yes", tr(slot,"SHOP_CONFIRM_YES"));
-  m.addItem("no", tr(slot,"SHOP_CONFIRM_NO"));
+  m.addItem("yes", `${ChatColors.Green}${msgFor(slot, "SHOP_CONFIRM_YES")}`);
+  m.addItem("no", `${ChatColors.Grey}${msgFor(slot, "SHOP_CONFIRM_NO")}`);
 
   m.onSelect((e) => {
     if (e.info !== "yes") { openShopMenu(e.slot); return; }
@@ -178,7 +183,7 @@ function confirmPurchase(slot: number, item: ShopItem): void {
     }
     if (tryPurchase(e.slot, item) !== PurchaseResult.Success) return; // prints its own refusal
     tell(e.slot, msgFor(e.slot, "SHOP_PURCHASED", msgFor(e.slot, item.nameKey)));
-    const desc = tr(e.slot, item.descKey);
+    const desc = msg(item.descKey);
     if (desc !== "" && desc !== item.descKey) {
       tell(e.slot, msgFor(e.slot, "SHOP_PURCHASED_DETAIL", desc));
     }
@@ -253,16 +258,19 @@ export function registerCommands(): void {
     const states = ["WAITING", "COUNTDOWN", "IN_PROGRESS", "FINISHED"];
     const active = reg.activeSlots();
     cmd.reply(
-      phraseFor(cmd.callerSlot, "CHAT_STATE_PLAYERS_WARMUP_PARTICIPANTS_ROUNDSTHISMAP", states[game.state] ?? game.state, active.length, cfg.minPlayers, String(inWarmup()), game.participants, game.roundsThisMap),
+      `[ttt] state=${states[game.state] ?? game.state} players=${active.length}/${cfg.minPlayers} ` +
+        `warmup=${inWarmup()} participants=${game.participants} roundsThisMap=${game.roundsThisMap}`,
     );
     cmd.reply(
-      phraseFor(cmd.callerSlot, "CHAT_ALIVE_INNOCENT_TRAITOR_DETECTIVE", reg.aliveCount(RoleId.Innocent), reg.aliveCount(RoleId.Traitor), reg.aliveCount(RoleId.Detective)),
+      `[ttt] alive: innocent=${reg.aliveCount(RoleId.Innocent)} ` +
+        `traitor=${reg.aliveCount(RoleId.Traitor)} detective=${reg.aliveCount(RoleId.Detective)}`,
     );
     const bodies = allBodies();
     let live = 0;
     for (let i = 0; i < bodies.length; i++) if (bodies[i]!.ref.isValid()) live++;
     cmd.reply(
-      phraseFor(cmd.callerSlot, "CHAT_BODIES_LIVE_ENTITIES_IDENTIFIED", bodies.length, live, bodies.filter((b) => b.identified).length),
+      `[ttt] bodies=${bodies.length} (live entities: ${live}, ` +
+        `identified: ${bodies.filter((b) => b.identified).length})`,
     );
     cmd.reply(
       msgFor(
@@ -275,17 +283,22 @@ export function registerCommands(): void {
     );
     const d = damageDiag;
     cmd.reply(
-      phraseFor(cmd.callerSlot, "CHAT_DAMAGE_PREHOOK_FALLBACK_CANCELED_APPLIED", d.hits, d.fallbackHits, d.canceled, d.applied),
+      `[ttt] damage: preHook=${d.hits} fallback=${d.fallbackHits} ` +
+        `canceled=${d.canceled} applied=${d.applied}`,
     );
     // `rewrites` is the effect counter: a voice rule that never rewrites is not doing anything.
     const v = Voice.stats();
     cmd.reply(
-      (v === null ? phraseFor(cmd.callerSlot, "CHAT_VOICE_UNSUPPORTED_ON_THIS_RUNTIME") : phraseFor(cmd.callerSlot, "CHAT_VOICE_CALLS_RULES_REWRITES", v.calls, v.entries, v.rewrites)),
+      v === null
+        ? "[ttt] voice: unsupported on this runtime"
+        : `[ttt] voice: calls=${v.calls} rules=${v.entries} rewrites=${v.rewrites}`,
     );
     for (let i = 0; i < active.length; i++) {
       const slot = active[i]!;
       cmd.reply(
-        phraseFor(cmd.callerSlot, "CHAT_ROLE_ALIVE_ENGINE_HP_TEAM_CREDITS_KARMA", slot, reg.nameOf(slot), roleNameFor(cmd.callerSlot, reg.roleOf(slot)) || tr(cmd.callerSlot, "LABEL_NONE"), String(reg.isAlive(slot)), String(reg.computeAlive(slot)), getHealth(slot), teamOf(slot), balanceOf(slot), karmaOf(slot)),
+        `  [${slot}] ${reg.nameOf(slot)} role=${roleName(reg.roleOf(slot)) || "none"}` +
+          ` alive=${reg.isAlive(slot)}(engine:${reg.computeAlive(slot)})` +
+          ` hp=${getHealth(slot)} team=${teamOf(slot)} credits=${balanceOf(slot)} karma=${karmaOf(slot)}`,
       );
     }
   });
@@ -305,7 +318,7 @@ export function registerCommands(): void {
     // Viewing the logs while alive is announced, exactly as the original did — it is an
     // information advantage the rest of the server is entitled to know about.
     if (slot >= 0 && reg.isAlive(slot)) {
-      tellAllWith((recipient,name) => msgFor(recipient,"LOGS_VIEWED_ALIVE",name),reg.nameOf(slot));
+      tellAll(msg("LOGS_VIEWED_ALIVE", reg.nameOf(slot)));
     } else if (slot >= 0) {
       cmd.reply(msgFor(cmd.callerSlot, "LOGS_VIEWED_INFO"));
     }
@@ -360,13 +373,13 @@ export function registerCommands(): void {
       const item = items[i]!;
       const affordable =
         (slot < 0 || canPurchase(slot, item) === PurchaseResult.Success) && item.price <= bal;
-      cmd.replyToChat(formatItem(item, i + 1, affordable, slot));
+      cmd.replyToChat(formatItem(item, i + 1, affordable));
     }
 
     if (slot < 0 || game.state !== GameState.InProgress) return;
     const role = reg.roleOf(slot);
     if (role === RoleId.None) return;
-    cmd.replyToChat(msgFor(slot, "SHOP_LIST_FOOTER", roleNameFor(slot, role), bal));
+    cmd.replyToChat(msg("SHOP_LIST_FOOTER", roleName(role), bal));
   };
 
   const buy = (cmd: CommandInvocation, query = cmd.argsFrom(0).trim()): void => {
@@ -380,7 +393,7 @@ export function registerCommands(): void {
       return;
     }
     if (query === "") {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", tr(cmd.callerSlot, "TEXT_BUY_ITEM")));
+      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "buy <item>"));
       return;
     }
 
@@ -391,7 +404,7 @@ export function registerCommands(): void {
     }
     if (tryPurchase(slot, item) !== PurchaseResult.Success) return;
     cmd.reply(msgFor(cmd.callerSlot, "SHOP_PURCHASED", msgFor(cmd.callerSlot, item.nameKey)));
-    const desc = tr(slot, item.descKey);
+    const desc = msg(item.descKey);
     if (desc !== "" && desc !== item.descKey) cmd.reply(msgFor(cmd.callerSlot, "SHOP_PURCHASED_DETAIL", desc));
   };
 
@@ -409,26 +422,26 @@ export function registerCommands(): void {
     // Bare `!report` picks the player in the HUD, then asks for the reason in chat.
     if (targetQuery === "" && reportsAvailable() && getTttHud()?.openReportPicker(slot) === true) return;
     if (targetQuery === "" || reason === "") {
-      cmd.reply(msgFor(slot, "GENERIC_USAGE", tr(slot, "TEXT_REPORT_PLAYER_WHAT_HAPPENED")));
+      cmd.reply(msgFor(slot, "GENERIC_USAGE", "report <player> <what happened>"));
       return;
     }
     const accused = resolveTarget(targetQuery);
     if (accused < 0) { cmd.reply(msgFor(slot, "GENERIC_NO_TARGET", targetQuery)); return; }
 
-    if(!reportsAvailable()){cmd.reply(phraseFor(cmd.callerSlot, "CHAT_REPORTS_PLUGIN_IS_UNAVAILABLE"));return;}
+    if(!reportsAvailable()){cmd.reply("[ttt] Reports plugin is unavailable.");return;}
     const { result, report, unavailable } = fileReport(slot, accused, reason);
-    if(unavailable){cmd.reply(phraseFor(cmd.callerSlot, "CHAT_REPORTS_PLUGIN_IS_UNAVAILABLE_AN_ADMIN_SHOULD_VERIFY_WHETHER_THE_"));return;}
+    if(unavailable){cmd.reply('[ttt] Reports plugin is unavailable. An admin should verify whether the report was filed.');return;}
 
-    if (result === FileResult.SelfReport)  { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_YOU_CANNOT_REPORT_YOURSELF")); return; }
-    if (result === FileResult.EmptyReason) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_DESCRIBE_WHAT_HAPPENED")); return; }
-    if (result === FileResult.Duplicate)   { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_YOU_ALREADY_REPORTED_THEM_THIS_ROUND")); return; }
+    if (result === FileResult.SelfReport)  { cmd.reply("[ttt] You cannot report yourself."); return; }
+    if (result === FileResult.EmptyReason) { cmd.reply("[ttt] Describe what happened."); return; }
+    if (result === FileResult.Duplicate)   { cmd.reply("[ttt] You already reported them this round."); return; }
     if (result === FileResult.RateLimited) {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_REPORT_LIMIT_REACHED_PER_ROUND", REPORTS_PER_ROUND));
+      cmd.reply(`[ttt] Report limit reached (${REPORTS_PER_ROUND} per round).`);
       return;
     }
-    cmd.reply(phraseFor(cmd.callerSlot, "CHAT_REPORT_FILED_AN_ADMIN_WILL_REVIEW_IT"));
+    cmd.reply("[ttt] Report filed. An admin will review it.");
     if (report) {
-      getTttHud()?.notifyAdmins("UI_RDM_NOTICE", `${report.reporterName} → ${report.accusedName}`);
+      getTttHud()?.notifyAdmins("RDM report", `${report.reporterName} → ${report.accusedName}`);
     }
   });
 
@@ -436,9 +449,9 @@ export function registerCommands(): void {
   // segfaulted a live server at round start. So it is an explicit admin action, not implicit.
   command.admin("sm_ttt_hud", ADMFLAG.GENERIC, (cmd) => {
     const hud = getTttHud();
-    if (!hud) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_HUD_UNAVAILABLE")); return; }
+    if (!hud) { cmd.reply("[ttt] HUD unavailable."); return; }
     const why = hud.ensure();
-    cmd.reply((why === null ? phraseFor(cmd.callerSlot, "CHAT_HUD_LAYOUT_SPAWNED") : phraseFor(cmd.callerSlot, "CHAT_HUD_NOT_READY", why)));
+    cmd.reply(why === null ? "[ttt] HUD layout spawned." : `[ttt] HUD not ready: ${why}`);
   });
 
   command.admin("sm_rdm", ADMFLAG.GENERIC, (cmd) => {
@@ -446,15 +459,15 @@ export function registerCommands(): void {
     const queue = pendingReports();
     if (slot < 0) {
       // Console has no HUD; give it the queue as text rather than nothing.
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_PENDING_REPORT_S", queue.length));
+      cmd.reply(`[ttt] ${queue.length} pending report(s)`);
       for (const r of queue) {
-        cmd.reply(phraseFor(cmd.callerSlot, "CHAT_ROUND", r.id, r.reporterName, r.accusedName, r.round, r.reason));
+        cmd.reply(`  #${r.id} ${r.reporterName} -> ${r.accusedName} (round ${r.round}): ${r.reason}`);
       }
       return;
     }
-    if (queue.length === 0) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_NO_PENDING_REPORTS")); return; }
+    if (queue.length === 0) { cmd.reply("[ttt] No pending reports."); return; }
     const hud = getTttHud();
-    if (!hud) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_HUD_UNAVAILABLE")); return; }
+    if (!hud) { cmd.reply("[ttt] HUD unavailable."); return; }
     hud.openRdm(slot);
   });
 
@@ -466,7 +479,7 @@ export function registerCommands(): void {
   // commands when they have no HUD, rather than appearing to do nothing.
   const shopMenu = (cmd: CommandInvocation): void => {
     const slot = cmd.callerSlot;
-    if (slot < 0) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_SM_SHOP_NEEDS_AN_IN_GAME_CALLER")); return; }
+    if (slot < 0) { cmd.reply("sm_shop needs an in-game caller"); return; }
     if (!openShopHud(slot)) openShopMenu(slot);
   };
   command("sm_shopmenu", shopMenu);
@@ -514,14 +527,14 @@ export function registerCommands(): void {
         if (!openShopHud(cmd.callerSlot)) openShopMenu(cmd.callerSlot);
         return;
       default:
-        cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", tr(cmd.callerSlot, "TEXT_SHOP_LIST_BUY_ITEM_BALANCE")));
+        cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "shop <list|buy [item]|balance>"));
     }
   });
 
   // ── admin ─────────────────────────────────────────────────────────────────
   command.admin("sm_ttt_start", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.Waiting) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", tr(cmd.callerSlot, "TEXT_A_ROUND_IS_ALREADY_RUNNING")));
+      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", "A round is already running"));
       return;
     }
     startGame();
@@ -530,7 +543,7 @@ export function registerCommands(): void {
 
   command.admin("sm_ttt_end", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.InProgress && game.state !== GameState.Countdown) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", tr(cmd.callerSlot, "TEXT_NO_ROUND_IS_RUNNING")));
+      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", "No round is running"));
       return;
     }
     endGame(RoleId.None, "Ended by an admin");
@@ -538,14 +551,14 @@ export function registerCommands(): void {
   });
 
   command.admin("sm_ttt_special", ADMFLAG.GENERIC, (cmd) => {
-    if (!specialAvailable()) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_SPECIAL_ROUND_PLUGIN_IS_UNAVAILABLE")); return; }
+    if (!specialAvailable()) { cmd.reply("[ttt] Special-round plugin is unavailable."); return; }
     const id = cmd.arg(0).toLowerCase();
     if (id === "") {
       cmd.reply(msgFor(cmd.callerSlot, "CMD_SPECIAL_AVAILABLE", roundIds().join(", ")));
       return;
     }
     const started = startSpecialRounds([id]);
-    cmd.reply((started.length > 0 ? phraseFor(cmd.callerSlot, "CHAT_STARTED", started.join(", ")) : phraseFor(cmd.callerSlot, "CHAT_UNKNOWN_ROUND", id)));
+    cmd.reply(started.length > 0 ? `Started: ${started.join(", ")}` : `Unknown round: ${id}`);
   });
 
   /**
@@ -556,14 +569,15 @@ export function registerCommands(): void {
    * the C# build exposed neither (its `!karma` only ever read your own).
    */
   command.admin("sm_ttt_karma", ADMFLAG.GENERIC, (cmd) => {
-    if (!karmaAvailable()) { cmd.reply(phraseFor(cmd.callerSlot, "CHAT_KARMA_PLUGIN_IS_UNAVAILABLE")); return; }
+    if (!karmaAvailable()) { cmd.reply("[ttt] Karma plugin is unavailable."); return; }
     if (cmd.argCount === 0) {
       const active = reg.activeSlots();
       for (let i = 0; i < active.length; i++) {
         const slot = active[i]!;
         const out = timeoutRemaining(slot);
         cmd.reply(
-          phraseFor(cmd.callerSlot, "CHAT_KARMA", slot, reg.nameOf(slot), karmaOf(slot), (out > 0 ? tr(cmd.callerSlot,"LABEL_BENCHED",out) : "")),
+          `  [${slot}] ${reg.nameOf(slot)} karma=${karmaOf(slot)}` +
+            (out > 0 ? ` (benched ${out} more round${out === 1 ? "" : "s"})` : ""),
         );
       }
       cmd.reply(msgFor(cmd.callerSlot, "CMD_USAGE_KARMA"));
@@ -578,19 +592,21 @@ export function registerCommands(): void {
     if (cmd.argCount < 2) {
       const out = timeoutRemaining(slot);
       cmd.reply(
-        phraseFor(cmd.callerSlot, "CHAT_KARMA_2", reg.nameOf(slot), karmaOf(slot), (out > 0 ? tr(cmd.callerSlot,"LABEL_BENCHED",out) : "")),
+        `[ttt] ${reg.nameOf(slot)} karma=${karmaOf(slot)}` +
+          (out > 0 ? ` (benched ${out} more round${out === 1 ? "" : "s"})` : ""),
       );
       return;
     }
 
     const value = cmd.argInt(1, -1);
     if (value < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", tr(cmd.callerSlot, "TEXT_TTT_KARMA_SLOT_NAME_VALUE")));
+      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "ttt_karma <slot|name> <value>"));
       return;
     }
     adminSetKarma(slot, value);
     cmd.reply(
-      phraseFor(cmd.callerSlot, "CHAT_KARMA_SET_TO", reg.nameOf(slot), karmaOf(slot), (timeoutRemaining(slot) === 0 ? tr(cmd.callerSlot,"LABEL_TIMEOUT_CLEARED") : "")),
+      `[ttt] ${reg.nameOf(slot)} karma set to ${karmaOf(slot)}` +
+        (timeoutRemaining(slot) === 0 ? " (timeout cleared)" : ""),
     );
   });
 
@@ -626,7 +642,7 @@ export function registerCommands(): void {
    */
   command.admin("sm_ttt_roles", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.InProgress && game.state !== GameState.Finished) {
-      cmd.replyToChat(msgFor(cmd.callerSlot, "GAME_LOGS_NONE"));
+      cmd.replyToChat(msg("GAME_LOGS_NONE"));
       return;
     }
 
@@ -648,12 +664,14 @@ export function registerCommands(): void {
         if (reg.roleOf(slot) !== role) continue;
         const dead = !reg.isAlive(slot);
         cmd.replyToChat(
-          phraseFor(cmd.callerSlot,"ROLE_LIST_ENTRY",roleNameFor(cmd.callerSlot,role),reg.nameOf(slot),dead ? tr(cmd.callerSlot,"LABEL_DEAD") : ""),
+          ` ${colour}${roleName(role)}${ChatColors.Grey} - ` +
+            `${dead ? ChatColors.Grey : ChatColors.Default}${reg.nameOf(slot)}` +
+            `${dead ? ` ${ChatColors.DarkRed}[DEAD]` : ""}`,
         );
         shown++;
       }
     }
-    if (shown === 0) cmd.replyToChat(msgFor(cmd.callerSlot, "GAME_LOGS_NONE"));
+    if (shown === 0) cmd.replyToChat(msg("GAME_LOGS_NONE"));
   });
 
   /**
@@ -687,7 +705,7 @@ export function registerCommands(): void {
    */
   command.admin("sm_ttt_credits", ADMFLAG.ROOT, (cmd) => {
     if (cmd.arg(0) === "" || cmd.arg(1) === "") {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_USAGE_SM_TTT_CREDITS_TARGET_AMOUNT"));
+      cmd.reply("usage: sm_ttt_credits <target> <amount>");
       return;
     }
     const slot = resolveTarget(cmd.arg(0));
@@ -697,16 +715,16 @@ export function registerCommands(): void {
     }
     const want = Number.parseInt(cmd.arg(1), 10);
     if (!Number.isFinite(want) || want < 0) {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_IS_NOT_A_CREDIT_AMOUNT", cmd.arg(1)));
+      cmd.reply(`'${cmd.arg(1)}' is not a credit amount`);
       return;
     }
     addBalance(slot, want - balanceOf(slot), "Admin", false);
-    cmd.reply(phraseFor(cmd.callerSlot, "CHAT_NOW_HAS_CREDITS", reg.nameOf(slot), String(balanceOf(slot))));
+    cmd.reply(`${reg.nameOf(slot)} now has ${String(balanceOf(slot))} credits`);
   });
 
   command.admin("sm_ttt_testkill", ADMFLAG.ROOT, (cmd) => {
     if (cmd.arg(0) === "") {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_USAGE_SM_TTT_TESTKILL_VICTIM_KILLER_KILLER_DEFAULTS_TO_A_LIVE_TRA"));
+      cmd.reply("usage: sm_ttt_testkill <victim> [killer]  (killer defaults to a live Traitor)");
       return;
     }
     const victim = resolveTarget(cmd.arg(0));
@@ -715,7 +733,7 @@ export function registerCommands(): void {
       return;
     }
     if (!reg.isAlive(victim)) {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_IS_ALREADY_DEAD", reg.nameOf(victim)));
+      cmd.reply(`${reg.nameOf(victim)} is already dead`);
       return;
     }
 
@@ -736,17 +754,17 @@ export function registerCommands(): void {
         }
       }
       if (killer < 0) {
-        cmd.reply(phraseFor(cmd.callerSlot, "CHAT_NO_LIVING_TRAITOR_TO_CREDIT_PASS_ONE_EXPLICITLY_SM_TTT_TESTKILL_V"));
+        cmd.reply("no living Traitor to credit — pass one explicitly: sm_ttt_testkill <victim> <killer>");
         return;
       }
     }
     if (killer === victim) {
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_KILLER_AND_VICTIM_MUST_DIFFER_OR_THE_CORPSE_RECORDS_A_SUICIDE_AND"));
+      cmd.reply("killer and victim must differ, or the corpse records a suicide and carries no DNA");
       return;
     }
 
     killWithGadget(victim, killer, "[Test Kill]");
-    cmd.reply(phraseFor(cmd.callerSlot, "CHAT_KILLED_CREDITED_TO", reg.nameOf(victim), reg.nameOf(killer), roleNameFor(cmd.callerSlot, reg.roleOf(killer))));
+    cmd.reply(`killed ${reg.nameOf(victim)}, credited to ${reg.nameOf(killer)} (${roleName(reg.roleOf(killer))})`);
   });
 
   command.admin("sm_ttt_myrole", ADMFLAG.ROOT, (cmd) => {
@@ -798,7 +816,7 @@ export function registerCommands(): void {
     const want = cmd.arg(0).toLowerCase();
     if (want === "clear") {
       clearMapContexts(me);
-      cmd.reply(phraseFor(cmd.callerSlot, "CHAT_CLEARED_TRAITOR_DETECTIVE_AND_INNOCENT_FROM_YOUR_PAWN"));
+      cmd.reply("cleared TRAITOR, DETECTIVE and INNOCENT from your pawn");
       return;
     }
 
@@ -808,13 +826,15 @@ export function registerCommands(): void {
       : want === "innocent" ? RoleId.Innocent
       : RoleId.None;
     if (role === RoleId.None) {
-      cmd.reply(msgFor(me, "GENERIC_USAGE", tr(me, "TEXT_TTT_CONTEXT_TRAITOR_DETECTIVE_INNOCENT_CLEAR")));
+      cmd.reply(msgFor(me, "GENERIC_USAGE", "ttt_context [traitor|detective|innocent|clear]"));
       return;
     }
 
     const applied = applyMapContext(me, role);
     cmd.reply(
-      (applied === "" ? phraseFor(cmd.callerSlot, "CHAT_NO_LIVE_PAWN_TO_PUT_A_CONTEXT_ON") : phraseFor(cmd.callerSlot, "CHAT_APPLIED_1_TO_YOUR_PAWN_REPLACING_ANY_ROLE_CONTEXT_ALREADY_ON_IT", applied)),
+      applied === ""
+        ? "no live pawn to put a context on"
+        : `applied ${applied}:1 to your pawn (replacing any role context already on it)`,
     );
   });
 
@@ -832,7 +852,7 @@ export function registerCommands(): void {
       : roleName_ === "innocent" ? RoleId.Innocent
       : RoleId.None;
     if (slot < 0 || !reg.isConnected(slot) || role === RoleId.None) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", tr(cmd.callerSlot, "TEXT_TTT_SETROLE_SLOT_INNOCENT_TRAITOR_DETECTIVE")));
+      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "ttt_setrole <slot> <innocent|traitor|detective>"));
       return;
     }
     reg.setRole(slot, role);
@@ -897,7 +917,13 @@ function findItem(slot: number, query: string): ShopItem | undefined {
 }
 
 /** Format one shop listing line, matching the original's colour scheme. */
-function formatItem(item: ShopItem, index: number, affordable: boolean, slot = -1): string {
-  const name = tr(slot, item.nameKey);
-  return affordable ? phraseFor(slot,"SHOP_LIST_ITEM",index,item.price,name) : phraseFor(slot,"SHOP_LIST_UNAFFORDABLE",item.price,name);
+function formatItem(item: ShopItem, index: number, affordable: boolean): string {
+  const name = msg(item.nameKey);
+  if (!affordable) {
+    return ` ${ChatColors.Grey}- [${ChatColors.DarkRed}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name}`;
+  }
+  if (index > 9) {
+    return ` ${ChatColors.Default}- [${ChatColors.Yellow}${item.price}${ChatColors.Default}] ${ChatColors.Green}${name}`;
+  }
+  return ` ${ChatColors.Blue}/${index} ${ChatColors.Default}| [${ChatColors.Yellow}${item.price}${ChatColors.Default}] ${ChatColors.Green}${name}`;
 }

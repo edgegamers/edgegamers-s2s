@@ -1,6 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
-import {forRecipients} from '@edgegamers/jailbreak-shared';
-import {broadcastLines} from '@edgegamers/jailbreak-shared';
 /**
  * Last guard (C# `LastGuard`): when the second-to-last guard dies, the remaining guard faces every
  * prisoner alone. They get HP pooled from the prisoners, everyone is beaconed, every prisoner
@@ -15,7 +12,7 @@ import { isGunDef, lastGuardHealth, pooledHealth } from "./logic";
 import { stopAllBeacons, startBeacon } from "./fx";
 import { emit } from "./forwards";
 import { isEnabled as isLREnabled } from "./manager";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { Participant } from "./players";
 import { addTimeCapped, claimMode, setTimeRemaining } from "./round";
 import { settings } from "./settings";
@@ -65,7 +62,7 @@ export function disableForRound(): void {
 function finish(result: "guard_win" | "prisoner_win"): void {
   if (endEmitted || !guard) return;
   endEmitted = true;
-  log(...logEntry("JB_LOG_LAST_GUARD", [String(guard.name), String(result === "guard_win" ? "survived" : "was killed")], [1]));
+  log(`Last guard ${guard.name} ${result === "guard_win" ? "survived" : "was killed"}`);
   emit("OnLastGuardEnd", { guard: guard.ref(), result });
 }
 
@@ -127,8 +124,8 @@ export function startLastGuard(lastGuard: Player): boolean {
 
   const ctHealth = pawn.health ?? 0;
   const tHealth = ts.reduce((sum, p) => sum + (p.pawn?.health ?? 0), 0);
-  broadcastLines(forRecipients((recipient,value0,value1,value2) => msgFor(recipient).lgStartedChat(value0, value1, value2), guard!.name,ctHealth,tHealth));
-  for (const p of Player.all()) HintText.to(p.slot, msgFor(p.slot).lgStartedCenter(guard.name, ctHealth, tHealth));
+  for (const line of msg.lgStartedChat(guard.name, ctHealth, tHealth)) Chat.toAll(line);
+  for (const p of Player.all()) HintText.to(p.slot, msg.lgStartedCenter(guard.name, ctHealth, tHealth));
 
   for (const p of ts) {
     startBeacon(p.userId, Colors.Red);
@@ -136,7 +133,7 @@ export function startLastGuard(lastGuard: Player): boolean {
     if (settings.lgTWeapon !== "") p.pawn?.giveNamedItem(settings.lgTWeapon);
   }
 
-  log(...logEntry("JB_LOG_LAST_GUARD_STARTED_HP_VS_PRISONERS_HP", [String(guard.name), String(ctHealth), String(ts.length), String(tHealth)]));
+  log(`Last guard started: ${guard.name} (${ctHealth} HP) vs ${ts.length} prisoner(s) (${tHealth} HP)`);
   emit("OnLastGuardStart", { guard: guard.ref(), prisoners: startPrisoners });
   return true;
 }

@@ -1,4 +1,3 @@
-import { plainPhraseFor as tr } from "../../../packages/contracts/phrases.ts";
 /**
  * The shop — the port of `IShop` / `Shop` / `IShopItem` / `BaseItem` / `RoleRestrictedItem`.
  *
@@ -28,7 +27,7 @@ export const enum PurchaseResult {
 }
 
 /** A human-readable reason for a refusal. */
-export function resultMessage(r: PurchaseResult, slot = -1): string {
+export function resultMessage(r: PurchaseResult): string {
   switch (r) {
     // Success is not a refusal and has no reason to give. Named explicitly so `default` keeps
     // meaning "a value nobody accounted for" — without this case it reads as an error, and a
@@ -36,19 +35,19 @@ export function resultMessage(r: PurchaseResult, slot = -1): string {
     case PurchaseResult.Success:
       return "";
     case PurchaseResult.InsufficientFunds:
-      return tr(slot,"PURCHASE_REFUSAL_1");
+      return "You do not have enough funds to complete this purchase";
     case PurchaseResult.NotFound:
-      return tr(slot,"PURCHASE_REFUSAL_2");
+      return "The item was not found in the shop";
     case PurchaseResult.NotPurchasable:
-      return tr(slot,"PURCHASE_REFUSAL_3");
+      return "You cannot purchase this item at the moment";
     case PurchaseResult.WrongRole:
-      return tr(slot,"PURCHASE_REFUSAL_4");
+      return "You do not have the required role to purchase this item";
     case PurchaseResult.Canceled:
-      return tr(slot,"PURCHASE_REFUSAL_5");
+      return "The purchase was canceled";
     case PurchaseResult.AlreadyOwned:
-      return tr(slot,"PURCHASE_REFUSAL_6");
+      return "You have purchased the maximum amount of this item";
     default:
-      return tr(slot,"PURCHASE_REFUSAL_7");
+      return "An unexpected error occurred";
   }
 }
 
@@ -132,7 +131,7 @@ export function balanceOf(slot: number): number {
  * Add (or subtract) credits, firing the `balance` event so listeners can rescale the change (the
  * Rich special round multiplies gains). `print` controls whether the player is told.
  */
-export function addBalance(slot: number, amount: number, reason: string, print = true, render?: (sign: string, delta: number) => string): void {
+export function addBalance(slot: number, amount: number, reason: string, print = true): void {
   if (amount === 0) return;
   const old = balances[slot]!;
   const ev = bus.emit("balance", {
@@ -152,9 +151,9 @@ export function addBalance(slot: number, amount: number, reason: string, print =
   const sign = delta > 0 ? "+" : "";
   tell(
     slot,
-    render ? render(sign, delta) : reason === ""
-      ? msgFor(slot, "CREDITS_GIVEN", sign, delta)
-      : msgFor(slot, "CREDITS_GIVEN_REASON", sign, delta, reason),
+    reason === ""
+      ? msg("CREDITS_GIVEN", sign, delta)
+      : msg("CREDITS_GIVEN_REASON", sign, delta, reason),
   );
 }
 
@@ -189,8 +188,8 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
       tell(
         slot,
         gate === PurchaseResult.UnknownError
-          ? msgFor(slot, "SHOP_CANNOT_PURCHASE")
-          : msgFor(slot, "SHOP_CANNOT_PURCHASE_WITH_REASON", resultMessage(gate,slot)),
+          ? msg("SHOP_CANNOT_PURCHASE")
+          : msg("SHOP_CANNOT_PURCHASE_WITH_REASON", resultMessage(gate)),
       );
     }
     return gate;
@@ -199,7 +198,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
   const ev = bus.emit("purchase", { slot, itemId: item.id, canceled: false });
   if (ev.canceled) return PurchaseResult.Canceled;
 
-  addBalance(slot, -item.price, msg(item.nameKey), tellWhy, (sign,delta) => msgFor(slot,"CREDITS_GIVEN_REASON",sign,delta,tr(slot,item.nameKey)));
+  addBalance(slot, -item.price, msg(item.nameKey), tellWhy);
 
   const idx = items.indexOf(item);
   if (idx >= 0) {

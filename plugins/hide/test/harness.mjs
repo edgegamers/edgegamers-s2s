@@ -63,14 +63,13 @@ export function fixture(options = {}) {
       assert.equal(opts?.phase, 'post'); frames.push(fn);
     } } }),
     Translations: {
-      load(name, seed) { phraseSets.set(name, { ...seed, ...options.phrases?.[name] }); },
+      load(name, seed) { phraseSets.set(name, { ...seed }); },
       translate(slot, name, ...args) {
         for (const [set, seed] of phraseSets) {
           let phrases = seed;
           if (clients.get(slot)?.language === 'ru') {
             phrases = { ...seed, ...JSON.parse(readFileSync(`translations/ru/${set}.phrases.json`, 'utf8')) };
           }
-          phrases = { ...phrases, ...options.locales?.[clients.get(slot)?.language]?.[set] };
           if (name in phrases) return phrases[name].replace(/\{(\d+)\}/g, (_, n) => String(args[Number(n) - 1] ?? '').replace(/[{}]/g, ''));
         }
         return name;
@@ -119,14 +118,12 @@ export function fixture(options = {}) {
     players.set(slot, { slot, teamNum: opts.team ?? 2, connected: 0, ref: controller, playerPawn: pawn });
     return c;
   }
-  function invoke(name, slot = 0, root = false, source = slot < 0 ? 'console' : 'chat') {
+  function invoke(name, slot = 0, root = false) {
     const entry = commands.get(name);
     assert.ok(entry, `command ${name} must be registered`);
     if (entry.flags && slot >= 0 && !root) return false;
-    entry.handler({ callerSlot: slot, replySource: source, args: [], argString: '', argCount: 0,
-      reply: text => messages.push({ slot, text, source }),
-      replyToConsole: text => messages.push({ slot, text, source: 'console' }),
-      replyToChat: text => messages.push({ slot, text, source: 'chat' }) });
+    entry.handler({ callerSlot: slot, args: [], argString: '', argCount: 0,
+      reply: text => messages.push({ slot, text }), replyToChat: text => messages.push({ slot, text }) });
     return true;
   }
   function frame(ms = 16) { now += ms; frames.forEach(fn => fn()); }

@@ -12,7 +12,7 @@ import { Colors, setPawnColor, Team } from "@edgegamers/jailbreak-shared";
 import type { Rgb } from "@edgegamers/jailbreak-shared";
 import { WEAPON_GROUPS, SNIPERS, classForDefIndex, isKnife } from "./weapons.ts";
 import type { WeaponGroup } from "./weapons.ts";
-import { msgFor } from "./messages.ts";
+import { msg } from "./messages.ts";
 
 export type TickBlock = "scope" | "leftKnife" | "rightKnife";
 
@@ -137,10 +137,10 @@ export function onSay(slot: number, text: string, teamonly: boolean): void {
   if (!decluttrCall(true, provider => provider.checkChat(slot, text))) return;
   const sender = Player.fromSlot(slot);
   if (!sender) return;
-  const team = teamLabel(sender.teamNum), name = sender.playerName ?? "";
+  const line = msg.spy(teamLabel(sender.teamNum), sender.playerName ?? "", text);
   for (const userId of spies) {
     const spy = Player.fromUserId(userId);
     if (!spy || spy.slot === slot || spy.teamNum === sender.teamNum) continue;
-    Clients.fromSlot(spy.slot)?.chat(msgFor(spy.slot).spy(team,name,text));
+    Clients.fromSlot(spy.slot)?.chat(line);
   }
 }

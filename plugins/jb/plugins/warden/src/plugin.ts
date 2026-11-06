@@ -1,4 +1,3 @@
-import {loadMessages} from './messages';
 import { command, config, createScope, publish, use } from "@s2script/sdk";
 import type { Client } from "@s2script/sdk";
 import { Events } from "@s2script/cs2";
@@ -53,7 +52,6 @@ import {
  * special treatment and peace mute each live in their own module.
  */
 export function OnPluginStart(): void {
-  loadMessages();
   loadConfig();
   config.onChange(() => loadConfig());
 

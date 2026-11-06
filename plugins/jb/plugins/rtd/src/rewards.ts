@@ -1,6 +1,3 @@
-import {forRecipients} from '@edgegamers/jailbreak-shared';
-import {plainPhraseFor,phraseFor} from '@edgegamers/jailbreak-shared';
-import {broadcastText} from '@edgegamers/jailbreak-shared';
 /**
  * What each reward does in game (the C# `Rewards/*.cs`). The pool itself — names, weights, team
  * restrictions — is data in pool.ts; here each spec gets `enabled` / `prepare` / `grant`.
@@ -18,7 +15,7 @@ import type { RewardSpec } from "./pool.ts";
 import { WEAPON_GROUPS, isKnife } from "./weapons.ts";
 import { addSpy, addTickBlock, blockGroup, tintPlayer } from "./effects.ts";
 import { deps, gangsReady } from "./deps.ts";
-import { msgFor } from "./messages.ts";
+import { msg } from "./messages.ts";
 
 export interface Reward {
   /** Index into POOL (stable; used for hot-reload handoff). */
@@ -69,7 +66,7 @@ function prepareFor(spec: RewardSpec, player: Player): boolean {
   } catch {
     return false;
   }
-  if (isJackpot(spec)) broadcastText(forRecipients((recipient,value0,value1) => msgFor(recipient).jackpot(value0, value1), player.playerName ?? "",spec.amount));
+  if (isJackpot(spec)) Chat.toAll(msg.jackpot(player.playerName ?? "", spec.amount));
   return true;
 }
 
@@ -171,7 +168,7 @@ function build(spec: RewardSpec, weight: number, poolIndex: number): Reward {
     spec,
     weight,
     name: rewardName(spec),
-    description: rewardDescription(spec, (t, c) => t),
+    description: rewardDescription(spec, (t, c) => `${msg.colorCode[c]}${t}${msg.grey}`),
     enabled: () => enabledFor(spec),
     canGrant: (p) => teamOk(spec, p),
     prepare: (p) => prepareFor(spec, p),
@@ -186,6 +183,3 @@ export const REWARDS: readonly Reward[] = POOL.map((e, i) => build(e.spec, e.wei
 export function enabledRewards(): Reward[] {
   return REWARDS.filter((r) => r.enabled());
 }
-
-export function nameFor(slot:number,reward:Reward):string{return rewardName(reward.spec,(key,...args)=>plainPhraseFor(slot,key,...args));}
-export function descriptionFor(slot:number,reward:Reward):string{return rewardDescription(reward.spec,undefined,(key,...args)=>key.startsWith('RTD_DESC_')?phraseFor(slot,'CHAT_'+key,...args):plainPhraseFor(slot,key,...args));}

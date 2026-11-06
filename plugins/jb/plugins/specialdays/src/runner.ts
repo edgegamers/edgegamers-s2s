@@ -1,6 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
-import {forRecipients} from '@edgegamers/jailbreak-shared';
-import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 /**
  * The shared part of every special day (AbstractSpecialDay): convars, round time, respawn/health/
  * strip, invulnerability, rebels, cells, teleports, freeze, zone restriction, the pickup gate and
@@ -19,7 +16,7 @@ import { pickupAllowed } from "./weapons.ts";
 import { setPickupRule } from "./pickup.ts";
 import { ZoneRestriction, restrictionArea } from "./restrict.ts";
 import { zoneCenters } from "./zones.ts";
-import { msgFor } from "./messages.ts";
+import { msg } from "./messages.ts";
 import {
   alive,
   clearColors,
@@ -48,7 +45,7 @@ import {
 export interface CoreHooks {
   disableRebelsForRound(): void;
   openCells(source: string): boolean;
-  log(message: string, presentation?: { key: string; args: (string | number)[]; labels?: number[] }): void;
+  log(message: string): void;
 }
 
 function setCvar(name: string, value: string): boolean {
@@ -110,7 +107,7 @@ export class DayRun implements DayContext {
   }
 
   beginsIn(seconds: number): void {
-    toAll(forRecipients((recipient,value0,value1) => this.day.beginsIn?.(seconds,recipient) ?? msgFor(recipient).beginsIn(value0, value1), this.day.name,seconds));
+    toAll(this.day.beginsIn?.(seconds) ?? msg.beginsIn(this.day.name, seconds));
   }
 
   disarmPickups(): void {
@@ -126,8 +123,8 @@ export class DayRun implements DayContext {
   }
 
   panic(reason: string): void {
-    toAll(recipient => msgFor(recipient).error(labelFor(recipient,"JB_SPECIALDAYS_LABEL_PANIC", String(reason))));
-    this.core.log(...logEntry("JB_LOG_SPECIAL_DAY_PANICKED", [String(this.day.name), String(reason)], [0,1]));
+    toAll(msg.error(`PANIC: ${reason}`));
+    this.core.log(`Special day ${this.day.name} panicked: ${reason}`);
     Server.setCvar("mp_ignore_round_win_conditions", "0");
     setTimeRemaining(1);
   }

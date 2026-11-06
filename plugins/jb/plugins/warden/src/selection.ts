@@ -1,5 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
-import {broadcastText} from '@edgegamers/jailbreak-shared';
 import { Chat, Clients, Cookies } from "@s2script/sdk";
 import type { Cookie } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
@@ -7,7 +5,7 @@ import { Team, isAlive, isSteamId64 } from "@edgegamers/jailbreak-shared";
 import { log } from "@edgegamers/jailbreak-core";
 import { cfg } from "./config";
 import { hasFlagLetters, roundAfter } from "./env";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { runRaffle, type Favor } from "./queue";
 import { cooldownKey, hasWarden, setWarden } from "./warden";
 
@@ -54,7 +52,7 @@ export function tryGuaranteed(slot: number): boolean {
   if (!guaranteed.has(steamId)) return false;
   if (!setWarden(slot)) return false;
   guaranteed.delete(steamId);
-  log(...logEntry("JB_LOG_GUARANTEED_WARDEN_USED_BY", [String(steamId)]));
+  log(`Guaranteed warden used by ${steamId}.`);
   return true;
 }
 
@@ -85,7 +83,7 @@ function chooseWarden(): void {
   if (hasWarden()) return;
   const eligible = Player.all().filter((p) => p.teamNum === Team.Guard && isAlive(p) && queued.has(p.userId));
   if (eligible.length === 0) {
-    broadcastText(recipient => msgFor(recipient).noWardens);
+    Chat.toAll(msg.noWardens);
     return;
   }
   const keyToSlot = new Map<string, number>();
@@ -103,17 +101,17 @@ function runAutoWarden(): void {
     const c = Clients.fromSlot(p.slot);
     if (!c || Cookies.get(c, autoCookie) !== "Y") continue;
     if (isInQueue(p.slot)) continue;
-    if (tryEnterQueue(p.slot)) Chat.toSlot(p.slot, msgFor(p.slot).joinRaffle);
+    if (tryEnterQueue(p.slot)) Chat.toSlot(p.slot, msg.joinRaffle);
   }
 }
 
 /** `!aw` / `!autowarden`: toggle the auto-warden preference. Returns the message to show. */
 export function toggleAutoWarden(slot: number): string {
   const c = Clients.fromSlot(slot);
-  if (!autoCookie || !c || c.isBot) return msgFor(slot).togglingNotEnabled;
+  if (!autoCookie || !c || c.isBot) return msg.togglingNotEnabled;
   const enable = Cookies.get(c, autoCookie) !== "Y";
-  if (!Cookies.set(c, autoCookie, enable ? "Y" : "N")) return msgFor(slot).markerSaveFailed;
-  return msgFor(slot).autoWardenToggled(enable);
+  if (!Cookies.set(c, autoCookie, enable ? "Y" : "N")) return msg.markerSaveFailed;
+  return msg.autoWardenToggled(enable);
 }
 
 /** Round start (non-warmup): open the raffle, pick in a few seconds. */
@@ -122,7 +120,7 @@ export function selectionRoundStart(warmup: boolean): void {
   queueActive = false;
   if (warmup) return;
   queueActive = true;
-  broadcastText(recipient => msgFor(recipient).pickingShortly);
+  Chat.toAll(msg.pickingShortly);
   roundAfter(cfg.queueSeconds * 1000, chooseWarden);
   roundAfter(cfg.autoWardenDelay * 1000, runAutoWarden);
 }

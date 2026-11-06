@@ -1,4 +1,3 @@
-import {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';
 /**
  * LR menus (C# `LastRequestMenuSelector` / `LastRequestPlayerSelector`) plus a tiny registry of
  * the menus this plugin has open, so round start can close them all.
@@ -37,7 +36,7 @@ export function showTypeMenu(
 ): void {
   const menu = new Menu(title);
   menu.style = MenuStyle.Center;
-  for (const t of LR_TYPES) if (available(t)) menu.addItem(t,labelFor(slot,lrName(t)));
+  for (const t of LR_TYPES) if (available(t)) menu.addItem(t, lrName(t));
   menu.onSelect((e) => {
     open.delete(e.slot);
     onPick(e.info as LRType);
@@ -61,7 +60,7 @@ export function showPlayerMenu(
   for (const p of Player.all()) {
     if (!isAlive(p)) continue;
     if (!debug && p.teamNum !== Team.Guard) continue;
-    const label = (p.playerName ?? "?") + (isWarden(p.slot) ? labelFor(slot,"LABEL_WARDEN_SUFFIX") : "");
+    const label = (p.playerName ?? "?") + (isWarden(p.slot) ? " (Warden)" : "");
     menu.addItem(String(p.userId), label, { disabled: !debug && inLR(p.slot) });
   }
   menu.onSelect((e) => {

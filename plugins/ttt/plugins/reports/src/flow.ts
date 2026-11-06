@@ -1,4 +1,3 @@
-import { plainPhraseFor } from "../../../packages/contracts/phrases.ts";
 /** Existing RDM question/context flow. Core presents it in Panorama, with chat as the fallback; the reason is always chat. */
 import type {DomainBus} from '../../../packages/contracts/ordered';
 import type {ReportActor,ReportAnswer,ReportCapture,ReportFiled} from '../../../packages/contracts/report-types';
@@ -34,7 +33,7 @@ function considerDeath(victim:number,killer:number):void{
  if(klass===KillClass.Clean){why(`clean (vRole=${v.role} kRole=${k.role} victimStruckFirst=${selfDefence})`);return;}
  const round=b.core.getGame().roundsThisMap;
  if(!valid(v.actor,b)||!valid(k.actor,b)||!current(b)||revision!==version)return;
- const subject:Subject={accusedSlot:killer,accusedName:k.name,accusedSteamId:k.actor.steamId,round,what:describeKill(klass,key=>plainPhraseFor(victim,key))};
+ const subject:Subject={accusedSlot:killer,accusedName:k.name,accusedSteamId:k.actor.steamId,round,what:describeKill(klass)};
  if(!offer(victim,subject,Date.now()/1000)){why('offer refused');return;}
  connections.set(victim,{...v.actor});
  if(!present(b,v.actor,'RDM_ASK_TITLE',subject.accusedName)&&current(b)){tell(b,v.actor,'RDM_ASK_TITLE',subject.accusedName);tell(b,v.actor,'RDM_ASK_YES');tell(b,v.actor,'RDM_ASK_NO');}

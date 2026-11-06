@@ -121,16 +121,13 @@ export function teleportOnto(p: Player, target: Player): void {
 
 // ── chat ─────────────────────────────────────────────────────────────────────────────────────────
 
-type Lines = string | readonly string[];
-type LocalizedLines = Lines | ((slot: number) => Lines);
-export function toAll(lines: LocalizedLines): void {
-  for (const client of Clients.all()) if(client.isValid()) toSlot(client.slot,lines);
+export function toAll(lines: string | readonly string[]): void {
+  for (const l of typeof lines === "string" ? [lines] : lines) Chat.toAll(l);
 }
-export function toSlot(slot: number, lines: LocalizedLines): void {
-  const rendered=typeof lines==='function'?lines(slot):lines;
-  for (const l of typeof rendered === "string" ? [rendered] : rendered) Chat.toSlot(slot, l);
+export function toSlot(slot: number, lines: string | readonly string[]): void {
+  for (const l of typeof lines === "string" ? [lines] : lines) Chat.toSlot(slot, l);
 }
-export function toTeam(teamNum: number, lines: LocalizedLines): void {
+export function toTeam(teamNum: number, lines: string | readonly string[]): void {
   for (const p of onTeam(teamNum)) toSlot(p.slot, lines);
 }
 

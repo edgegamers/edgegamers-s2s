@@ -1,11 +1,10 @@
-import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 import { Chat, Clients, Cookies, HookResult, Menu, MenuStyle, Vector } from "@s2script/sdk";
 import type { Cookie, HookResultValue } from "@s2script/sdk";
 import type { BeamHandle } from "@s2script/cs2";
 import { cfg } from "./config";
 import { hasFlagLetters } from "./env";
 import { drawLine, drawLoop, removeBeams } from "./draw";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { inMarker, markerPing, type MarkerPlacement, type Point3 } from "./rules";
 import {
   MARKER_COLORS,
@@ -71,7 +70,7 @@ export function markerOnPing(slot: number, x: number, y: number, z: number): voi
   if (res.action === "ignore") return;
   placement = res.marker;
   redraw();
-  if (res.action === "place") Chat.toSlot(slot, msgFor(slot).markerPlaced);
+  if (res.action === "place") Chat.toSlot(slot, msg.markerPlaced);
 }
 
 /** Only the warden may ping (C# player_ping command listener). */
@@ -96,19 +95,19 @@ export function clearMarker(): void {
 
 /** Returns an error message, or null when the menu was opened. */
 export function openMarkerTypeMenu(slot: number): string | null {
-  if (!hasFlagLetters(slot, cfg.markerFlag)) return msgFor(slot).noPermission(cfg.markerFlag);
-  const menu = new Menu(labelFor(slot,"JB_WARDEN_LABEL_MARKER_TYPE"));
+  if (!hasFlagLetters(slot, cfg.markerFlag)) return msg.noPermission(cfg.markerFlag);
+  const menu = new Menu("Marker Type");
   menu.style = MenuStyle.Center;
-  for (const s of MARKER_SHAPES) menu.addItem(s.key,labelFor(slot,s.name));
+  for (const s of MARKER_SHAPES) menu.addItem(s.key, s.name);
   menu.onSelect((e) => {
     const c = Clients.fromSlot(e.slot);
     if (!c || !typeCookie) return;
     const name = shapeName(parseShape(e.info));
     if (!Cookies.set(c, typeCookie, name)) {
-      Chat.toSlot(e.slot, msgFor(e.slot).markerSaveFailed);
+      Chat.toSlot(e.slot, msg.markerSaveFailed);
       return;
     }
-    Chat.toSlot(e.slot, msgFor(e.slot).markerTypeChanged(name));
+    Chat.toSlot(e.slot, msg.markerTypeChanged(name));
     if (isWarden(e.slot)) redraw();
   });
   menu.display(slot, 30);
@@ -116,18 +115,18 @@ export function openMarkerTypeMenu(slot: number): string | null {
 }
 
 export function openMarkerColorMenu(slot: number): string | null {
-  if (!hasFlagLetters(slot, cfg.markerFlag)) return msgFor(slot).noPermission(cfg.markerFlag);
-  const menu = new Menu(labelFor(slot,"JB_WARDEN_LABEL_MARKER_COLOR"));
+  if (!hasFlagLetters(slot, cfg.markerFlag)) return msg.noPermission(cfg.markerFlag);
+  const menu = new Menu("Marker Color");
   menu.style = MenuStyle.Center;
-  for (const c of MARKER_COLORS) menu.addItem(c.name,labelFor(slot,c.name));
+  for (const c of MARKER_COLORS) menu.addItem(c.name, c.name);
   menu.onSelect((e) => {
     const c = Clients.fromSlot(e.slot);
     if (!c || !colorCookie) return;
     if (!Cookies.set(c, colorCookie, e.info)) {
-      Chat.toSlot(e.slot, msgFor(e.slot).markerSaveFailed);
+      Chat.toSlot(e.slot, msg.markerSaveFailed);
       return;
     }
-    Chat.toSlot(e.slot, msgFor(e.slot).markerColorChanged(e.info));
+    Chat.toSlot(e.slot, msg.markerColorChanged(e.info));
     if (isWarden(e.slot)) redraw();
   });
   menu.display(slot, 30);
