@@ -2,7 +2,7 @@ import {logEntry} from '@edgegamers/jailbreak-shared';
 /**
  * Rebels (Jailbreak.Rebel RebelManager + RebelListener). A prisoner who hurts a guard is a rebel
  * for `rebel_time` seconds: their model fades from red back to white and their screen pulses red
- * every second. Death, disconnect and the next round clear it.
+ * every second. Death, disconnect and round end clear it.
  */
 import { config, HookResult } from "@s2script/sdk";
 import { Fade, Player } from "@s2script/cs2";
@@ -59,6 +59,18 @@ function applyColor(p: Player): void {
   });
 }
 
+/** Clear both model tint and any outstanding rebel screen fade. */
+function clearColor(p: Player): void {
+  const pawn = p.pawn;
+  if (pawn && pawn.isValid) {
+    const alpha = ((pawn.render ?? 0xffffffff) >>> 24) & 0xff;
+    setPawnColor(pawn, { r: 255, g: 255, b: 255 }, alpha);
+  }
+  if (!Clients.fromSlot(p.slot)?.isBot) {
+    Fade.to(p.slot, { duration: 0, holdTime: 0, flags: 0x0010, color: 0 });
+  }
+}
+
 /** core.markRebel. */
 export function markRebel(slot: number, seconds: number, reason: string): boolean {
   const p = Player.fromSlot(slot);
@@ -92,7 +104,7 @@ function clear(slot: number, reason: string, notify: boolean): boolean {
   book.unmark(slot);
   if (same && p) {
     if (notify) Clients.fromSlot(slot)?.chat(msgFor(slot).noLongerRebel());
-    if (notify) applyColor(p);
+    clearColor(p);
     bus()?.emit("OnRebelChanged", { player: refOf(p), rebel: false, reason });
   }
   return true;
@@ -110,14 +122,13 @@ export function disableRebelsForRound(): void {
 /** Round start: everyone is pardoned and rebels are allowed again. */
 export function resetRebels(): void {
   enabled = true;
-  for (const slot of book.slots()) {
-    const p = liveEntry(slot);
-    book.unmark(slot);
-    if (!p) continue;
-    const pawn = p.pawn;
-    if (pawn && pawn.isValid) setPawnColor(pawn, { r: 255, g: 255, b: 255 });
-    bus()?.emit("OnRebelChanged", { player: refOf(p), rebel: false, reason: "round" });
-  }
+  for (const slot of book.slots()) clear(slot, "round", false);
+}
+
+/** Clear rebels before round-end team changes and prevent post-round damage from marking them again. */
+export function endRebels(): void {
+  enabled = false;
+  for (const slot of book.slots()) clear(slot, "round", false);
 }
 
 /** Every second: expire rebels, refresh the colour fade of the rest. */

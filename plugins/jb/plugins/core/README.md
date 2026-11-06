@@ -61,7 +61,8 @@ The warden's `!open` belongs to `@edgegamers/jailbreak-warden`, which calls `cor
   `normal` at every round start. `OnModeChanged` fires only when the mode actually moves.
 - **Order at round start**: mode reset (`OnModeChanged` if it was claimed) → log cleared → rebels
   cleared (`OnRebelChanged` reason `"round"` each) → C4 state reset → cells closed + auto-open armed
-  → **`OnRoundStart`**. `OnRoundLive` on freeze end, `OnRoundEnd { winner }` on round end.
+  → **`OnRoundStart`**. `OnRoundLive` on freeze end. Round end clears rebel model/screen tints and
+  blocks further rebel marks before emitting `OnRoundEnd { winner }`.
 - **Rebels**: `markRebel(slot, seconds, reason)` only for living prisoners; refused (returns the
   current state) after `disableRebelsForRound()`. Otherwise `OnRebelRequested` (Hook) is dispatched — `Handled`/`Stop` veto. `seconds <= 0`
   uses `rebel_time`; re-marking refreshes the timer. `OnRebelChanged` fires on every transition:
@@ -125,7 +126,8 @@ Nothing here has been run on a CS2 server. Verify:
 - [ ] T shoots a CT → T turns red, red screen pulse each second, fades to white over `rebel_time`,
       "You are no longer red." on expiry; `OnRebelChanged` both ways.
 - [ ] T hurting a CT while mode is `lastrequest`/`lastguard`/`specialday` does **not** mark.
-- [ ] Rebel dies / disconnects / new round → cleared (no chat line), colour reset at round start.
+- [ ] Rebel dies / round ends → model and screen tint cleared immediately (no chat line).
+      Post-round damage does not mark rebels; round start allows marks again. Disconnect clears tracking.
 - [ ] A consumer returning `Handled` from `OnRebelRequested` vetoes the mark.
 - [ ] Rebel colour keeps any translucency another plugin set (alpha preserved).
 - [ ] Round start: a random human T gets a C4 + two chat lines after ~1s (`c4_give`).
@@ -167,7 +169,8 @@ Nothing here has been run on a CS2 server. Verify:
   forgets the tracked bombs (they become plain C4s until the next round).
 - **Kill-feed attacker**: rewritten in a `player_death` pre-hook via `ev.setInt("attacker", slot)` +
   `ev.setString("weapon", icon)` — the slot encoding is a guess at what CS2 expects (see checklist).
-- **Rebel colour reset at round start** only touches previous rebels (C# repainted everyone white).
+- **Rebel colour cleanup** touches tracked rebels on death, pardon, expiry and round end; round start
+  also clears any remaining entries (C# repainted everyone white). Cleanup preserves pawn alpha.
 - **Explosion particle** is removed after 5s (C# leaked it). Spawned with keyvalues
   `effect_name` / `start_active` / `origin`.
 - **Logs**: label format is `Name #userid [T, rebel]` (no colours; the warden tag is warden's job).

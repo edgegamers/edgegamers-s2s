@@ -74,6 +74,7 @@ export function OnPluginStart(): void {
     killRoundTimers();
     selectionRoundEnd();
     wardenRoundEnd();
+    specialRoundStart();
     peaceRoundEnd();
   });
   core.on("OnRebelChanged", (ev) => {
@@ -151,6 +152,8 @@ export function OnMapStart(_map: string): void {
 }
 
 export function OnPluginEnd(): void {
+  wardenRoundEnd();
+  specialRoundStart();
   unPeaceMute();
   removeAllIcons();
   clearMarker();

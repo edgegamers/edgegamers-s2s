@@ -69,6 +69,7 @@ export function OnPluginStart(): void {
     round.roundLive();
   });
   Events.on("round_end", (ev) => {
+    rebels.endRebels();
     const winner = round.roundEnded(ev.getInt("winner"));
     cells.stopAutoOpen();
     logs.log(...logEntry("JB_LOG_ROUND_OVER_WINNER", [String(winner)], [0]));

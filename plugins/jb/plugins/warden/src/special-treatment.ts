@@ -55,7 +55,7 @@ export function revokeSpecialTreatment(slot: number, print: boolean): boolean {
   const p = Player.fromSlot(slot);
   if (p) {
     setPawnColor(p.pawn, Colors.White);
-    Fade.to(slot, { duration: Math.round(1.5 * 512), holdTime: 0, color: tint, flags: FADE_IN | PURGE });
+    Fade.to(slot, { duration: print ? Math.round(1.5 * 512) : 0, holdTime: 0, color: print ? tint : 0, flags: FADE_IN | PURGE });
     if (print) {
       Chat.toSlot(slot, msgFor(slot).stRevoked);
       centerTo(slot, msgFor(slot).stRevokedCenter);
@@ -77,10 +77,9 @@ function emit(slot: number, granted: boolean): void {
   if (player) pub()?.emit("OnSpecialTreatment", { player, granted });
 }
 
-/** Per-round reset: respawn already restores colour, so only state and icons are dropped. */
+/** Clear owned model/screen tints as well as state and icons, even without a respawn. */
 export function specialRoundStart(): void {
-  for (const slot of [...special]) removeSpecialIcon(slot);
-  special.clear();
+  for (const slot of [...special]) revokeSpecialTreatment(slot, false);
 }
 
 export function specialOnDeath(slot: number): void {

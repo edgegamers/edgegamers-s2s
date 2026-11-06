@@ -14,11 +14,11 @@ import { clearQueue, fillGuards, leaveQueue, resetRoundRestarts, trimGuards } fr
 import { guardsToAdd, guardsToRemove } from "./ratio";
 import { atLeast } from "./ranks";
 
-export function onJoinTeam(slot: number, argString: string): HookResultValue {
+export function onJoinTeam(slot: number, team: number): HookResultValue {
   if (!isRealClient(slot)) return HookResult.Continue; // bots (and invalid slots) only
   const p = Player.fromSlot(slot);
   if (!p) return HookResult.Continue;
-  const req = parseJoinTeam(argString);
+  const req = parseJoinTeam(String(team));
   if (req === "ct" && p.steamId === "0") {
     // Unverified: no ban/priority can be checked, so never CT.
     p.changeTeam(Team.Prisoner);

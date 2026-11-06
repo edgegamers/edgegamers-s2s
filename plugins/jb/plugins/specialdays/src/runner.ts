@@ -22,6 +22,7 @@ import { zoneCenters } from "./zones.ts";
 import { msgFor } from "./messages.ts";
 import {
   alive,
+  clearColors,
   ctSpawns,
   freeze,
   give,
@@ -263,6 +264,8 @@ export class DayRun implements DayContext {
       this.day.teardown?.(this);
     } catch (e) {
       console.log(`[specialdays] ${this.day.type} teardown failed: ${String(e)}`);
+    } finally {
+      clearColors();
     }
   }
 }

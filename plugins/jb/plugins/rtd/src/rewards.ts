@@ -11,13 +11,12 @@ import {broadcastText} from '@edgegamers/jailbreak-shared';
 import { Chat, Entity, after } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
-import { Colors, Team, isAlive, setPawnColor } from "@edgegamers/jailbreak-shared";
+import { Colors, Team, isAlive } from "@edgegamers/jailbreak-shared";
 import { giveBomb, skipRandomBombNextRound } from "@edgegamers/jailbreak-core";
-import type { Rgb } from "@edgegamers/jailbreak-shared";
 import { POOL, isJackpot, requiredTeam, rewardDescription, rewardName } from "./pool.ts";
 import type { RewardSpec } from "./pool.ts";
 import { WEAPON_GROUPS, isKnife } from "./weapons.ts";
-import { addSpy, addTickBlock, blockGroup } from "./effects.ts";
+import { addSpy, addTickBlock, blockGroup, tintPlayer } from "./effects.ts";
 import { deps, gangsReady } from "./deps.ts";
 import { msgFor } from "./messages.ts";
 
@@ -84,13 +83,6 @@ function stripLater(userId: number, delaysMs: number[]): void {
   }
 }
 
-function tint(pawn: Pawn, color: Rgb, alpha: number): boolean {
-  // C# SetColor: an opaque colour keeps the pawn's current alpha.
-  const current = pawn.render;
-  const a = alpha === 255 && current !== null ? (current >>> 24) & 0xff : alpha;
-  return setPawnColor(pawn, color, a);
-}
-
 const SPAWN_CLASSES = ["info_teleport_destination", "info_player_terrorist", "info_player_counterterrorist"];
 
 function randomTeleport(pawn: Pawn): boolean {
@@ -146,9 +138,9 @@ function grantFor(spec: RewardSpec, player: Player): boolean {
       stripLater(player.userId, [1000, 2000, 4000]);
       return true;
     case "color":
-      return tint(pawn, Colors.Green, 255);
+      return tintPlayer(player, Colors.Green, 255);
     case "transparent":
-      return tint(pawn, Colors.White, 70);
+      return tintPlayer(player, Colors.White, 70);
     case "guaranteedWarden":
       if (deps.warden === null) return false;
       try {
