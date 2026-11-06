@@ -76,6 +76,11 @@ Existing installations that explicitly configured `prisoner_to_guard_ratio` to `
 
 ## Behaviour
 
+- **Waiting for players**: the first playing human spawns on T, including auto-select and CT
+  requests. With two playing humans, an eligible player becomes the first guard immediately;
+  spectators and bots do not count. This initial pair is exempt from minimum priority until more
+  humans are playing. CT bans and pending ban data still prevent guard assignment; when a pending
+  load completes, the pair is checked again. With no eligible guard, players remain on T while waiting.
 - **Queue order**: effective priority is `min(stored, rank cap)`. A joiner walks from the back toward
   the front and may be skipped by Dedicated Supporters with a chance based on their priority. Players
   pushed back are told why.

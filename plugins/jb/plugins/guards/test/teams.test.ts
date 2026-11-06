@@ -9,7 +9,7 @@ const code = (await build({
   bundle: true, write: false, format: "cjs", platform: "node", external: ["@s2script/*", "@edgegamers/jailbreak-core"],
   plugins: [{ name: "runtime-boundaries", setup(build) {
     const mocks: Record<string, string> = {
-      "./players": "export const entry=id=>({loaded:!fixture.unloaded.has(id),priority:480}), effectiveOf=()=>480, capOfSlot=()=>480, rankOfSlot=()=> 'eg', flushAll=()=>{}, onPlayerGone=()=>{}, onPlayerReady=()=>{}, reloadUnloaded=()=>{}, startAccrual=()=>{};",
+      "./players": "export const entry=id=>({loaded:!fixture.unloaded.has(id),priority:fixture.priority.get(id)??480}), effectiveOf=()=>480, capOfSlot=()=>480, rankOfSlot=()=> 'default', flushAll=()=>{}, onPlayerGone=()=>{}, onPlayerReady=(id,done)=>done({}), reloadUnloaded=()=>{}, startAccrual=()=>{};",
       "./ctbans": "export const activeBan=id=>fixture.banned.has(id)?{steamId:id}:null, remind=()=>{}, armExpiry=()=>{}, clearExpiry=()=>{};",
       "./store": "export const onStoreConnected=()=>{}, openStore=()=>{}, pendingWrites=()=>0, pruneBans=()=>{};",
       "./commands": "export const registerCommands=()=>{}, resetCommandState=()=>{};",
@@ -21,25 +21,27 @@ const code = (await build({
 })).outputFiles[0]!.text;
 
 function fixture(overrides: Record<string, number> = {}) {
-  const players: any[] = [], joins: any[] = [], forwards = new Map<string, () => void>();
-  const banned = new Set<string>(), unloaded = new Set<string>();
+  const players: any[] = [], joins: any[] = [], forwards = new Map<string, (event?: any) => void>();
+  const round = { mode: "normal" };
+  const banned = new Set<string>(), unloaded = new Set<string>(), priority = new Map<string, number>();
   const values: Record<string, number | string> = { prisoner_to_guard_ratio: 3, min_priority_for_ct: 120, priority_caps: "default=480" };
+  let fullyConnected = (_client: any) => {};
   const command: any = () => {};
   command.onClientCommand = () => {};
   const sdk = {
     command, Commands: { dispatch() {} }, HookResult: { Continue: 0, Handled: 2, Stop: 3 },
-    Chat: { toSlot() {}, toAll() {} }, Clients: { all: () => [], fromSlot: (slot: number) => players.find(p => p.slot === slot)?.client },
+    Chat: { toSlot() {}, toAll() {} }, Clients: { all: () => players.map(p => p.client), fromSlot: (slot: number) => players.find(p => p.slot === slot)?.client },
     config: { getString: (key: string) => values[key] ?? "", getFloat: (key: string) => overrides[key] ?? values[key] ?? 0,
       getInt: (key: string) => values[key] ?? 0, getBool: () => false, onChange() {} },
-    createScope: () => ({ clients: { onFullyConnect() {} } }), publish: () => ({ emit() {} }),
-    use: () => ({ on: (name: string, handler: () => void) => forwards.set(name, handler) }),
+    createScope: () => ({ clients: { onFullyConnect(handler: any) { fullyConnected = handler; } } }), publish: () => ({ emit() {} }),
+    use: () => ({ on: (name: string, handler: (event?: any) => void) => forwards.set(name, handler) }),
   };
   const cs2 = { Player: { fromSlot: (slot: number) => players.find(p => p.slot === slot) ?? null, allConnected: () => players },
     Teams: { onJoinTeam: (handler: any) => joins.push(handler) }, GameRules: { get: () => ({ warmupPeriod: false }) } };
   const mod = { exports: {} as any };
-  vm.runInNewContext(code, { fixture: { banned, unloaded }, module: mod, exports: mod.exports, console, require: (name: string) => {
+  vm.runInNewContext(code, { fixture: { banned, unloaded, priority }, module: mod, exports: mod.exports, console, require: (name: string) => {
     if (name === "@s2script/cs2") return cs2;
-    if (name === "@edgegamers/jailbreak-core") return { getRound: () => ({ mode: "normal" }) };
+    if (name === "@edgegamers/jailbreak-core") return { getRound: () => round };
     return sdk;
   } });
   mod.exports.OnPluginStart();
@@ -56,7 +58,7 @@ function fixture(overrides: Record<string, number> = {}) {
     const result = Math.max(0, ...joins.map(handler => handler({ player: p, team, queue: false }) ?? 0));
     if (result < 2) p.changeTeam(team === 0 ? 3 : team);
   }
-  return { add, join, players, banned, unloaded, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
+  return { add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
 }
 
 test("native team-menu CT requests cannot bypass an occupied guard queue", () => {
@@ -79,7 +81,7 @@ test("native auto-select joins prisoners and spectator requests leave the queue"
 
 for (const team of [0, 1, 2]) {
   test(`joining empty CT from team ${team} spawns immediately as a guard`, () => {
-    const f = fixture(), p = f.add(team, false);
+    const f = fixture(); f.add(2); const p = f.add(team, false);
     f.queue.add(p.steamId, () => 480, 480, () => 0);
     f.join(p, 3);
     assert.equal(p.teamNum, 3);
@@ -90,7 +92,7 @@ for (const team of [0, 1, 2]) {
 }
 
 test("a living prisoner joining empty CT also spawns as a guard", () => {
-  const f = fixture(), p = f.add(2);
+  const f = fixture(); f.add(2); const p = f.add(2);
   f.join(p, 3);
   assert.equal(p.pawnIsAlive, true);
   assert.deepEqual(p.spawnedTeams, [3]);
@@ -101,7 +103,7 @@ test("only the first guard gets an immediate spawn", () => {
   f.join(first, 3);
   f.join(second, 3);
   assert.equal(second.teamNum, 2);
-  assert.deepEqual(second.spawnedTeams, []);
+  assert.equal(second.spawnedTeams.includes(3), false);
 });
 
 for (const blocked of ["ban", "loading", "unverified"]) {
@@ -112,7 +114,7 @@ for (const blocked of ["ban", "loading", "unverified"]) {
     if (blocked === "unverified") p.steamId = "0";
     f.join(p, 3);
     assert.equal(p.teamNum, 2);
-    assert.deepEqual(p.spawnedTeams, []);
+    assert.equal(p.spawnedTeams.includes(3), false);
   });
 }
 
@@ -126,4 +128,141 @@ test("round-start balancing obeys configured 3:1 without round-end transfers", (
   assert.equal(f.players.filter(p => p.teamNum === 3).length, 2);
   f.roundEnd();
   assert.equal(f.players.filter(p => p.teamNum === 3).length, 2);
+});
+
+for (const team of [0, 2, 3]) {
+  test(`the first player joining team ${team} spawns as T while waiting for an opponent`, () => {
+    const f = fixture(), p = f.add(0, false);
+    f.join(p, team);
+    assert.equal(p.teamNum, 2);
+    assert.equal(p.pawnIsAlive, true);
+    assert.deepEqual(p.spawnedTeams, [2]);
+  });
+}
+
+test("two auto-joining players become a living T/guard pair before any round event", () => {
+  const f = fixture(), first = f.add(0, false);
+  f.join(first, 0);
+  const second = f.add(0, false);
+  f.join(second, 0);
+  assert.equal(first.teamNum, 2);
+  assert.equal(second.teamNum, 3);
+  assert.equal(first.pawnIsAlive, true);
+  assert.equal(second.pawnIsAlive, true);
+});
+
+for (const team of [0, 2, 3]) {
+  test(`the second player requesting team ${team} establishes the first guard`, () => {
+    const f = fixture(), first = f.add(2);
+    const second = f.add(0, false);
+    f.join(second, team);
+    assert.equal(first.teamNum, 2);
+    assert.equal(second.teamNum, 3);
+    assert.equal(second.pawnIsAlive, true);
+  });
+}
+
+test("a banned second player spawns as T and the eligible first player becomes guard", () => {
+  const f = fixture(), first = f.add(2), second = f.add(0, false);
+  f.banned.add(second.steamId);
+  f.join(second, 0);
+  assert.equal(first.teamNum, 3);
+  assert.equal(first.pawnIsAlive, true);
+  assert.equal(second.teamNum, 2);
+  assert.equal(second.pawnIsAlive, true);
+});
+
+test("two banned players can spawn on T without either bypassing a CT ban", () => {
+  const f = fixture(), first = f.add(0, false);
+  f.banned.add(first.steamId);
+  f.join(first, 0);
+  const second = f.add(0, false);
+  f.banned.add(second.steamId);
+  f.join(second, 0);
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
+  assert.ok(f.players.every(p => p.pawnIsAlive));
+});
+
+test("pending ban data is retried to establish the first pair after loading", () => {
+  const f = fixture(), first = f.add(2), second = f.add(0, false);
+  f.unloaded.add(first.steamId); f.unloaded.add(second.steamId);
+  f.join(second, 0);
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
+  f.unloaded.delete(second.steamId);
+  f.ready(second);
+  assert.equal(second.teamNum, 3);
+});
+
+test("round start keeps a low-priority first guard when only two humans are playing", () => {
+  const f = fixture(), first = f.add(2), guard = f.add(3);
+  f.priority.set(guard.steamId, 0);
+  f.roundStart();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3]);
+});
+
+test("a sole queued player is never promoted to guard at round start", () => {
+  const f = fixture(), p = f.add(2);
+  f.queue.add(p.steamId, () => 480, 480, () => 0);
+  f.roundStart();
+  assert.equal(p.teamNum, 2);
+});
+
+test("spectators and bots do not count as an opponent for the first joining human", () => {
+  const f = fixture(); f.add(1);
+  const bot = f.add(3); bot.client.isBot = true;
+  const p = f.add(0, false);
+  f.join(p, 3);
+  assert.equal(p.teamNum, 2);
+  assert.equal(p.pawnIsAlive, true);
+});
+
+test("reselecting T in an established live pair never revives a dead prisoner", () => {
+  const f = fixture(); f.add(3);
+  const p = f.add(2, false);
+  f.join(p, 0);
+  assert.equal(p.pawnIsAlive, false);
+});
+
+test("normal minimum priority enforcement resumes above two playing humans", () => {
+  const f = fixture(); f.add(2); f.add(2);
+  const guard = f.add(3);
+  f.priority.set(guard.steamId, 0);
+  f.roundStart();
+  assert.equal(guard.teamNum, 2);
+});
+
+test("the third auto-joining player remains T and normal ratio balancing resumes", () => {
+  const f = fixture(), first = f.add(0, false);
+  f.join(first, 0);
+  const second = f.add(0, false);
+  f.join(second, 0);
+  const third = f.add(0, false);
+  f.join(third, 0);
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+  f.roundStart();
+  f.roundEnd();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+});
+
+for (const handedBack of [false, true]) {
+  for (const guardCount of [1, 2]) {
+    test(`late ban-data loading preserves ${guardCount} special-day guards (mode handed back: ${handedBack})`, () => {
+      const f = fixture();
+      for (let i = 0; i < guardCount; i++) f.add(3);
+      const spectator = f.add(1);
+      f.mode("specialday");
+      if (handedBack) f.mode("normal");
+      f.ready(spectator);
+      assert.ok(f.players.slice(0, guardCount).every(p => p.teamNum === 3 && p.pawnIsAlive));
+      assert.ok(f.players.every(p => p.spawnedTeams.length === 0));
+    });
+  }
+}
+
+test("late ban discovery still removes a guard during a special day", () => {
+  const f = fixture(), guard = f.add(3);
+  f.mode("specialday");
+  f.banned.add(guard.steamId);
+  f.ready(guard);
+  assert.equal(guard.teamNum, 2);
 });

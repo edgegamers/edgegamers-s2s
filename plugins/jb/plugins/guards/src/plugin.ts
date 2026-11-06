@@ -15,20 +15,22 @@ import { now, playerBySteam, setPublisher } from "./env";
 import { effectiveOf, flushAll, onPlayerGone, onPlayerReady, reloadUnloaded, startAccrual } from "./players";
 import { leaveQueue, queue } from "./queueing";
 import { onStoreConnected, openStore, pendingWrites, pruneBans } from "./store";
-import { mapStart, noteModeChanged, onJoinTeam, roundEnd, roundStart } from "./teams";
+import { balanceStartingTeams, mapStart, noteModeChanged, onJoinTeam, roundEnd, roundStart } from "./teams";
 
 function ready(steamId: string): void {
   onPlayerReady(steamId, (e) => {
     if (e.ban) armExpiry(e.ban);
     // The ban may only be known now (slow load / DB was down): enforce it like round start would.
     const ban = activeBan(steamId);
-    if (!ban) return;
-    leaveQueue(steamId);
-    const p = playerBySteam(steamId);
-    if (p && p.teamNum === Team.Guard) {
-      remind(p.slot, ban);
-      p.changeTeam(Team.Prisoner);
+    if (ban) {
+      leaveQueue(steamId);
+      const p = playerBySteam(steamId);
+      if (p && p.teamNum === Team.Guard) {
+        remind(p.slot, ban);
+        p.changeTeam(Team.Prisoner);
+      }
     }
+    balanceStartingTeams(steamId);
   });
 }
 
