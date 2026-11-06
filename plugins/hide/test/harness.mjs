@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
 
@@ -62,15 +63,12 @@ export function fixture(options = {}) {
       assert.equal(opts?.phase, 'post'); frames.push(fn);
     } } }),
     Translations: {
-      load(name, seed) { phraseSets.set(name, {...seed,
-        'Player.Hide.Enabled':'enabled fixture','Player.Hide.Disabled':'disabled fixture',
-        'Config.Reloaded':'{green}reloaded fixture{white}','Config.ReloadFailed':'{red}failed fixture{grey}',
-        ...options.phrases?.[name]}); },
+      load(name, seed) { phraseSets.set(name, { ...seed, ...options.phrases?.[name] }); },
       translate(slot, name, ...args) {
         for (const [set, seed] of phraseSets) {
           let phrases = seed;
           if (clients.get(slot)?.language === 'ru') {
-            phrases = { ...seed, 'Player.Hide.Enabled':'ru enabled fixture','Config.Reloaded':'{yellow}ru reload fixture{grey}','Config.ReloadFailed':'{red}ru failed fixture{grey}' };
+            phrases = { ...seed, ...JSON.parse(readFileSync(`translations/ru/${set}.phrases.json`, 'utf8')) };
           }
           phrases = { ...phrases, ...options.locales?.[clients.get(slot)?.language]?.[set] };
           if (name in phrases) return phrases[name].replace(/\{(\d+)\}/g, (_, n) => String(args[Number(n) - 1] ?? '').replace(/[{}]/g, ''));

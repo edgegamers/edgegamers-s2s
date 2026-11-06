@@ -76,6 +76,5 @@ test('Body provider reentry before paint invocation cannot spend a retired Item 
 
 test('center nameplates render user text as text inside the presentation span',()=>{
  const {api}=fixture();
- const html=api.hudLine('<b>A & B</b>', '#ffffff');
- assert.match(html,/&lt;b&gt;A &amp; B&lt;\/b&gt;/);assert.doesNotMatch(html,/<b>/);
+ assert.equal(api.hudLine('<b>A & B</b>', '#ffffff'), "<font class='fontSize-sm' color='#ffffff'>&lt;b&gt;A &amp; B&lt;/b&gt;</font>");
 });
