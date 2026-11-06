@@ -1,0 +1,37 @@
+name: Restart dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Full source commit SHA from a successfully published dev release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-release
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  restart:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Load the immutable published event
+        env:
+          DEV_RESTART_SOURCE: ${{ inputs.source }}
+        run: node .github/scripts/dev-state.mjs event
+      - name: Retry dev server restart delivery
+        env:
+          DEV_RESTART_WEBHOOKS: ${{ secrets.DEV_RESTART_WEBHOOKS }}
+        run: node .github/scripts/restart-dev.mjs .superpowers/releases/dev-restart.json

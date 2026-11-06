@@ -7,9 +7,11 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: registry-release
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -41,3 +43,12 @@ jobs:
         env:
           S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
         run: npm run deploy
+      - name: Synchronize published main into dev
+        if: steps.versions.outputs.publish == 'true'
+        id: sync
+        run: bash .github/scripts/sync-dev.sh
+      - name: Validate and release the synchronized dev branch
+        if: steps.sync.outputs.dev_sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run dev-release.yml --ref dev
