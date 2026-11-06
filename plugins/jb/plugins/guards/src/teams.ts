@@ -148,6 +148,7 @@ export function roundEnd(): void {
 }
 
 export function mapStart(): void {
+  specialDayThisRound = false;
   clearQueue();
 }
 

@@ -58,7 +58,7 @@ function fixture(overrides: Record<string, number> = {}) {
     const result = Math.max(0, ...joins.map(handler => handler({ player: p, team, queue: false }) ?? 0));
     if (result < 2) p.changeTeam(team === 0 ? 3 : team);
   }
-  return { add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
+  return { mapStart: () => { round.mode = "normal"; mod.exports.OnMapStart("jb_test"); }, add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
 }
 
 test("native team-menu CT requests cannot bypass an occupied guard queue", () => {
@@ -266,3 +266,15 @@ test("late ban discovery still removes a guard during a special day", () => {
   f.ready(guard);
   assert.equal(guard.teamNum, 2);
 });
+
+for (const team of [0, 2, 3]) {
+  test(`a special day on the previous map does not block the first team ${team} join`, () => {
+    const f = fixture();
+    f.mode("specialday");
+    f.mapStart();
+    const p = f.add(0, false);
+    f.join(p, team);
+    assert.equal(p.teamNum, 2);
+    assert.equal(p.pawnIsAlive, true);
+  });
+}
