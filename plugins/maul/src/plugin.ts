@@ -1,4 +1,3 @@
-import { loadPhrases, kickReasonFor } from "./phrases.ts";
 import { watchDecluttr, decluttrCall } from '../../decluttr/src/owner.ts';
 // src/plugin.ts — composition root for the MAUL authentication port.
 //
@@ -77,7 +76,6 @@ function sweepUnverified(auth: Authenticator): void {
 }
 
 export function OnPluginStart(): void {
-  loadPhrases();
   cfg = readConfig();
   reloadRankTable();
 
@@ -121,10 +119,10 @@ export function OnPluginStart(): void {
           },
           // Kicks target a SteamID because that is what MAUL's roster is keyed
           // to; slots are an engine detail MAUL never sees.
-          onKick: (steamId, reason, isDefault) => {
+          onKick: (steamId, reason) => {
             for (const client of Clients.all()) {
               if (!client.isValid() || client.steamId !== steamId) continue;
-              client.kick(kickReasonFor(client.slot,reason,isDefault));
+              client.kick(reason);
               return true;
             }
             return false;

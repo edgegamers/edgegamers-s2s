@@ -1,6 +1,3 @@
-import {loadPhrases,phraseFor,plainPhraseFor} from '@edgegamers/jailbreak-shared';
-import english from '../translations/jb-specialdays.phrases.json';
-export function loadMessages():void {loadPhrases('jb-specialdays',english);}
 /**
  * Every player-facing string (ported from lang/Jailbreak.English/SpecialDay/** and the warden/generic
  * locales the special-day code used). Multi-line C# views are arrays: one chat line each.
@@ -12,103 +9,132 @@ import { article } from "./sdtype";
 const C = ChatColors;
 export const PREFIX = tag("Game", C.DarkBlue);
 const line = (s: string): string => PREFIX + C.Grey + s;
-const unit = (slot: number, n: number, word: "round" | "second"): string => plainPhraseFor(slot,n===1?word:word+"s");
+const plural = (n: number, word: string): string => `${word}${n === 1 ? "" : "s"}`;
 
-export function msgFor(slot: number) {
- return {
-  running: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_RUNNING", plainPhraseFor(slot,name)),
-  invalid: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_INVALID", String(name)),
+export const msg = {
+  // ── manager / command ──────────────────────────────────────────────────────────────────────
+  running: (name: string) => line(`The current day is ${C.BlueGrey}${name}${C.Grey}.`),
+  invalid: (name: string) => line(`${C.Red}${name} ${C.Grey}is not a valid special day.`),
   cooldown: (rounds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_COOLDOWN", String(rounds), String(unit(slot, rounds, "round"))),
+    line(`You must wait ${hl(rounds)}${C.Grey} more ${plural(rounds, "round")} before starting a special day.`),
   tooLate: (seconds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_TOO_LATE", String(seconds), String(unit(slot, seconds, "second"))),
-  cannotCall: (reason: string) => phraseFor(slot, "JB_SPECIALDAYS_CANNOT_CALL", String(reason)),
-  notWarden: () => phraseFor(slot, "JB_SPECIALDAYS_NOT_WARDEN"),
-  modeRefused: () => phraseFor(slot, "JB_SPECIALDAYS_MODE_REFUSED"),
-  get usage() { return phraseFor(slot, "JB_SPECIALDAYS_USAGE"); },
-  get menuTitle() { return plainPhraseFor(slot, "JB_SPECIALDAYS_MENU_TITLE"); },
-  error: (message: string) => phraseFor(slot, "JB_SPECIALDAYS_ERROR", String(message)),
+    line(`You must start a special day within ${hl(seconds)}${C.Grey} ${plural(seconds, "second")} of round start.`),
+  cannotCall: (reason: string) => line(`You cannot call this special day: ${C.Red}${reason}`),
+  notWarden: () => tag("Warden") + `${C.LightRed}You are not the warden.`,
+  modeRefused: () => line(`${C.Red}A special day cannot start right now (another mode owns this round).`),
+  usage: "sm_sd [day]",
+  menuTitle: "Special Days",
+  error: (message: string) => line(`An error occurred: ${C.Red}${message}${C.Grey}.`),
+
+  // ── generic day lifecycle (SoloDayLocale / TeamDayLocale) ───────────────────────────────────
   dayStart: (name: string, description: readonly string[]): string[] => {
-    const head = plainPhraseFor(slot, "JB_SPECIALDAYS_DAY_START", plainPhraseFor(slot,article(name)), plainPhraseFor(slot,name));
-    if (description.length === 0) return [phraseFor(slot, "JB_SPECIALDAYS_DAY_START_2", String(head))];
-    return [phraseFor(slot, "JB_SPECIALDAYS_DAY_START_3", String(head), plainPhraseFor(slot,description[0])), ...description.slice(1).map(text => phraseFor(slot,"JB_SPECIALDAYS_DAY_DESCRIPTION",plainPhraseFor(slot,text)))];
+    const head = `Today is ${article(name)} ${C.White}${name}${C.Grey} day!`;
+    if (description.length === 0) return [line(head)];
+    return [line(`${head} ${description[0]}`), ...description.slice(1).map(line)];
   },
-  dayEnd: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_DAY_END", plainPhraseFor(slot,name)),
+  dayEnd: (name: string) => line(`${C.White}${name}${C.Grey} ended.`),
   beginsIn: (name: string, seconds: number) =>
     seconds === 0
-      ? phraseFor(slot, "JB_SPECIALDAYS_BEGINS_IN", plainPhraseFor(slot,name))
-      : phraseFor(slot, "JB_SPECIALDAYS_BEGINS_IN_2", plainPhraseFor(slot,name), String(seconds)),
-  stayInArmory: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_STAY_IN_ARMORY", plainPhraseFor(slot,name)),
-  stayInCells: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_STAY_IN_CELLS", plainPhraseFor(slot,name)),
-  fogComing: (): string[] => [phraseFor(slot, "JB_SPECIALDAYS_FOG_COMING"), phraseFor(slot, "JB_SPECIALDAYS_FOG_COMING_2")],
+      ? line(`${C.White}${name}${C.Grey} begins now!`)
+      : line(`${C.White}${name}${C.Grey} begins in ${hl(seconds)}${C.Grey} seconds.`),
+  stayInArmory: (name: string) => line(`Today is ${C.White}${name}${C.Grey}, so stay in armory!`),
+  stayInCells: (name: string) => line(`Today is ${C.White}${name}${C.Grey}, so stay in cells!`),
+
+  // ── fog ──────────────────────────────────────────────────────────────────────────────────────
+  fogComing: (): string[] => [line("Fog's rolling in!"), line("Match Starts in 15 seconds.")],
   fogExpands: (seconds: number) =>
     seconds === 0
-      ? phraseFor(slot, "JB_SPECIALDAYS_FOG_EXPANDS")
-      : phraseFor(slot, "JB_SPECIALDAYS_FOG_EXPANDS_2", String(seconds), String(unit(slot, seconds, "second"))),
-  ggDemotedKnife: () => phraseFor(slot, "JB_SPECIALDAYS_GG_DEMOTED_KNIFE"),
+      ? line("Fog is expanding.")
+      : line(`Fog will start expanding in ${hl(seconds)}${C.Grey} ${plural(seconds, "second")}`),
+
+  // ── gun game ─────────────────────────────────────────────────────────────────────────────────
+  ggDemotedKnife: () => line("You were demoted due to getting knifed."),
   ggPromoted: (weapon: string, left: number) =>
     left === 1
-      ? phraseFor(slot, "JB_SPECIALDAYS_GG_PROMOTED", String(weapon))
-      : phraseFor(slot, "JB_SPECIALDAYS_GG_PROMOTED_2", String(weapon), String(left)),
-  ggLastWeapon: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_GG_LAST_WEAPON", String(player)),
-  ggWon: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_GG_WON", String(player)),
-  hnsStayInArmory: (name: string) => phraseFor(slot, "JB_SPECIALDAYS_HNS_STAY_IN_ARMORY", plainPhraseFor(slot,name)),
+      ? line(`Promoted to ${hl(weapon)}${C.Grey}. ${C.Green}LAST WEAPON!`)
+      : line(`Promoted to ${hl(weapon)}${C.Grey}. ${hl(left)}${C.Grey} weapons left.`),
+  ggLastWeapon: (player: string) => line(`${player}${C.Grey} is on the last weapon! ${C.LightRed}Watch out!`),
+  ggWon: (player: string) => line(`${player}${C.Grey} won the game!`),
+
+  // ── hide and seek ────────────────────────────────────────────────────────────────────────────
+  hnsStayInArmory: (name: string) => line(`Today is ${name}, stay in the armory!`),
   hnsBeginsIn: (name: string, seconds: number) =>
     seconds === 0
-      ? phraseFor(slot, "JB_SPECIALDAYS_HNS_BEGINS_IN")
-      : phraseFor(slot, "JB_SPECIALDAYS_HNS_BEGINS_IN_2", plainPhraseFor(slot,name), String(seconds), String(unit(slot, seconds, "second"))),
+      ? line("Ready or not, here they come!")
+      : line(`${C.White}${name}${C.Grey} begins in ${hl(seconds)}${C.Grey} ${plural(seconds, "second")}.`),
   hnsDamageWarning: (seconds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_HNS_DAMAGE_WARNING", String(seconds), String(unit(slot, seconds, "second"))),
+    line(`You will be vulnerable to damage in ${hl(seconds)}${C.Grey} ${plural(seconds, "second")}.`),
+
+  // ── infection ────────────────────────────────────────────────────────────────────────────────
   infYouWereInfected: (by: string | null) =>
     by === null
-      ? phraseFor(slot, "JB_SPECIALDAYS_INF_YOU_WERE_INFECTED")
-      : phraseFor(slot, "JB_SPECIALDAYS_INF_YOU_WERE_INFECTED_2", String(by)),
+      ? line(`${C.Red}You were ${C.DarkRed}infected${C.Red}!`)
+      : line(`${C.Red}You were ${C.DarkRed}infected${C.Red} by ${by}${C.Red}!`),
   infInfectedWarning: (player: string) =>
-    phraseFor(slot, "JB_SPECIALDAYS_INF_INFECTED_WARNING", String(player)),
+    line(`${player}${C.Grey} was ${C.DarkRed}infected${C.Default}! ${C.Red}Watch out!`),
   infDamageWarning: (seconds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_INF_DAMAGE_WARNING", String(seconds)),
-  wardayExpandNow: () => phraseFor(slot, "JB_SPECIALDAYS_WARDAY_EXPAND_NOW"),
+    line(`Damage will be enabled for the ${C.LightRed}Prisoner${C.Grey} team in ${hl(seconds)}${C.Grey} seconds.`),
+
+  // ── warday ───────────────────────────────────────────────────────────────────────────────────
+  wardayExpandNow: () => line("CTs can expand now!"),
   wardayExpandIn: (seconds: number): string[] => [
-    phraseFor(slot, "JB_SPECIALDAYS_WARDAY_EXPAND_IN", String(seconds)),
-    phraseFor(slot, "JB_SPECIALDAYS_WARDAY_EXPAND_IN_2"),
+    line(`CTs can expand in ${hl(seconds)}${C.Grey} seconds.`),
+    line("They will be given replenished health, armor, and speed."),
   ],
-  ghostCountdown: (visible: boolean, seconds: number) => plainPhraseFor(slot, "JB_SPECIALDAYS_GHOST_COUNTDOWN", String((visible ? plainPhraseFor(slot, "JB_SPECIALDAYS_GHOST_COUNTDOWN_YES") : plainPhraseFor(slot, "JB_SPECIALDAYS_GHOST_COUNTDOWN_NO"))), String(seconds)),
-  srNoneEliminated: () => phraseFor(slot, "JB_SPECIALDAYS_SR_NONE_ELIMINATED"),
+
+  // ── ghost ────────────────────────────────────────────────────────────────────────────────────
+  ghostCountdown: (visible: boolean, seconds: number) => `${visible ? "Visible" : "Hidden"} for: ${seconds}s`,
+
+  // ── speedrun ─────────────────────────────────────────────────────────────────────────────────
+  srNoneEliminated: () => line("No one was eliminated this round!"),
   srYouAreRunner: (seconds: number): string[] => [
-    phraseFor(slot, "JB_SPECIALDAYS_SR_YOU_ARE_RUNNER"),
-    phraseFor(slot, "JB_SPECIALDAYS_SR_YOU_ARE_RUNNER_2", String(seconds)),
+    line("You are the speedrunner!"),
+    line(`You have ${hl(seconds)}${C.Grey} seconds to run to a spot to set the goal.`),
   ],
   srBeginRound: (round: number, eliminations: number, seconds: number): string[] =>
     eliminations === 1
       ? [
-          phraseFor(slot, "JB_SPECIALDAYS_SR_BEGIN_ROUND", String(round)),
-          phraseFor(slot, "JB_SPECIALDAYS_SR_BEGIN_ROUND_2", String(seconds)),
+          line(`Round ${C.Yellow}#${round}${C.Grey} begins! The slowest player to reach the goal will be eliminated!`),
+          line(`You have ${hl(seconds)}${C.Grey} seconds to reach the goal!`),
         ]
       : [
-          phraseFor(slot, "JB_SPECIALDAYS_SR_BEGIN_ROUND_3", String(round), String(eliminations)),
-          phraseFor(slot, "JB_SPECIALDAYS_SR_BEGIN_ROUND_4", String(seconds)),
+          line(
+            `Round ${C.Yellow}#${round}${C.Grey} begins! The slowest ${hl(eliminations)}${C.Grey} players to reach the goal will be eliminated!`,
+          ),
+          line(`You have ${hl(seconds)}${C.Grey} seconds to reach the goal.`),
         ],
-  srRuntimeLeft: (seconds: number) => phraseFor(slot, "JB_SPECIALDAYS_SR_RUNTIME_LEFT", String(seconds)),
-  srRunnerAssigned: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_SR_RUNNER_ASSIGNED", String(player)),
-  srRunnerLeft: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_SR_RUNNER_LEFT", String(player)),
+  srRuntimeLeft: (seconds: number) => line(`You have ${hl(seconds)}${C.Grey} seconds left to run to a spot!`),
+  srRunnerAssigned: (player: string) => line(`${player}${C.Grey} is the speedrunner! Follow them closely!`),
+  srRunnerLeft: (player: string) => line(`The original speedrunner left, so ${player}${C.Grey} is now the speedrunner.`),
   srRunnerAfk: (player: string) =>
-    phraseFor(slot, "JB_SPECIALDAYS_SR_RUNNER_AFK", String(player)),
+    line(`The original speedrunner isn't moving, so ${player}${C.Grey} is now the speedrunner.`),
   srFinished: (player: string, place: string, position: number, seconds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_SR_FINISHED", String(player), String(seconds.toFixed(3)), "", placeFor(slot,position), String((position === 1 ? "!" : "."))),
+    line(`${player}${C.Grey} finished in ${hl(seconds.toFixed(3))}${C.Grey} seconds. ${placeColor(position)}${place}${C.Grey} place${position === 1 ? "!" : "."}`),
   srDistance: (player: string, place: string, position: number, units: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_SR_DISTANCE", String(player), String(Math.round(units)), "", placeFor(slot,position)),
-  srEliminated: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_SR_ELIMINATED", String(player)),
-  srStayStill: () => phraseFor(slot, "JB_SPECIALDAYS_SR_STAY_STILL"),
-  srWon: (player: string) => phraseFor(slot, "JB_SPECIALDAYS_SR_WON", String(player)),
+    line(`${player}${C.Grey} was ${hl(Math.round(units))}${C.Grey} units away from the goal, ${placeColor(position)}${place}${C.Grey} place.`),
+  srEliminated: (player: string) => line(`${player}${C.Grey} was eliminated!`),
+  srStayStill: () => line("Stay still to start the round sooner..."),
+  srWon: (player: string) => line(`${player}${C.Grey} won the game!`),
   srBestTime: (player: string, seconds: number) =>
-    phraseFor(slot, "JB_SPECIALDAYS_SR_BEST_TIME", String(player), String(seconds.toFixed(3))),
+    line(`${player}${C.Grey} beat the best time with ${hl(seconds.toFixed(3))}${C.Grey} seconds! ${C.Green}FIRST PLACE${C.Grey}!`),
   srImpossible: (team: string, player: string): string[] => [
-    phraseFor(slot, "JB_SPECIALDAYS_SR_IMPOSSIBLE", plainPhraseFor(slot,team)),
-    phraseFor(slot, "JB_SPECIALDAYS_SR_IMPOSSIBLE_2", String(player)),
-  ]
- };
-}
+    line(`No one on ${team}${C.Grey} reached the goal. Eliminating one player on each team.`),
+    line(`Randomly selected the path from ${player}${C.Grey}.`),
+  ],
+} as const;
 
+function placeColor(position: number): string {
+  switch (position) {
+    case 1:
+      return C.Green;
+    case 2:
+      return C.Yellow;
+    case 3:
+      return C.BlueGrey;
+    default:
+      return C.Grey;
+  }
+}
 
 /** Day descriptions (the locale `Description` lines). */
 export const DESCRIPTIONS = {
@@ -140,9 +166,3 @@ export const DESCRIPTIONS = {
   teleport: ["Free for all! If you damage someone, you will swap places with them!"],
   warday: ["CTs vs Ts! CTs pick a room, Ts must go fight them!", "CTs MUST stay in the same room until expansion time."],
 } as const;
-
-export {plainPhraseFor as labelFor} from '@edgegamers/jailbreak-shared';
-
-function placeFor(slot:number,position:number):string {
- return plainPhraseFor(slot,position===1?"JB_SPECIALDAYS_PLACE_FIRST":position===2?"JB_SPECIALDAYS_PLACE_SECOND":position===3?"JB_SPECIALDAYS_PLACE_THIRD":"JB_SPECIALDAYS_PLACE_OTHER",position);
-}

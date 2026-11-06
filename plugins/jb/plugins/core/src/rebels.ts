@@ -1,4 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
 /**
  * Rebels (Jailbreak.Rebel RebelManager + RebelListener). A prisoner who hurts a guard is a rebel
  * for `rebel_time` seconds: their model fades from red back to white and their screen pulses red
@@ -12,7 +11,7 @@ import { isAlive, nowSeconds, packColor32, setPawnColor, Team } from "@edgegamer
 import { RebelBook, rebelColor, rebelPercent, rebelScreenAlpha } from "./rebel-book";
 import { bus, refOf } from "./bus";
 import { describe, log } from "./logs";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import type { PlayerRef } from "../api";
 
 const book = new RebelBook();
@@ -88,7 +87,7 @@ export function markRebel(slot: number, seconds: number, reason: string): boolea
 
   const isNew = book.mark(slot, p.userId, nowSeconds() + duration);
   if (isNew) {
-    log(...logEntry("JB_LOG_IS_NOW_A_REBEL", [String(describe(slot))]));
+    log(`${describe(slot)} is now a rebel.`);
     h?.emit("OnRebelChanged", { player: refOf(p), rebel: true, reason });
   }
   applyColor(p);
@@ -100,10 +99,10 @@ function clear(slot: number, reason: string, notify: boolean): boolean {
   if (!e) return false;
   const p = Player.fromSlot(slot);
   const same = p !== null && p.userId === e.userId;
-  if (notify && same) log(...logEntry("JB_LOG_IS_NO_LONGER_A_REBEL", [String(describe(slot))]));
+  if (notify && same) log(`${describe(slot)} is no longer a rebel.`);
   book.unmark(slot);
   if (same && p) {
-    if (notify) Clients.fromSlot(slot)?.chat(msgFor(slot).noLongerRebel());
+    if (notify) Clients.fromSlot(slot)?.chat(msg.noLongerRebel());
     clearColor(p);
     bus()?.emit("OnRebelChanged", { player: refOf(p), rebel: false, reason });
   }

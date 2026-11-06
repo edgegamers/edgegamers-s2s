@@ -1,4 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
 /**
  * Round tracking and mode arbitration. The game-event handlers here only move the state; the
  * per-round reset of the other features is orchestrated in plugin.ts so OnRoundStart is emitted
@@ -33,7 +32,7 @@ function emitModeChange(previous: Mode): void {
 export function setMode(mode: Mode): boolean {
   const r = state.setMode(mode);
   if (r.changed) {
-    log(...logEntry("JB_LOG_ROUND_MODE", [String(r.previous), String(mode)], [0,1]));
+    log(`Round mode: ${r.previous} -> ${mode}`);
     emitModeChange(r.previous);
   }
   return r.ok;

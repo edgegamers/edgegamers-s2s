@@ -12,7 +12,7 @@ const code = (await build({
     const mocks: Record<string, string> = {
       "./env": "export const playerRef=slot=>fixture.players.find(p=>p.slot===slot),pub=()=>null,centerTo=()=>{},centerAll=()=>{},playToAll=()=>{},hasFlags=()=>false,isWarmup=()=>false;",
       "./icons": "export const assignSpecialIcon=()=>{},removeSpecialIcon=()=>{},assignWardenIcon=()=>{},removeWardenIcon=()=>{};",
-      "./messages": "export const msgFor=()=>new Proxy({},{get:()=>()=>''}),who=name=>name;",
+      "./messages": "export const msg=new Proxy({wardenDied:[]},{get:(target,key)=>target[key]??(()=>'')}),who=name=>name;",
       "./config": "export const cfg={};",
       "./peace": "export const unPeaceMute=()=>{},peaceOnWarden=()=>{},peaceMute=()=>{};",
     };
@@ -23,7 +23,7 @@ const code = (await build({
 
 function fixture() {
   const players: any[] = [], fades = new Map<number, any>();
-  const sdk = { Clients: { all: () => [] }, after: () => ({ kill() {} }), Chat: { toSlot() {} } };
+  const sdk = { Clients: { all: () => [] }, after: () => ({ kill() {} }), Chat: { toSlot() {}, toAll() {} } };
   const cs2 = { Player: { fromSlot: (slot: number) => players.find(p => p.slot === slot) ?? null, all: () => players, allConnected: () => players },
     Fade: { to: (slot: number, fade: any) => fades.set(slot, fade) }, RenderMode_t: { RenderTransAlpha: 1 } };
   const core = { isRebel: () => false, unmarkRebel() {}, log() {}, describe: () => "" };

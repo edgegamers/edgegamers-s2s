@@ -1,7 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
-import {forRecipients} from '@edgegamers/jailbreak-shared';
-import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
-import {broadcastText} from '@edgegamers/jailbreak-shared';
 /**
  * LR rebel (C# `LastRequestRebelCommand` / `LastRequestRebelManager`): the last prisoner alive may
  * `!rebel` instead of taking an LR — they become a rebel with HP pooled from the living guards and
@@ -15,7 +11,7 @@ import { log, markRebel } from "@edgegamers/jailbreak-core";
 import { rebelHealth } from "./logic";
 import { isEnabled, isInLR } from "./manager";
 import { closeMenu } from "./menus";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { Participant } from "./players";
 import { settings } from "./settings";
 
@@ -32,12 +28,12 @@ export function rebelCommand(cmd: CommandInvocation): void {
   if (!p) return;
   const tell = (m: string): void => cmd.replyToChat(m);
 
-  if (!settings.rebelOn) return tell(msgFor(slot).rebelDisabled());
-  if (p.teamNum !== Team.Prisoner) return tell(msgFor(slot).rebelCt());
-  if (!isEnabled() || !isAlive(p)) return tell(msgFor(slot).notEnabled());
-  if (isInLR(slot) || isRebelling(slot)) return tell(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_YOU_ARE_ALREADY_IN_AN_LR")));
+  if (!settings.rebelOn) return tell(msg.rebelDisabled());
+  if (p.teamNum !== Team.Prisoner) return tell(msg.rebelCt());
+  if (!isEnabled() || !isAlive(p)) return tell(msg.notEnabled());
+  if (isInLR(slot) || isRebelling(slot)) return tell(msg.cannotLR("You are already in an LR"));
   const alivePrisoners = Player.all().filter((q) => q.teamNum === Team.Prisoner && isAlive(q)).length;
-  if (alivePrisoners > 1) return tell(msgFor(slot).cannotLR(labelFor(slot,"JB_LASTREQUEST_LABEL_YOU_MUST_BE_THE_LAST_ALIVE_TO_REBEL")));
+  if (alivePrisoners > 1) return tell(msg.cannotLR("You must be the last alive to !rebel"));
 
   healthBefore.set(slot, p.pawn?.health ?? 0);
   startRebelling(p);
@@ -54,7 +50,7 @@ export function startRebelling(p: Player): void {
     ? rebelHealth(guardHealths, p.pawn.health ?? 0, settings.rebelCtMaxHp, settings.rebelTHpRatio, settings.rebelTMaxHp)
     : 101;
 
-  broadcastText(forRecipients((recipient,value0,value1) => msgFor(recipient).rebel(value0, value1), me.name,hp));
+  Chat.toAll(msg.rebel(me.name, hp));
   markRebel(p.slot, 0, "lastrequest");
   rebelling.add(p.slot);
 
@@ -62,7 +58,7 @@ export function startRebelling(p: Player): void {
   me.strip();
   me.give(settings.rebelWeapon);
   me.give("weapon_knife");
-  log(...logEntry("JB_LOG_CHOSE_TO_LR_REBEL_WITH_HP", [String(me.name), String(hp)]));
+  log(`${me.name} chose to LR rebel with ${hp} HP`);
 }
 
 /** A rebel dropped a weapon: HP back down to what they had before rebelling (once). */

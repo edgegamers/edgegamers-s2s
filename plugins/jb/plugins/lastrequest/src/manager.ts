@@ -1,6 +1,3 @@
-import {logEntry} from '@edgegamers/jailbreak-shared';
-import {forRecipients} from '@edgegamers/jailbreak-shared';
-import {broadcastText} from '@edgegamers/jailbreak-shared';
 /**
  * The last-request manager (C# `LastRequestManager`): when LR turns on, starting and ending LRs,
  * the damage and pickup rules while LRs run, and the per-round reset.
@@ -17,7 +14,7 @@ import type { LastRequest, LRHost } from "./games";
 import { clearTint, startRainbow, stopAllBeacons, tintPlayer } from "./fx";
 import { emit, lrColor } from "./forwards";
 import { damageVerdict, lrName, shouldEnableLR } from "./logic";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { closeAllMenus } from "./menus";
 import { countOnTeam, isReal, Participant, playerOfEntity, playToAll } from "./players";
 import { addTimeCapped, addTimeRemaining, claimMode, isWarmup, releaseMode, setDefaultWinner, setTimeRemaining } from "./round";
@@ -71,7 +68,7 @@ export const hasActiveLRs = (): boolean => active.length > 0;
 export function enableLR(diedSlot = -1): boolean {
   if (!claimMode("lastrequest")) return false;
   enabled = true;
-  broadcastText(recipient => msgFor(recipient).enabled());
+  Chat.toAll(msg.enabled());
 
   const prisoners = Player.all().filter((p) => p.teamNum === Team.Prisoner && isAlive(p));
   const guards = Player.all().filter((p) => p.teamNum === Team.Guard && isAlive(p)).length;
@@ -89,7 +86,7 @@ export function enableLR(diedSlot = -1): boolean {
   }
   setDefaultWinner(3);
 
-  log(...logEntry("JB_LOG_LAST_REQUEST_ENABLED_PRISONERS_LEFT", [String(prisoners.length)]));
+  log(`Last request enabled (${prisoners.length} prisoner(s) left)`);
   emit("OnLREnabled", { round: getRound().round, prisoners: prisoners.length });
   return true;
 }
@@ -156,8 +153,8 @@ function completeInitiation(lr: LastRequest): void {
   }
   applyColor(lr);
 
-  broadcastText(forRecipients((recipient,value0,value1,value2) => msgFor(recipient).inform(value0, value1, value2), lr.prisoner.name,lr.type,lr.guard.name));
-  log(...logEntry("JB_LOG_STARTED_A_LR_AGAINST", [String(lr.prisoner.name), String(lrName(lr.type)), String(lr.guard.name)], [1]));
+  Chat.toAll(msg.inform(lr.prisoner.name, lr.type, lr.guard.name));
+  log(`${lr.prisoner.name} started a ${lrName(lr.type)} LR against ${lr.guard.name}`);
   emit("OnLRStart", { lr: lr.info() });
 }
 
@@ -171,7 +168,7 @@ function applyColor(lr: LastRequest): void {
     if (parsed === RAINBOW) startRainbow(p.userId);
     else tintPlayer(p.userId, parsed);
   }
-  lr.tell(forRecipients((recipient,value0) => parsed === RAINBOW ? msgFor(recipient).lrRainbow() : msgFor(recipient).lrColor(value0), hl(color)));
+  lr.tell(parsed === RAINBOW ? msg.lrRainbow() : msg.lrColor(hl(color)));
 }
 
 /** End an LR (C# `EndLastRequest`). Safe to call twice; the second call is ignored. */
@@ -188,9 +185,9 @@ export function endLastRequest(lr: LastRequest, result: LRResult): void {
 
   if (result === "guard_win" || result === "prisoner_win") {
     addTimeCapped(settings.lrTimePerLR, settings.maxTimeForLR);
-    broadcastText(forRecipients((recipient,value0,value1,value2,value3,value4) => msgFor(recipient).decided(value0, value1, value2, value3, value4), result,lr.prisoner.name,lr.guard.name,lr.prisoner.present,lr.guard.present));
+    Chat.toAll(msg.decided(result, lr.prisoner.name, lr.guard.name, lr.prisoner.present, lr.guard.present));
   }
-  log(...logEntry("JB_LOG_LR_BETWEEN_AND_ENDED", [String(lrName(lr.type)), String(lr.prisoner.name), String(lr.guard.name), String(result.replace("_", " "))], [0,3]));
+  log(`${lrName(lr.type)} LR between ${lr.prisoner.name} and ${lr.guard.name} ended: ${result.replace("_", " ")}`);
   emit("OnLREnd", { lr: info, result });
 
   lr.onEnd(result);
@@ -244,7 +241,7 @@ export function onTakeDamage(info: DamageInfo): HookResultValue | void {
   if (!isReal(attacker) || !victim) return;
   const verdict = damageVerdict(getActiveLR(victim.slot)?.id ?? null, getActiveLR(attacker.slot)?.id ?? null);
   if (verdict === "allow") return;
-  HintText.to(attacker.slot, verdict === "block_one_in_lr" ? msgFor(attacker.slot).damageBlockedInside : msgFor(attacker.slot).damageBlockedOtherLR);
+  HintText.to(attacker.slot, verdict === "block_one_in_lr" ? msg.damageBlockedInside : msg.damageBlockedOtherLR);
   return HookResult.Handled;
 }
 
@@ -300,7 +297,7 @@ export function onRoundEnd(): void {
  * LR simply cannot claim the mode while the day holds it, and may start if it returns to "normal".
  */
 export function onModeTaken(): void {
-  if (enabled || active.length > 0) log(...logEntry("JB_LOG_LAST_REQUEST_DISABLED_THE_ROUND_MODE_WAS_TAKEN", []));
+  if (enabled || active.length > 0) log("Last request disabled: the round mode was taken");
   enabled = false;
   endAll("interrupted");
 }

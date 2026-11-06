@@ -4,8 +4,6 @@ Keep one root npm/s2s workspace and one lockfile. Use native s2s commands for bu
 
 Retain tests for essential behavior. Remove temporary and incidental structure tests after they serve their purpose. MAUL's source is public; its registry distribution must remain restricted.
 
-Before adding or changing tests, follow [CONTRIBUTING.md#tests](CONTRIBUTING.md#tests).
-
 ## Agent skills
 
 ### Issue tracker
@@ -19,7 +17,3 @@ Before triage, read `docs/agents/triage-labels.md`: use the five default role la
 ### Domain docs
 
 Before domain exploration, read `docs/agents/domain.md`: one root glossary and `docs/adr/` for consequential decisions.
-
-### Player/admin text
-
-Before changing player/admin text, phrase catalogs or output routing, read [docs/translations.md](docs/translations.md) and follow its localization and formatting standard.

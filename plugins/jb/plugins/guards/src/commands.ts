@@ -1,4 +1,3 @@
-import {plainPhraseFor as labelFor,phraseFor} from '@edgegamers/jailbreak-shared';
 /** Every command (CTBans commands/*). */
 import { command, HookResult, Server } from "@s2script/sdk";
 import type { CommandInvocation, HookResultValue } from "@s2script/sdk";
@@ -9,7 +8,7 @@ import { activeBan, issueBan, remind, unban } from "./ctbans";
 import { settings } from "./config";
 import { ctEmpty, isHuman, now } from "./env";
 import { parseSteamId } from "./ids";
-import { msgFor } from "./messages";
+import { msg } from "./messages";
 import { capOfSlot, effectiveOf, entry, rankOfSlot, rawPriority, setPriority } from "./players";
 import { effectivePriority } from "./priority";
 import { atLeast, maxBanSeconds } from "./ranks";
@@ -22,18 +21,18 @@ const lastGuard = new Map<string, number>();
 
 function requireEg(cmd: CommandInvocation): boolean {
   if (cmd.callerSlot < 0 || atLeast(rankOfSlot(cmd.callerSlot), "eg")) return true;
-  cmd.reply(msgFor(cmd.callerSlot).noPermission(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_EG"), labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_RANK")));
+  cmd.reply(msg.noPermission("=(eG)=", "rank"));
   return false;
 }
 
 function single(cmd: CommandInvocation, n: number): Player | null {
   const found = Player.target(cmd.arg(n), cmd.callerSlot, true).filter((p) => isHuman(p.slot));
   if (found.length === 0) {
-    cmd.reply(msgFor(cmd.callerSlot).playerNotFound(cmd.arg(n)));
+    cmd.reply(msg.playerNotFound(cmd.arg(n)));
     return null;
   }
   if (found.length > 1) {
-    cmd.reply(msgFor(cmd.callerSlot).playerFoundMultiple(cmd.arg(n)));
+    cmd.reply(msg.playerFoundMultiple(cmd.arg(n)));
     return null;
   }
   return found[0];
@@ -55,7 +54,7 @@ function deferredReply(cmd: CommandInvocation): (line: string) => void {
 /** Refuse to act on an online target whose cached ban/priority is not loaded yet. */
 function targetLoaded(cmd: CommandInvocation, target: Player): boolean {
   if (entry(target.steamId)?.loaded) return true;
-  cmd.reply(msgFor(cmd.callerSlot).targetNotLoaded(target.playerName ?? target.steamId));
+  cmd.reply(msg.targetNotLoaded(target.playerName ?? target.steamId));
   return false;
 }
 
@@ -70,26 +69,26 @@ function issuerMax(cmd: CommandInvocation): number {
 
 function guard(cmd: CommandInvocation): HookResultValue {
   const slot = cmd.callerSlot;
-  if (slot < 0) return cmd.reply(msgFor(cmd.callerSlot).playersOnly()), H;
+  if (slot < 0) return cmd.reply(msg.playersOnly()), H;
   const p = Player.fromSlot(slot);
-  if (!p || p.steamId === "0") return cmd.reply(msgFor(cmd.callerSlot).guardUnverified()), H;
-  if (p.teamNum === Team.Guard) return cmd.reply(msgFor(cmd.callerSlot).guardAlreadyGuard()), H;
+  if (!p || p.steamId === "0") return cmd.reply(msg.guardUnverified()), H;
+  if (p.teamNum === Team.Guard) return cmd.reply(msg.guardAlreadyGuard()), H;
   const s = settings();
   const last = lastGuard.get(p.steamId) ?? 0;
   const wait = last + s.guardCooldown - now();
-  if (wait > 0) return cmd.reply(msgFor(cmd.callerSlot).guardCooldown(wait)), H;
+  if (wait > 0) return cmd.reply(msg.guardCooldown(wait)), H;
   lastGuard.set(p.steamId, now());
 
   const ban = activeBan(p.steamId);
   if (ban) return remind(slot, ban), H;
   if (!atLeast(rankOfSlot(slot), "eg")) {
     const e = entry(p.steamId);
-    if (!e?.loaded) return cmd.reply(msgFor(cmd.callerSlot).guardPriorityUnavailable()), H;
+    if (!e?.loaded) return cmd.reply(msg.guardPriorityUnavailable()), H;
     const prio = e.priority ?? 0;
-    if (prio < s.minPriority) return cmd.reply(msgFor(cmd.callerSlot).guardInsufficient(prio, s.minPriority)), H;
+    if (prio < s.minPriority) return cmd.reply(msg.guardInsufficient(prio, s.minPriority)), H;
   }
   const pos = queue.position(p.steamId);
-  if (pos >= 0) return cmd.reply(msgFor(cmd.callerSlot).guardAlreadyQueued(pos + 1, queue.size())), H;
+  if (pos >= 0) return cmd.reply(msg.guardAlreadyQueued(pos + 1, queue.size())), H;
 
   joinQueue(slot);
   if (ctEmpty() && isLiveRound() && markRestartUsed(p.steamId)) Server.command(`mp_restartgame ${s.restartDelay}`);
@@ -97,19 +96,19 @@ function guard(cmd: CommandInvocation): HookResultValue {
 }
 
 function leave(cmd: CommandInvocation): HookResultValue {
-  if (cmd.callerSlot < 0) return cmd.reply(msgFor(cmd.callerSlot).playersOnly()), H;
+  if (cmd.callerSlot < 0) return cmd.reply(msg.playersOnly()), H;
   const p = Player.fromSlot(cmd.callerSlot);
-  if (!p || !leaveQueue(p.steamId)) return cmd.reply(msgFor(cmd.callerSlot).leaveNotQueued()), H;
-  cmd.reply(msgFor(cmd.callerSlot).leaveRemoved());
+  if (!p || !leaveQueue(p.steamId)) return cmd.reply(msg.leaveNotQueued()), H;
+  cmd.reply(msg.leaveRemoved());
   return H;
 }
 
 function showQueue(cmd: CommandInvocation): HookResultValue {
-  if (queue.size() === 0) return cmd.reply(msgFor(cmd.callerSlot).queueEmpty()), H;
+  if (queue.size() === 0) return cmd.reply(msg.queueEmpty()), H;
   queue.ids().forEach((id, i) => {
     const p = Player.allConnected().find((x) => x.steamId === id);
     const cap = p ? capOfSlot(p.slot) : settings().normalCap;
-    cmd.reply(msgFor(cmd.callerSlot).queueLine(i + 1, effectiveOf(id), cap, p?.playerName ?? id));
+    cmd.reply(msg.queueLine(i + 1, effectiveOf(id), cap, p?.playerName ?? id));
   });
   return H;
 }
@@ -121,57 +120,57 @@ function priority(cmd: CommandInvocation): HookResultValue {
   let targets: Player[];
   if (cmd.argCount >= 1 && atLeast(callerRank, "eg")) {
     targets = Player.target(cmd.arg(0), caller, setting).filter((p) => isHuman(p.slot));
-    if (targets.length === 0) return cmd.reply(msgFor(cmd.callerSlot).playerNotFound(cmd.arg(0))), H;
+    if (targets.length === 0) return cmd.reply(msg.playerNotFound(cmd.arg(0))), H;
   } else if (caller < 0) {
-    return cmd.reply(msgFor(cmd.callerSlot).usage(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_SM_PRIORITY_PLAYER_PRIORITY"))), H;
+    return cmd.reply(msg.usage("sm_priority <player> [priority]")), H;
   } else {
     const self = Player.fromSlot(caller);
     if (!self) return H;
     targets = [self];
   }
   if (setting) {
-    if (!/^-?\d+$/.test(cmd.arg(1))) return cmd.reply(msgFor(cmd.callerSlot).invalidParam(cmd.arg(1), labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_NUMBER"))), H;
+    if (!/^-?\d+$/.test(cmd.arg(1))) return cmd.reply(msg.invalidParam(cmd.arg(1), "number")), H;
     const value = Number.parseInt(cmd.arg(1), 10);
     for (const t of targets) setPriority(t.steamId, value);
-    cmd.reply(msgFor(cmd.callerSlot).prioritySet(targets.length === 1 ? (targets[0].playerName ?? "") : cmd.arg(0), value));
+    cmd.reply(msg.prioritySet(targets.length === 1 ? (targets[0].playerName ?? "") : cmd.arg(0), value));
     return H;
   }
   for (const t of targets) {
     const raw = rawPriority(t.steamId);
     const cap = capOfSlot(t.slot);
-    cmd.reply(msgFor(cmd.callerSlot).priorityLine(t.playerName ?? "", effectivePriority(raw, cap), cap, raw ?? -1));
+    cmd.reply(msg.priorityLine(t.playerName ?? "", effectivePriority(raw, cap), cap, raw ?? -1));
   }
   return H;
 }
 
 function ctban(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount < 3) return cmd.reply(msgFor(cmd.callerSlot).usage(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_SM_CTBAN_PLAYER_TIME_REASON"))), H;
+  if (cmd.argCount < 3) return cmd.reply(msg.usage("sm_ctban <player> <time> <reason>")), H;
   const target = single(cmd, 0);
   if (!target || !targetLoaded(cmd, target)) return H;
-  if (!/^\d+$/.test(cmd.arg(1))) return cmd.reply(msgFor(cmd.callerSlot).invalidParam(cmd.arg(1), labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_NON_NEGATIVE_INT"))), H;
+  if (!/^\d+$/.test(cmd.arg(1))) return cmd.reply(msg.invalidParam(cmd.arg(1), "non-negative int")), H;
   const existing = activeBan(target.steamId);
   if (existing) {
     const name = target.playerName ?? target.steamId;
-    return cmd.reply(isPermanent(existing) ? msgFor(cmd.callerSlot).ctbanAlreadyPermanent(name) : msgFor(cmd.callerSlot).ctbanAlready(name, minutesLeft(existing, now()))), H;
+    return cmd.reply(isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
   }
   const capped = capDuration(Number.parseInt(cmd.arg(1), 10) * 60, issuerMax(cmd));
-  if (capped.reduced) cmd.reply(msgFor(cmd.callerSlot).ctbanReduced(Math.floor(capped.seconds / 60)));
+  if (capped.reduced) cmd.reply(msg.ctbanReduced(Math.floor(capped.seconds / 60)));
   leaveQueue(target.steamId);
   const r = issueBan({ steamId: target.steamId, name: target.playerName ?? target.steamId }, cmd.callerSlot, capped.seconds, cmd.argsFrom(2));
-  if (!r.written && !storeReady()) cmd.reply(msgFor(cmd.callerSlot).savedLocally());
+  if (!r.written && !storeReady()) cmd.reply(msg.savedLocally());
   return H;
 }
 
 function revoke(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount < 2) return cmd.reply(msgFor(cmd.callerSlot).usage(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_SM_REVOKE_PLAYER_REASON"))), H;
+  if (cmd.argCount < 2) return cmd.reply(msg.usage("sm_revoke <player> <reason>")), H;
   const target = single(cmd, 0);
   if (!target || !targetLoaded(cmd, target)) return H;
   const existing = activeBan(target.steamId);
   if (existing) {
     const name = target.playerName ?? target.steamId;
-    return cmd.reply(isPermanent(existing) ? msgFor(cmd.callerSlot).ctbanAlreadyPermanent(name) : msgFor(cmd.callerSlot).ctbanAlready(name, minutesLeft(existing, now()))), H;
+    return cmd.reply(isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
   }
   leaveQueue(target.steamId);
   issueBan({ steamId: target.steamId, name: target.playerName ?? target.steamId }, cmd.callerSlot, settings().revokeMinutes * 60, cmd.argsFrom(1));
@@ -180,25 +179,25 @@ function revoke(cmd: CommandInvocation): HookResultValue {
 
 function unctban(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount !== 1) return cmd.reply(msgFor(cmd.callerSlot).usage(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_SM_UNCTBAN_PLAYER_STEAMID"))), H;
+  if (cmd.argCount !== 1) return cmd.reply(msg.usage("sm_unctban <player|steamid>")), H;
   const online = Player.target(cmd.arg(0), cmd.callerSlot, false).filter((p) => isHuman(p.slot));
-  if (online.length > 1) return cmd.reply(msgFor(cmd.callerSlot).playerFoundMultiple(cmd.arg(0))), H;
+  if (online.length > 1) return cmd.reply(msg.playerFoundMultiple(cmd.arg(0))), H;
   const steamId = online[0]?.steamId ?? parseSteamId(cmd.arg(0));
-  if (!steamId) return cmd.reply(msgFor(cmd.callerSlot).invalidParam(cmd.arg(0), labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_STEAMID_3_64_COMMUNITYID"))), H;
+  if (!steamId) return cmd.reply(msg.invalidParam(cmd.arg(0), "SteamID 3/64/CommunityID")), H;
   const name = online[0]?.playerName ?? steamId;
   const by = cmd.callerSlot >= 0 ? (Player.fromSlot(cmd.callerSlot)?.playerName ?? "Console") : "Console";
   const max = issuerMax(cmd);
   const reply = deferredReply(cmd);
   const finish = (ban: Ban | null): void => {
-    if (!ban || !isActive(ban, now())) return reply(msgFor(cmd.callerSlot).unctbanNotBanned(name));
+    if (!ban || !isActive(ban, now())) return reply(msg.unctbanNotBanned(name));
     if (max !== 0 && (ban.duration > max || ban.duration === 0)) {
-      return reply(msgFor(cmd.callerSlot).unctbanTooLong(name, Math.floor(effectiveDuration(ban) / 60), Math.floor(max / 60)));
+      return reply(msg.unctbanTooLong(name, Math.floor(effectiveDuration(ban) / 60), Math.floor(max / 60)));
     }
     unban(ban, name, by);
   };
   const cached = online[0] ? activeBan(steamId) : null;
   if (cached) finish(cached);
-  else latestBan(steamId).then(finish).catch(() => reply(msgFor(cmd.callerSlot).error(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_DATABASE_UNAVAILABLE"))));
+  else latestBan(steamId).then(finish).catch(() => reply(msg.error("database unavailable")));
   return H;
 }
 
@@ -207,18 +206,30 @@ function listBans(cmd: CommandInvocation): HookResultValue {
   const reply = deferredReply(cmd);
   const show = (bans: Ban[]): void => {
     const live = bans.filter((b) => isActive(b, now()));
-    if (live.length === 0) return reply(msgFor(cmd.callerSlot).listNone());
+    if (live.length === 0) return reply(msg.listNone());
     for (const b of live) {
       const name = Player.allConnected().find((p) => p.steamId === b.steamId)?.playerName ?? b.steamId;
-      reply(isPermanent(b) ? msgFor(cmd.callerSlot).listLinePermanent(name, b.reason) : msgFor(cmd.callerSlot).listLine(name, minutesLeft(b, now()), b.reason));
+      reply(isPermanent(b) ? msg.listLinePermanent(name, b.reason) : msg.listLine(name, minutesLeft(b, now()), b.reason));
     }
   };
   if (cmd.arg(0) === "1") {
-    activeBansFromDb(now()).then(show).catch(() => reply(msgFor(cmd.callerSlot).error(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_DATABASE_UNAVAILABLE"))));
+    activeBansFromDb(now()).then(show).catch(() => reply(msg.error("database unavailable")));
   } else {
     show(Player.allConnected().map((p) => activeBan(p.steamId)).filter((b): b is Ban => b !== null));
   }
   return H;
+}
+
+function whenText(ts: number): string {
+  const minutesAgo = Math.floor((now() - ts) / 60);
+  if (minutesAgo > 1440) {
+    const d = new Date(ts * 1000);
+    const pad = (n: number): string => String(n).padStart(2, "0");
+    return `on ${pad(d.getUTCMonth() + 1)}/${pad(d.getUTCDate())}/${d.getUTCFullYear()}`;
+  }
+  if (minutesAgo < 60) return `${minutesAgo} minute${minutesAgo === 1 ? "" : "s"} ago`;
+  const h = Math.floor(minutesAgo / 60);
+  return `${h} hour${h === 1 ? "" : "s"} ago`;
 }
 
 function stamp(): string {
@@ -229,26 +240,28 @@ function stamp(): string {
 
 function history(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount !== 1) return cmd.reply(msgFor(cmd.callerSlot).usage(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_SM_CTBANS_PLAYER"))), H;
+  if (cmd.argCount !== 1) return cmd.reply(msg.usage("sm_ctbans <player>")), H;
   const online = Player.target(cmd.arg(0), cmd.callerSlot, false).filter((p) => isHuman(p.slot));
-  if (online.length > 1) return cmd.reply(msgFor(cmd.callerSlot).playerFoundMultiple(cmd.arg(0))), H;
+  if (online.length > 1) return cmd.reply(msg.playerFoundMultiple(cmd.arg(0))), H;
   const steamId = online[0]?.steamId ?? parseSteamId(cmd.arg(0));
-  if (!steamId) return cmd.reply(msgFor(cmd.callerSlot).invalidParam(cmd.arg(0), labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_STEAMID"))), H;
+  if (!steamId) return cmd.reply(msg.invalidParam(cmd.arg(0), "SteamID")), H;
   const name = online[0]?.playerName ?? steamId;
   const reply = deferredReply(cmd);
   banHistory(steamId)
     .then((bans) => {
-      if (bans.length === 0) return reply(msgFor(cmd.callerSlot).historyNone(name));
-      reply(msgFor(cmd.callerSlot).historyHeader(bans.length, name, stamp()));
+      if (bans.length === 0) return reply(msg.historyNone(name));
+      reply(msg.historyHeader(bans.length, name, stamp()));
       bans.forEach((b, i) => {
-        const at=now();
-        const suffix=msgFor(cmd.callerSlot).historyStatus(isRevoked(b),isPermanent(b),isActive(b,at),minutesLeft(b,at));
+        const suffix = isRevoked(b) ? " (Revoked)"
+          : isPermanent(b) ? ""
+          : isActive(b, now()) ? ` (${minutesLeft(b, now())} minutes left)`
+          : " (Expired)";
         reply(isPermanent(b)
-          ? msgFor(cmd.callerSlot).historyLinePermanent(i + 1, msgFor(cmd.callerSlot).historyWhen(b.timestamp,at), b.reason, suffix)
-          : msgFor(cmd.callerSlot).historyLine(i + 1, Math.floor(effectiveDuration(b) / 60), msgFor(cmd.callerSlot).historyWhen(b.timestamp,at), b.reason, suffix));
+          ? msg.historyLinePermanent(i + 1, whenText(b.timestamp), b.reason, suffix)
+          : msg.historyLine(i + 1, Math.floor(effectiveDuration(b) / 60), whenText(b.timestamp), b.reason, suffix));
       });
     })
-    .catch(() => reply(msgFor(cmd.callerSlot).error(labelFor(cmd.callerSlot,"JB_GUARDS_LABEL_DATABASE_UNAVAILABLE"))));
+    .catch(() => reply(msg.error("database unavailable")));
   return H;
 }
 

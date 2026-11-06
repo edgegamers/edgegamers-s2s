@@ -1,4 +1,3 @@
-import {loadMessages} from './messages';
 /**
  * @edgegamers/jailbreak-gangperks — the only bridge between Gangs (`@edgegamers/gangs`) and Jailbreak.
  *
@@ -41,7 +40,7 @@ import {
   setMinPlayersForCredits,
 } from "./stats.ts";
 import { LG_STAT, LR_STAT, WARDEN_STAT } from "./records.ts";
-import { msgFor, statLines } from "./messages.ts";
+import { msg, statLines } from "./messages.ts";
 import { deps, guard, readyGangs, steamOfSlot } from "./state.ts";
 
 function readConfig(): void {
@@ -49,7 +48,6 @@ function readConfig(): void {
 }
 
 export function OnPluginStart(): void {
-  loadMessages();
   const gangs = use("@edgegamers/gangs");
   deps.gangs = gangs;
   const provider = pluginId();
@@ -75,24 +73,23 @@ export function OnPluginStart(): void {
 
   for (const def of ALL_PERKS) {
     command(def.command, (cmd) => {
-      if (cmd.callerSlot < 0) return cmd.reply(msgFor(cmd.callerSlot).playerOnly());
+      if (cmd.callerSlot < 0) return cmd.reply(msg.playerOnly());
       guard(def.command, undefined, () => runPerk(def, cmd.callerSlot, cmd.args));
     });
   }
 
   command("sm_jbstats", (cmd) => {
-    if (cmd.callerSlot < 0) return cmd.reply(msgFor(cmd.callerSlot).playerOnly());
+    if (cmd.callerSlot < 0) return cmd.reply(msg.playerOnly());
     const g = readyGangs();
-    if (!g) return Chat.toSlot(cmd.callerSlot, msgFor(cmd.callerSlot).notReady());
+    if (!g) return Chat.toSlot(cmd.callerSlot, msg.notReady());
     const steam = steamOfSlot(cmd.callerSlot);
-    if (!steam) return Chat.toSlot(cmd.callerSlot, msgFor(cmd.callerSlot).noSteamId());
+    if (!steam) return Chat.toSlot(cmd.callerSlot, msg.noSteamId());
     const name = Player.fromSlot(cmd.callerSlot)?.playerName ?? steam;
     const lines = statLines(
       name,
       g.getPlayerStat(steam, LR_STAT.statId),
       g.getPlayerStat(steam, LG_STAT.statId),
       g.getPlayerStat(steam, WARDEN_STAT.statId),
-      cmd.callerSlot,
     );
     for (const line of lines) Chat.toSlot(cmd.callerSlot, line);
   });

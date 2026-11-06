@@ -8,7 +8,7 @@ import type { Command, Cookie, HookResultValue } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { autoRtdEnabled, parseFlagLetters, toggledAutoRtd } from "./rules.ts";
 import { hasReward, isWarmup, minPlayers, roll } from "./rtd.ts";
-import { msgFor } from "./messages.ts";
+import { msg } from "./messages.ts";
 
 let cookie: Cookie | null = null;
 
@@ -42,23 +42,23 @@ export function cmdAutoRtd(cmd: Command): HookResultValue {
   const slot = cmd.callerSlot;
   if (slot < 0) return HookResult.Handled;
   if (minPlayers() === -1) {
-    cmd.replyToChat(msgFor(cmd.callerSlot).rollingDisabled);
+    cmd.replyToChat(msg.rollingDisabled);
     return HookResult.Handled;
   }
   if (!hasAutoFlag(slot)) {
-    cmd.replyToChat(msgFor(cmd.callerSlot).noPermission);
+    cmd.replyToChat(msg.noPermission);
     return HookResult.Handled;
   }
   const client = Clients.fromSlot(slot);
   if (cookie === null || !client || client.isBot || !Cookies.areCached(client)) {
-    cmd.replyToChat(msgFor(cmd.callerSlot).autoNotSupported);
+    cmd.replyToChat(msg.autoNotSupported);
     return HookResult.Handled;
   }
   const next = toggledAutoRtd(Cookies.get(client, cookie));
   if (!Cookies.set(client, cookie, next.value)) {
-    cmd.replyToChat(msgFor(cmd.callerSlot).autoNotSupported);
+    cmd.replyToChat(msg.autoNotSupported);
     return HookResult.Handled;
   }
-  cmd.replyToChat(msgFor(cmd.callerSlot).autoToggled(next.enabled));
+  cmd.replyToChat(msg.autoToggled(next.enabled));
   return HookResult.Handled;
 }

@@ -1,4 +1,3 @@
-import type {LogPresentation} from "@edgegamers/jailbreak-shared";
 /**
  * Pure round-log storage and formatting (no SDK imports, unit-tested). `logs.ts` feeds it from
  * game events and prints it.
@@ -8,7 +7,6 @@ export interface LogLine {
   /** Seconds since the round went live (freeze time excluded, like RoundUtil.GetTimeElapsed). */
   at: number;
   message: string;
-  presentation?: LogPresentation;
 }
 
 /** `[mm:ss]` — the C# log timestamp. Negative input shows as 00:00. */
@@ -31,8 +29,8 @@ export class LogBook {
     this.max = max;
   }
 
-  add(at: number, message: string, presentation?: LogPresentation): LogLine {
-    const line:LogLine = { at, message, ...(presentation?{presentation:{key:presentation.key,args:[...presentation.args],labels:[...(presentation.labels??[])]}}:{}) };
+  add(at: number, message: string): LogLine {
+    const line = { at, message };
     this.lines.push(line);
     if (this.lines.length > this.max) this.lines.splice(0, this.lines.length - this.max);
     return line;

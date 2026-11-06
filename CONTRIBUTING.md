@@ -22,10 +22,6 @@ Create a branch for your change. Keep it focused and describe the observable beh
 
 When editing Jailbreak's shared library, run `npm run types --workspace @edgegamers/jailbreak-shared` and commit the updated declarations with the source.
 
-## Player/admin text
-
-Before changing player/admin text, phrase catalogs or output routing, read [the translations and message guide](docs/translations.md). Follow its catalog, recipient-language, chat/console and plain UI rules.
-
 ## Changesets
 
 Run `npm run changeset` for changes that affect shipped runtime plugins or their shared libraries. Select those packages and describe the user-visible change. Use patch for compatible fixes, minor for compatible functionality, and major for breaking behavior or public interface changes.
@@ -39,7 +35,5 @@ CI verifies pull requests. Merged changesets are versioned and published automat
 Test external behavior at the highest useful boundary. Keep coverage for gameplay rules, authentication/access decisions, configuration/data handling and release safety. Existing behavioral suites are the starting point.
 
 Temporary tests and development probes are welcome. Remove them after use when they only freeze source text, folder layout, command wording, snapshots of implementation details or other noncritical choices. A permanent test should catch a real regression while allowing the implementation to change.
-
-Give behavior tests controlled phrases, settings, prices and display data. Routine edits to shipped wording, translations, colors, labels, layout, catalog size, prices or default values must not require test updates. Verify the behavior using those inputs: recipient language and fallback, argument substitution, escaping, private audiences, authorization, debits/grants, persistence and lifecycle boundaries. Keep exact assertions for protocol identifiers and persisted data contracts. Before retaining an assertion, name the bug it would catch; remove assertions that only record an editable product choice.
 
 Run `npm run check` before submitting. A native build includes SDK type and safety checks; a passing local suite does not replace testing a plugin on a compatible game host.

@@ -11,7 +11,7 @@ const code = (await build({
 
 function fixture() {
   const players: any[] = [];
-  const cs2 = { Player: { fromUserId: (id: number) => players.find(p => p.userId === id) ?? null }, RenderMode_t: { RenderNormal: 0, RenderTransAlpha: 1 } };
+  const cs2 = { ChatColors: new Proxy({}, {get:()=>""}), Player: { fromUserId: (id: number) => players.find(p => p.userId === id) ?? null }, RenderMode_t: { RenderNormal: 0, RenderTransAlpha: 1 } };
   const mod = { exports: {} as any };
   vm.runInNewContext(code, { module: mod, exports: mod.exports, console, require: (name: string) => name === "@s2script/cs2" ? cs2 : {} });
   function add(userId = 11) {

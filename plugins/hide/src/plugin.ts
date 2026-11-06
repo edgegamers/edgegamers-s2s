@@ -2,14 +2,20 @@
 // GPL-3.0-only. See LICENSE and NOTICE for upstream attribution.
 import {
   ADMFLAG, Clients, command, CookieAccess, Cookies, createScope,
-  HookResult, Transmit,
+  HookResult, Translations, Transmit,
 } from '@s2script/sdk';
 import type { Client, CommandInvocation, Cookie, EntityRef, HookResultValue } from '@s2script/sdk';
 import { CSPlayerState, Player, PlayerConnectedState, wrapEntity } from '@s2script/cs2';
 import type { CBasePlayerController, CCSPlayerPawnBase } from '@s2script/cs2';
 import { commandNames, readConfig } from './config';
 import type { HideConfig } from './config';
-import { loadPhrases, phraseFor, replyPhrase } from './phrases';
+
+// Embedded English keeps a standalone .s2sp usable; operator phrase files override it.
+const english = {
+  'Player.Hide.Enabled': '{orange}[Hide]{default} You {green}turned on{default} hide players!',
+  'Player.Hide.Disabled': '{orange}[Hide]{default} You {lightred}turned off{default} hide players!',
+  'Player.SaveFailed': '{orange}[Hide]{default} Your setting changed, but could not be saved yet. Retrying while you stay connected.',
+};
 
 interface Preference {
   client: Client;
@@ -60,9 +66,9 @@ function toggle(cmd: CommandInvocation): HookResultValue {
   if (!client?.isValid()) return HookResult.Handled;
   const state = preference(client);
   state.enabled = !state.enabled;
-  cmd.replyToChat(phraseFor(client.slot, state.enabled ? 'Player.Hide.Enabled' : 'Player.Hide.Disabled'));
+  cmd.replyToChat(Translations.translate(client.slot, state.enabled ? 'Player.Hide.Enabled' : 'Player.Hide.Disabled'));
   if (!client.isBot && !save(state)) {
-    cmd.replyToChat(phraseFor(client.slot, 'Player.SaveFailed'));
+    cmd.replyToChat(Translations.translate(client.slot, 'Player.SaveFailed'));
   }
   updateVisibility();
   return HookResult.Handled;
@@ -74,9 +80,9 @@ function reload(cmd: CommandInvocation): HookResultValue {
     commandNames(next.cmds); // Reject malformed edits before replacing working settings.
     settings = next;
     updateVisibility();
-    replyPhrase(cmd, 'Config.Reloaded');
+    cmd.reply('[HidePlayers] You have successfully reloaded the config.');
   } catch (error) {
-    replyPhrase(cmd, 'Config.ReloadFailed');
+    cmd.reply('[HidePlayers] An error occurred.');
     console.log(`[HidePlayers] An error occurred while reloading the configuration: ${String(error)}`);
   }
   return HookResult.Handled;
@@ -85,7 +91,7 @@ function reload(cmd: CommandInvocation): HookResultValue {
 export function OnPluginStart(): void {
   settings = readConfig();
   cookie = Cookies.register('hide_player_status', { access: CookieAccess.Public, default: '', description: '' });
-  loadPhrases();
+  Translations.load('hideplayers', english);
   for (const name of commandNames(settings.cmds)) {
     if (reloadCommands.has(name)) throw new Error(`${name} is reserved for config reload`);
     command(name, toggle);
