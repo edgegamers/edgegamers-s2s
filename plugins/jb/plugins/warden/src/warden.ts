@@ -33,7 +33,7 @@ let wardenSlot = -1;
 let wardenRef: PlayerRef | null = null;
 let firstWarden = false;
 let preStats: PreWardenStats | null = null;
-const bluePrisoners = new Set<number>();
+const bluePrisoners = new Map<number, { userId: number; pawnId: number }>();
 let unblueTimer: Timer | null = null;
 let freedayTimer: Timer | null = null;
 
@@ -257,18 +257,20 @@ function ignoreColor(slot: number): boolean {
 
 function markPrisonersBlue(): void {
   for (const p of playersOn(Team.Prisoner)) {
-    if (ignoreColor(p.slot) || !isAlive(p)) continue;
-    setPawnColor(p.pawn, Colors.Blue);
-    bluePrisoners.add(p.slot);
+    const pawn = p.pawn;
+    if (!pawn || ignoreColor(p.slot) || !isAlive(p)) continue;
+    setPawnColor(pawn, Colors.Blue);
+    bluePrisoners.set(p.slot, { userId: p.userId, pawnId: pawn.ref.id });
   }
 }
 
 function unmarkPrisonersBlue(): void {
   unblueTimer = null;
-  for (const slot of bluePrisoners) {
+  for (const [slot, before] of bluePrisoners) {
     const p = Player.fromSlot(slot);
-    if (!p || ignoreColor(slot)) continue;
-    setPawnColor(p.pawn, Colors.White);
+    const pawn = p?.pawn;
+    if (!p || p.userId !== before.userId || !pawn || pawn.ref.id !== before.pawnId || ignoreColor(slot)) continue;
+    setPawnColor(pawn, Colors.White);
   }
   bluePrisoners.clear();
 }
@@ -279,16 +281,17 @@ export function wardenRoundStart(): void {
   if (hasWarden()) clearWarden("round_end");
   firstWarden = true;
   preStats = null;
-  bluePrisoners.clear();
-  passCooldowns.clear();
   unblueTimer?.kill();
-  unblueTimer = null;
+  unmarkPrisonersBlue();
+  passCooldowns.clear();
   freedayTimer?.kill(); // a pass right before round end shouldn't announce a freeday next round
   freedayTimer = null;
 }
 
 export function wardenRoundEnd(): void {
   removeWarden("round_end");
+  unblueTimer?.kill();
+  unmarkPrisonersBlue();
 }
 
 export function wardenMapStart(): void {

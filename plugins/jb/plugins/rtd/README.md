@@ -93,3 +93,6 @@ Nothing here has run on a real server yet. With ≥3 players on teams:
   mode is claimed), so none was added.
 - `css_debug rtd` became its own command, `sm_debugrtd` (core owns the other debug commands).
 - Pending rewards survive a hot reload (`OnPluginState`), and are dropped on disconnect.
+
+RTD model colors and transparency expire at round end, including for survivors. Cleanup restores
+white on the rewarded pawn; transparency rewards also restore full opacity and normal rendering.

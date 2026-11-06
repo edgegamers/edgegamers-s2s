@@ -161,3 +161,6 @@ restored, timers die, and `OnSpecialDayEnd` is emitted. Start and end are writte
 - NOT PORTED: Rocket Jump hiding the Nova pellet tracers (the C# cleared the FireBullets user-message
   recipients; no safe equivalent found), the `API.Stats` "JB_SPECIALDAY" stat push, and gang colours
   (owned by `@edgegamers/jailbreak-gangperks`).
+
+Day teardown clears colors and transparency applied by the day (including Infection and Speedrun)
+on the tinted pawns. Other players and replacement pawns keep their appearance.

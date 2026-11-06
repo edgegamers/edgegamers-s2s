@@ -139,3 +139,6 @@ Nothing here has run on a live CS2 server yet. Verify:
 - **Auto-opening the cells** (C# `WardenBehavior`'s `css_edgegamers_jailbreak-warden_opencells_delay` timer and the
   auto-snitch) lives in `@edgegamers/jailbreak-core` (`opencells_delay`, `opencells_snitch`): it is a round rule, not a
   warden one, and must run with no warden plugin loaded. Warden only owns `!open`.
+
+Round end clears special-treatment model/screen tints and no-warden blue prisoners immediately.
+Round start also clears any remaining tracked colors if the previous round-end event was missed.

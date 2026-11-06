@@ -3,9 +3,10 @@ import {loadMessages} from './messages';
  * @edgegamers/jailbreak-guards — wiring only. Guard queue, ratio, priority and CT bans live in their
  * own modules; this file connects them to core, the SDK lifecycle and the published contract.
  */
-import { command, config, createScope, publish, use } from "@s2script/sdk";
+import { config, createScope, publish, use } from "@s2script/sdk";
 import type { Client } from "@s2script/sdk";
 import { Clients } from "@s2script/sdk";
+import { Teams } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";
 import { isPermanent, minutesLeft } from "./bans";
 import { registerCommands, resetCommandState } from "./commands";
@@ -58,7 +59,7 @@ export function OnPluginStart(): void {
   core.on("OnRoundEnd", () => roundEnd());
   core.on("OnModeChanged", (ev) => noteModeChanged(ev.mode));
 
-  command.onClientCommand("jointeam", (slot, argString) => onJoinTeam(slot, argString));
+  Teams.onJoinTeam(({ player, team }) => player ? onJoinTeam(player.slot, team) : undefined);
   registerCommands();
 
   // Open first, then seed: loads that fail before the connection is up are restarted on connect.

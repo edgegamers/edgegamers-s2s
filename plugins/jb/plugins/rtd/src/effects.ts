@@ -6,9 +6,10 @@ import { decluttrCall } from '../../../../decluttr/src/owner.ts';
  */
 import { Clients, Commands, HookResult, Server } from "@s2script/sdk";
 import type { HookResultValue } from "@s2script/sdk";
-import { AcquireMethod, AcquireResult, Player } from "@s2script/cs2";
+import { AcquireMethod, AcquireResult, Player, RenderMode_t } from "@s2script/cs2";
 import type { CanAcquireView, Weapon } from "@s2script/cs2";
-import { Team } from "@edgegamers/jailbreak-shared";
+import { Colors, setPawnColor, Team } from "@edgegamers/jailbreak-shared";
+import type { Rgb } from "@edgegamers/jailbreak-shared";
 import { WEAPON_GROUPS, SNIPERS, classForDefIndex, isKnife } from "./weapons.ts";
 import type { WeaponGroup } from "./weapons.ts";
 import { msgFor } from "./messages.ts";
@@ -25,6 +26,21 @@ const tickBlocks: Record<TickBlock, Set<number>> = {
 };
 /** userIds that read the other team's team chat. */
 const spies = new Set<number>();
+/** Only the pawn actually tinted by an RTD reward is restored. */
+const tinted = new Map<number, { pawnId: number; transparent: boolean }>();
+
+export function tintPlayer(player: Player, color: Rgb, alpha: number): boolean {
+  const pawn = player.pawn;
+  if (!pawn || !pawn.isValid) return false;
+  const currentAlpha = ((pawn.render ?? 0xffffffff) >>> 24) & 0xff;
+  const previous = tinted.get(player.userId);
+  if (!previous || previous.pawnId !== pawn.ref.id) {
+    tinted.set(player.userId, { pawnId: pawn.ref.id, transparent: alpha < 255 });
+  } else if (alpha < 255) {
+    previous.transparent = true;
+  }
+  return setPawnColor(pawn, color, alpha === 255 ? currentAlpha : alpha);
+}
 
 export function blockGroup(userId: number, group: WeaponGroup): void {
   let groups = blockedGroups.get(userId);
@@ -45,12 +61,21 @@ export function addSpy(userId: number): void {
 
 /** Round end: every round-long effect expires. */
 export function clearRound(): void {
+  for (const [userId, before] of tinted) {
+    const pawn = Player.fromUserId(userId)?.pawn;
+    if (!pawn || !pawn.isValid || pawn.ref.id !== before.pawnId) continue;
+    const alpha = before.transparent ? 255 : ((pawn.render ?? 0xffffffff) >>> 24) & 0xff;
+    setPawnColor(pawn, Colors.White, alpha);
+    if (before.transparent) pawn.renderMode = RenderMode_t.RenderNormal;
+  }
+  tinted.clear();
   blockedGroups.clear();
   for (const s of Object.values(tickBlocks)) s.clear();
   spies.clear();
 }
 
 export function forgetUser(userId: number): void {
+  tinted.delete(userId);
   blockedGroups.delete(userId);
   for (const s of Object.values(tickBlocks)) s.delete(userId);
   spies.delete(userId);

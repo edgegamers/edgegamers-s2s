@@ -16,7 +16,7 @@
     "config": {
       "prisoner_to_guard_ratio": {
         "type": "float",
-        "default": 2,
+        "default": 3,
         "description": "Prisoners per guard (CTBans PrisonerToGuardRatio)."
       },
       "min_priority_for_ct": {

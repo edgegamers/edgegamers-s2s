@@ -18,7 +18,7 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, round mode for sp
 | `src/ctbans.ts`, `src/cache.ts`, `src/players.ts` | Per-online-player cache (latest ban, priority, load state), expiry timers, alive-time priority tick. |
 | `src/bans.ts`, `src/priority.ts`, `src/ranks.ts` | Ban model and repeat-ban penalty, effective priority and skip rules, rank ladder and caps. |
 | `src/queue.ts`, `src/queueing.ts`, `src/ratio.ts` | Ordered queue with prioritized insertion; round-start fill and round-end trim counts. |
-| `src/teams.ts` | `jointeam` hook, round start/end balancing, special-day tracking. |
+| `src/teams.ts` | Native team-request hook, round start/end balancing, special-day tracking. |
 | `src/commands.ts` | Every chat/console command. |
 | `src/messages.ts` | Every player-facing string. |
 | `src/rows.ts`, `src/ids.ts`, `src/config.ts`, `src/env.ts` | DB row decoding, SteamID parsing, config parsing, environment helpers. |
@@ -50,7 +50,7 @@ cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `prisoner_to_guard_ratio` | 2.0 | Prisoners per guard (CTBans `PrisonerToGuardRatio`, 3.0). |
+| `prisoner_to_guard_ratio` | 3.0 | Prisoners per guard (CTBans `PrisonerToGuardRatio`). |
 | `min_priority_for_ct` | 120 | Priority (minutes alive) needed to guard; eG+ are exempt. |
 | `priority_caps` | `default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750` | `group=cap` pairs; a player's cap is the highest of their groups' caps, else `default`. |
 | `rank_groups` | `e=ego/e,eg=ego/eg,ego=ego/ego,advisor=ego/advisor,manager=ego/manager,srmanager=ego/srmanager,commgr=ego/commgr,root=ego/root` | `rank=admin group` pairs (MAUL ranks). |
@@ -71,15 +71,18 @@ cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
 `priority_caps` and `rank_groups` are comma-separated `key=value` strings. Malformed pairs are
 skipped with a logged warning.
 
+Existing installations that explicitly configured `prisoner_to_guard_ratio` to `2` must set it to
+`3` to use 3:1; a configured value overrides the new default.
+
 ## Behaviour
 
 - **Queue order**: effective priority is `min(stored, rank cap)`. A joiner walks from the back toward
   the front and may be skipped by Dedicated Supporters with a chance based on their priority. Players
   pushed back are told why.
 - **Round start**: CT-banned guards go to T; guards below `min_priority_for_ct` (rank under eG) go to
-  T; then CT is filled from the queue to `floor(T / ratio)` (at least one guard when CT is empty).
+  T; then CT is filled from the queue to `floor((T + CT) / (ratio + 1))` (at least one guard when CT is empty).
 - **Round end**: CT-banned guards go to T. Unless this round was a special day, CT is trimmed to
-  `ceil(T / ratio)` (at least one guard) and the removed guards, lowest priority first, are moved to T
+  the same limit (at least one guard) and the removed guards, lowest priority first, are moved to T
   and re-queued.
 - **Special day this round**: "special day" means core reported mode `specialday` at any point in the
   round. Days that hand the mode back before round end still skip the round-end trim. CT-ban

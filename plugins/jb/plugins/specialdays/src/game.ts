@@ -4,9 +4,9 @@
  */
 import { Chat, Clients, Entity, Server } from "@s2script/sdk";
 import type { EntityRef } from "@s2script/sdk";
-import { GameRules, MoveType_t, Player } from "@s2script/cs2";
+import { GameRules, MoveType_t, Player, RenderMode_t } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
-import { alivePlayers, isAlive, setPawnColor, Team, teamColored as teamColoredName } from "@edgegamers/jailbreak-shared";
+import { alivePlayers, Colors, isAlive, setPawnColor, Team, teamColored as teamColoredName } from "@edgegamers/jailbreak-shared";
 import type { Rgb } from "@edgegamers/jailbreak-shared";
 import type { Vec3 } from "./geometry.ts";
 import { pickupBypass } from "./pickup.ts";
@@ -69,9 +69,26 @@ export function setArmor(p: Player, armor: number): void {
   if (pawn) pawn.armorValue = armor;
 }
 
+const tinted = new Map<number, number>();
+
 /** Tint the player (alpha < 255 is see-through). */
 export function setColor(p: Player, color: Rgb, alpha = 255): void {
-  setPawnColor(livePawn(p), color, alpha);
+  const pawn = livePawn(p);
+  if (!pawn) return;
+  tinted.set(p.userId, pawn.ref.id);
+  setPawnColor(pawn, color, alpha);
+}
+
+/** Stop special-day colors without repainting unrelated players or replacement pawns. */
+export function clearColors(): void {
+  for (const [userId, pawnId] of tinted) {
+    const pawn = livePawn(Player.fromUserId(userId));
+    if (!pawn || pawn.ref.id !== pawnId) continue;
+    // Every day tint expires here; restoring an earlier RTD alpha could resurrect an expired reward.
+    setPawnColor(pawn, Colors.White);
+    pawn.renderMode = RenderMode_t.RenderNormal;
+  }
+  tinted.clear();
 }
 
 /** Pawn.TakesDamage (C# Enable/DisableDamage). */
