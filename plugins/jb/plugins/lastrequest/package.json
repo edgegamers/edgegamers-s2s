@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-lastrequest",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Last requests and last guard.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",

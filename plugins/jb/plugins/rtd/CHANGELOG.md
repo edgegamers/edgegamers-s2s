@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-rtd
 
+## 1.1.6
+
+### Patch Changes
+
+- b776776: Stop the CanAcquire handlers from throwing on every pickup. `@s2script/cs2` only declares the `AcquireMethod`/`AcquireResult` enums in its types and does not export them at runtime, so Last Request, RTD and Special Days crashed with "Cannot read properties of undefined (reading 'PickUp')" and their pickup restrictions never applied. They now use the engine values directly.
+
 ## 1.1.5
 
 ### Patch Changes

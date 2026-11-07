@@ -1,5 +1,12 @@
 # @edgegamers/jailbreak-specialdays
 
+## 1.0.6
+
+### Patch Changes
+
+- b776776: Stop the CanAcquire handlers from throwing on every pickup. `@s2script/cs2` only declares the `AcquireMethod`/`AcquireResult` enums in its types and does not export them at runtime, so Last Request, RTD and Special Days crashed with "Cannot read properties of undefined (reading 'PickUp')" and their pickup restrictions never applied. They now use the engine values directly.
+- 340eec9: Special days with a weapon list (HE Only, One in the Chamber, Speedrunners, No Scope, Hide and Seek, Infection, Gun Game) now really hold players to it. The pickup gate also covers walking over guns on the ground (map-placed and dropped weapons), it is armed from the moment the day is picked instead of only once it begins, and players are only handed a knife when the day's list allows one, so HE Only is grenades only. Bayonets are no longer let through on lists without a knife.
+
 ## 1.0.5
 
 ### Patch Changes
