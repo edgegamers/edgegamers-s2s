@@ -1,5 +1,5 @@
 /** `jointeam` handling and round start/end balancing (CTBans listeners). */
-import { Chat, Commands, HookResult } from "@s2script/sdk";
+import { Chat, Commands, HookResult, Server } from "@s2script/sdk";
 import type { HookResultValue } from "@s2script/sdk";
 import { GameRules, Player } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";
@@ -10,7 +10,7 @@ import { broadcast, ctEmpty, humans, isRealClient } from "./env";
 import { msg } from "./messages";
 import { capOfSlot, entry, rankOfSlot } from "./players";
 import { parseJoinTeam } from "./queue";
-import { clearQueue, fillGuards, leaveQueue, resetRoundRestarts, trimGuards } from "./queueing";
+import { clearQueue, fillGuards, leaveQueue, queue, resetRoundRestarts, trimGuards } from "./queueing";
 import { guardsToAdd, guardsToRemove } from "./ratio";
 import { atLeast } from "./ranks";
 
@@ -18,6 +18,24 @@ import { atLeast } from "./ranks";
 function playingHumans(): Player[] {
   return Player.allConnected().filter(p => isRealClient(p.slot)
     && (p.teamNum === Team.Prisoner || p.teamNum === Team.Guard));
+}
+
+/** Playing humans on `team`, counting unverified clients too, so every prisoner counts toward the ratio. */
+function playingOn(team: number): number {
+  return playingHumans().filter(p => p.teamNum === team).length;
+}
+
+/** Players who asked for CT while waiting for an opponent. Nobody is moved to CT without asking. */
+const ctRequests = new Set<string>();
+
+/** The engine's own balancer moves prisoners to CT whenever T outnumbers CT; jailbreak teams never are even. */
+export function disableEngineBalance(): void {
+  Server.command("mp_autoteambalance 0");
+  Server.command("mp_limitteams 0");
+}
+
+export function forgetPlayer(steamId: string): void {
+  ctRequests.delete(steamId);
 }
 
 function joinAndSpawn(p: Player, team: number): void {
@@ -36,12 +54,15 @@ export function balanceStartingTeams(preferredSteamId?: string): void {
   if (players.length !== 2) return;
   const guards = players.filter(p => p.teamNum === Team.Guard);
   if (guards.length === 1) return;
-  const guard = guards[0] ?? players.find(p => p.steamId === preferredSteamId
-    && p.steamId !== "0" && entry(p.steamId)?.loaded === true && !activeBan(p.steamId))
-    ?? players.find(p => p.steamId !== "0" && entry(p.steamId)?.loaded === true && !activeBan(p.steamId));
-  if (!guard) return; // Both ban records are pending, or neither player may guard.
+  // Only a player who asked for CT (team menu or !guard) may become the first guard.
+  const eligible = (p: Player): boolean => p.steamId !== "0" && entry(p.steamId)?.loaded === true
+    && !activeBan(p.steamId) && (ctRequests.has(p.steamId) || queue.has(p.steamId));
+  const guard = guards[0] ?? players.find(p => p.steamId === preferredSteamId && eligible(p))
+    ?? players.find(eligible);
+  if (!guard) return; // Nobody asked for CT, their ban records are pending, or they may not guard.
   // Keep a prisoner present before moving the guard, so the engine can commence normally.
   for (const p of players) if (p.slot !== guard.slot) joinAndSpawn(p, Team.Prisoner);
+  ctRequests.delete(guard.steamId);
   leaveQueue(guard.steamId);
   joinAndSpawn(guard, Team.Guard);
 }
@@ -51,6 +72,8 @@ export function onJoinTeam(slot: number, team: number | string): HookResultValue
   const p = Player.fromSlot(slot);
   if (!p) return HookResult.Continue;
   const req = parseJoinTeam(String(team));
+  if (req === "ct" && p.steamId !== "0") ctRequests.add(p.steamId);
+  else ctRequests.delete(p.steamId);
   if (req === "spec") {
     leaveQueue(p.steamId);
     return HookResult.Continue;
@@ -135,24 +158,26 @@ export function roundStart(): void {
     p.changeTeam(Team.Prisoner);
     Chat.toSlot(p.slot, msg.guardInsufficient(prio, s.minPriority));
   }
-  const playing = playingHumans();
-  const add = guardsToAdd(playing.filter(p => p.teamNum === Team.Prisoner).length,
-    playing.filter(p => p.teamNum === Team.Guard).length, s.ratio);
+  // Only queued volunteers are moved to CT; with an empty queue CT stays short.
+  const add = guardsToAdd(playingOn(Team.Prisoner), playingOn(Team.Guard), s.ratio);
   if (add > 0 && !fillGuards(add)) broadcast(msg.queueEmptyBroadcast());
 }
 
-/** Core OnRoundEnd: bans always; ratio trim unless this round was a special day. */
+/**
+ * Core OnRoundEnd: bans always. Unless this round was a special day, move guards back to T only when
+ * prisoners have left and CT now breaks the ratio. Prisoners are never moved to CT here.
+ */
 export function roundEnd(): void {
   enforceBans();
   if (isSpecialDayRound()) return;
-  const playing = playingHumans();
-  const remove = guardsToRemove(playing.filter(p => p.teamNum === Team.Prisoner).length,
-    playing.filter(p => p.teamNum === Team.Guard).length, settings().ratio);
+  const remove = guardsToRemove(playingOn(Team.Prisoner), playingOn(Team.Guard), settings().ratio);
   if (remove > 0) trimGuards(remove);
 }
 
 export function mapStart(): void {
   specialDayThisRound = false;
+  ctRequests.clear();
+  disableEngineBalance();
   clearQueue();
 }
 

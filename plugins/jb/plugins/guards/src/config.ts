@@ -31,7 +31,7 @@ export function loadSettings(): void {
   const caps = parseCaps(config.getString("priority_caps"), warn);
   const ratio = config.getFloat("prisoner_to_guard_ratio");
   current = {
-    ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 3,
+    ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 2,
     minPriority: config.getInt("min_priority_for_ct"),
     caps,
     normalCap: normalCap(caps),

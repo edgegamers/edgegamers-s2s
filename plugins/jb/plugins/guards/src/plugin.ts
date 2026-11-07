@@ -15,7 +15,7 @@ import { now, playerBySteam, setPublisher } from "./env";
 import { effectiveOf, flushAll, onPlayerGone, onPlayerReady, reloadUnloaded, startAccrual } from "./players";
 import { leaveQueue, queue } from "./queueing";
 import { onStoreConnected, openStore, pendingWrites, pruneBans } from "./store";
-import { balanceStartingTeams, mapStart, noteModeChanged, onJoinTeam, roundEnd, roundStart } from "./teams";
+import { balanceStartingTeams, disableEngineBalance, forgetPlayer, mapStart, noteModeChanged, onJoinTeam, roundEnd, roundStart } from "./teams";
 
 function ready(steamId: string): void {
   onPlayerReady(steamId, (e) => {
@@ -36,6 +36,7 @@ function ready(steamId: string): void {
 
 export function OnPluginStart(): void {
   loadSettings();
+  disableEngineBalance();
   config.onChange(() => {
     loadSettings();
     startAccrual();
@@ -81,6 +82,7 @@ export function OnClientDisconnect(client: Client): void {
   const steamId = client.steamId;
   if (steamId === "0") return;
   leaveQueue(steamId);
+  forgetPlayer(steamId);
   clearExpiry(steamId);
   onPlayerGone(steamId);
 }

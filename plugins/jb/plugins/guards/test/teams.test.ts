@@ -25,13 +25,14 @@ function fixture(overrides: Record<string, number> = {}) {
   const round = { mode: "normal", phase: "freeze" };
   const rules = { warmupPeriod: false, freezePeriod: true };
   const banned = new Set<string>(), unloaded = new Set<string>(), priority = new Map<string, number>();
-  const values: Record<string, number | string> = { prisoner_to_guard_ratio: 3, min_priority_for_ct: 120, priority_caps: "default=480" };
+  const values: Record<string, number | string> = { prisoner_to_guard_ratio: 2, min_priority_for_ct: 120, priority_caps: "default=480" };
   let fullyConnected = (_client: any) => {};
   const clientCommands = new Map<string, (slot: number, args: string) => number | void>();
   const command: any = () => {};
+  const serverCommands: string[] = [];
   command.onClientCommand = (name: string, handler: any) => clientCommands.set(name, handler);
   const sdk = {
-    command, Commands: { dispatch() {} }, HookResult: { Continue: 0, Handled: 2, Stop: 3 },
+    command, Server: { command: (line: string) => serverCommands.push(line) }, Commands: { dispatch() {} }, HookResult: { Continue: 0, Handled: 2, Stop: 3 },
     Chat: { toSlot() {}, toAll() {} }, Clients: { all: () => players.map(p => p.client), fromSlot: (slot: number) => players.find(p => p.slot === slot)?.client },
     config: { getString: (key: string) => values[key] ?? "", getFloat: (key: string) => overrides[key] ?? values[key] ?? 0,
       getInt: (key: string) => values[key] ?? 0, getBool: () => false, onChange() {} },
@@ -67,7 +68,7 @@ function fixture(overrides: Record<string, number> = {}) {
     if (nativeAvailable) join(p, team);
     else p.changeTeam(team === 0 ? 3 : team);
   }
-  return { clientJoin, rules, mapStart: () => { round.mode = "normal"; mod.exports.OnMapStart("jb_test"); }, add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
+  return { clientJoin, rules, serverCommands, disconnect: (p: any) => { players.splice(players.indexOf(p), 1); mod.exports.OnClientDisconnect(p.client); }, mapStart: () => { round.mode = "normal"; mod.exports.OnMapStart("jb_test"); }, add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
 }
 
 test("native team-menu CT requests cannot bypass an occupied guard queue", () => {
@@ -127,16 +128,57 @@ for (const blocked of ["ban", "loading", "unverified"]) {
   });
 }
 
-test("round-start balancing obeys configured 3:1 without round-end transfers", () => {
+const guards = (f: ReturnType<typeof fixture>) => f.players.filter(p => p.teamNum === 3).length;
+
+test("round start fills CT from the queue to one guard per two prisoners", () => {
   const f = fixture();
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 9; i++) {
     const p = f.add(2);
     f.queue.add(p.steamId, () => 480, 480, () => 0);
   }
   f.roundStart();
-  assert.equal(f.players.filter(p => p.teamNum === 3).length, 2);
+  assert.equal(guards(f), 3); // 6 T, 3 CT
   f.roundEnd();
-  assert.equal(f.players.filter(p => p.teamNum === 3).length, 2);
+  assert.equal(guards(f), 3);
+});
+
+test("round start never moves prisoners who did not queue for CT", () => {
+  const f = fixture();
+  for (let i = 0; i < 9; i++) f.add(2);
+  f.add(3);
+  f.roundStart();
+  f.roundEnd();
+  assert.equal(guards(f), 1);
+});
+
+test("unverified prisoners count toward the ratio", () => {
+  const f = fixture();
+  for (let i = 0; i < 6; i++) {
+    const p = f.add(2);
+    if (i < 3) { p.steamId = "0"; p.client.steamId = "0"; }
+  }
+  const queued = f.add(2);
+  f.queue.add(queued.steamId, () => 480, 480, () => 0);
+  f.add(3); f.add(3);
+  f.roundStart(); // 7 T, 2 CT -> 6 T, 3 CT
+  assert.equal(queued.teamNum, 3);
+});
+
+test("guards go back to T only after prisoners disconnect and break the ratio", () => {
+  const f = fixture();
+  const prisoners = Array.from({ length: 6 }, () => f.add(2));
+  f.add(3); f.add(3); f.add(3);
+  f.roundEnd();
+  assert.equal(guards(f), 3); // 6 T, 3 CT holds
+  f.disconnect(prisoners[0]);
+  f.roundEnd();
+  assert.equal(guards(f), 2); // 5 T, 3 CT breaks it -> 6 T, 2 CT
+});
+
+test("the engine's own team balancer is turned off", () => {
+  const f = fixture();
+  assert.ok(f.serverCommands.includes("mp_autoteambalance 0"));
+  assert.ok(f.serverCommands.includes("mp_limitteams 0"));
 });
 
 for (const team of [0, 2, 3]) {
@@ -149,30 +191,49 @@ for (const team of [0, 2, 3]) {
   });
 }
 
-test("two auto-joining players become a living T/guard pair before any round event", () => {
+test("two auto-joining players both stay living prisoners; nobody is forced to CT", () => {
   const f = fixture(), first = f.add(0, false);
   f.join(first, 0);
   const second = f.add(0, false);
   f.join(second, 0);
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
+  assert.ok(f.players.every(p => p.pawnIsAlive));
+  f.roundStart();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
+});
+
+test("the second player requesting CT establishes the first guard", () => {
+  const f = fixture(), first = f.add(2);
+  const second = f.add(0, false);
+  f.join(second, 3);
   assert.equal(first.teamNum, 2);
   assert.equal(second.teamNum, 3);
-  assert.equal(first.pawnIsAlive, true);
   assert.equal(second.pawnIsAlive, true);
 });
 
-for (const team of [0, 2, 3]) {
-  test(`the second player requesting team ${team} establishes the first guard`, () => {
+for (const team of [0, 2]) {
+  test(`the second player requesting team ${team} stays T`, () => {
     const f = fixture(), first = f.add(2);
     const second = f.add(0, false);
     f.join(second, team);
-    assert.equal(first.teamNum, 2);
-    assert.equal(second.teamNum, 3);
-    assert.equal(second.pawnIsAlive, true);
+    assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
   });
 }
 
-test("a banned second player spawns as T and the eligible first player becomes guard", () => {
-  const f = fixture(), first = f.add(2), second = f.add(0, false);
+test("a queued waiting prisoner becomes the first guard when an opponent joins", () => {
+  const f = fixture(), first = f.add(2);
+  f.queue.add(first.steamId, () => 480, 480, () => 0);
+  const second = f.add(0, false);
+  f.join(second, 0);
+  assert.equal(first.teamNum, 3);
+  assert.equal(second.teamNum, 2);
+});
+
+test("a banned second player spawns as T and the first player who asked for CT becomes guard", () => {
+  const f = fixture(), first = f.add(0, false);
+  f.join(first, 3);
+  assert.equal(first.teamNum, 2);
+  const second = f.add(0, false);
   f.banned.add(second.steamId);
   f.join(second, 0);
   assert.equal(first.teamNum, 3);
@@ -195,7 +256,7 @@ test("two banned players can spawn on T without either bypassing a CT ban", () =
 test("pending ban data is retried to establish the first pair after loading", () => {
   const f = fixture(), first = f.add(2), second = f.add(0, false);
   f.unloaded.add(first.steamId); f.unloaded.add(second.steamId);
-  f.join(second, 0);
+  f.join(second, 3);
   assert.deepEqual(f.players.map(p => p.teamNum), [2, 2]);
   f.unloaded.delete(second.steamId);
   f.ready(second);
@@ -244,7 +305,7 @@ test("the third auto-joining player remains T and normal ratio balancing resumes
   const f = fixture(), first = f.add(0, false);
   f.join(first, 0);
   const second = f.add(0, false);
-  f.join(second, 0);
+  f.join(second, 3);
   const third = f.add(0, false);
   f.join(third, 0);
   assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
@@ -340,7 +401,7 @@ for (const nativeAvailable of [false, true]) {
     const f = fixture(), first = f.add(0, false);
     f.clientJoin(first, "0", nativeAvailable);
     const second = f.add(0, false);
-    f.clientJoin(second, "0", nativeAvailable);
+    f.clientJoin(second, "3", nativeAvailable);
     const third = f.add(2);
     f.clientJoin(third, "3 1", nativeAvailable);
     assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
