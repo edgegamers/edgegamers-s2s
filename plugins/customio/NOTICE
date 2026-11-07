@@ -1,0 +1,22 @@
+CustomIO for s2script
+
+Derived from CS2-CustomIO 1.DZ.17.3 by DarkerZ [RUS]:
+https://github.com/darkerz7/CS2-CustomIO
+Reference commit: c2d8f95aa0fac92e5c8fb83677df797e5ed529a6
+
+CS2-CustomIO's idea and input set come from CS2Fixes' custom mapping features
+(https://github.com/Source2ZE/CS2Fixes, src/customio.cpp).
+
+Modified 2026-11-07: ported from C#/CounterStrikeSharp to TypeScript/s2script;
+uses s2script's native AcceptInput hook, entity and schema APIs, and a
+plugin-declared CEntityIdentity::SetEntityName call (signature taken from the
+upstream gamedata). Strings that upstream assigned through CounterStrikeSharp's
+schema setters are pooled through SetEntityName instead. Adds tests and
+packaging.
+
+This derived work is distributed under the GNU General Public License version 3.
+The full license is in LICENSE. There is no warranty.
+
+s2script SDK 0.35.0 and CS2 types 0.22.0 are development dependencies, licensed
+MIT OR Apache-2.0 by their authors. The framework is installed separately and is
+not bundled in this release.
