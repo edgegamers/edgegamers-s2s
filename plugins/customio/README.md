@@ -14,10 +14,10 @@ Built against SDK **0.35.0** and CS2 types **0.22.0**. CounterStrikeSharp is not
 
 1. Run `npm run build -- --filter @edgegamers/s2s-customio` from the repository root.
 2. Copy `dist/_edgegamers_s2s-customio.s2sp` to `addons/s2script/plugins/`.
-3. Allow the plugin's `engine:calls` permission. It declares one engine call,
+3. Check `sm plugins list` and the server log. The plugin declares one engine call,
    `CEntityIdentity::SetEntityName`, in [`gamedata/functions.jsonc`](gamedata/functions.jsonc).
-4. Check `sm plugins list` and the server log. If the signature does not resolve after a game
-   update, the plugin logs a warning and keeps every input that does not need it.
+   If its signature does not resolve after a game update, the plugin logs a warning and keeps
+   every input that does not need it.
 
 After the first registry publication, `s2s install @edgegamers/s2s-customio` installs it.
 Do not run it alongside CounterStrikeSharp's CS2-CustomIO or CS2Fixes' custom IO, or each input
