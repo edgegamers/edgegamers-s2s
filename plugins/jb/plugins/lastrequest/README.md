@@ -160,6 +160,6 @@ Nothing here has run on a CS2 server yet. Verify:
   - `API.Stats` server stat pushes — no analytics sink; the round log (`core.log`) has the lines.
   - Last guard kill credits (`grantLastGuardKill`) — gangperks.
 - **Runtime unknowns:** whether `WeaponDropPost` fires for every throw (and not for
-  `stripWeapons`), whether writing `nextSecondaryAttackTick` each frame fully blocks the scope,
-  whether `weapon_fire` sees the clip before the decrement (B4B turn passing relies on it), and
-  freeze via `moveType = NONE`.
+  `stripWeapons`), whether writing `nextSecondaryAttackTick` each frame fully blocks the scope, and
+  freeze via `moveType = NONE`. (B4B no longer depends on when `weapon_fire` sees the clip: the turn
+  passes when the fire event or a 100 ms check reads the shooter's magazine as empty.)

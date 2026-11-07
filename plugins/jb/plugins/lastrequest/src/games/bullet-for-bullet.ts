@@ -1,14 +1,14 @@
 /**
  * Shot for Shot / Mag for Mag (C# `BulletForBullet`). The prisoner picks a pistol; after 5s both
  * get it empty and a random player gets the first shot (one bullet, or a full magazine for mag
- * for mag). When the shooter's clip runs out the turn passes. Firing out of turn is cheating and
- * kills you. Knives at 30s; with `lr_b4b_kill_by_health` the lower-HP player dies at 60s.
+ * for mag). Only the shooter ever holds ammo; once their magazine is empty the turn passes and the
+ * other player is loaded. Firing a loaded gun out of turn is cheating and kills you. Knives at 30s; with `lr_b4b_kill_by_health` the lower-HP player dies at 60s.
  */
 import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
-import { setWeaponAmmo } from "@edgegamers/jailbreak-shared";
+import { reserveAmmo, setWeaponAmmo } from "@edgegamers/jailbreak-shared";
 import type { LRResult, LRType } from "../../api";
-import { B4B_PISTOLS, b4bHealthDecision, GUN_DEFS, isKnifeDef, PISTOL_MAG } from "../logic";
+import { B4B_PISTOLS, b4bHealthDecision, B4BTurns, GUN_DEFS, isKnifeDef, PISTOL_MAG } from "../logic";
 import { guardName, msg, prisonerName } from "../messages";
 import { settings } from "../settings";
 import type { Participant } from "../players";
@@ -24,7 +24,7 @@ function defOf(weapon: string): number {
 export class BulletForBullet extends TeleportingRequest {
   readonly type: LRType;
   private weapon = "weapon_deagle";
-  private whosShot: number | null = null;
+  private turns: B4BTurns | null = null;
   private magSize = 1;
   private readonly guns = new Map<number, Weapon | null>();
 
@@ -88,11 +88,12 @@ export class BulletForBullet extends TeleportingRequest {
       if (gGun) setWeaponAmmo(gGun, 0, 0);
 
       const shooter = Math.random() < 0.5 ? this.prisoner : this.guard;
-      this.whosShot = shooter.slot;
+      this.turns = new B4BTurns(shooter.slot);
       const name = shooter === this.prisoner ? prisonerName(shooter.name) : guardName(shooter.name);
       this.tell(msg.goesFirst(name));
       this.load(shooter);
       this.state = "active";
+      this.every(100, () => this.enforce());
     });
 
     this.after(30_000, () => {
@@ -104,7 +105,7 @@ export class BulletForBullet extends TeleportingRequest {
     if (!settings.b4bKillByHealth) return;
     this.after(60_000, () => {
       if (this.state !== "active") return;
-      const d = b4bHealthDecision(this.guard.health, this.prisoner.health, this.whosShot === this.prisoner.slot);
+      const d = b4bHealthDecision(this.guard.health, this.prisoner.health, this.turns?.whosShot === this.prisoner.slot);
       const winner = d.result === "guard_win" ? guardName(this.guard.name) : prisonerName(this.prisoner.name);
       this.tell(d.reason === "health" ? msg.winByHealth(winner) : msg.winByReason(winner, d.reason));
       if (d.result === "guard_win") this.prisoner.slay();
@@ -112,20 +113,44 @@ export class BulletForBullet extends TeleportingRequest {
     });
   }
 
+  /** The participant whose turn it is. */
+  private shooter(): Participant | null {
+    const slot = this.turns?.whosShot;
+    return slot === this.prisoner.slot ? this.prisoner : slot === this.guard.slot ? this.guard : null;
+  }
+
+  /** Pass the turn once the shooter's magazine is empty. */
+  private checkTurn(): void {
+    const shooter = this.shooter();
+    if (!this.turns || !shooter) return;
+    const opponent = this.opponentOf(shooter.slot);
+    if (this.turns.turnOver(this.gun(shooter)?.clip1 ?? null, opponent.slot)) this.load(opponent);
+  }
+
+  /** Every 100 ms: pass a finished turn, and keep the waiting player's gun empty and the shooter's reserve at 0. */
+  private enforce(): void {
+    if (this.state !== "active") return;
+    this.checkTurn();
+    const shooter = this.shooter();
+    if (!shooter) return;
+    const waiting = this.gun(this.opponentOf(shooter.slot));
+    if (waiting && ((waiting.clip1 ?? 0) !== 0 || (reserveAmmo(waiting) ?? 0) !== 0)) setWeaponAmmo(waiting, 0, 0);
+    const held = this.gun(shooter);
+    if (held && (reserveAmmo(held) ?? 0) !== 0) setWeaponAmmo(held, held.clip1 ?? 0, 0);
+  }
+
   onWeaponFire(slot: number): void {
-    if (this.state !== "active" || this.whosShot === null) return;
+    if (this.state !== "active" || !this.turns) return;
     if (!this.isParticipant(slot)) return;
-    const shooter = slot === this.prisoner.slot ? this.prisoner : this.guard;
-    if (slot !== this.whosShot) {
-      this.tell(msg.cheated(shooter.name));
-      shooter.slay();
-      return;
+    const player = slot === this.prisoner.slot ? this.prisoner : this.guard;
+    const g = this.gun(player);
+    const verdict = this.turns.onFire(slot, g?.clip1 ?? null, g ? reserveAmmo(g) : null);
+    if (verdict === "cheat") {
+      this.tell(msg.cheated(player.name));
+      player.slay();
+    } else if (verdict === "shot") {
+      this.checkTurn();
     }
-    const bullets = this.gun(shooter)?.clip1 ?? 1;
-    if (bullets > 1) return;
-    const opponent = this.opponentOf(slot);
-    this.whosShot = opponent.slot;
-    this.load(opponent);
   }
 
   onEnd(result: LRResult): void {
