@@ -7,9 +7,9 @@
 //   SetMessage "<text>"          on env_hudhint
 //   SetModel "<model>"           sets the activating player's model
 // Inputs are observed in AcceptInput's pre-hook and always continue, as upstream does.
-import { Entity, after, onInput } from '@s2script/sdk';
+import { Entity, after, createEntity, onInput } from '@s2script/sdk';
 import type { EntityRef, InputEvent } from '@s2script/sdk';
-import { Engine, Ptr } from '@s2script/sdk/unsafe';
+import { Ptr } from '@s2script/sdk/unsafe';
 import { MoveType_t, Player, wrapEntity } from '@s2script/cs2';
 import type { DamageTypes_t, Pawn } from '@s2script/cs2';
 import { parseFloat32, parseInt32, splitKeyValue } from './parse';
@@ -18,7 +18,6 @@ import { parseFloat32, parseInt32, splitKeyValue } from './parse';
 declare const __s2_schema_offset: ((className: string, field: string) => number) | undefined;
 
 const LOG = '[CustomIO]';
-const setEntityName = Engine.function('setEntityName');
 const offsets = new Map<string, number>();
 const warned = new Set<string>();
 
@@ -68,31 +67,22 @@ function nameSymbol(ref: EntityRef): Ptr | null {
   return symbol.isNull() ? null : symbol;
 }
 
-function renamingAvailable(): boolean {
-  if (setEntityName.available) return true;
-  warnOnce('setEntityName', `CEntityIdentity::SetEntityName is unavailable (${setEntityName.status.reason}); targetname, entitytemplate, case and SetMessage are ignored.`);
-  return false;
-}
-
-function rename(identity: Ptr, name: string): void {
-  if (setEntityName.available) setEntityName.call(identity, name);
-}
-
 /**
  * Pool `value` in the entity system's string table, as CS2Fixes' AllocPooledString does.
- * SetEntityName is the pooling path s2script can reach, so the entity is briefly renamed to
- * `value`, the pooled symbol is read back, and the original name is restored. Pooled strings
- * persist for the map like every other entity string.
+ * s2script exposes no pooling call, but spawning an entity with a `targetname` keyvalue pools
+ * its name: a scratch info_target is spawned with that name, its symbol read back, and the
+ * entity removed. Pooled strings persist for the map like every other entity string.
  */
-function pooledString(ref: EntityRef, value: string): Ptr | null {
-  const identity = identityOf(ref);
-  const off = offset('CEntityIdentity', 'm_name');
-  if (!identity || off < 0 || !renamingAvailable()) return null;
-  const original = symbolText(identity.readPtr(off));
-  rename(identity, value);
-  const pooled = identity.readPtr(off);
-  rename(identity, original);
-  return pooled.isNull() || symbolText(pooled) !== value ? null : pooled;
+function pooledString(value: string): Ptr | null {
+  if (value === '') return Ptr.NULL; // A null CUtlSymbolLarge reads as "".
+  const scratch = createEntity('info_target', { targetname: value });
+  if (!scratch) {
+    warnOnce('pool', 'Could not spawn a scratch info_target to pool a string; targetname, entitytemplate, case and SetMessage are ignored.');
+    return null;
+  }
+  const symbol = nameSymbol(scratch);
+  scratch.remove();
+  return symbol && symbolText(symbol) === value ? symbol : null;
 }
 
 function writeSymbol(ref: EntityRef, className: string, field: string, symbol: Ptr | null, index = 0): boolean {
@@ -133,9 +123,12 @@ type KeyValueHandler = (ref: EntityRef, kv: string[]) => void;
 
 const KEYVALUES: Record<string, KeyValueHandler> = {
   targetname(ref, kv) {
+    // Writes CEntityIdentity::m_name directly; Entity.findByName and map I/O read it there.
     const name = argument(kv);
-    const identity = name === null ? null : identityOf(ref);
-    if (identity && renamingAvailable()) rename(identity, name!);
+    const off = offset('CEntityIdentity', 'm_name');
+    const identity = name === null || off < 0 ? null : identityOf(ref);
+    const symbol = identity ? pooledString(name!) : null;
+    if (identity && symbol) identity.writePtr(off, symbol);
   },
   origin(ref, kv) {
     const origin = vector(kv, 16384);
@@ -163,7 +156,7 @@ const KEYVALUES: Record<string, KeyValueHandler> = {
   entitytemplate(ref, kv) {
     const template = argument(kv);
     if (template === null || designerName(ref) !== 'env_entity_maker') return;
-    writeSymbol(ref, 'CEnvEntityMaker', 'm_iszTemplate', pooledString(ref, template));
+    writeSymbol(ref, 'CEnvEntityMaker', 'm_iszTemplate', pooledString(template));
   },
   basevelocity(ref, kv) {
     const velocity = vector(kv, 4096);
@@ -236,7 +229,7 @@ const KEYVALUES: Record<string, KeyValueHandler> = {
     const index = parseInt32(kv[1]);
     if (index === null || index < 1 || index > 32) return;
     const value = [kv[2], ...kv.slice(3).filter(Boolean)].join(' ');
-    writeSymbol(ref, 'CLogicCase', 'm_nCase', pooledString(ref, value), index - 1);
+    writeSymbol(ref, 'CLogicCase', 'm_nCase', pooledString(value), index - 1);
   },
 };
 
@@ -255,7 +248,7 @@ function onAddScore(ev: InputEvent): void {
 function onSetMessage(ev: InputEvent): void {
   const entity = ev.entity;
   if (!entity?.isValid() || designerName(entity) !== 'env_hudhint') return;
-  writeSymbol(entity, 'CEnvHudHint', 'm_iszMessage', pooledString(entity, ev.value));
+  writeSymbol(entity, 'CEnvHudHint', 'm_iszMessage', pooledString(ev.value));
 }
 
 function onSetModel(ev: InputEvent): void {
@@ -287,9 +280,6 @@ export function OnPluginStart(): void {
   onInput('*', 'AddScore', onAddScore);
   onInput('env_hudhint', 'SetMessage', onSetMessage);
   onInput('*', 'SetModel', onSetModel);
-  if (!setEntityName.available) {
-    console.log(`${LOG} WARN: CEntityIdentity::SetEntityName unavailable — ${setEntityName.status.reason}`);
-  }
 }
 
 export function OnMapStart(): void {

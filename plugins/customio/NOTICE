@@ -8,11 +8,9 @@ CS2-CustomIO's idea and input set come from CS2Fixes' custom mapping features
 (https://github.com/Source2ZE/CS2Fixes, src/customio.cpp).
 
 Modified 2026-11-07: ported from C#/CounterStrikeSharp to TypeScript/s2script;
-uses s2script's native AcceptInput hook, entity and schema APIs, and a
-plugin-declared CEntityIdentity::SetEntityName call (signature taken from the
-upstream gamedata). Strings that upstream assigned through CounterStrikeSharp's
-schema setters are pooled through SetEntityName instead. Adds tests and
-packaging.
+uses s2script's native AcceptInput hook and entity and schema APIs. Strings
+that upstream assigned through CounterStrikeSharp's schema setters are pooled by
+spawning a scratch entity with the string as its name. Adds tests and packaging.
 
 This derived work is distributed under the GNU General Public License version 3.
 The full license is in LICENSE. There is no warranty.

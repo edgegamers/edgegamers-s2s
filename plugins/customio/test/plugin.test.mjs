@@ -13,7 +13,7 @@ test('inputs are observed and never dropped', () => {
   }
 });
 
-test('targetname renames through SetEntityName', () => {
+test('targetname renames through a pooled name symbol', () => {
   const f = fixture();
   const e = f.entity('func_door', 'old');
   kv(f, e, 'targetname new_name');
@@ -181,12 +181,20 @@ test('SetModel changes the activator model and re-seats walking players', () => 
   assert.equal(f.timers.length, 0);
 });
 
-test('without SetEntityName, name-pooling keys are skipped with one warning', () => {
-  const f = fixture({ renaming: false });
+test('scratch entities used for pooling are removed', () => {
+  const f = fixture();
+  kv(f, f.entity('logic_case'), 'case 1 a');
+  kv(f, f.entity('func_door'), 'targetname door2');
+  assert.equal(f.spawned, 2);
+  assert.equal(f.removed, 2);
+});
+
+test('when scratch entities cannot spawn, name-pooling keys are skipped with one warning', () => {
+  const f = fixture({ spawning: false });
   const e = f.entity('logic_case', 'keep');
   kv(f, e, 'targetname changed'); kv(f, e, 'case 1 a'); kv(f, e, 'health 7');
   assert.equal(e.name, 'keep');
   assert.equal(e.mem.cells.size, 1);
   assert.equal(e.fields.health, 7);
-  assert.equal(f.logs.filter(l => /SetEntityName/.test(l)).length, 2, 'one load warning, one use warning');
+  assert.equal(f.logs.filter(l => /scratch/.test(l)).length, 1);
 });

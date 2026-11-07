@@ -14,7 +14,6 @@
   },
   "include": [
     "src/**/*.ts",
-    ".s2script/*.d.ts",
     "../../node_modules/@s2script/sdk/globals.d.ts"
   ]
 }
