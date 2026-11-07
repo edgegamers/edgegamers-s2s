@@ -1,0 +1,9 @@
+# Collect pending releases in one version-packages PR
+
+November 7, 2026. Follow [s2script's Changesets workflow](https://github.com/s2script/s2script/blob/main/.github/workflows/changesets.yml): use `changesets/action@v1` to maintain one `chore: version packages` PR from `changeset-release/main`. New changesets update that PR; merging it releases the committed versions. This replaces the direct version commit and immediate publication described in the original plugin-monorepo design.
+
+Keep one root npm/s2s workspace and lockfile. The action calls `npm run version-packages`, which uses native `s2s version`, refreshes the lockfile and checks the generated versions before updating the PR. [PR checks triggered with GitHub's built-in token can require approval](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow), so validation belongs in this command as well as the existing PR workflow.
+
+With no pending changesets, the action calls `npm run release` to check and publish through native `s2s deploy --ci`. Native versioning retains independent release units, dependency propagation and bundle updates; native deployment retains publication ordering, retry handling and MAUL's restricted registry distribution. Keep releases serialized without cancelling an active publication. Manual dispatch updates the pending version PR or retries publication of already committed versions.
+
+Use the upstream action instead of maintaining custom release-branch and PR logic. Grant `contents: write` and `pull-requests: write`, enable GitHub Actions PR creation in repository settings, and retain `S2SCRIPT_TOKEN` for s2script registry publication. No npm publication or direct bot commits to `main` are required. Remove the superseded commit-back helper and its tests; retained workspace tests continue to run through the root test command.

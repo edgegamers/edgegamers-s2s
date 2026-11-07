@@ -28,7 +28,7 @@ Run `npm run changeset` for changes that affect shipped runtime plugins or their
 
 Bundle descriptors are handled by native s2s versioning: select their affected members rather than inventing separate npm packages for bundles. A private shared-library changeset must reach its consuming plugins; keep the declared dependency edges accurate. Documentation-only changes normally need no changeset.
 
-CI verifies pull requests. Merged changesets are versioned and published automatically from `main`; there is no separate release PR. Let the workflow commit its generated versions and refresh the lockfile. Retry a failed publication through the Release workflow, retaining the same committed versions.
+CI verifies pull requests. Changesets merged into `main` collect in one `chore: version packages` PR. The release workflow applies native `s2s version`, refreshes the lockfile and checks the generated versions before updating that PR. Leave it open to collect more changes; merge it to publish the release through `s2s deploy --ci`. Retry a failed publication through the Release workflow, retaining the same committed versions.
 
 ## Tests
 

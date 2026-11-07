@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: registry-release
@@ -20,7 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
@@ -28,16 +28,14 @@ jobs:
           cache: npm
       - run: npm install --global npm@11.19.0
       - run: npm ci
-      - run: npm run version
-      - run: npm run check
-      - name: Persist release versions
-        id: versions
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          bash .github/scripts/commit-release.sh
-      - name: Publish to s2script
-        if: steps.versions.outputs.publish == 'true'
+      - name: Create release PR or publish to s2script
+        uses: changesets/action@v1
+        with:
+          version: npm run version-packages
+          publish: npm run release
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+          createGithubReleases: false
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
-        run: npm run deploy
