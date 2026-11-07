@@ -50,7 +50,7 @@ cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `prisoner_to_guard_ratio` | 3.0 | Prisoners per guard (CTBans `PrisonerToGuardRatio`). |
+| `prisoner_to_guard_ratio` | 2.0 | Prisoners per guard (CTBans `PrisonerToGuardRatio`). |
 | `min_priority_for_ct` | 120 | Priority (minutes alive) needed to guard; eG+ are exempt. |
 | `priority_caps` | `default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750` | `group=cap` pairs; a player's cap is the highest of their groups' caps, else `default`. |
 | `rank_groups` | `e=ego/e,eg=ego/eg,ego=ego/ego,advisor=ego/advisor,manager=ego/manager,srmanager=ego/srmanager,commgr=ego/commgr,root=ego/root` | `rank=admin group` pairs (MAUL ranks). |
@@ -71,16 +71,20 @@ cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
 `priority_caps` and `rank_groups` are comma-separated `key=value` strings. Malformed pairs are
 skipped with a logged warning.
 
-Existing installations that explicitly configured `prisoner_to_guard_ratio` to `2` must set it to
-`3` to use 3:1; a configured value overrides the new default.
+Existing installations that explicitly configured `prisoner_to_guard_ratio` (for example to `3`)
+must set it to `2` to use 2:1; a configured value overrides the default.
 
 ## Behaviour
 
 - **Waiting for players**: the first playing human spawns on T, including auto-select and CT
-  requests. With two playing humans, an eligible player becomes the first guard immediately;
-  spectators and bots do not count. This initial pair is exempt from minimum priority until more
-  humans are playing. CT bans and pending ban data still prevent guard assignment; when a pending
-  load completes, the pair is checked again. With no eligible guard, players remain on T while waiting.
+  requests. With two playing humans, a player who asked for CT (picked CT in the team menu or is in
+  the `!guard` queue) becomes the first guard immediately; nobody else is moved. Spectators and bots
+  do not count. This initial pair is exempt from minimum priority until more humans are playing.
+  CT bans and pending ban data still prevent guard assignment; when a pending load completes, the
+  pair is checked again. With nobody eligible asking for CT, players remain on T while waiting.
+- **No forced guards**: prisoners only ever reach CT by asking (team menu on an empty CT, or the
+  queue). The engine's own balancer (`mp_autoteambalance`, `mp_limitteams`) is turned off on plugin
+  and map start, since jailbreak teams are never even.
 - **Team menu and client commands**: both `jointeam` commands and native team requests use the same
   guard policy during grace time, warmup and live rounds. An occupied CT sends requests through
   `!guard` rather than allowing another direct CT join; refused requests keep living prisoners alive.
@@ -89,11 +93,13 @@ Existing installations that explicitly configured `prisoner_to_guard_ratio` to `
   pushed back are told why.
 - **Round start**: CT-banned guards go to T; guards below `min_priority_for_ct` (rank under eG) go to
   T; then CT is filled from the queue to `floor((T + CT) / (ratio + 1))` (at least one guard when CT is empty).
-- **Round end**: CT-banned guards go to T. Unless this round was a special day, CT is trimmed to
-  the same limit (at least one guard) and the removed guards, lowest priority first, are moved to T
-  and re-queued. Connected humans with pending SteamIDs count toward the limit; excess unverified
-  guards are moved to T first and cannot enter the queue until verified. Bots do not consume human
-  guard slots or get selected for human queue transfers.
+  With the default ratio of 2 that is one guard per two prisoners after the moves (9 players: 6 T, 3 CT).
+  Every playing human on T counts, including clients whose SteamID is not verified yet.
+- **Round end**: CT-banned guards go to T. Unless this round was a special day, guards are moved
+  back to T only when prisoners have left (disconnected or spectated) and CT now breaks the same
+  limit (at least one guard stays). Excess unverified guards move first and cannot enter the queue
+  until verified; the rest move lowest priority first and are re-queued. Bots do not consume human
+  guard slots. Prisoners are never moved to CT here.
 - **Special day this round**: "special day" means core reported mode `specialday` at any point in the
   round. Days that hand the mode back before round end still skip the round-end trim. CT-ban
   enforcement always runs.
