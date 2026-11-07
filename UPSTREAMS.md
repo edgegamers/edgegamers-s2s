@@ -8,6 +8,7 @@ Fresh source imports; upstream Git history is not part of this repository. The f
 | surftimer | https://github.com/s2script/s2s-surftimer | `0c8263b760bd6fff459d6186de41d732b0707629` |
 | jb | https://github.com/s2script/s2s-jb | `3e77b87f2cd04cae2aada7df6d238c2fae38daf6` |
 | hide | https://github.com/ShookEagle/s2s-hide | `2cb26c74d45dd478797b5c63921631957252e670` |
+| extracommands | https://github.com/s2script/s2script/pull/327 | `1e1e53f2d97d031f313a7fb3df798e97c850706a` (command additions extracted into one optional plugin) |
 | maul | https://github.com/GabeHirakawa/s2s-maul | `aaaaabb6cb2af2b4a092559805d28baf1449d3c7` |
 | customio | https://github.com/darkerz7/CS2-CustomIO (ported from C#) | `c2d8f95aa0fac92e5c8fb83677df797e5ed529a6` |
 

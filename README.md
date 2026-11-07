@@ -14,6 +14,7 @@ CS2 server plugins maintained by edgegamers. One install, native s2s tooling, in
 | [SurfTimer](plugins/surftimer/) | `@edgegamers/surftimer` | Public bundle · timer + HUD |
 | [Jailbreak](plugins/jb/) | `@edgegamers/jailbreak` | Public bundle · 7 members, gangperks optional |
 | [Decluttr](plugins/decluttr/) | `@edgegamers/decluttr` | Public plugin |
+| [ExtraCommands](plugins/extracommands/) | `@edgegamers/extracommands` | Public plugin |
 | [Hide](plugins/hide/) | `@edgegamers/s2s-hide` | Public plugin |
 | [CustomIO](plugins/customio/) | `@edgegamers/s2s-customio` | Public plugin |
 | [MAUL](plugins/maul/) | `@edgegamers/s2s-maul` | Restricted plugin |
