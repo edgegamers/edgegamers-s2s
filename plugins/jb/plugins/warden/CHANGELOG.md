@@ -1,5 +1,12 @@
 # @edgegamers/jailbreak-warden
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [91c2c1b]
+  - @edgegamers/jailbreak-shared@1.0.3
+
 ## 1.0.3
 
 ### Patch Changes

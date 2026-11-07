@@ -1,5 +1,12 @@
 # @edgegamers/jailbreak-core
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [91c2c1b]
+  - @edgegamers/jailbreak-shared@1.0.3
+
 ## 1.1.3
 
 ### Patch Changes
