@@ -9,7 +9,7 @@ const code = (await build({
   bundle: true, write: false, format: "cjs", platform: "node", external: ["@s2script/*", "@edgegamers/jailbreak-core"],
   plugins: [{ name: "runtime-boundaries", setup(build) {
     const mocks: Record<string, string> = {
-      "./players": "export const entry=id=>({loaded:!fixture.unloaded.has(id),priority:fixture.priority.get(id)??480}), effectiveOf=()=>480, capOfSlot=()=>480, rankOfSlot=()=> 'default', flushAll=()=>{}, onPlayerGone=()=>{}, onPlayerReady=(id,done)=>done({}), reloadUnloaded=()=>{}, startAccrual=()=>{};",
+      "./players": "export const entry=id=>({loaded:!fixture.unloaded.has(id),priority:fixture.priority.get(id)??480}), effectiveOf=id=>fixture.priority.get(id)??480, capOfSlot=()=>480, rankOfSlot=()=> 'default', flushAll=()=>{}, onPlayerGone=()=>{}, onPlayerReady=(id,done)=>done({}), reloadUnloaded=()=>{}, startAccrual=()=>{};",
       "./ctbans": "export const activeBan=id=>fixture.banned.has(id)?{steamId:id}:null, remind=()=>{}, armExpiry=()=>{}, clearExpiry=()=>{};",
       "./store": "export const onStoreConnected=()=>{}, openStore=()=>{}, pendingWrites=()=>0, pruneBans=()=>{};",
       "./commands": "export const registerCommands=()=>{}, resetCommandState=()=>{};",
@@ -22,12 +22,14 @@ const code = (await build({
 
 function fixture(overrides: Record<string, number> = {}) {
   const players: any[] = [], joins: any[] = [], forwards = new Map<string, (event?: any) => void>();
-  const round = { mode: "normal" };
+  const round = { mode: "normal", phase: "freeze" };
+  const rules = { warmupPeriod: false, freezePeriod: true };
   const banned = new Set<string>(), unloaded = new Set<string>(), priority = new Map<string, number>();
   const values: Record<string, number | string> = { prisoner_to_guard_ratio: 3, min_priority_for_ct: 120, priority_caps: "default=480" };
   let fullyConnected = (_client: any) => {};
+  const clientCommands = new Map<string, (slot: number, args: string) => number | void>();
   const command: any = () => {};
-  command.onClientCommand = () => {};
+  command.onClientCommand = (name: string, handler: any) => clientCommands.set(name, handler);
   const sdk = {
     command, Commands: { dispatch() {} }, HookResult: { Continue: 0, Handled: 2, Stop: 3 },
     Chat: { toSlot() {}, toAll() {} }, Clients: { all: () => players.map(p => p.client), fromSlot: (slot: number) => players.find(p => p.slot === slot)?.client },
@@ -37,7 +39,7 @@ function fixture(overrides: Record<string, number> = {}) {
     use: () => ({ on: (name: string, handler: (event?: any) => void) => forwards.set(name, handler) }),
   };
   const cs2 = { Player: { fromSlot: (slot: number) => players.find(p => p.slot === slot) ?? null, allConnected: () => players },
-    Teams: { onJoinTeam: (handler: any) => joins.push(handler) }, GameRules: { get: () => ({ warmupPeriod: false }) } };
+    Teams: { onJoinTeam: (handler: any) => joins.push(handler) }, GameRules: { get: () => rules } };
   const mod = { exports: {} as any };
   vm.runInNewContext(code, { fixture: { banned, unloaded, priority }, module: mod, exports: mod.exports, console, require: (name: string) => {
     if (name === "@s2script/cs2") return cs2;
@@ -58,7 +60,14 @@ function fixture(overrides: Record<string, number> = {}) {
     const result = Math.max(0, ...joins.map(handler => handler({ player: p, team, queue: false }) ?? 0));
     if (result < 2) p.changeTeam(team === 0 ? 3 : team);
   }
-  return { mapStart: () => { round.mode = "normal"; mod.exports.OnMapStart("jb_test"); }, add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
+  function clientJoin(p: any, args: string, nativeAvailable = true) {
+    const result = clientCommands.get("jointeam")?.(p.slot, args) ?? 0;
+    if (result >= 2) return;
+    const team = Number(args.trim().split(/\s+/)[0]);
+    if (nativeAvailable) join(p, team);
+    else p.changeTeam(team === 0 ? 3 : team);
+  }
+  return { clientJoin, rules, mapStart: () => { round.mode = "normal"; mod.exports.OnMapStart("jb_test"); }, add, join, players, banned, unloaded, priority, ready: (p: any) => fullyConnected(p.client), mode: (mode: string) => { round.mode = mode; forwards.get("OnModeChanged")!({ mode }); }, queue: mod.exports.queue, roundStart: () => forwards.get("OnRoundStart")!(), roundEnd: () => forwards.get("OnRoundEnd")!() };
 }
 
 test("native team-menu CT requests cannot bypass an occupied guard queue", () => {
@@ -278,3 +287,99 @@ for (const team of [0, 2, 3]) {
     assert.equal(p.pawnIsAlive, true);
   });
 }
+
+for (const warmup of [false, true]) {
+  test(`client join commands cannot add a second guard with three humans (warmup: ${warmup}, native hook unavailable)`, () => {
+    const f = fixture(); f.rules.warmupPeriod = warmup;
+    f.add(3); f.add(2);
+    const prisoner = f.add(2);
+    f.clientJoin(prisoner, "3 1", false);
+    assert.equal(prisoner.teamNum, 2);
+    assert.equal(f.players.filter(p => p.teamNum === 3).length, 1);
+  });
+}
+
+test("denied guard clicks during grace time keep an existing prisoner alive", () => {
+  const f = fixture(); f.add(3); f.add(2);
+  const prisoner = f.add(2);
+  f.join(prisoner, 3);
+  assert.equal(prisoner.teamNum, 2);
+  assert.equal(prisoner.pawnIsAlive, true);
+});
+
+test("round end removes the lowest-priority excess guard with three humans", () => {
+  const f = fixture(), prisoner = f.add(2), high = f.add(3), low = f.add(3);
+  f.priority.set(high.steamId, 480); f.priority.set(low.steamId, 120);
+  f.roundEnd();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+  assert.equal(f.queue.has(low.steamId), true);
+});
+
+test("round end counts pending SteamIDs and removes an unverified excess guard first", () => {
+  const f = fixture(); f.add(2); f.add(3);
+  const pending = f.add(3);
+  pending.steamId = pending.client.steamId = "0";
+  f.roundEnd();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+  assert.equal(f.queue.has("0"), false);
+});
+
+test("round-start filling counts an unverified guard toward the ratio", () => {
+  const f = fixture();
+  const pending = f.add(3); pending.steamId = pending.client.steamId = "0";
+  for (let i = 0; i < 3; i++) {
+    const p = f.add(2);
+    f.queue.add(p.steamId, () => 480, 480, () => 0);
+  }
+  f.roundStart();
+  assert.equal(f.players.filter(p => p.teamNum === 3).length, 1);
+});
+
+for (const nativeAvailable of [false, true]) {
+  test(`client-command startup keeps one guard after three joins (native hook: ${nativeAvailable})`, () => {
+    const f = fixture(), first = f.add(0, false);
+    f.clientJoin(first, "0", nativeAvailable);
+    const second = f.add(0, false);
+    f.clientJoin(second, "0", nativeAvailable);
+    const third = f.add(2);
+    f.clientJoin(third, "3 1", nativeAvailable);
+    assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+    assert.ok(f.players.every(p => p.pawnIsAlive));
+    assert.deepEqual(second.spawnedTeams, [3]);
+  });
+}
+
+test("round-end trimming ignores CT bots and re-queues the excess human guard", () => {
+  const f = fixture(), bot = f.add(3);
+  bot.client.isBot = true;
+  f.add(2); f.add(3);
+  const low = f.add(3);
+  f.priority.set(low.steamId, 120);
+  f.roundEnd();
+  assert.deepEqual(f.players.map(p => p.teamNum), [3, 2, 3, 2]);
+  assert.equal(f.queue.has(low.steamId), true);
+});
+
+test("round end keeps the guard needed for the remaining pair after a prisoner leaves", () => {
+  const f = fixture(); f.add(3); f.add(3);
+  f.roundEnd();
+  assert.equal(f.players.filter(p => p.teamNum === 3).length, 1);
+  assert.equal(f.players.filter(p => p.teamNum === 2).length, 1);
+});
+
+test("unverified excess guards are removed before verified guards with unknown priority", () => {
+  const f = fixture(); f.add(2);
+  const verified = f.add(3), pending = f.add(3);
+  f.priority.set(verified.steamId, -1);
+  pending.steamId = pending.client.steamId = "0";
+  f.roundEnd();
+  assert.deepEqual(f.players.map(p => p.teamNum), [2, 3, 2]);
+});
+
+test("an unverified living prisoner cannot join CT or die from a denied grace-time click", () => {
+  const f = fixture(); f.add(3); f.add(2);
+  const p = f.add(2); p.steamId = p.client.steamId = "0";
+  f.clientJoin(p, "3 1", false);
+  assert.equal(p.teamNum, 2);
+  assert.equal(p.pawnIsAlive, true);
+});

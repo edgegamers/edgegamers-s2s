@@ -81,6 +81,9 @@ Existing installations that explicitly configured `prisoner_to_guard_ratio` to `
   spectators and bots do not count. This initial pair is exempt from minimum priority until more
   humans are playing. CT bans and pending ban data still prevent guard assignment; when a pending
   load completes, the pair is checked again. With no eligible guard, players remain on T while waiting.
+- **Team menu and client commands**: both `jointeam` commands and native team requests use the same
+  guard policy during grace time, warmup and live rounds. An occupied CT sends requests through
+  `!guard` rather than allowing another direct CT join; refused requests keep living prisoners alive.
 - **Queue order**: effective priority is `min(stored, rank cap)`. A joiner walks from the back toward
   the front and may be skipped by Dedicated Supporters with a chance based on their priority. Players
   pushed back are told why.
@@ -88,7 +91,9 @@ Existing installations that explicitly configured `prisoner_to_guard_ratio` to `
   T; then CT is filled from the queue to `floor((T + CT) / (ratio + 1))` (at least one guard when CT is empty).
 - **Round end**: CT-banned guards go to T. Unless this round was a special day, CT is trimmed to
   the same limit (at least one guard) and the removed guards, lowest priority first, are moved to T
-  and re-queued.
+  and re-queued. Connected humans with pending SteamIDs count toward the limit; excess unverified
+  guards are moved to T first and cannot enter the queue until verified. Bots do not consume human
+  guard slots or get selected for human queue transfers.
 - **Special day this round**: "special day" means core reported mode `specialday` at any point in the
   round. Days that hand the mode back before round end still skip the round-end trim. CT-ban
   enforcement always runs.
