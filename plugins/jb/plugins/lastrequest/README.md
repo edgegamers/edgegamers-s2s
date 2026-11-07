@@ -107,8 +107,8 @@ Nothing here has run on a CS2 server yet. Verify:
 - [ ] Shot for Shot / Mag for Mag: pistol menu, after 5 s both get the pistol empty, the starter
       gets 1 bullet / a full mag, turns alternate when the clip empties, shooting out of turn
       slays the cheater, knives at 30 s, HP decision at 60 s.
-- [ ] Gun Toss: knives + deagles (prisoner's empty clip — reserve ammo may NOT be limited to 7,
-      see port notes), thrown deagles turn red/blue, neither can pick up until 4 s after both
+- [ ] Gun Toss: knives + deagles (prisoner's empty clip, 7 reserve), thrown deagles turn red/blue,
+      neither can pick up until 4 s after both
       threw, an outsider can't grab a deagle near a thrower.
 - [ ] Coinflip: guard gets the chat menu; 10 s timeout picks randomly; flavour text sometimes;
       loser is slain.
@@ -158,8 +158,6 @@ Nothing here has run on a CS2 server yet. Verify:
   - LR / LG gang stats and credits (`LRStat`, `LGStat`, eco grants, "LR reached") — owned by
     `@edgegamers/jailbreak-gangperks` from this plugin's forwards.
   - `API.Stats` server stat pushes — no analytics sink; the round log (`core.log`) has the lines.
-  - Gun Toss prisoner reserve ammo of 7: `Weapon.setAmmo` accepts but does not yet apply reserve
-    (s2script defers `m_pReserveAmmo`), so the prisoner keeps default reserve. `// NOTE` in gun-toss.ts.
   - Last guard kill credits (`grantLastGuardKill`) — gangperks.
 - **Runtime unknowns:** whether `WeaponDropPost` fires for every throw (and not for
   `stripWeapons`), whether writing `nextSecondaryAttackTick` each frame fully blocks the scope,

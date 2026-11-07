@@ -84,7 +84,8 @@ Nothing here has run on a real server yet. With ≥3 players on teams:
 - **Per-tick blocks** write `nextPrimary/SecondaryAttackTick` every frame to `gameTime*64 + 500`
   (the SDK exposes no tick counter; CS2 is fixed 64-tick).
 - **AmmoWeaponReward** is implemented (`ammoWeapon` kind) but, as in C#, every entry is commented out
-  of the pool. Reserve ammo is not settable in SDK 0.27 (`Weapon.setAmmo` defers `reserve`).
+  of the pool. Reserve is written through `setWeaponAmmo` from `@edgegamers/jailbreak-shared`, since
+  `Weapon.setAmmo` doesn't apply it.
 - **Auto-RTD** calls the roll directly instead of executing `css_rtd` as the player, and only for
   players whose cookies are loaded. The C# `@ego/dssilver` permission became the `autortd_flag` letters.
 - A roll whose `prepare` fails (credit roll while Gangs just went away) now says so and stores

@@ -150,8 +150,10 @@ restored, timers die, and `OnSpecialDayEnd` is emitted. Start and end are writte
 - **Rocket Jump** (approximation): no native HE-projectile factory in s2script, so rockets are hitscan —
   aim trace → `env_explosion` at the impact point. Same launch maths and knife rule; no travel time.
   `rj_bullet_speed`, `rj_proj_inherit_player_velocity` and `rj_proj_gravity` were dropped (no projectile).
-- **One in the Chamber:** reserve ammo can't be written (`setAmmo` reserve is deferred in the SDK), so the
-  plugin counts bullets itself and clamps the magazine every frame.
+- **One in the Chamber:** `Weapon.setAmmo` doesn't write reserve ammo yet, so the day writes
+  `CBasePlayerWeapon::m_pReserveAmmo` directly through the host schema resolver. Every frame the weapon is
+  held to zero reserve and a magazine no larger than the bullets the player has earned (counted from fires
+  and kills), so reloads, refills and re-given weapons can't add ammo.
 - **No Scope:** the C# used `Server.TickCount`; s2script exposes game time only, so the tick is
   `gameTime × 64`.
 - **Speedrun leaderboard:** the HTML center panel is plain hint text (`HintText.to`) refreshed every 8

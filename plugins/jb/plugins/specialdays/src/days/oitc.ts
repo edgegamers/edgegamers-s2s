@@ -1,7 +1,8 @@
 /**
  * One in the Chamber: one bullet, one-hit kills, a bullet back per kill (OneInTheChamberDay). The
- * C# zeroed reserve ammo; s2script can't write reserve ammo yet, so the bullet count is tracked
- * here and the magazine is clamped to it every frame.
+ * weapon holds exactly the bullets the player owns in the magazine and never any reserve: reserve is
+ * zeroed when the weapon is given and on every frame, and the magazine is clamped to the tracked
+ * count, so nothing (a reload, a refill, a re-given weapon) can top it up.
  */
 import { config } from "@s2script/sdk";
 import type { HookResultValue } from "@s2script/sdk";
@@ -12,13 +13,23 @@ import { baseSettings, withFriendlyFire } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
 import { DESCRIPTIONS } from "../messages.ts";
 import { weaponFromDefIndex } from "../weapons.ts";
+import { reserveAmmo, setReserveAmmo, setWeaponAmmo } from "@edgegamers/jailbreak-shared";
 import { alive, give, livePawn, playerOfPawn, strip } from "../game.ts";
+import { oitcCorrection } from "../rules/oitc.ts";
 
 function findWeapon(p: Player, cls: string): Weapon | null {
   for (const w of livePawn(p)?.weapons ?? []) {
     if (weaponFromDefIndex(w.attributeManager.item.itemDefinitionIndex ?? -1) === cls) return w;
   }
   return null;
+}
+
+/** Hold `w` to `owned` bullets in the magazine and none in reserve. */
+function enforce(w: Weapon, owned: number): void {
+  const fix = oitcCorrection(owned, w.clip1 ?? null, reserveAmmo(w));
+  if (!fix) return;
+  if (fix.clip !== null && fix.clip !== w.clip1) w.setAmmo(fix.clip, 0);
+  setReserveAmmo(w, fix.reserve);
 }
 
 export function oitcDay(): SpecialDay {
@@ -52,7 +63,8 @@ export function oitcDay(): SpecialDay {
         if (weapon !== "") {
           give(p, weapon);
           bullets.set(p.userId, 1);
-          findWeapon(p, weapon)?.setAmmo(1, 0);
+          const w = findWeapon(p, weapon);
+          if (w) setWeaponAmmo(w, 1, 0);
         }
       }
     },
@@ -72,7 +84,9 @@ export function oitcDay(): SpecialDay {
       const n = (bullets.get(attacker.userId) ?? 0) + 1;
       bullets.set(attacker.userId, n);
       const w = findWeapon(attacker, weapon);
-      if (w) w.setAmmo((w.clip1 ?? 0) + 1);
+      if (!w) return;
+      setWeaponAmmo(w, (w.clip1 ?? 0) + 1, 0);
+      enforce(w, n);
     },
     onFrame(ctx) {
       if (!ctx.executed) return;
@@ -80,7 +94,7 @@ export function oitcDay(): SpecialDay {
         const allowed = bullets.get(p.userId);
         if (allowed === undefined) continue;
         const w = findWeapon(p, weapon);
-        if (w && (w.clip1 ?? 0) > allowed) w.setAmmo(allowed);
+        if (w) enforce(w, allowed);
       }
     },
   };

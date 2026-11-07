@@ -8,7 +8,7 @@
 import { Chat, Entity, after } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
-import { Colors, Team, isAlive } from "@edgegamers/jailbreak-shared";
+import { Colors, Team, isAlive, setWeaponAmmo } from "@edgegamers/jailbreak-shared";
 import { giveBomb, skipRandomBombNextRound } from "@edgegamers/jailbreak-core";
 import { POOL, isJackpot, requiredTeam, rewardDescription, rewardName } from "./pool.ts";
 import type { RewardSpec } from "./pool.ts";
@@ -105,8 +105,7 @@ function grantFor(spec: RewardSpec, player: Player): boolean {
       return pawn.giveNamedItem(spec.weapon) !== null;
     case "ammoWeapon": {
       const w = pawn.giveNamedItem(spec.weapon);
-      // Reserve ammo is not settable in this SDK (Weapon.setAmmo defers `reserve`); clip only.
-      return w !== null && w.setAmmo(spec.primary, spec.secondary);
+      return w !== null && setWeaponAmmo(w, spec.primary, spec.secondary);
     }
     case "fakeBomb":
       return pawn.giveNamedItem("weapon_c4") !== null;
