@@ -1,0 +1,31 @@
+{
+  "name": "@edgegamers/extracommands",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Extra player administration and fun commands with native admin menu integration for CS2.",
+  "license": "Apache-2.0",
+  "main": "src/plugin.ts",
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "s2script": {
+    "game": "cs2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/extracommands"
+  },
+  "files": [
+    "src/",
+    "translations/",
+    "tsconfig.json",
+    "NOTICE",
+    "LICENSE"
+  ]
+}
