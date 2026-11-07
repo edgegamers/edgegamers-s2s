@@ -6,6 +6,7 @@
  */
 import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
+import { setWeaponAmmo } from "@edgegamers/jailbreak-shared";
 import type { LRResult, LRType } from "../../api";
 import { B4B_PISTOLS, b4bHealthDecision, GUN_DEFS, isKnifeDef, PISTOL_MAG } from "../logic";
 import { guardName, msg, prisonerName } from "../messages";
@@ -65,6 +66,12 @@ export class BulletForBullet extends TeleportingRequest {
     return found;
   }
 
+  /** Hand `p` their turn: a full turn's magazine and no reserve, so the shot count can't be topped up. */
+  private load(p: Participant): void {
+    const g = this.gun(p);
+    if (g) setWeaponAmmo(g, this.magSize, 0);
+  }
+
   execute(): void {
     this.state = "pending";
 
@@ -77,14 +84,14 @@ export class BulletForBullet extends TeleportingRequest {
 
       const fullClip = pGun?.clip1 ?? null;
       this.magSize = this.magForMag ? (fullClip && fullClip > 0 ? fullClip : (PISTOL_MAG[this.weapon] ?? 1)) : 1;
-      pGun?.setAmmo(0, 0);
-      gGun?.setAmmo(0, 0);
+      if (pGun) setWeaponAmmo(pGun, 0, 0);
+      if (gGun) setWeaponAmmo(gGun, 0, 0);
 
       const shooter = Math.random() < 0.5 ? this.prisoner : this.guard;
       this.whosShot = shooter.slot;
       const name = shooter === this.prisoner ? prisonerName(shooter.name) : guardName(shooter.name);
       this.tell(msg.goesFirst(name));
-      this.gun(shooter)?.setAmmo(this.magSize, 0);
+      this.load(shooter);
       this.state = "active";
     });
 
@@ -118,7 +125,7 @@ export class BulletForBullet extends TeleportingRequest {
     if (bullets > 1) return;
     const opponent = this.opponentOf(slot);
     this.whosShot = opponent.slot;
-    this.gun(opponent)?.setAmmo(this.magSize, 0);
+    this.load(opponent);
   }
 
   onEnd(result: LRResult): void {

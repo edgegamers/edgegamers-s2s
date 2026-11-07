@@ -5,6 +5,7 @@
  */
 import { Server } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
+import { setWeaponAmmo } from "@edgegamers/jailbreak-shared";
 import type { LRType } from "../../api";
 import { DEAGLE_DEF, distSq, TOSS_OUTSIDER_BLOCK_DIST_SQ, TossTracker } from "../logic";
 import type { Participant } from "../players";
@@ -33,8 +34,8 @@ export class GunToss extends TeleportingRequest {
     this.guard.give("weapon_knife");
     const pGun = this.prisoner.give("weapon_deagle");
     this.guard.give("weapon_deagle");
-    // NOTE: s2script's setAmmo accepts but does not yet apply the reserve count (C#: 0 clip, 7 reserve).
-    pGun?.setAmmo(0, 7);
+    // The prisoner's deagle starts empty with one magazine in reserve (C#: 0 clip, 7 reserve).
+    if (pGun) setWeaponAmmo(pGun, 0, 7);
     this.after(250, () => {
       this.state = "active";
     });

@@ -13,7 +13,8 @@ import { baseSettings, withFriendlyFire } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
 import { DESCRIPTIONS } from "../messages.ts";
 import { weaponFromDefIndex } from "../weapons.ts";
-import { alive, give, livePawn, playerOfPawn, reserveAmmo, setReserveAmmo, strip } from "../game.ts";
+import { reserveAmmo, setReserveAmmo, setWeaponAmmo } from "@edgegamers/jailbreak-shared";
+import { alive, give, livePawn, playerOfPawn, strip } from "../game.ts";
 import { oitcCorrection } from "../rules/oitc.ts";
 
 function findWeapon(p: Player, cls: string): Weapon | null {
@@ -63,10 +64,7 @@ export function oitcDay(): SpecialDay {
           give(p, weapon);
           bullets.set(p.userId, 1);
           const w = findWeapon(p, weapon);
-          if (w) {
-            w.setAmmo(1, 0);
-            setReserveAmmo(w, 0);
-          }
+          if (w) setWeaponAmmo(w, 1, 0);
         }
       }
     },
@@ -87,7 +85,7 @@ export function oitcDay(): SpecialDay {
       bullets.set(attacker.userId, n);
       const w = findWeapon(attacker, weapon);
       if (!w) return;
-      w.setAmmo((w.clip1 ?? 0) + 1, 0);
+      setWeaponAmmo(w, (w.clip1 ?? 0) + 1, 0);
       enforce(w, n);
     },
     onFrame(ctx) {
