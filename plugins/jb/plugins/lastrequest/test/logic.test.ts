@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   b4bHealthDecision,
+  B4BTurns,
   cappedTimeDelta,
   coinflipResult,
   damageVerdict,
@@ -171,4 +172,29 @@ test("weapon defs", () => {
   assert.equal(isGunDef(4), true);
   assert.equal(isGunDef(42), false);
   assert.equal(isGunDef(44), false);
+});
+
+test("shot for shot: the shooter's own shot never counts as cheating, turns alternate on an empty clip", () => {
+  const prisoner = 1;
+  const guard = 2;
+  const t = new B4BTurns(prisoner);
+  // CS2 can report the shot before the clip drops: still the prisoner's turn
+  assert.equal(t.onFire(prisoner, 1, 0), "shot");
+  assert.equal(t.turnOver(1, guard), false);
+  assert.equal(t.whosShot, prisoner);
+  // once the clip reads empty the turn passes
+  assert.equal(t.turnOver(0, guard), true);
+  assert.equal(t.whosShot, guard);
+  // an echoed weapon_fire for that same shot, from the now-empty gun, is ignored, not cheating
+  assert.equal(t.onFire(prisoner, 0, 0), "ignore");
+  assert.equal(t.onFire(prisoner, null, null), "ignore");
+  // firing out of turn with a loaded gun is cheating
+  assert.equal(t.onFire(prisoner, 1, 0), "cheat");
+  assert.equal(t.onFire(prisoner, 0, 7), "cheat");
+  // the guard shoots back and the turn returns
+  assert.equal(t.onFire(guard, 0, 0), "shot");
+  assert.equal(t.turnOver(0, prisoner), true);
+  assert.equal(t.whosShot, prisoner);
+  // an unreadable clip never passes the turn
+  assert.equal(t.turnOver(null, guard), false);
 });

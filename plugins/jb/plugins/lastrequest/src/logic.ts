@@ -215,6 +215,40 @@ export function b4bHealthDecision(
   return { result: guardHealth > prisonerHealth ? "guard_win" : "prisoner_win", reason: "health" };
 }
 
+/** What a `weapon_fire` from a B4B participant means. */
+export type B4BFire = "shot" | "cheat" | "ignore";
+
+/**
+ * Shot for Shot / Mag for Mag turns. Exactly one player holds ammo at a time: the shooter. The turn
+ * passes once the shooter's magazine is seen empty, never on the fire event itself, because CS2 can
+ * report a shot before the magazine drops and can repeat `weapon_fire` for one trigger pull (the C#
+ * read the clip in the event and slayed the shooter for "cheating" on the echo).
+ */
+export class B4BTurns {
+  whosShot: number;
+
+  constructor(first: number) {
+    this.whosShot = first;
+  }
+
+  /**
+   * A fire from `slot`. Out of turn it's cheating only if that player's gun actually holds ammo;
+   * an empty gun can't hurt anyone, so its fire event is an echo or a dry fire and is ignored.
+   * `clip`/`reserve` are the firing player's gun, null when unreadable (treated as empty).
+   */
+  onFire(slot: number, clip: number | null, reserve: number | null): B4BFire {
+    if (slot === this.whosShot) return "shot";
+    return (clip ?? 0) > 0 || (reserve ?? 0) > 0 ? "cheat" : "ignore";
+  }
+
+  /** The shooter's magazine now reads `clip`: when it's empty the turn passes to `opponent`. */
+  turnOver(clip: number | null, opponent: number): boolean {
+    if (clip !== 0) return false;
+    this.whosShot = opponent;
+    return true;
+  }
+}
+
 /** No Scope 60-second decision: the guard needs strictly more HP. */
 export function noScopeTimeoutResult(guardHealth: number, prisonerHealth: number): "guard_win" | "prisoner_win" {
   return guardHealth > prisonerHealth ? "guard_win" : "prisoner_win";
