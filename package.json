@@ -18,6 +18,7 @@
     "plugins/surftimer/packages/*",
     "plugins/jb/plugins/*",
     "plugins/jb/packages/*",
+    "plugins/arcadescripts",
     "plugins/hide",
     "plugins/maul",
     "plugins/decluttr"
@@ -28,6 +29,7 @@
         "plugins/ttt/plugins/*",
         "plugins/surftimer/plugins/*",
         "plugins/jb/plugins/*",
+        "plugins/arcadescripts",
         "plugins/hide",
         "plugins/maul",
         "plugins/decluttr"

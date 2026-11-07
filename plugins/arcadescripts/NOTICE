@@ -1,0 +1,27 @@
+ArcadeScripts for s2script
+
+Derived from ArcadeScripts-CSS 1.0.2 by Supergosciuツ:
+https://github.com/supergosciu/ArcadeScripts-CSS
+Reference commit: e9aa84d8876ae8f24669505cd4b03ca6d563db92
+
+ArcadeScripts-CSS replaces the VScript logic_scripts of the jb_arcade_b6 map with
+C# implementations for CounterStrikeSharp. Its scripts are themselves ports of the
+map's original Squirrel VScripts.
+
+Modified 2026-11-07: ported from C#/CounterStrikeSharp to TypeScript/s2script.
+The runtime (logic_script discovery, RunScriptCode parsing and dispatch, per-round
+script lifetime) and all 29 map scripts were rewritten against the s2script SDK.
+Behavior differences are listed in README.md. In short: the `vscripts` keyvalue is
+read through checked entity offsets; scripted damage is dealt directly with the
+same attacker instead of through renamed point_hurt entities, so the custom
+kill-feed icons are gone; the first-input JIT warmup is dropped; and a few upstream
+defects are fixed (a shared colour table cleared for good in Colors, a sound count
+shared between PlaySoundAt instances, sprite lookups that compared wrapper objects
+instead of entities in LightDuel and Blob).
+
+This derived work is distributed under the GNU General Public License version 3.
+The full license is in LICENSE. There is no warranty.
+
+s2script SDK 0.35.0 and CS2 types 0.22.0 are development dependencies, licensed
+MIT OR Apache-2.0 by their authors. The framework is installed separately and is
+not bundled in this release.
