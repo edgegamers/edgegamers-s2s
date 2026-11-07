@@ -52,8 +52,8 @@
 
 - [x] Register the new product, refresh the single lockfile and document commands/install/menu/engine acceptance.
 - [x] Run `npm run check`; inspect archive and dry-run packaging.
-- [ ] Review the complete change; commit only task-owned files and push a feature branch for a durable replacement reference.
-- [ ] Post verification and the replacement link on #327, then close it and confirm its closed state.
+- [x] Review the complete change; commit only task-owned files and push a feature branch for a durable replacement reference.
+- [x] Post verification and the replacement link on #327, then close it and confirm its closed state.
 
 ## Verification record
 
@@ -67,3 +67,5 @@
 Delivery uses a clean worktree based on remote main f682aa3, carrying only ExtraCommands and the necessary root discovery/release entries. The original local checkout and unrelated HUD work remain intact. Remote main has no root translation guide, so no unrelated localization documentation is reintroduced.
 
 Clean delivery verification: `npm run check` passed against remote main f682aa3 (all 24 runtime plugins build, all retained workspace suites pass, ExtraCommands 71/71). Native archive inspection and source pack dry-run passed; source pack includes Apache LICENSE. No unrelated local HUD/localization history is included in the delivery branch.
+
+Delivery: [edgegamers/edgegamers-s2s#21](https://github.com/edgegamers/edgegamers-s2s/pull/21). Upstream [s2script/s2script#327](https://github.com/s2script/s2script/pull/327) closed after the replacement branch was pushed and verified. Tracking issue #20 remains linked for merge.
