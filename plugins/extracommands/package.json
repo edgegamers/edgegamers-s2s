@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/extracommands",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Extra player administration and fun commands with native admin menu integration for CS2.",
   "license": "Apache-2.0",
