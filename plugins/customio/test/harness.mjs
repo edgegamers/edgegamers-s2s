@@ -24,7 +24,7 @@ export const OFFSETS = {
 export function fixture(options = {}) {
   const inputs = [], logs = [], timers = [], entities = [], players = [];
   const pool = new Map();
-  let serial = 1, renames = 0;
+  let serial = 1, spawned = 0, removed = 0;
 
   const NULL = { isNull: () => true, readPtr() { throw Error('null deref'); }, readString() { throw Error('null deref'); } };
   const symbol = text => {
@@ -79,19 +79,20 @@ export function fixture(options = {}) {
     return p;
   }
 
-  const setEntityName = options.renaming === false
-    ? { available: false, status: { reason: 'signature not found' } }
-    : { available: true, status: { reason: null }, call(identity, name) {
-      renames++; identity.cells.set(OFFSETS['CEntityIdentity::m_name'], symbol(name));
-    } };
-
   const sdk = {
     onInput(cls, input, handler) { inputs.push({ cls, input: input.toLowerCase(), handler }); },
     after(ms, fn) { timers.push({ ms, fn }); return { cancel() {} }; },
     Entity: { findByName: name => entities.filter(e => e.valid && name && e.name === name) },
+    createEntity(cls, keyvalues) {
+      assert.deepEqual(Object.keys(keyvalues), ['targetname']);
+      if (options.spawning === false) return null;
+      spawned++;
+      const scratch = entity(cls, keyvalues.targetname);
+      scratch.remove = () => { scratch.valid = false; removed++; return true; };
+      return scratch;
+    },
   };
   const unsafe = {
-    Engine: { function: name => (assert.equal(name, 'setEntityName'), setEntityName) },
     Ptr: { NULL, from: ref => (ref.valid ? ref.mem : null) },
   };
   const cs2 = {
@@ -132,6 +133,7 @@ export function fixture(options = {}) {
 
   return {
     api, inputs, logs, timers, entities, players, entity, player, fire, runTimers, symbol,
-    get renames() { return renames; },
+    get spawned() { return spawned; },
+    get removed() { return removed; },
   };
 }

@@ -14,10 +14,7 @@ Built against SDK **0.35.0** and CS2 types **0.22.0**. CounterStrikeSharp is not
 
 1. Run `npm run build -- --filter @edgegamers/s2s-customio` from the repository root.
 2. Copy `dist/_edgegamers_s2s-customio.s2sp` to `addons/s2script/plugins/`.
-3. Check `sm plugins list` and the server log. The plugin declares one engine call,
-   `CEntityIdentity::SetEntityName`, in [`gamedata/functions.jsonc`](gamedata/functions.jsonc).
-   If its signature does not resolve after a game update, the plugin logs a warning and keeps
-   every input that does not need it.
+3. Check `sm plugins list` and the server log. The plugin needs no gamedata or engine calls.
 
 After the first registry publication, `s2s install @edgegamers/s2s-customio` installs it.
 Do not run it alongside CounterStrikeSharp's CS2-CustomIO or CS2Fixes' custom IO, or each input
@@ -49,16 +46,18 @@ is applied twice.
 | `damage`, `damagetype`, `damageradius` | `point_hurt` | Integer |
 | `case` | `logic_case` | `<1-32> <value...>` `*` |
 
-`*` These keys, and `SetMessage`, need the `SetEntityName` engine call.
+`*` These keys, and `SetMessage`, need a pooled string (see below).
 
 Inputs are observed before the entity runs them and always continue, as upstream does. Values
 that do not parse are ignored.
 
 ## Implementation notes
 
-- s2script cannot allocate the entity system's pooled strings directly. For `entitytemplate`,
-  `case` and `SetMessage`, the plugin renames the receiving entity to the value with
-  `SetEntityName`, reads back the pooled symbol, and restores the original name in the same call.
+- s2script cannot allocate the entity system's pooled strings directly. For `targetname`,
+  `entitytemplate`, `case` and `SetMessage`, the plugin spawns a scratch `info_target` with the
+  value as its `targetname`, reads back the pooled name symbol, and removes the scratch entity.
+- `targetname` writes the new symbol to `CEntityIdentity::m_name`, which `Entity.findByName` and
+  map I/O read. Unlike `SetEntityName`, it does not update the name's client string-table index.
 - `target` and `filtername` copy the found entity's existing name symbol, as CS2Fixes does.
 - Schema offsets for string fields come from the runtime's schema resolver, so they follow game
   updates. Any field the runtime cannot resolve disables only the keys that need it.

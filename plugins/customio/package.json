@@ -15,7 +15,6 @@
   },
   "files": [
     "src/",
-    "gamedata/",
     "test/",
     "tsconfig.json",
     "NOTICE"
