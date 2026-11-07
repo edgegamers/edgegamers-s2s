@@ -187,14 +187,14 @@ export function weaponFromDefIndex(defIndex: number): string | null {
 export const isKnife = (name: string): boolean => name.includes("knife") || name.includes("bayonet");
 
 /**
- * AbstractSpecialDay.OnCanAcquire: a pickup is allowed when there is no list, the item is on it, it
- * is any knife while the list has `weapon_knife`, or it is a bayonet.
+ * AbstractSpecialDay.OnCanAcquire: a pickup is allowed when there is no list, the item is on it, or
+ * it is any knife (skins, bayonets) while the list has `weapon_knife`. The C# let bayonets through
+ * on every list; a list without `weapon_knife` now means no knife of any kind.
  */
 export function pickupAllowed(name: string, allowed: ReadonlySet<string> | null): boolean {
   if (allowed === null) return true;
   if (allowed.has(name)) return true;
-  if (allowed.has("weapon_knife") && name.includes("knife")) return true;
-  return name.includes("bayonet");
+  return allowed.has("weapon_knife") && isKnife(name);
 }
 
 /** Parse a comma-separated item list (config); "" → null (no restriction). */

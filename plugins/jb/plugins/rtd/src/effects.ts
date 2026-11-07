@@ -6,13 +6,22 @@ import { decluttrCall } from '../../../../decluttr/src/owner.ts';
  */
 import { Clients, Commands, HookResult, Server } from "@s2script/sdk";
 import type { HookResultValue } from "@s2script/sdk";
-import { AcquireMethod, AcquireResult, Player, RenderMode_t } from "@s2script/cs2";
+import { Player, RenderMode_t } from "@s2script/cs2";
+import type { AcquireMethod, AcquireResult } from "@s2script/cs2";
 import type { CanAcquireView, Weapon } from "@s2script/cs2";
 import { Colors, setPawnColor, Team } from "@edgegamers/jailbreak-shared";
 import type { Rgb } from "@edgegamers/jailbreak-shared";
 import { WEAPON_GROUPS, SNIPERS, classForDefIndex, isKnife } from "./weapons.ts";
 import type { WeaponGroup } from "./weapons.ts";
 import { msg } from "./messages.ts";
+
+/**
+ * CanAcquire enum values. `@s2script/cs2` declares AcquireMethod/AcquireResult as enums in its types
+ * but does not export them at runtime, so reading `AcquireMethod.PickUp` from it throws on every
+ * acquire. Values match the engine enums (same as TTT's `cs2/acquire.ts`).
+ */
+const ACQUIRE_PICKUP = 0 as AcquireMethod;
+const ACQUIRE_PROHIBITED = 7 as AcquireResult;
 
 export type TickBlock = "scope" | "leftKnife" | "rightKnife";
 
@@ -89,7 +98,7 @@ function weaponClass(w: Weapon | null): string | null {
 /** items.onCanAcquire: refuse pickups of a blocked group (C# only blocked AcquireMethod.PickUp). */
 export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
   if (blockedGroups.size === 0) return;
-  if (view.method !== AcquireMethod.PickUp) return;
+  if (view.method !== ACQUIRE_PICKUP) return;
   const player = view.player;
   if (!player) return;
   const groups = blockedGroups.get(player.userId);
@@ -98,7 +107,7 @@ export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
   if (cls === null) return;
   for (const g of groups) {
     if (WEAPON_GROUPS[g].items.has(cls)) {
-      view.result = AcquireResult.NotAllowedByProhibited;
+      view.result = ACQUIRE_PROHIBITED;
       return HookResult.Changed;
     }
   }
