@@ -18,6 +18,7 @@ import { rocketJumpVelocity } from "../src/rules/rocketjump.ts";
 import type { RocketJumpParams } from "../src/rules/rocketjump.ts";
 import { TrailPath, trailStep, pulse } from "../src/rules/trail.ts";
 import { vec } from "../src/geometry.ts";
+import { oitcCorrection } from "../src/rules/oitc.ts";
 
 test("gun game ladder has 10 distinct steps from the right tiers", () => {
   const p = buildProgression();
@@ -133,4 +134,22 @@ test("trail path keeps a bounded newest-first polyline", () => {
   assert.equal(trailStep(t.newest(), vec(300, 0, 0)), "add");
   const p = pulse(0, 0);
   assert.ok(p.width >= 0 && p.alpha >= 0 && p.alpha <= 255);
+});
+
+test("one in the chamber: magazine never exceeds owned bullets, reserve is always zero", () => {
+  // the given weapon arrives with a full magazine and stock reserve
+  assert.deepEqual(oitcCorrection(1, 7, 35), { clip: 1, reserve: 0 });
+  // a refill that only touched reserve
+  assert.deepEqual(oitcCorrection(1, 1, 7), { clip: 1, reserve: 0 });
+  // a reload/refill that topped up the magazine
+  assert.deepEqual(oitcCorrection(2, 7, 0), { clip: 2, reserve: 0 });
+  // shot spent, no bullets owned
+  assert.deepEqual(oitcCorrection(0, 1, 0), { clip: 0, reserve: 0 });
+  // compliant weapons are left alone, including a kill streak past the stock magazine
+  assert.equal(oitcCorrection(1, 1, 0), null);
+  assert.equal(oitcCorrection(3, 2, 0), null);
+  assert.equal(oitcCorrection(9, 9, 0), null);
+  // a field that couldn't be read is never written from a guess
+  assert.deepEqual(oitcCorrection(1, null, 35), { clip: null, reserve: 0 });
+  assert.equal(oitcCorrection(1, 1, null), null);
 });

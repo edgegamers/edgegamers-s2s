@@ -5,7 +5,7 @@
 import { Chat, Clients, Entity, Server } from "@s2script/sdk";
 import type { EntityRef } from "@s2script/sdk";
 import { GameRules, MoveType_t, Player, RenderMode_t } from "@s2script/cs2";
-import type { Pawn } from "@s2script/cs2";
+import type { Pawn, Weapon } from "@s2script/cs2";
 import { alivePlayers, Colors, isAlive, setPawnColor, Team, teamColored as teamColoredName } from "@edgegamers/jailbreak-shared";
 import type { Rgb } from "@edgegamers/jailbreak-shared";
 import type { Vec3 } from "./geometry.ts";
@@ -106,6 +106,32 @@ export function give(p: Player, item: string): void {
   const pawn = livePawn(p);
   if (!pawn || item === "") return;
   pickupBypass(() => pawn.giveNamedItem(item));
+}
+
+// The host's schema resolver (the one the generated field accessors use). `Weapon.setAmmo` accepts a
+// reserve count but does not write it, so reserve ammo is written straight to the networked field.
+declare const __s2_schema_offset: ((className: string, field: string) => number) | undefined;
+let reserveOffset: number | undefined;
+function reserveAmmoOffset(): number {
+  if (reserveOffset === undefined) {
+    reserveOffset =
+      typeof __s2_schema_offset === "function" ? __s2_schema_offset("CBasePlayerWeapon", "m_pReserveAmmo") : -1;
+  }
+  return reserveOffset;
+}
+
+/** The weapon's primary reserve ammo (`m_pReserveAmmo[0]`), or null when it can't be read. */
+export function reserveAmmo(w: Weapon): number | null {
+  const off = reserveAmmoOffset();
+  return off < 0 ? null : w.ref.readInt32(off);
+}
+
+/** Set the weapon's primary reserve ammo and network it. False when the field can't be written. */
+export function setReserveAmmo(w: Weapon, reserve: number): boolean {
+  const off = reserveAmmoOffset();
+  if (off < 0 || !w.ref.writeInt32(off, reserve)) return false;
+  w.ref.notifyStateChanged(off);
+  return true;
 }
 
 /** Kill the player (CommitSuicide). */
