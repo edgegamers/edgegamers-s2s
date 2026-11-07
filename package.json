@@ -20,7 +20,8 @@
     "plugins/jb/packages/*",
     "plugins/hide",
     "plugins/maul",
-    "plugins/decluttr"
+    "plugins/decluttr",
+    "plugins/customio"
   ],
   "s2script": {
     "workspace": {
@@ -30,7 +31,8 @@
         "plugins/jb/plugins/*",
         "plugins/hide",
         "plugins/maul",
-        "plugins/decluttr"
+        "plugins/decluttr",
+        "plugins/customio"
       ],
       "bundles": [
         "plugins/ttt",
