@@ -4,7 +4,7 @@ import { Player } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";
 import { activeBan } from "./ctbans";
 import { settings } from "./config";
-import { playerBySteam, pub, toSteam } from "./env";
+import { isRealClient, playerBySteam, pub, toSteam } from "./env";
 import { msg } from "./messages";
 import { effectiveOf } from "./players";
 import { GuardQueue, type Notice } from "./queue";
@@ -65,13 +65,18 @@ export function fillGuards(count: number): boolean {
 /** Move the `count` lowest-priority guards to T and re-queue them. */
 export function trimGuards(count: number): void {
   const guards = Player.allConnected()
-    .filter((p) => p.teamNum === Team.Guard && p.steamId !== "0")
-    .sort((a, b) => effectiveOf(a.steamId) - effectiveOf(b.steamId));
+    .filter((p) => p.teamNum === Team.Guard && isRealClient(p.slot))
+    .sort((a, b) => {
+      if ((a.steamId === "0") !== (b.steamId === "0")) return a.steamId === "0" ? -1 : 1;
+      return effectiveOf(a.steamId) - effectiveOf(b.steamId);
+    });
   for (const p of guards.slice(0, count)) {
     p.changeTeam(Team.Prisoner);
     Chat.toSlot(p.slot, msg.swapped());
-    Chat.toSlot(p.slot, msg.readded());
-    joinQueue(p.slot);
+    if (p.steamId !== "0") {
+      Chat.toSlot(p.slot, msg.readded());
+      joinQueue(p.slot);
+    }
   }
 }
 

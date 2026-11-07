@@ -46,7 +46,7 @@ export function balanceStartingTeams(preferredSteamId?: string): void {
   joinAndSpawn(guard, Team.Guard);
 }
 
-export function onJoinTeam(slot: number, team: number): HookResultValue {
+export function onJoinTeam(slot: number, team: number | string): HookResultValue {
   if (!isRealClient(slot)) return HookResult.Continue; // bots (and invalid slots) only
   const p = Player.fromSlot(slot);
   if (!p) return HookResult.Continue;
@@ -69,7 +69,7 @@ export function onJoinTeam(slot: number, team: number): HookResultValue {
   }
   if (req === "ct" && p.steamId === "0") {
     // Unverified: no ban/priority can be checked, so never CT.
-    p.changeTeam(Team.Prisoner);
+    if (p.teamNum !== Team.Prisoner) p.changeTeam(Team.Prisoner);
     Chat.toSlot(slot, msg.guardUnverified());
     return HookResult.Stop;
   }
@@ -91,7 +91,7 @@ export function onJoinTeam(slot: number, team: number): HookResultValue {
     return HookResult.Stop;
   }
   // Otherwise the !guard logic decides (banned → reminder, not loaded → "priority unavailable").
-  p.changeTeam(Team.Prisoner);
+  if (p.teamNum !== Team.Prisoner) p.changeTeam(Team.Prisoner);
   Commands.dispatch("sm_guard", slot, "", "chat");
   return HookResult.Stop;
 }
@@ -135,7 +135,9 @@ export function roundStart(): void {
     p.changeTeam(Team.Prisoner);
     Chat.toSlot(p.slot, msg.guardInsufficient(prio, s.minPriority));
   }
-  const add = guardsToAdd(humans(Team.Prisoner).length, humans(Team.Guard).length, s.ratio);
+  const playing = playingHumans();
+  const add = guardsToAdd(playing.filter(p => p.teamNum === Team.Prisoner).length,
+    playing.filter(p => p.teamNum === Team.Guard).length, s.ratio);
   if (add > 0 && !fillGuards(add)) broadcast(msg.queueEmptyBroadcast());
 }
 
@@ -143,7 +145,9 @@ export function roundStart(): void {
 export function roundEnd(): void {
   enforceBans();
   if (isSpecialDayRound()) return;
-  const remove = guardsToRemove(humans(Team.Prisoner).length, humans(Team.Guard).length, settings().ratio);
+  const playing = playingHumans();
+  const remove = guardsToRemove(playing.filter(p => p.teamNum === Team.Prisoner).length,
+    playing.filter(p => p.teamNum === Team.Guard).length, settings().ratio);
   if (remove > 0) trimGuards(remove);
 }
 

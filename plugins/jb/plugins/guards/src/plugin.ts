@@ -2,7 +2,7 @@
  * @edgegamers/jailbreak-guards — wiring only. Guard queue, ratio, priority and CT bans live in their
  * own modules; this file connects them to core, the SDK lifecycle and the published contract.
  */
-import { config, createScope, publish, use } from "@s2script/sdk";
+import { command, config, createScope, publish, use } from "@s2script/sdk";
 import type { Client } from "@s2script/sdk";
 import { Clients } from "@s2script/sdk";
 import { Teams } from "@s2script/cs2";
@@ -59,6 +59,8 @@ export function OnPluginStart(): void {
   core.on("OnRoundEnd", () => roundEnd());
   core.on("OnModeChanged", (ev) => noteModeChanged(ev.mode));
 
+  // Catch the client command even when the host's native team hook is unavailable.
+  command.onClientCommand("jointeam", (slot, args) => onJoinTeam(slot, args));
   Teams.onJoinTeam(({ player, team }) => player ? onJoinTeam(player.slot, team) : undefined);
   registerCommands();
 
