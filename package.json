@@ -21,7 +21,9 @@
     "plugins/arcadescripts",
     "plugins/hide",
     "plugins/maul",
-    "plugins/decluttr"
+    "plugins/decluttr",
+    "plugins/customio",
+    "plugins/extracommands"
   ],
   "s2script": {
     "workspace": {
@@ -32,7 +34,9 @@
         "plugins/arcadescripts",
         "plugins/hide",
         "plugins/maul",
-        "plugins/decluttr"
+        "plugins/decluttr",
+        "plugins/customio",
+        "plugins/extracommands"
       ],
       "bundles": [
         "plugins/ttt",
@@ -43,10 +47,12 @@
   },
   "scripts": {
     "build": "s2s build",
-    "test": "node --test test/*.test.mjs && npm test --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
     "check": "npm run build && npm test",
     "changeset": "changeset",
     "version": "s2s version && npm install --package-lock-only --ignore-scripts",
+    "version-packages": "npm run version && npm run check",
+    "release": "npm run check && npm run deploy",
     "deploy": "s2s deploy --ci"
   },
   "devDependencies": {

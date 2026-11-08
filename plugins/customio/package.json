@@ -1,0 +1,30 @@
+{
+  "name": "@edgegamers/s2s-customio",
+  "version": "0.2.1",
+  "description": "An s2script port of darkerz7/CS2-CustomIO: CSS/CS:GO-style KeyValue, AddScore, SetMessage and SetModel map inputs.",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "main": "src/plugin.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/customio"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "test/",
+    "tsconfig.json",
+    "NOTICE"
+  ],
+  "s2script": {
+    "game": "cs2"
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "test": "node --test --test-isolation=none test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  }
+}

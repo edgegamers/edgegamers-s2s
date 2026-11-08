@@ -14,6 +14,7 @@ import type { Vec3 } from "./geometry.ts";
 import { pickSpawns, ShuffleBag, shuffle } from "./geometry.ts";
 import { pickupAllowed } from "./weapons.ts";
 import { setPickupRule } from "./pickup.ts";
+import type { PickupRule } from "./pickup.ts";
 import { ZoneRestriction, restrictionArea } from "./restrict.ts";
 import { zoneCenters } from "./zones.ts";
 import { msg } from "./messages.ts";
@@ -129,9 +130,21 @@ export class DayRun implements DayContext {
     setTimeRemaining(1);
   }
 
+  /** The day's own pickup rule, else its allowed-weapons list. */
+  private pickupRule(): PickupRule {
+    const s = this.day.settings;
+    const custom = this.day.pickupRule?.bind(this.day);
+    return custom ?? ((p, item) => pickupAllowed(item, s.allowedWeapons(p)));
+  }
+
   // ── setup (AbstractSpecialDay.Setup) ───────────────────────────────────────────────────────
   start(): void {
     const s = this.day.settings;
+    // Arm the pickup gate from setup, not just execute: the C# only hooked CanAcquire in Execute,
+    // so the countdown before a restricted day began was a free window to grab map guns and keep
+    // them. Our own gives bypass the gate.
+    const rule = this.pickupRule();
+    setPickupRule(rule);
     this.day.setup?.(this);
 
     for (const [name, value] of Object.entries(s.convars)) this.setConvar(name, value);
@@ -147,7 +160,9 @@ export class DayRun implements DayContext {
       if (armor !== -1) setArmor(p, armor);
       if (s.stripToKnife) {
         strip(p);
-        give(p, "weapon_knife");
+        // Only hand out the knife when the day allows one (HE Only, One in the Chamber and
+        // Speedrunners do not).
+        if (rule(p, "weapon_knife")) give(p, "weapon_knife");
       }
     }
 
@@ -233,9 +248,7 @@ export class DayRun implements DayContext {
     this.didExecute = true;
     if (!this.day.skipBaseExecute) {
       for (const p of alive()) setTakesDamage(p, true);
-      const s = this.day.settings;
-      const custom = this.day.pickupRule?.bind(this.day);
-      setPickupRule(custom ?? ((p, item) => pickupAllowed(item, s.allowedWeapons(p))));
+      setPickupRule(this.pickupRule());
     }
     this.day.execute?.(this);
     if (this.day.restrict) {

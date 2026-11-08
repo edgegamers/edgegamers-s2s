@@ -4,7 +4,8 @@
  */
 import { after, Chat, HookResult } from "@s2script/sdk";
 import type { DamageInfo, EntityRef, HookResultValue } from "@s2script/sdk";
-import { AcquireMethod, AcquireResult, HintText, Player, Weapon } from "@s2script/cs2";
+import { HintText, Player, Weapon } from "@s2script/cs2";
+import type { AcquireMethod, AcquireResult } from "@s2script/cs2";
 import type { CanAcquireView } from "@s2script/cs2";
 import { Colors, hl, isAlive, packColor32, parseColor, RAINBOW, Team } from "@edgegamers/jailbreak-shared";
 import { getRound, log, unmarkRebel } from "@edgegamers/jailbreak-core";
@@ -19,6 +20,14 @@ import { closeAllMenus } from "./menus";
 import { countOnTeam, isReal, Participant, playerOfEntity, playToAll } from "./players";
 import { addTimeCapped, addTimeRemaining, claimMode, isWarmup, releaseMode, setDefaultWinner, setTimeRemaining } from "./round";
 import { settings } from "./settings";
+
+/**
+ * CanAcquire enum values. `@s2script/cs2` declares AcquireMethod/AcquireResult as enums in its types
+ * but does not export them at runtime, so reading `AcquireMethod.PickUp` from it throws on every
+ * acquire. Values match the engine enums (same as TTT's `cs2/acquire.ts`).
+ */
+const ACQUIRE_PICKUP = 0 as AcquireMethod;
+const ACQUIRE_PROHIBITED = 7 as AcquireResult;
 
 const LR_SOUND = "sounds/jb/ct/lr.vsnd";
 
@@ -247,11 +256,11 @@ export function onTakeDamage(info: DamageInfo): HookResultValue | void {
 
 /** CanAcquire pre-hook (C# `OnCanAcquire`): each LR may forbid pickups. */
 export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
-  if (active.length === 0 || view.method !== AcquireMethod.PickUp) return;
+  if (active.length === 0 || view.method !== ACQUIRE_PICKUP) return;
   const p = view.player;
   if (!p) return;
   if (!active.some((lr) => lr.preventEquip(p.slot, view.defIndex))) return;
-  view.result = AcquireResult.NotAllowedByProhibited;
+  view.result = ACQUIRE_PROHIBITED;
   return HookResult.Handled;
 }
 

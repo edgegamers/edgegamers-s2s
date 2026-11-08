@@ -1,0 +1,10 @@
+ExtraCommands
+
+Command implementations and essential behavior tests adapted from s2script/s2script
+pull request #327 by ShookEagle, commit 1e1e53f2d97d031f313a7fb3df798e97c850706a.
+https://github.com/s2script/s2script/pull/327
+
+s2script is available under MIT OR Apache-2.0. This adaptation uses Apache-2.0,
+as provided in this repository's root LICENSE. Copyright remains with the
+original contributors. Standalone packaging, translations and menu integration
+are maintained by edgegamers.

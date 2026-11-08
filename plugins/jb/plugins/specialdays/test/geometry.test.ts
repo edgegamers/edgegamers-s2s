@@ -63,7 +63,16 @@ test("pickup gate", () => {
   assert.equal(pickupAllowed("weapon_ak47", null), true);
   assert.equal(pickupAllowed("weapon_ak47", new Set(["weapon_m4a1"])), false);
   assert.equal(pickupAllowed("weapon_knife_karambit", new Set(["weapon_knife"])), true);
-  assert.equal(pickupAllowed("weapon_bayonet", new Set()), true);
+  assert.equal(pickupAllowed("weapon_bayonet", new Set(["weapon_knife"])), true);
+  assert.equal(pickupAllowed("weapon_knife_t", new Set(["weapon_knife"])), true);
+  // HE Only style lists: no knife of any kind, no map guns.
+  const heOnly = new Set(["weapon_hegrenade"]);
+  assert.equal(pickupAllowed("weapon_hegrenade", heOnly), true);
+  assert.equal(pickupAllowed("weapon_knife", heOnly), false);
+  assert.equal(pickupAllowed("weapon_knife_t", heOnly), false);
+  assert.equal(pickupAllowed("weapon_bayonet", heOnly), false);
+  assert.equal(pickupAllowed("weapon_ak47", heOnly), false);
+  assert.equal(pickupAllowed("weapon_bayonet", new Set()), false);
   assert.equal(pickupAllowed("weapon_deagle", new Set()), false);
   assert.equal(parseItemList(""), null);
   assert.deepEqual([...(parseItemList("a, b,,c") ?? [])], ["a", "b", "c"]);

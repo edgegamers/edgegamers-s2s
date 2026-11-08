@@ -109,7 +109,8 @@ restored, timers die, and `OnSpecialDayEnd` is emitted. Start and end are writte
       `mp_respawn_on_death_*`, `sv_gravity`, `sv_infinite_ammo`, `mp_ignore_round_win_conditions`, …).
 - [ ] Freeze/unfreeze timings, invulnerability until the start, teleports (armory = CT spawns,
       random uses `spawn`-tagged zones first), cells open, round timer set.
-- [ ] Pickup gate: HE day can't pick up guns; HNS CTs only pistols/utility; Gun Game only the current class.
+- [ ] Pickup gate: HE day can't pick up map-placed or dropped guns, during the countdown or after it,
+      and nobody gets a knife; HNS CTs only pistols/utility (no knife); Gun Game only the current class.
 - [ ] Armory restriction (HNS seekers, Infection CTs, Warday Ts): walking out teleports back + reminder;
       outline beams drawn; works with `armory`-tagged zones and with the spawn-hull fallback.
 - [ ] Fog War: fog appears, closes in at 25s, expands at 100s; sky disabled and restored. **Verify the

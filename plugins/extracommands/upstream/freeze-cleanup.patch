@@ -1,0 +1,182 @@
+--- a/plugins/funcommands/src/plugin.ts
++++ b/plugins/funcommands/src/plugin.ts
+@@ -9,14 +9,58 @@
+ //   DEFERRED: sm_burn (an ignite game-function, no framework sig to port),
+ //   sm_beacon (a particle/temp-entity subsystem). Both are documented follow-ups.
+ 
+-import { command, translations, ADMFLAG, delay, Translations, HookResult } from "@s2script/sdk";
+-import type { Command, PhraseKey } from "@s2script/sdk";
++import { command, translations, ADMFLAG, after, Clients, Translations, HookResult } from "@s2script/sdk";
++import type { Client, Command, EntityRef, PhraseKey, Timer } from "@s2script/sdk";
+ import { Player, Pawn, Fade } from "@s2script/cs2";
+ 
+ // MoveType_t (const.h)
+ const WALK = 2;
+ const NOCLIP = 7;
+ const NONE = 0;
++
++// A freeze belongs to one connection and one pawn, never to a reusable player slot.
++interface FreezeState { client: Client; controller: EntityRef; pawn: EntityRef; expiry?: Timer }
++const freezes = new Map<number, FreezeState>();
++let clearingFreezes = false;
++let ended = false;
++function sameRef(a: EntityRef, b: EntityRef): boolean { return a.index === b.index && a.id === b.id; }
++function frozenPawn(state: FreezeState): Pawn | null {
++  if (!state.client.isValid()) return null;
++  const p = Player.fromSlot(state.client.slot);
++  if (!p || !sameRef(p.ref, state.controller)) return null;
++  const pawn = p.pawn;
++  return pawn?.isValid && sameRef(pawn.ref, state.pawn) ? pawn : null;
++}
++function stopFreeze(state: FreezeState): void {
++  if (freezes.get(state.client.slot) !== state) return;
++  freezes.delete(state.client.slot);
++  state.expiry?.kill();
++  const pawn = frozenPawn(state);
++  if (pawn?.moveType === NONE) pawn.moveType = WALK;
++}
++function freezePlayer(p: Player, pawn: Pawn, seconds: number): boolean {
++  if (clearingFreezes || ended) return false;
++  const client = Clients.fromSlot(p.slot);
++  if (!client?.isValid() || !pawn.isValid || pawn.lifeState !== 0 || pawn.moveType === null) return false;
++  const previous = freezes.get(p.slot);
++  if (previous) stopFreeze(previous);
++  const state: FreezeState = { client, controller: p.ref, pawn: pawn.ref };
++  freezes.set(p.slot, state);
++  try {
++    if (seconds > 0) state.expiry = after(seconds * 1000, () => stopFreeze(state));
++    if (freezes.get(p.slot) !== state || !frozenPawn(state)) { stopFreeze(state); return false; }
++    pawn.moveType = NONE;
++    if (pawn.moveType !== NONE) { stopFreeze(state); return false; }
++    return true;
++  } catch { stopFreeze(state); return false; }
++}
++function clearFreezes(): void {
++  if (clearingFreezes) return;
++  clearingFreezes = true;
++  try { for (const state of [...freezes.values()]) stopFreeze(state); }
++  finally { clearingFreezes = false; }
++}
++
+ 
+ // Resolve the target, apply `fn` to each live pawn, and reply with the count. With no target argument,
+ // defaults to the caller (self) — SM behavior — unless run from the console, which must name a target.
+@@ -32,7 +76,7 @@
+   usageKey: PhraseKey,
+   singularKey: PhraseKey,
+   pluralKey: PhraseKey,
+-  fn: (p: Player, pw: Pawn) => void,
++  fn: (p: Player, pw: Pawn) => void | boolean,
+   filterImmunity: boolean,
+ ): void {
+   let pattern = cmd.arg(0);
+@@ -45,7 +89,7 @@
+   let n = 0;
+   for (const p of targets) {
+     const pw = p.pawn;
+-    if (pw) { fn(p, pw); n++; }
++    if (pw && fn(p, pw) !== false) n++;
+   }
+   cmd.replyT(n === 1 ? singularKey : pluralKey, n);
+ }
+@@ -85,24 +129,28 @@
+   // sm_freeze <target> [seconds] — freeze in place; auto-unfreeze after [seconds] (0 = until sm_unfreeze).
+   command.admin("sm_freeze", ADMFLAG.SLAY, (cmd) => {
+     const secs = cmd.argFloat(1, 0);
+-    forEachPawn(cmd, "Usage Freeze", "Froze Player", "Froze Players", (p, pw) => {
+-      pw.moveType = NONE;
+-      if (secs > 0) {
+-        const slot = p.slot;
+-        delay(secs * 1000).then(() => {
+-          const q = Player.fromSlot(slot); // re-resolve — the slot may have been reused
+-          if (q && q.pawn) q.pawn.moveType = WALK;
+-        });
+-      }
+-    }, true);
++    forEachPawn(cmd, "Usage Freeze", "Froze Player", "Froze Players", (p, pw) => freezePlayer(p, pw, secs), true);
+     return HookResult.Handled;
+   });
+ 
+   // sm_unfreeze <target> — restore movement.
+   command.admin("sm_unfreeze", ADMFLAG.SLAY, (cmd) => {
+-    forEachPawn(cmd, "Usage Unfreeze", "Unfroze Player", "Unfroze Players", (_p, pw) => {
++    forEachPawn(cmd, "Usage Unfreeze", "Unfroze Player", "Unfroze Players", (p, pw) => {
++      const state = freezes.get(p.slot);
++      if (state) stopFreeze(state);
+       pw.moveType = WALK;
+     }, false);
+     return HookResult.Handled;
+   });
+ }
++
++export function OnGameFrame(): void {
++  for (const state of [...freezes.values()]) if (frozenPawn(state)?.lifeState !== 0) stopFreeze(state);
++}
++export function OnClientDisconnect(client: Client): void {
++  const state = freezes.get(client.slot);
++  if (state && !state.client.isValid()) stopFreeze(state);
++}
++export function OnMapStart(): void { clearFreezes(); }
++export function OnMapEnd(): void { clearFreezes(); }
++export function OnPluginEnd(): void { ended = true; clearFreezes(); }
+--- /dev/null
++++ b/plugins/funcommands/src/freeze.test.mjs
+@@ -0,0 +1,58 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import vm from "node:vm";
++import { readFileSync } from "node:fs";
++import { transformSync } from "esbuild";
++const source = transformSync(readFileSync(new URL("./plugin.ts", import.meta.url), "utf8"), { loader: "ts", format: "cjs" }).code;
++function fixture() {
++  const commands = new Map(), players = new Map(), timers = [];
++  let serial = 0;
++  const sdk = { command: { admin: (name, _flags, fn) => commands.set(name, fn) },
++    translations: { load() {} }, ADMFLAG: { SLAY: 32 }, HookResult: { Handled: 2 },
++    Clients: { fromSlot: slot => players.get(slot)?.client ?? null },
++    after(_ms, fn) { const t = { alive: true, fn, kill() { this.alive = false; } }; timers.push(t); return t; },
++  };
++  const module = { exports: {} };
++  vm.runInContext(source, vm.createContext({ module, exports: module.exports, require(name) {
++    if (name === "@s2script/sdk") return sdk;
++    if (name === "@s2script/cs2") return { Player: { fromSlot: slot => players.get(slot), target: () => [...players.values()] } };
++    throw Error(name);
++  } }));
++  const api = module.exports; api.OnPluginStart();
++  function pawn(p) { return p.pawn = { ref: { index: 100 + p.slot, id: ++serial }, isValid: true, lifeState: 0, moveType: 2 }; }
++  function player(slot = 1) {
++    const p = { slot, ref: { index: slot + 1, id: ++serial } };
++    p.client = { slot, isValid: () => players.get(slot) === p };
++    players.set(slot, p); pawn(p); return p;
++  }
++  return { api, players, timers, player, pawn, call(name = "sm_freeze", seconds = "1") {
++    commands.get(name)({ callerSlot: -1, arg: () => "@all", argFloat: () => Number(seconds), replyT() {} });
++  } };
++}
++test("freeze expiry cannot mutate a replacement connection or later pawn", () => {
++  for (const replacement of ["connection", "pawn"]) {
++    const f = fixture(), original = f.player(); f.call(); const timer = f.timers[0];
++    const next = replacement === "connection" ? f.player() : (f.pawn(original), original);
++    next.pawn.moveType = 7; timer.fn();
++    assert.equal(next.pawn.moveType, 7); assert.equal(timer.alive, false);
++  }
++});
++test("unfreeze cancels old expiry, which cannot cancel a later freeze", () => {
++  const f = fixture(), p = f.player(); f.call(); const old = f.timers[0];
++  f.call("sm_unfreeze"); assert.equal(p.pawn.moveType, 2); assert.equal(old.alive, false);
++  f.call(); old.fn(); assert.equal(p.pawn.moveType, 0);
++  f.timers[1].fn(); assert.equal(p.pawn.moveType, 2);
++});
++test("death, map boundaries and unload release tracked freezes and timers", () => {
++  for (const event of ["death", "OnMapStart", "OnMapEnd", "OnPluginEnd"]) {
++    const f = fixture(), p = f.player(); f.call();
++    if (event === "death") { p.pawn.lifeState = 1; f.api.OnGameFrame(); } else f.api[event]();
++    assert.equal(f.timers[0].alive, false); assert.equal(p.pawn.moveType, 2);
++  }
++});
++test("disconnect cancels only the disconnected connection's freeze", () => {
++  const f = fixture(), old = f.player(); f.call(); f.players.delete(1); f.api.OnClientDisconnect(old.client);
++  assert.equal(f.timers[0].alive, false);
++  const next = f.player(); f.call(); f.api.OnClientDisconnect(old.client);
++  assert.equal(next.pawn.moveType, 0); assert.equal(f.timers[1].alive, true);
++});
