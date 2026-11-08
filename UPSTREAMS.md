@@ -11,6 +11,7 @@ Fresh source imports; upstream Git history is not part of this repository. The f
 | extracommands | https://github.com/s2script/s2script/pull/327 | `1e1e53f2d97d031f313a7fb3df798e97c850706a` (command additions extracted into one optional plugin) |
 | maul | https://github.com/GabeHirakawa/s2s-maul | `aaaaabb6cb2af2b4a092559805d28baf1449d3c7` |
 | customio | https://github.com/darkerz7/CS2-CustomIO (ported from C#) | `c2d8f95aa0fac92e5c8fb83677df797e5ed529a6` |
+| arcadescripts | https://github.com/supergosciu/ArcadeScripts-CSS (ported from C#) | `e9aa84d8876ae8f24669505cd4b03ca6d563db92` |
 
 Keep source changes in this repository. Select future upstream changes deliberately, then add changesets for affected release units. Superseded upstream install/release/agent configuration and historical engineering evidence are omitted; gameplay, required assets and useful product documentation are retained.
 
