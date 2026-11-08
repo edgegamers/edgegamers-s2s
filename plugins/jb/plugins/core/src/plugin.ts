@@ -1,6 +1,6 @@
 /**
- * @edgegamers/jailbreak-core — round state + mode arbitration, rebels, the jihad C4, cell doors, the round log and
- * the admin debug commands. This file is wiring only: every feature lives in its own module.
+ * @edgegamers/jailbreak-core — round state + mode arbitration, rebels, the jihad C4, the spawn knife, cell doors,
+ * the round log and the admin debug commands. This file is wiring only: every feature lives in its own module.
  */
 import {
   ADMFLAG,
@@ -21,6 +21,7 @@ import * as rebels from "./rebels";
 import * as c4 from "./c4";
 import * as cells from "./cells";
 import * as logs from "./logs";
+import * as knife from "./knife";
 import { debugCommand } from "./admin";
 
 export function OnPluginStart(): void {
@@ -84,6 +85,8 @@ export function OnPluginStart(): void {
     rebels.onPlayerDeath(ev);
   });
   Events.on("grenade_thrown", (ev) => logs.onGrenadeThrown(ev));
+  // ---- Spawn knife: the engine's default loadout misses some respawns and map cell spawns. ----
+  Events.on("player_spawn", (ev) => knife.onPlayerSpawn(ev.getPlayerSlot("userid")));
   Events.on("item_pickup", (ev) => {
     if (round.getRound().phase === "live") logs.onItemPickup(ev);
   });
