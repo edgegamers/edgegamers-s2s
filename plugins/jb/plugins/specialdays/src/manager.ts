@@ -9,7 +9,7 @@ import type { Mode, RoundInfo } from "@edgegamers/jailbreak-core";
 import type { SDInfo, SDType } from "../api";
 import type { DayContext, SpecialDay } from "./day.ts";
 import { DAYS } from "./days/index.ts";
-import { DayRun } from "./runner.ts";
+import { DayRun, resetFixedConvars } from "./runner.ts";
 import { checkStart, nextRoundsSince } from "./eligibility.ts";
 import type { StartDenial } from "./eligibility.ts";
 import { parseSDTypeList } from "./sdtype.ts";
@@ -73,6 +73,7 @@ export class Manager {
   /** Core's OnRoundStart. */
   onRoundStart(): void {
     if (this.current) this.end(false); // round_end was missed
+    for (const name of resetFixedConvars()) console.log(`[specialdays] reset ${name} left on by an earlier day`);
     this.roundsSince = nextRoundsSince(this.roundsSince, this.core.getRound().phase === "warmup");
   }
 

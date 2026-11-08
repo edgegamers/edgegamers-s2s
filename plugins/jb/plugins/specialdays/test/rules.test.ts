@@ -103,3 +103,11 @@ test("settings builders", () => {
   const f = randomFreeze(() => 0.5);
   assert.equal(f(), 4.5);
 });
+
+test("restoreValue: sv_infinite_ammo always goes back to 0", async () => {
+  const { restoreValue } = await import("../src/settings.ts");
+  assert.equal(restoreValue("sv_infinite_ammo", "-229000626"), "0");
+  assert.equal(restoreValue("sv_infinite_ammo", "2"), "0");
+  assert.equal(restoreValue("sv_infinite_ammo", ""), "0");
+  assert.equal(restoreValue("sv_gravity", "800"), "800");
+});
