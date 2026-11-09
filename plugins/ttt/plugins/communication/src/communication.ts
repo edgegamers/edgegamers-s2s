@@ -4,19 +4,11 @@ import {Chat} from '@s2script/sdk/chat';
 import {Admin,ADMFLAG} from '@s2script/sdk/admin';
 import {Voice} from '@s2script/sdk/voice';
 import {Server} from '@s2script/sdk/server';
-import {Commands} from '@s2script/sdk/commands';
 import type {CommunicationCoreMethods,CommunicationMethods,CommunicationPlayer,CommunicationSnapshot} from '../../../packages/contracts/communication-types';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
 
 const LIVE=2, TRAITOR=2, FULL_CHECK_SECONDS=1;
 type Captured={player:CommunicationPlayer;client:Client};
-/** A bare one-word line naming a public command (`rtv`, `nominate`) belongs to the plugin listening for it. */
-function bareCommand(text:string):boolean {
-  const word=text.trim().toLowerCase();
-  if(word===''||/\s/.test(word))return false;
-  try {return Commands.list().some(c=>c.flags===0&&(c.name===word||c.name===`sm_${word}`));}
-  catch {return false;}
-}
 function identity(a:CommunicationPlayer,b:CommunicationPlayer):boolean {
   return a.slot===b.slot&&a.generation===b.generation&&a.steamId===b.steamId;
 }
@@ -58,7 +50,7 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
     const snapshot=core.getCommunicationSnapshot();if(snapshot.state!==LIVE)return 0;
     const player=snapshot.players.find(p=>p.slot===slot);if(!player)return 0;
     // `@` in team chat is the admin channel; only all-chat `@` is the traitor line.
-    const mode=!player.alive&&!text.startsWith('@')&&!bareCommand(text)?'dead':player.role===TRAITOR&&!teamOnly&&text.startsWith('@')?'traitor':null;
+    const mode=!player.alive&&!text.startsWith('@')?'dead':player.role===TRAITOR&&!teamOnly&&text.startsWith('@')?'traitor':null;
     if(mode===null)return 0;
     try {
     const body=(mode==='traitor'?text.slice(1):text).trim();if(body==='')return 2;

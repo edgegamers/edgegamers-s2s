@@ -12,18 +12,28 @@ export function bindCommunicationProvider(current:TypedInterfaceHandle<Contract>
   catch(error){if(provider===current)provider=previous;throw error;}
   return {dispose(){if(provider===current) provider=null;}};
 }
-// Mirrors Communication: a bare public command word (`rtv`) is left to the plugin listening for it.
-function bareCommand(text:string):boolean {
-  const word=text.trim().toLowerCase();
-  if(word===''||/\s/.test(word))return false;
-  try {return Commands.list().some(c=>c.flags===0&&(c.name===word||c.name===`sm_${word}`));}
-  catch {return false;}
-}
 export function handleChat(slot:number,text:string,teamOnly=false):0|2 {
   // Core's broadcast fence survives an optional owner's absence or an interop failure.
-  const privateLine=inProgress() && (!reg.isAlive(slot)&&!text.startsWith('@')&&!bareCommand(text) || reg.roleOf(slot)===2&&!teamOnly&&text.startsWith('@'));
-  try {return provider?.handleChat(slot,text,teamOnly?1:0) ?? (privateLine?2:0);}
-  catch(error){console.log(`[ttt] WARN: communication relay unavailable: ${String(error)}`);return privateLine?2:0;}
+  const dead=inProgress()&&!reg.isAlive(slot)&&!text.startsWith('@');
+  const privateLine=dead || inProgress()&&reg.roleOf(slot)===2&&!teamOnly&&text.startsWith('@');
+  let result:0|2;
+  try {result=provider?.handleChat(slot,text,teamOnly?1:0) ?? (privateLine?2:0);}
+  catch(error){console.log(`[ttt] WARN: communication relay unavailable: ${String(error)}`);result=privateLine?2:0;}
+  if(dead&&result===2)runBareCommand(slot,text);
+  return result;
+}
+/**
+ * A suppressed line never reaches plugins that act on bare chat words, so a dead player's `rtv` or
+ * `nominate` did nothing. The line stays in dead chat; when it is one word naming a registered
+ * command (`name` or `sm_name`), run it for the player as its `!` trigger would. Gating still applies.
+ */
+function runBareCommand(slot:number,text:string):void {
+  const word=text.trim().toLowerCase();
+  if(word===''||/\s/.test(word))return;
+  try {
+    if(!Commands.list().some(c=>c.name===word||c.name===`sm_${word}`))return;
+    Commands.handleChatTrigger(slot,`${Commands.triggers.public}${word}`);
+  } catch(error){console.log(`[ttt] WARN: dead-chat command ${word} failed: ${String(error)}`);}
 }
 // Finished/map/unload reset the owned policy explicitly; idle frames need no native roster scan.
 export function tickCommunication():void { if(inProgress())provider?.tick(); }
