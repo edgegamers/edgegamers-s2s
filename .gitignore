@@ -4,6 +4,7 @@ dist/
 .superpowers/
 **/.s2script/interfaces.d.ts
 **/.s2script/gamedata.d.ts
+**/.s2script/engine-functions.d.ts
 .env
 .env.*
 !.env.example
