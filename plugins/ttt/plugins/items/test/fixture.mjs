@@ -51,6 +51,8 @@ export function fixture(code,options={}) {
  function deliver(handler,payload){return published.handleDomain({handler,kind:handler.split('.')[1],payload});}
  function drain(){const jobs=queue.splice(0,128);for(const j of jobs)if(j.epoch===game.epoch&&j.map===server.mapName&&(!j.actor||matches(j.actor)))published.runPreFrame(j.ticket);}
  function body(extra={}){const r=ref();const b={ref:r,index:r.index,owner:1,ownerName:'P1',ownerRole:1,killer:0,killerName:'P0',weapon:'weapon_awp',identified:false,timeOfDeath:server.gameTime,dnaSuppressed:false,painted:false,x:20,y:0,z:0,ticket:r.id,...extra};bodies.push(b);return b;}
- function fireMessage(def=9,slot=0){const p=players.get(slot).pawn;return hooks.get('CMsgTEFireBullets')?.({readInt:key=>key==='weapon_id'?def:null,readFloat:key=>key==='origin.x'?p.origin.x:key==='origin.y'?p.origin.y:p.origin.z+64});}
+ // Shaped like CS2's CMsgTEFireBullets: `weapon_id` and `player` are entity HANDLES (serial bits above
+ // the 15-bit index), `item_def_index` is the weapon definition. `eyeZ` defaults to standing eye height.
+ function fireMessage(def=9,slot=0,{handle=true,eyeZ=64}={}){const p=players.get(slot).pawn;const fields={weapon_id:(7<<15)|4000,item_def_index:def,player:handle?(3<<15)|p.ref.index:null};return hooks.get('CMsgTEFireBullets')?.({readInt:key=>fields[key]??null,readFloat:key=>key==='origin.x'?p.origin.x:key==='origin.y'?p.origin.y:p.origin.z+eyeZ});}
  return {get methods(){return published;},get manifestPaths(){return [...manifestPaths];},get precacheSubscriptions(){return precacheHandlers.size;},ctx,ops,entities,beams,players,clients,roster,game,settings,fail,core,server,queue,hooks,actor,deliver,drain,body,fireMessage,connect,ref,precache,end:()=>ctx.module.exports.OnPluginEnd()};
 }
