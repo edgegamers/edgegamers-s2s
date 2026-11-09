@@ -122,7 +122,11 @@ export function installFireHook(): void {
   try {
     UserMessages.onPre("CMsgTEFireBullets", (m): HookResultValue | void => {
       if(!isOpen())return;
-      const def = checked(() => m.readInt("weapon_id")) ?? checked(() => m.readInt("item_def_index"));
+      // `item_def_index` is the weapon's definition index (9 = AWP), what the C# `SilentAWPItem`
+      // read. `weapon_id` is NOT: in CS2's `CMsgTEFireBullets` it is a `CEHandleNetworkableInt`, the
+      // weapon ENTITY's handle, so it never equals a def index. Reading it made every comparison
+      // below fail and let the Silent AWP (and Suppressed/Poison Shots pistols) be heard by everyone.
+      const def = checked(() => m.readInt("item_def_index"));
       const isPistolDef = def !== null && PISTOL_DEFS.has(def);
 
       if (suppressPistols && isPistolDef) return HookResult.Handled;
@@ -159,8 +163,32 @@ function anyCharge(counts: Int32Array): boolean {
   return false;
 }
 
-/** Resolve the firing player from the message's bullet origin. */
+/** Entity-index bits of a CS2 `CEntityHandle` (NUM_ENT_ENTRY_BITS = 15). */
+const ENT_INDEX_MASK = 0x7fff;
+
+/**
+ * Resolve the firing player.
+ *
+ * Prefers the message's `player` field, the shooter pawn's entity handle, which is exact whatever
+ * stance or subtick offset the shot was taken at. Falls back to matching the bullet origin against
+ * eye positions, as the C# did, for a message without a usable handle.
+ */
 function shooterOf(m: UserMessageView): number {
+  const handle = checked(() => m.readInt("player"));
+  if (handle !== null && handle !== 0xffffff) {
+    const index = handle & ENT_INDEX_MASK;
+    const active = reg.activeSlots();
+    for (let i = 0; i < active.length; i++) {
+      const slot = active[i]!;
+      const pawn = pawnOf(slot);
+      if (pawn !== null && pawn.ref.index === index) return slot;
+    }
+  }
+  return shooterByOrigin(m);
+}
+
+/** Resolve the firing player from the message's bullet origin. */
+function shooterByOrigin(m: UserMessageView): number {
   const x = checked(() => m.readFloat("origin.x"));
   const y = checked(() => m.readFloat("origin.y"));
   const z = checked(() => m.readFloat("origin.z"));
