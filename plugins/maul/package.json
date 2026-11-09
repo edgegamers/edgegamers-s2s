@@ -74,6 +74,21 @@
         "default": true,
         "description": "Broadcast a Dedicated Supporter's join message on their first join."
       },
+      "ds_chat": {
+        "type": "bool",
+        "default": true,
+        "description": "Dedicated Supporter chat: '$message' in team chat goes to every Dedicated Supporter on the server."
+      },
+      "leadership_chat": {
+        "type": "bool",
+        "default": true,
+        "description": "Leadership chat: '%message' in team chat goes to leadership; '%message' in all chat is a LEADERSHIP TO ALL broadcast."
+      },
+      "leadership_min_rank": {
+        "type": "int",
+        "default": 60,
+        "description": "Lowest MAUL rank counted as leadership for '%' chat. 60 = manager."
+      },
       "http_timeout_ms": {
         "type": "int",
         "default": 8000,

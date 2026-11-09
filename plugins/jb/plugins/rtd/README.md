@@ -19,7 +19,7 @@ Each player can hold one rolled reward at a time. It is granted shortly after th
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `rtd_minplayers` | `3` | Minimum players on T/CT before rolling is allowed. `-1` also makes `!autortd` refuse (C# behaviour). Was `css_edgegamers_jailbreak-rtd_minplayers`. |
-| `autortd_flag` | `"o"` | SourceMod admin flag letters needed for auto-RTD (every letter required; `""` = everyone). The C# default was the `@ego/dssilver` permission; map it to whichever custom flag your donors have. Was `css_autortd_flag`. |
+| `autortd_flag` | `"t"` | SourceMod admin flag letters needed for auto-RTD (every letter required; `""` = everyone). The C# default was the `@ego/dssilver` permission; `t` is the flag every Dedicated Supporter tier grants. Was `css_autortd_flag`. |
 
 ## Contracts
 

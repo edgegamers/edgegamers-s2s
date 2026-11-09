@@ -141,7 +141,7 @@ export function rankOfSlot(slot: number): Rank {
 
 export function capOfSlot(slot: number): number {
   const a = slot >= 0 ? Admin.forSlot(slot) : null;
-  return capFor(a?.groups ?? [], settings().caps);
+  return capFor(a?.groups ?? [], settings().caps, (mask) => a?.hasFlags(mask) ?? false);
 }
 
 /** Effective priority for an online player (cap from their current slot); -1 when unknown. */

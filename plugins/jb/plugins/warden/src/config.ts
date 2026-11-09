@@ -18,7 +18,7 @@ export const cfg = {
   soundNew: "jb/warden/wardennew.vsnd",
   // selection
   queueSeconds: 7,
-  autoWardenFlag: "o",
+  autoWardenFlag: "t",
   autoWardenDelay: 5,
   // commands
   openCooldown: 25,
@@ -30,7 +30,7 @@ export const cfg = {
   maxChickens: 5,
   maxSoccers: 3,
   // markers + paint
-  markerFlag: "o",
+  markerFlag: "t",
   markerMinRadius: 60,
   markerMaxRadius: 360,
   markerResizeMs: 800,
@@ -60,7 +60,7 @@ export function loadConfig(): void {
   cfg.soundPassed = str("warden_sound_passed", "jb/warden/wardenpassed.vsnd");
   cfg.soundNew = str("warden_sound_new", "jb/warden/wardennew.vsnd");
   cfg.queueSeconds = Math.max(1, float("warden_queue_seconds", 7));
-  cfg.autoWardenFlag = str("autowarden_flag", "o");
+  cfg.autoWardenFlag = str("autowarden_flag", "t");
   cfg.autoWardenDelay = Math.max(0, float("autowarden_delay_interval", 5));
   cfg.openCooldown = clamp(int("warden_open_cooldown", 25), 0, 300);
   cfg.countCooldown = clamp(int("warden_count_cooldown", 30), 0, 300);
@@ -70,7 +70,7 @@ export function loadConfig(): void {
   cfg.peaceCooldown = Math.max(0, int("peace_cooldown", 60));
   cfg.maxChickens = int("max_chickens", 5);
   cfg.maxSoccers = int("max_soccers", 3);
-  cfg.markerFlag = str("marker_customization_flag", "o");
+  cfg.markerFlag = str("marker_customization_flag", "t");
   cfg.markerMinRadius = float("warden_marker_min_radius", 60);
   cfg.markerMaxRadius = float("warden_marker_max_radius", 360);
   cfg.markerResizeMs = int("warden_resize_time", 800);

@@ -24,7 +24,7 @@
       },
       "autortd_flag": {
         "type": "string",
-        "default": "o",
+        "default": "t",
         "description": "SourceMod admin flag letter(s) required for auto-RTD (all required; \"\" = everyone). C# default was the @ego/dssilver permission."
       }
     }

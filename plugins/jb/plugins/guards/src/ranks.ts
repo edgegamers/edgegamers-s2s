@@ -76,12 +76,43 @@ export function normalCap(caps: Map<string, number>): number {
   return caps.get("default") ?? DEFAULT_NORMAL_CAP;
 }
 
-/** The highest cap among the player's groups, else the default cap. */
-export function capFor(groups: readonly string[], caps: Map<string, number>): number {
+/** Prefix for a `priority_caps` key that matches admin flag letters instead of a group name. */
+export const FLAG_CAP_PREFIX = "flag:";
+
+/**
+ * SourceMod flag letters -> ADMFLAG mask: a..n are bits 0..13, z is ROOT (14), o..t are CUSTOM1..6
+ * (15..20). Unknown letters are ignored.
+ */
+export function flagMask(letters: string): number {
+  let mask = 0;
+  for (const ch of letters.toLowerCase()) {
+    const c = ch.charCodeAt(0);
+    if (ch === "z") mask |= 1 << 14;
+    else if (c >= 97 && c <= 110) mask |= 1 << (c - 97);
+    else if (c >= 111 && c <= 116) mask |= 1 << (c - 111 + 15);
+  }
+  return mask >>> 0;
+}
+
+/**
+ * The highest cap the player qualifies for, else the default cap. A key is either an admin group
+ * name or `flag:<letters>`, which matches when the player holds every listed flag. Flag keys are
+ * what MAUL-granted Dedicated Supporters hit: runtime admins carry flags but no group names.
+ */
+export function capFor(
+  groups: readonly string[],
+  caps: Map<string, number>,
+  hasFlags: (mask: number) => boolean = () => false,
+): number {
   let max = normalCap(caps);
-  for (const g of groups) {
-    const c = caps.get(g);
-    if (c !== undefined && c > max) max = c;
+  for (const [key, cap] of caps) {
+    if (cap <= max) continue;
+    if (key.startsWith(FLAG_CAP_PREFIX)) {
+      const need = flagMask(key.slice(FLAG_CAP_PREFIX.length));
+      if (need !== 0 && hasFlags(need)) max = cap;
+    } else if (groups.includes(key)) {
+      max = cap;
+    }
   }
   return max;
 }

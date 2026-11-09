@@ -11,6 +11,9 @@ On connect it asks MAUL who the player is, then:
 - **grants admin** by mapping the player's MAUL rank onto groups in the server's `admin_groups.json`,
 - **renames** them to `<rank tag> <MAUL name>` and keeps that name enforced,
 - **greets** Dedicated Supporters with their join message,
+- runs **staff chat**: `$message` in team chat reaches every Dedicated Supporter, and `%message`
+  reaches leadership (team chat) or goes out as a LEADERSHIP TO ALL broadcast (all chat). A `$` or
+  `%` from someone not entitled to it is sent as ordinary chat,
 - **routes bans** issued in-game to MAUL instead of the local `bans.json`, which stays empty of
   MAUL-owned bans so MAUL remains the single source of truth,
 - optionally **reports the live roster** to MAUL's presence dashboard (v2 only).
@@ -47,6 +50,9 @@ defaults). The ones that matter:
 | `eventserver` | `false` | Grant the event-gated ranks (`special` in the ranks table). |
 | `autotag` | `true` | Rename players to `<tag> <MAUL name>`. |
 | `join_message` | `true` | Broadcast a Dedicated Supporter's join message on first join. |
+| `ds_chat` | `true` | `$message` in team chat goes to every Dedicated Supporter. |
+| `leadership_chat` | `true` | `%message` in team chat goes to leadership; in all chat it is a LEADERSHIP TO ALL broadcast. |
+| `leadership_min_rank` | `60` | Lowest MAUL rank (primary or any group) counted as leadership. 60 = manager. |
 | `http_timeout_ms` | `8000` | Per-request timeout. |
 | `debug` | `false` | Log request URLs and response bodies. |
 

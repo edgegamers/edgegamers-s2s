@@ -26,8 +26,8 @@
       },
       "priority_caps": {
         "type": "string",
-        "default": "default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750",
-        "description": "group=cap pairs; a player's cap is the highest of their groups' caps, else default (MaximumPriority)."
+        "default": "default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750,flag:t=600,flag:s=650,flag:r=700,flag:q=750",
+        "description": "key=cap pairs: an admin group, or flag:<letters> to match admin flags. A player's cap is the highest they match, else default (MaximumPriority)."
       },
       "rank_groups": {
         "type": "string",

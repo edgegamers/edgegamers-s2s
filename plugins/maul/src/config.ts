@@ -35,6 +35,12 @@ export interface MaulConfig {
   eventserver: boolean;
   autotag: boolean;
   joinMessage: boolean;
+  /** `$` in team chat goes to every Dedicated Supporter. */
+  dsChat: boolean;
+  /** `%` in team chat goes to leadership; `%` in all chat is a leadership broadcast. */
+  leadershipChat: boolean;
+  /** Lowest MAUL rank that counts as leadership for `%` chat. */
+  leadershipMinRank: number;
   httpTimeoutMs: number;
   /** Push a live roster to MAUL's presence dashboard over the v2 WebSocket. v2 only. */
   presence: boolean;
@@ -61,6 +67,9 @@ export function readConfig(): MaulConfig {
     eventserver: config.getBool("eventserver"),
     autotag: config.getBool("autotag"),
     joinMessage: config.getBool("join_message"),
+    dsChat: config.getBool("ds_chat"),
+    leadershipChat: config.getBool("leadership_chat"),
+    leadershipMinRank: config.getInt("leadership_min_rank") || 60,
     httpTimeoutMs: config.getInt("http_timeout_ms") || 8000,
     presence: config.getBool("presence"),
     // Floored at 5s: MAUL treats a roster as fresh for 3x this, so a very small value turns into a
