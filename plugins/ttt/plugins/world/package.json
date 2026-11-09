@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.8"
+      "@edgegamers/ttt-core": "^2.0.9"
     },
     "config": {
       "rolePanels": {
