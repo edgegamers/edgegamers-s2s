@@ -1,5 +1,11 @@
 # @edgegamers/s2s-maul
 
+## 0.2.0
+
+### Minor Changes
+
+- adb5046: Add Dedicated Supporter (`$`) and leadership (`%`) chat.
+
 ## 0.1.5
 
 ### Patch Changes

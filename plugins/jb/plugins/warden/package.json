@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-warden",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "The warden: selection, commands, markers, paint, special treatment and peace mute.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",

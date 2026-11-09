@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-specialdays
 
+## 1.0.8
+
+### Patch Changes
+
+- 59e2c25: Dedicated Supporter perks now default to the donator tier flags, and guards priority caps can match admin flags.
+
 ## 1.0.7
 
 ### Patch Changes

@@ -12,7 +12,7 @@
     },
     "pluginDependencies": {
       "@edgegamers/jailbreak-core": "^1.1.5",
-      "@edgegamers/jailbreak-warden": "^1.0.4"
+      "@edgegamers/jailbreak-warden": "^1.0.5"
     },
     "config": {
       "lr_activate_lr_at": {
