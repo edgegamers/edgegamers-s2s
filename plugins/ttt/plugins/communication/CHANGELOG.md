@@ -1,5 +1,11 @@
 # @edgegamers/ttt-communication
 
+## 2.0.10
+
+### Patch Changes
+
+- dabeb67: Republish TTT under a fresh version. `@edgegamers/ttt@2.0.9` was already taken on the registry with different members, so this release moves the bundle and its changed members past it. No gameplay change.
+
 ## 2.0.9
 
 ### Patch Changes

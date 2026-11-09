@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.9"
+      "@edgegamers/ttt-core": "^2.0.10"
     },
     "config": {
       "selection": {

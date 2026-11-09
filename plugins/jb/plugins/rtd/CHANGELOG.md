@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-rtd
 
+## 1.1.7
+
+### Patch Changes
+
+- 59e2c25: Dedicated Supporter perks now default to the donator tier flags, and guards priority caps can match admin flags.
+
 ## 1.1.6
 
 ### Patch Changes
