@@ -4,7 +4,7 @@ import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
 import {createContext,runInContext} from 'node:vm';
 const built=await build({entryPoints:[fileURLToPath(new URL('../src/cs2/communication.ts',import.meta.url))],bundle:true,format:'cjs',platform:'node',write:false,
-  plugins:[{name:'core-observations',setup(b){b.onResolve({filter:/\/game$|\/registry$/},a=>({path:a.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:a.path.endsWith('/game')?'export const inProgress=()=>fixture.live;':'export const isAlive=()=>fixture.alive,roleOf=()=>fixture.role;'}));}}]});
+  plugins:[{name:'core-observations',setup(b){b.onResolve({filter:/\/game$|\/registry$|^@s2script\/sdk\/commands$/},a=>({path:a.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:a.path.endsWith('/game')?'export const inProgress=()=>fixture.live;':a.path.endsWith('/commands')?'export const Commands={list:()=>[{name:"sm_rtv",flags:0},{name:"sm_slay",flags:2}]};':'export const isAlive=()=>fixture.alive,roleOf=()=>fixture.role;'}));}}]});
 function fixture(){const state={live:true,alive:false,role:1},module={exports:{} as any};runInContext(built.outputFiles[0]!.text,createContext({fixture:state,module,exports:module.exports,console:{log(){}}}));return {state,api:module.exports};}
 test('missing Communication cannot reopen private dead or traitor chat as public engine chat',()=>{
   const f=fixture();assert.equal(f.api.handleChat(1,'secret'),2);assert.equal(f.api.handleChat(1,'@ordinary'),0);f.state.alive=true;f.state.role=2;assert.equal(f.api.handleChat(1,'@secret'),2);assert.equal(f.api.handleChat(1,'ordinary'),0);f.state.live=false;assert.equal(f.api.handleChat(1,'@ordinary'),0);
@@ -12,6 +12,9 @@ test('missing Communication cannot reopen private dead or traitor chat as public
 test('without Communication a traitor\'s team-chat @ line still reaches admin chat',()=>{
   const f=fixture();f.state.alive=true;f.state.role=2;assert.equal(f.api.handleChat(1,'@to admins',true),0);assert.equal(f.api.handleChat(1,'@secret',false),2);
   f.api.bindCommunicationProvider({applyServerSettings(){},handleChat(){throw Error('provider retired')}});assert.equal(f.api.handleChat(1,'@to admins',true),0);
+});
+test('without Communication a dead player\'s bare public command word is not captured',()=>{
+  const f=fixture();assert.equal(f.api.handleChat(1,'rtv'),0);assert.equal(f.api.handleChat(1,'rtv now'),2);assert.equal(f.api.handleChat(1,'slay'),2);
 });
 test('interop failure also contains a private line; ordinary lines keep their old fallthrough',()=>{
   const f=fixture();f.api.bindCommunicationProvider({applyServerSettings(){},handleChat(){throw Error('provider retired')}});assert.equal(f.api.handleChat(1,'secret'),2);f.state.alive=true;assert.equal(f.api.handleChat(1,'ordinary'),0);

@@ -3,6 +3,7 @@ import type {TypedInterfaceHandle} from '@s2script/sdk/interfaces';
 import type {Contract} from '../../../communication/api.d.ts';
 import {inProgress} from '../game/game';
 import * as reg from '../core/registry';
+import {Commands} from '@s2script/sdk/commands';
 let provider:TypedInterfaceHandle<Contract>|null=null;
 export function bindCommunicationProvider(current:TypedInterfaceHandle<Contract>):{dispose():void} {
   const previous=provider;
@@ -11,9 +12,16 @@ export function bindCommunicationProvider(current:TypedInterfaceHandle<Contract>
   catch(error){if(provider===current)provider=previous;throw error;}
   return {dispose(){if(provider===current) provider=null;}};
 }
+// Mirrors Communication: a bare public command word (`rtv`) is left to the plugin listening for it.
+function bareCommand(text:string):boolean {
+  const word=text.trim().toLowerCase();
+  if(word===''||/\s/.test(word))return false;
+  try {return Commands.list().some(c=>c.flags===0&&(c.name===word||c.name===`sm_${word}`));}
+  catch {return false;}
+}
 export function handleChat(slot:number,text:string,teamOnly=false):0|2 {
   // Core's broadcast fence survives an optional owner's absence or an interop failure.
-  const privateLine=inProgress() && (!reg.isAlive(slot)&&!text.startsWith('@') || reg.roleOf(slot)===2&&!teamOnly&&text.startsWith('@'));
+  const privateLine=inProgress() && (!reg.isAlive(slot)&&!text.startsWith('@')&&!bareCommand(text) || reg.roleOf(slot)===2&&!teamOnly&&text.startsWith('@'));
   try {return provider?.handleChat(slot,text,teamOnly?1:0) ?? (privateLine?2:0);}
   catch(error){console.log(`[ttt] WARN: communication relay unavailable: ${String(error)}`);return privateLine?2:0;}
 }
