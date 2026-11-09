@@ -18,6 +18,8 @@ import { config } from "@s2script/sdk/config";
 import { Clients } from "@s2script/sdk/clients";
 import { Chat } from "@s2script/sdk/chat";
 import { HookResult } from "@s2script/sdk/events";
+import type { HookResultValue } from "@s2script/sdk/events";
+import { ChatColors, Player } from "@s2script/cs2";
 import { after } from "@s2script/sdk/timers";
 import { Server } from "@s2script/sdk/server";
 import type { Client } from "@s2script/sdk/clients";
@@ -31,6 +33,7 @@ import { registerCommands } from "./commands.ts";
 import { loadRankTable, readConfig } from "./config.ts";
 import { createLogger } from "./log.ts";
 import { NameManager } from "./names.ts";
+import { channelLabel, cleanChatText, receives, routeStaffChat } from "./staff-chat.ts";
 import type { MaulConfig } from "./config.ts";
 import type { RankTable } from "./types.ts";
 
@@ -275,15 +278,39 @@ export function OnClientPostAdminCheck(client: Client): void {
   maul.presence?.playerJoined(client);
 }
 
-// PRE-hook: fires before the line is broadcast, and returning a HookResult here could suppress it.
-// We only observe — MAUL is a record of what was said, not a filter — so nothing is returned and
-// the say proceeds exactly as it would have.
-export function OnClientSayCommand(slot: number, text: string, teamonly: boolean): void {
-  const presence = maul?.presence ?? null;
-  if (presence === null) return;
+// PRE-hook: fires before the line is broadcast. Presence only observes — MAUL is a record of what
+// was said — so every line is reported first. Only a `$` / `%` staff-chat line is then consumed.
+export function OnClientSayCommand(slot: number, text: string, teamonly: boolean): HookResultValue | void {
+  if (maul === null) return;
   const client = Clients.fromSlot(slot);
   if (client === null || client.steamId === "0") return;
-  presence.playerChat(client, text, teamonly);
+  maul.presence?.playerChat(client, text, teamonly);
+  return staffChat(maul.auth, slot, client.steamId, text, teamonly);
+}
+
+/** `$` Dedicated Supporter chat and `%` leadership chat, routed off the cached MAUL profiles. */
+function staffChat(
+  auth: Authenticator,
+  slot: number,
+  steamId: string,
+  text: string,
+  teamonly: boolean,
+): HookResultValue | void {
+  const route = routeStaffChat(text, teamonly, auth.profileOf(steamId), cfg);
+  if (route === null) return;
+  if (route.body.length === 0) return HookResult.Handled; // a bare trigger: consume, send nothing
+
+  const sender = Player.fromSlot(slot);
+  const name = cleanChatText(sender?.playerName ?? "");
+  const line =
+    `${ChatColors.Green}${channelLabel(route.channel)} ${name}: ${ChatColors.Default}${cleanChatText(route.body)}`;
+
+  for (const p of Player.allConnected()) {
+    if (p.steamId === "0") continue;
+    if (receives(route.channel, auth.profileOf(p.steamId), p.slot === slot, cfg)) Chat.toSlot(p.slot, line);
+  }
+  log.info(`${route.channel} chat from ${steamId}: ${route.body}`);
+  return HookResult.Handled;
 }
 
 // `client` is a read-only identity snapshot, valid only synchronously — everything below reads it
