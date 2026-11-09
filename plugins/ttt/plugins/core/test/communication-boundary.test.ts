@@ -9,6 +9,10 @@ function fixture(){const state={live:true,alive:false,role:1},module={exports:{}
 test('missing Communication cannot reopen private dead or traitor chat as public engine chat',()=>{
   const f=fixture();assert.equal(f.api.handleChat(1,'secret'),2);assert.equal(f.api.handleChat(1,'@ordinary'),0);f.state.alive=true;f.state.role=2;assert.equal(f.api.handleChat(1,'@secret'),2);assert.equal(f.api.handleChat(1,'ordinary'),0);f.state.live=false;assert.equal(f.api.handleChat(1,'@ordinary'),0);
 });
+test('without Communication a traitor\'s team-chat @ line still reaches admin chat',()=>{
+  const f=fixture();f.state.alive=true;f.state.role=2;assert.equal(f.api.handleChat(1,'@to admins',true),0);assert.equal(f.api.handleChat(1,'@secret',false),2);
+  f.api.bindCommunicationProvider({applyServerSettings(){},handleChat(){throw Error('provider retired')}});assert.equal(f.api.handleChat(1,'@to admins',true),0);
+});
 test('interop failure also contains a private line; ordinary lines keep their old fallthrough',()=>{
   const f=fixture();f.api.bindCommunicationProvider({applyServerSettings(){},handleChat(){throw Error('provider retired')}});assert.equal(f.api.handleChat(1,'secret'),2);f.state.alive=true;assert.equal(f.api.handleChat(1,'ordinary'),0);
 });

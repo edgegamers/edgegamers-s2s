@@ -13,7 +13,7 @@ export function bindCommunicationProvider(current:TypedInterfaceHandle<Contract>
 }
 export function handleChat(slot:number,text:string,teamOnly=false):0|2 {
   // Core's broadcast fence survives an optional owner's absence or an interop failure.
-  const privateLine=inProgress() && (!reg.isAlive(slot)&&!text.startsWith('@') || reg.roleOf(slot)===2&&text.startsWith('@'));
+  const privateLine=inProgress() && (!reg.isAlive(slot)&&!text.startsWith('@') || reg.roleOf(slot)===2&&!teamOnly&&text.startsWith('@'));
   try {return provider?.handleChat(slot,text,teamOnly?1:0) ?? (privateLine?2:0);}
   catch(error){console.log(`[ttt] WARN: communication relay unavailable: ${String(error)}`);return privateLine?2:0;}
 }
