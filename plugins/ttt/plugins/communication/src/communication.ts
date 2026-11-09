@@ -49,7 +49,8 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
     if(closed)return 0;
     const snapshot=core.getCommunicationSnapshot();if(snapshot.state!==LIVE)return 0;
     const player=snapshot.players.find(p=>p.slot===slot);if(!player)return 0;
-    const mode=!player.alive&&!text.startsWith('@')?'dead':player.role===TRAITOR&&text.startsWith('@')?'traitor':null;
+    // `@` in team chat is the admin channel; only all-chat `@` is the traitor line.
+    const mode=!player.alive&&!text.startsWith('@')?'dead':player.role===TRAITOR&&!teamOnly&&text.startsWith('@')?'traitor':null;
     if(mode===null)return 0;
     try {
     const body=(mode==='traitor'?text.slice(1):text).trim();if(body==='')return 2;
