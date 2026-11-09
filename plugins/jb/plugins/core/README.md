@@ -1,7 +1,7 @@
 # @edgegamers/jailbreak-core
 
 The Jailbreak round: round number/phase, the round **mode** (who owns the end of the round),
-rebels and the jihad C4, the cell doors, the round log, and the admin debug commands. Every other
+rebels and the jihad C4, the spawn knife, the cell doors, the round log, and the admin debug commands. Every other
 JB plugin hard-depends on core; core depends on nothing (optionally on `@s2script/zones`).
 
 Ported from `Jailbreak.Generic`, `Jailbreak.Rebel` (+ `C4Bomb`), `Jailbreak.Logs`,
@@ -16,11 +16,12 @@ auto-open-cells half of `WardenBehavior`.
 | `src/round.ts` | round/phase/mode from `round_start` / `round_freeze_end` / `round_end` + GameRules warmup |
 | `src/rebels.ts` | mark/unmark, colour fade + red screen pulse, damage listener |
 | `src/c4.ts` | the jihad C4 |
+| `src/knife.ts` | gives `weapon_knife` to a prisoner or guard who spawns without one (normal and last-guard rounds) |
 | `src/cells.ts` | open-cells button detection, zones, auto-open timer |
 | `src/logs.ts` | the round log, listeners, `!logs`, round-end dump |
 | `src/admin.ts` | `sm_debug` subcommands |
 | `src/messages.ts` | every player-facing string |
-| `src/round-state.ts`, `src/rebel-book.ts`, `src/cell-logic.ts`, `src/log-book.ts`, `src/c4-logic.ts` | pure logic, unit-tested in `test/` |
+| `src/round-state.ts`, `src/rebel-book.ts`, `src/cell-logic.ts`, `src/log-book.ts`, `src/c4-logic.ts`, `src/knife-logic.ts` | pure logic, unit-tested in `test/` |
 
 ## Commands
 
