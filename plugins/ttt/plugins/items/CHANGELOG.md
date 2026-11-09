@@ -1,5 +1,11 @@
 # @edgegamers/ttt-items
 
+## 2.0.9
+
+### Patch Changes
+
+- 1a38d41: Fix the Silent AWP being audible to other players: the fire-bullets hook read `weapon_id` (an entity handle in CS2) instead of `item_def_index`, so the shot was never suppressed. The shooter is now resolved from the message's pawn handle, so crouched or moving shots are also silenced. This also restores pistol silencing for the Suppressed round and Poison Shots.
+
 ## 2.0.8
 
 ### Patch Changes
