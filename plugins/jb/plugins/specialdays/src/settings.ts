@@ -111,3 +111,19 @@ export const FRAME_DELAYED_CONVARS: ReadonlySet<string> = new Set([
   "sv_autobunnyhopping",
   "mp_death_drop_gun",
 ]);
+
+/**
+ * Convars a day sets that always go back to a fixed value instead of the one read before the day.
+ * `sv_infinite_ammo` is the reason: No Scope sets it to 2 and Rocket Jump to 1, and the value
+ * read back before the day is not trustworthy (the console showed -229000626 on a live server).
+ * If it is restored wrong, any nonzero value keeps grenades from being used up while guns still
+ * look normal, which carries over to every later round and map.
+ */
+export const RESTORE_TO: Readonly<Record<string, string>> = {
+  sv_infinite_ammo: "0",
+};
+
+/** What `name` goes back to at the end of a day, given what it read before the day. */
+export function restoreValue(name: string, previous: string): string {
+  return RESTORE_TO[name] ?? previous;
+}

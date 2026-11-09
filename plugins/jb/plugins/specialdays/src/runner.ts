@@ -9,7 +9,7 @@ import { Player } from "@s2script/cs2";
 import type { SDType } from "../api";
 import type { DayContext, SpecialDay } from "./day.ts";
 import type { TeleportType } from "./settings.ts";
-import { FRAME_DELAYED_CONVARS } from "./settings.ts";
+import { FRAME_DELAYED_CONVARS, RESTORE_TO, restoreValue } from "./settings.ts";
 import type { Vec3 } from "./geometry.ts";
 import { pickSpawns, ShuffleBag, shuffle } from "./geometry.ts";
 import { pickupAllowed } from "./weapons.ts";
@@ -57,6 +57,20 @@ function setCvar(name: string, value: string): boolean {
     return true;
   }
   return Server.setCvar(name, value);
+}
+
+/**
+ * Outside a day, put fixed-restore convars back (round start). Undoes a value a failed or wrong
+ * restore left behind, such as a nonzero sv_infinite_ammo. Returns the names it reset.
+ */
+export function resetFixedConvars(): string[] {
+  const reset: string[] = [];
+  for (const [name, value] of Object.entries(RESTORE_TO)) {
+    if (Server.getCvar(name).trim() === value) continue;
+    if (!setCvar(name, value)) console.log(`[specialdays] could not reset convar: ${name}`);
+    reset.push(name);
+  }
+  return reset;
 }
 
 export class DayRun implements DayContext {
@@ -117,8 +131,7 @@ export class DayRun implements DayContext {
 
   setConvar(name: string, value: string): void {
     if (!this.convarBackup.has(name)) {
-      const prev = Server.getCvar(name);
-      this.convarBackup.set(name, prev);
+      this.convarBackup.set(name, restoreValue(name, Server.getCvar(name)));
     }
     if (!setCvar(name, value)) console.log(`[specialdays] invalid convar: ${name}`);
   }
@@ -268,7 +281,10 @@ export class DayRun implements DayContext {
     this.restriction?.kill();
     this.restriction = null;
     setPickupRule(null);
-    for (const [name, value] of this.convarBackup) setCvar(name, value);
+    for (const [name, value] of this.convarBackup) {
+      // A failed restore used to be silent and left the day's value on for later rounds.
+      if (!setCvar(name, value)) console.log(`[specialdays] could not restore convar: ${name} = ${value}`);
+    }
     this.convarBackup.clear();
     try {
       this.day.teardown?.(this);
