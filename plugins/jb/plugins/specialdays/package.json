@@ -38,7 +38,7 @@
       },
       "sd_gate_flag": {
         "type": "string",
-        "default": "custom1",
+        "default": "custom6",
         "description": "Admin flag that unlocks the gated days.",
         "enum": [
           "reservation",

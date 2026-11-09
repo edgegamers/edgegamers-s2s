@@ -1,12 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  atLeast, capFor, maxBanSeconds, normalCap, parseCaps, parsePairs, parseRankGroups, rankOf,
+  atLeast, capFor, flagMask, maxBanSeconds, normalCap, parseCaps, parsePairs, parseRankGroups, rankOf,
 } from "../src/ranks.ts";
 
 const DEFAULT_GROUPS =
   "e=ego/e,eg=ego/eg,ego=ego/ego,advisor=ego/advisor,manager=ego/manager,srmanager=ego/srmanager,commgr=ego/commgr,root=ego/root";
-const DEFAULT_CAPS = "default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750";
+const DEFAULT_CAPS =
+  "default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750,flag:t=600,flag:s=650,flag:r=700,flag:q=750";
 const noWarn = (): void => {};
 
 test("parsePairs trims, skips malformed pairs and reports them", () => {
@@ -50,6 +51,24 @@ test("capFor returns the highest group cap, else default; normalCap is default",
   assert.equal(capFor([], caps), 480);
   assert.equal(capFor(["ego/e", "ego/dsgold"], caps), 650);
   assert.equal(capFor(["unrelated"], caps), 480);
+  assert.equal(normalCap(caps), 480);
+});
+
+test("capFor matches flag: keys against the player's admin flags", () => {
+  const caps = parseCaps(DEFAULT_CAPS, noWarn);
+  const holding = (letters: string) => {
+    const mask = flagMask(letters);
+    return (need: number) => (mask & need) === need;
+  };
+  // A Gold supporter from MAUL: tier 1 + tier 2 flags, no group names.
+  assert.equal(capFor([], caps, holding("ats")), 650);
+  assert.equal(capFor([], caps, holding("atsrq")), 750);
+  assert.equal(capFor([], caps, holding("bcdj")), 480);
+  // A group still wins when it is higher.
+  assert.equal(capFor(["ego/dsroyal"], caps, holding("at")), 750);
+  assert.equal(flagMask("t"), 1 << 20);
+  assert.equal(flagMask("q"), 1 << 17);
+  assert.equal(flagMask(""), 0);
   assert.equal(normalCap(caps), 480);
   assert.equal(normalCap(new Map()), 480);
 });

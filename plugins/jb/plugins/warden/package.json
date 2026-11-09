@@ -71,7 +71,7 @@
       },
       "autowarden_flag": {
         "type": "string",
-        "default": "o",
+        "default": "t",
         "description": "SourceMod admin flag letters required for !autowarden (empty = everyone)."
       },
       "autowarden_delay_interval": {
@@ -121,7 +121,7 @@
       },
       "marker_customization_flag": {
         "type": "string",
-        "default": "o",
+        "default": "t",
         "description": "SourceMod admin flag letters required for !markertype / !markercolor (empty = everyone)."
       },
       "warden_marker_min_radius": {

@@ -52,7 +52,7 @@ cannot pick CT (moved to T with a notice). A guard re-picking CT is a no-op.
 | --- | --- | --- |
 | `prisoner_to_guard_ratio` | 2.0 | Prisoners per guard (CTBans `PrisonerToGuardRatio`). |
 | `min_priority_for_ct` | 120 | Priority (minutes alive) needed to guard; eG+ are exempt. |
-| `priority_caps` | `default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750` | `group=cap` pairs; a player's cap is the highest of their groups' caps, else `default`. |
+| `priority_caps` | `default=480,ego/e=500,ego/dssilver=600,ego/dsgold=650,ego/dsplatnium=700,ego/dsroyal=750,flag:t=600,flag:s=650,flag:r=700,flag:q=750` | `key=cap` pairs; a player's cap is the highest cap they match, else `default`. A key is an admin group, or `flag:<letters>` to match admin flags (all listed letters required). The `flag:` keys cover Dedicated Supporters granted by MAUL, who hold the donator tier flags but no group names. |
 | `rank_groups` | `e=ego/e,eg=ego/eg,ego=ego/ego,advisor=ego/advisor,manager=ego/manager,srmanager=ego/srmanager,commgr=ego/commgr,root=ego/root` | `rank=admin group` pairs (MAUL ranks). |
 | `allow_dangerous_ctbans` | false | Let manager / srmanager / commgr issue uncapped and permanent CT bans. |
 | `guard_cooldown_seconds` | 30 | Seconds between `!guard` uses. |
@@ -180,6 +180,9 @@ example, a Dedicated Supporter at Gold:
 ```
 
 Their priority cap comes from the `ego/dsgold` entry in `priority_caps`.
+
+Supporters granted by MAUL hold the donator tier flags (`t` Silver, `s` Gold, `r` Platinum, `q` Royal,
+stacking) but no group names, so they match the `flag:` entries instead.
 
 ## Contract (`api.d.ts`)
 

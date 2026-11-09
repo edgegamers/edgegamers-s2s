@@ -54,13 +54,13 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, rebels, cells, ro
 | `warden_armor` / `warden_hp` / `warden_maxhp` | 125 / 125 / 100 | First warden's armor/HP/max HP. |
 | `warden_sound_killed` / `_passed` / `_new` | `jb/warden/*.vsnd` | Sounds (`play sounds/<path>`), empty disables. |
 | `warden_queue_seconds` | 7 | Raffle window. |
-| `autowarden_flag` | `o` | SM flag letters for `!aw` (C# used the `@ego/dssilver` group). |
+| `autowarden_flag` | `t` | SM flag letters for `!aw` (C# used the `@ego/dssilver` group; `t` is granted to every Dedicated Supporter tier). |
 | `autowarden_delay_interval` | 5 | Seconds after round start auto-warden players are entered. |
 | `warden_open_cooldown` / `warden_count_cooldown` | 25 / 30 | Seconds after freeze time. |
 | `warden_countdown_min` / `_max` / `_default` | 3 / 15 / 5 | Countdown bounds. |
 | `peace_cooldown` | 60 | `!peace` cooldown. |
 | `max_chickens` / `max_soccers` | 5 / 3 | Per round. |
-| `marker_customization_flag` | `o` | SM flag letters for the marker menus. |
+| `marker_customization_flag` | `t` | SM flag letters for the marker menus. |
 | `warden_marker_min_radius` / `_max_radius` | 60 / 360 | Marker radius bounds. |
 | `warden_resize_time` | 800 | ms resize window. |
 | `warden_marker_segments` | 33 | Beams per curved shape (was the particle count). |

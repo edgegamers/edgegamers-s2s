@@ -60,7 +60,7 @@ restored, timers die, and `OnSpecialDayEnd` is emitted. Start and end are writte
 | `sd_round_cooldown` | 5 | Rounds between special days. |
 | `sd_max_elapsed_time` | 30 | Max seconds into a round a warden may call a day. |
 | `sd_gated_days` | `hns,speedrun` | Days that need `sd_gate_flag` (empty = none). |
-| `sd_gate_flag` | `custom1` | Admin flag name that unlocks gated days. |
+| `sd_gate_flag` | `custom6` | Admin flag name that unlocks gated days. `custom6` (letter `t`) is granted to every Dedicated Supporter tier. |
 | `sd_gated_message` | "You must be a Silver Supporter…" | Shown when the flag is missing. |
 | `sd_ghost_visible_duration` / `sd_ghost_invisible_duration` | 5 / 5 | Ghost War cycle (seconds). |
 | `sd_noscope_weapon` | `weapon_ssg08` | No Scope weapon(s), comma-separated. |
@@ -102,7 +102,7 @@ restored, timers die, and `OnSpecialDayEnd` is emitted. Start and end are writte
 
 - [ ] `!sd` as warden opens the center picker; picking a day starts it. As a non-warden: "You are not
       the warden." Cooldown/too-late/running messages appear at the right times; an `rcon` admin bypasses them.
-- [ ] Gated days (`hns`, `speedrun`) are refused without `custom1`, allowed with it / root.
+- [ ] Gated days (`hns`, `speedrun`) are refused without `custom6`, allowed with it / root.
 - [ ] Starting a day while LR/last guard owns the round is refused (core `setMode`).
 - [ ] Custom/Bunny Hop: LRs still possible at the end of the round (mode handed back to `normal`; lastrequest re-checks then and on every death); last guard stays off; rebels work.
 - [ ] Every day: convars restored after the round (`mp_teammates_are_enemies`, `sv_autobunnyhopping`,
