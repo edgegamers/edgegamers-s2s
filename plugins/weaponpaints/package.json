@@ -1,0 +1,164 @@
+{
+  "name": "@edgegamers/s2s-weaponpaints",
+  "version": "0.1.0",
+  "description": "An s2script port of Nereziel/cs2-WeaponPaints: weapon skins, knives, gloves, agents, music kits and pins stored in the WeaponPaints MySQL tables.",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "main": "src/plugin.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/weaponpaints"
+  },
+  "bugs": {
+    "url": "https://github.com/edgegamers/edgegamers-s2s/issues"
+  },
+  "homepage": "https://github.com/Nereziel/cs2-WeaponPaints",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "data/",
+    "gamedata/",
+    "translations/",
+    "test/",
+    "tsconfig.json",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "s2script": {
+    "game": "cs2",
+    "config": {
+      "skins_language": {
+        "type": "string",
+        "default": "en",
+        "description": "Item-name language. Non-English names load from data/<kind>_<lang>.json in this plugin's files directory (SkinsLanguage)."
+      },
+      "cmd_refresh_cooldown_seconds": {
+        "type": "int",
+        "default": 3,
+        "description": "Shared cooldown for !wp and the menu commands (CmdRefreshCooldownSeconds)."
+      },
+      "website": {
+        "type": "string",
+        "default": "example.com/skins",
+        "description": "Shown by !ws as the place to change skins (Website)."
+      },
+      "knife_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Knife selection (KnifeEnabled)."
+      },
+      "glove_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Glove selection (GloveEnabled)."
+      },
+      "music_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Music kit selection (MusicEnabled)."
+      },
+      "agent_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Agent selection (AgentEnabled)."
+      },
+      "skin_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Weapon skins (SkinEnabled)."
+      },
+      "pins_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Pin/coin selection (PinsEnabled)."
+      },
+      "command_wp_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Allow !wp and wp_refresh (CommandWpEnabled)."
+      },
+      "command_kill_enabled": {
+        "type": "bool",
+        "default": true,
+        "description": "Allow the !kill command (CommandKillEnabled)."
+      },
+      "command_knife": {
+        "type": "string",
+        "default": "knife",
+        "description": "Knife menu aliases, comma-separated (CommandKnife)."
+      },
+      "command_music": {
+        "type": "string",
+        "default": "music",
+        "description": "Music menu aliases (CommandMusic)."
+      },
+      "command_pin": {
+        "type": "string",
+        "default": "pin,pins,coin,coins",
+        "description": "Pin menu aliases (CommandPin)."
+      },
+      "command_glove": {
+        "type": "string",
+        "default": "gloves",
+        "description": "Glove menu aliases (CommandGlove)."
+      },
+      "command_agent": {
+        "type": "string",
+        "default": "agents",
+        "description": "Agent menu aliases (CommandAgent)."
+      },
+      "command_stattrak": {
+        "type": "string",
+        "default": "stattrak,st",
+        "description": "StatTrak toggle aliases (CommandStattrak)."
+      },
+      "command_skin": {
+        "type": "string",
+        "default": "ws",
+        "description": "Info command aliases (CommandSkin)."
+      },
+      "command_skin_selection": {
+        "type": "string",
+        "default": "skins",
+        "description": "Skin menu aliases (CommandSkinSelection)."
+      },
+      "command_refresh": {
+        "type": "string",
+        "default": "wp",
+        "description": "Refresh aliases (CommandRefresh)."
+      },
+      "command_kill": {
+        "type": "string",
+        "default": "kill",
+        "description": "Suicide aliases (CommandKill)."
+      },
+      "give_random_skin": {
+        "type": "bool",
+        "default": false,
+        "description": "Give a random paint to weapons the player has not customised (GiveRandomSkin)."
+      },
+      "show_skin_image": {
+        "type": "bool",
+        "default": true,
+        "description": "Flash the chosen item's image in the center panel (ShowSkinImage)."
+      },
+      "menu_type": {
+        "type": "string",
+        "default": "selectable",
+        "description": "chat or console use the chat menu; anything else the center menu (MenuType)."
+      }
+    }
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "test": "node --test --test-isolation=none test/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "registry:pack": "s2s pack --dry-run"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

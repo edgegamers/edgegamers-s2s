@@ -12,6 +12,7 @@ Fresh source imports; upstream Git history is not part of this repository. The f
 | maul | https://github.com/GabeHirakawa/s2s-maul | `aaaaabb6cb2af2b4a092559805d28baf1449d3c7` |
 | customio | https://github.com/darkerz7/CS2-CustomIO (ported from C#) | `c2d8f95aa0fac92e5c8fb83677df797e5ed529a6` |
 | arcadescripts | https://github.com/supergosciu/ArcadeScripts-CSS (ported from C#) | `e9aa84d8876ae8f24669505cd4b03ca6d563db92` |
+| weaponpaints | https://github.com/Nereziel/cs2-WeaponPaints (ported from C#) | `main` at version 3.3a, read 2026-11-09 (commit not recorded) |
 
 Keep source changes in this repository. Select future upstream changes deliberately, then add changesets for affected release units. Superseded upstream install/release/agent configuration and historical engineering evidence are omitted; gameplay, required assets and useful product documentation are retained.
 

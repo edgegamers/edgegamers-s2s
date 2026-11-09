@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "functions": {
+    // CAttributeList::SetOrAddAttributeValueByName(CAttributeList*, const char*, float), on any
+    // attribute list. @s2script/cs2's weapon.setAttribute() reaches only a weapon's networked list;
+    // gloves are an item view embedded in the pawn, so they need the list address directly.
+    // Same pattern and entry validator as @s2script/cs2's game.cs2.jsonc
+    // "CAttributeList_SetOrAddAttributeValueByName" (unique on the Oct 22 2026 libserver.so,
+    // BuildID 2603388a…, at 0x1cb4c00). Re-audit after every CS2 update.
+    "attributeListSetOrAdd": {
+      "target": {
+        "module": "libserver.so",
+        "pattern": "55 48 89 E5 41 57 41 56 41 55 49 89 FD 41 54 53 48 89 F3 48 83 EC ? F3 0F 11 85",
+        "validate": { "prologue": "55 48 89 E5 41 57 41 56 41 55 49 89 FD" }
+      },
+      "receiver": { "type": "none" },
+      "parameters": [
+        { "name": "list", "type": "ptr" },
+        { "name": "name", "type": "string", "ownership": "callee-borrowed" },
+        { "name": "value", "type": "f32" }
+      ],
+      "returns": "void",
+      "surfaces": ["call"],
+      "requirement": "optional"
+    }
+  }
+}

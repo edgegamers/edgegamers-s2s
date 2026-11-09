@@ -1,0 +1,24 @@
+WeaponPaints for s2script
+
+Derived from cs2-WeaponPaints 3.3a by Nereziel & daffyy:
+https://github.com/Nereziel/cs2-WeaponPaints
+Reference: the main branch as published on 2026-11-09 (VERSION 3.3a).
+
+The item catalogs in data/ (skins, gloves, agents, music kits, collectibles) and the
+English phrases in translations/ are copied from that repository's website/data and
+lang/en.json. Item images stay hosted by the upstream repository.
+
+Modified 2026-11-09: ported from C#/CounterStrikeSharp to TypeScript/s2script.
+Menus use s2script's menu module instead of MenuManagerCS2; persistence uses
+s2script's database module instead of MySqlConnector/Dapper, keeping upstream's
+table layout. Engine access goes through @s2script/cs2's schema accessors,
+weapon.setAttribute and entity inputs, plus one plugin-declared engine call
+(gamedata/functions.jsonc) for glove attributes. Behavior differences are listed
+in README.md.
+
+This derived work is distributed under the GNU General Public License version 3.
+The full license is in LICENSE. There is no warranty.
+
+s2script SDK 0.35.0 and CS2 types 0.22.0 are development dependencies, licensed
+MIT OR Apache-2.0 by their authors. The framework is installed separately and is
+not bundled in this release.
