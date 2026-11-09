@@ -10,6 +10,7 @@ import type { SDInfo, SDType } from "../api";
 import { Manager, say } from "./manager.ts";
 import { buildMenu } from "./menu.ts";
 import { registerPickupGate } from "./pickup.ts";
+import { resetFixedConvars } from "./runner.ts";
 import { setZoneProvider } from "./zones.ts";
 import { parseSDType } from "./sdtype.ts";
 import { msg } from "./messages.ts";
@@ -35,6 +36,7 @@ function hookPawn(ref: EntityRef | null): void {
 
 export function OnPluginStart(): void {
   watchDecluttr();
+  resetFixedConvars(); // clears a value left on before this load
   const core = use("@edgegamers/jailbreak-core");
   const handle = publish("@edgegamers/jailbreak-specialdays", {
     isRunning: (): boolean => manager?.isRunning() ?? false,
@@ -135,6 +137,7 @@ export function OnGameFrame(): void {
 
 export function OnMapStart(): void {
   manager?.end(false);
+  resetFixedConvars();
 }
 
 export function OnPluginEnd(): void {

@@ -123,6 +123,19 @@ export const RESTORE_TO: Readonly<Record<string, string>> = {
   sv_infinite_ammo: "0",
 };
 
+/**
+ * Cheat-protected convars that are set through the console, never through `Server.setCvar`.
+ * S2Script's setCvar is what put `sv_infinite_ammo` at -229000626 on the live server (setting it
+ * by hand from the console fixed the grenades), so for these the engine parses the value itself.
+ * The console refuses cheat cvars while `sv_cheats` is 0, hence the bracket in `cheatCommand`.
+ */
+export const CONSOLE_CHEAT_CONVARS: ReadonlySet<string> = new Set(["sv_infinite_ammo"]);
+
+/** One console line that sets cheat convar `name` and puts `sv_cheats` back as it was. */
+export function cheatCommand(name: string, value: string, cheatsOn: boolean): string {
+  return `sv_cheats 1; ${name} ${value}; sv_cheats ${cheatsOn ? 1 : 0}`;
+}
+
 /** What `name` goes back to at the end of a day, given what it read before the day. */
 export function restoreValue(name: string, previous: string): string {
   return RESTORE_TO[name] ?? previous;

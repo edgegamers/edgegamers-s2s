@@ -9,7 +9,7 @@ import { Player } from "@s2script/cs2";
 import type { SDType } from "../api";
 import type { DayContext, SpecialDay } from "./day.ts";
 import type { TeleportType } from "./settings.ts";
-import { FRAME_DELAYED_CONVARS, RESTORE_TO, restoreValue } from "./settings.ts";
+import { CONSOLE_CHEAT_CONVARS, FRAME_DELAYED_CONVARS, RESTORE_TO, cheatCommand, restoreValue } from "./settings.ts";
 import type { Vec3 } from "./geometry.ts";
 import { pickSpawns, ShuffleBag, shuffle } from "./geometry.ts";
 import { pickupAllowed } from "./weapons.ts";
@@ -50,6 +50,11 @@ export interface CoreHooks {
 }
 
 function setCvar(name: string, value: string): boolean {
+  if (CONSOLE_CHEAT_CONVARS.has(name)) {
+    const cheats = Server.getCvar("sv_cheats").trim();
+    Server.command(cheatCommand(name, value, cheats === "1" || cheats === "true"));
+    return true;
+  }
   if (FRAME_DELAYED_CONVARS.has(name)) {
     // Needs a frame to reach clients (the C# set it on the next frame); the console queues it.
     const v = value === "true" ? "1" : value === "false" ? "0" : value;
@@ -60,17 +65,14 @@ function setCvar(name: string, value: string): boolean {
 }
 
 /**
- * Outside a day, put fixed-restore convars back (round start). Undoes a value a failed or wrong
- * restore left behind, such as a nonzero sv_infinite_ammo. Returns the names it reset.
+ * Put fixed-restore convars back to their resting value (map start and plugin load). Clears a
+ * value an earlier write left behind, such as a nonzero sv_infinite_ammo. Unconditional, because
+ * S2Script's read of a value its own write corrupted can't be trusted to say it is wrong.
  */
-export function resetFixedConvars(): string[] {
-  const reset: string[] = [];
+export function resetFixedConvars(): void {
   for (const [name, value] of Object.entries(RESTORE_TO)) {
-    if (Server.getCvar(name).trim() === value) continue;
     if (!setCvar(name, value)) console.log(`[specialdays] could not reset convar: ${name}`);
-    reset.push(name);
   }
-  return reset;
 }
 
 export class DayRun implements DayContext {

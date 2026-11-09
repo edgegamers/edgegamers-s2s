@@ -111,3 +111,10 @@ test("restoreValue: sv_infinite_ammo always goes back to 0", async () => {
   assert.equal(restoreValue("sv_infinite_ammo", ""), "0");
   assert.equal(restoreValue("sv_gravity", "800"), "800");
 });
+
+test("cheatCommand sets a cheat convar inside an sv_cheats bracket", async () => {
+  const { cheatCommand, CONSOLE_CHEAT_CONVARS } = await import("../src/settings.ts");
+  assert.equal(cheatCommand("sv_infinite_ammo", "0", false), "sv_cheats 1; sv_infinite_ammo 0; sv_cheats 0");
+  assert.equal(cheatCommand("sv_infinite_ammo", "2", true), "sv_cheats 1; sv_infinite_ammo 2; sv_cheats 1");
+  assert.ok(CONSOLE_CHEAT_CONVARS.has("sv_infinite_ammo"));
+});
