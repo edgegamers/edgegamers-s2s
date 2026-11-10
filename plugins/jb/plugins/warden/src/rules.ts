@@ -209,3 +209,39 @@ export function voiceRule(s: VoiceSubject, v: VoiceState): VoiceRule {
 export function prisonerLockApplies(playersOnTeams: number, minPlayers: number): boolean {
   return minPlayers > 0 && playersOnTeams >= minPlayers;
 }
+
+/** The target text a command was given: the whole argument string, trimmed, outer quotes removed. */
+export function targetPattern(argString: string): string {
+  const s = argString.trim();
+  return s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1).trim() : s;
+}
+
+export type SingleTarget<T> = { kind: "one"; target: T } | { kind: "none" } | { kind: "many" };
+
+/**
+ * Pick exactly one target from `pool` (the players the command may act on). `#userid` and `@...`
+ * patterns are resolved by the framework (`native`, from `Player.target`) and only narrowed to the
+ * pool. A plain name is matched against the pool itself, SourceMod style: a case-insensitive exact
+ * name wins, otherwise a unique partial match. Matching in the pool matters because the framework
+ * resolves names across every connected player, so an exact match on a dead or guard player would
+ * otherwise hide the living prisoner the warden meant.
+ */
+export function pickSingleTarget<T>(
+  pattern: string,
+  native: readonly T[],
+  pool: readonly T[],
+  nameOf: (t: T) => string,
+  slotOf: (t: T) => number,
+): SingleTarget<T> {
+  const pick = (list: readonly T[]): SingleTarget<T> =>
+    list.length === 1 ? { kind: "one", target: list[0] } : list.length === 0 ? { kind: "none" } : { kind: "many" };
+  if (pattern === "") return { kind: "none" };
+  if (pattern.startsWith("#") || pattern.startsWith("@")) {
+    const hit = new Set(native.map(slotOf));
+    return pick(pool.filter((t) => hit.has(slotOf(t))));
+  }
+  const needle = pattern.toLowerCase();
+  const exact = pool.filter((t) => nameOf(t).toLowerCase() === needle);
+  if (exact.length > 0) return pick(exact);
+  return pick(pool.filter((t) => nameOf(t).toLowerCase().includes(needle)));
+}

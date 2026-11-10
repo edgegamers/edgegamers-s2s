@@ -8,7 +8,7 @@ import { hasFlagLetters, hasFlags, isWarmup, roundElapsed } from "./env";
 import { getMarker, isInMarker, openMarkerColorMenu, openMarkerTypeMenu } from "./markers";
 import { msg, who } from "./messages";
 import { isPeace, msSinceLastPeace, peaceMute, toggleSpeakToAll } from "./peace";
-import { countdownSchedule, parseCountdown, parseRoll, rollBetween } from "./rules";
+import { countdownSchedule, parseCountdown, parseRoll, pickSingleTarget, rollBetween, targetPattern } from "./rules";
 import {
   isInQueue,
   isQueueActive,
@@ -256,16 +256,26 @@ export function registerCommands(): void {
       cmd.replyToConsole(msg.notWarden);
       return H;
     }
-    if (cmd.argCount === 0) return H; // C# TODO: a prisoner picker menu
-    const query = cmd.arg(0);
-    const eligible = Player.target(query, slot, false).filter((p) => p.teamNum === Team.Prisoner && isAlive(p));
-    if (eligible.length !== 1) {
-      const text = eligible.length === 0 ? msg.playerNotFound(query) : msg.playerFoundMultiple(query);
+    const query = targetPattern(cmd.argString);
+    if (query === "") {
+      reply(cmd, msg.stUsage);
+      return H;
+    }
+    const prisoners = Player.all().filter((p) => p.teamNum === Team.Prisoner && isAlive(p));
+    const found = pickSingleTarget(
+      query,
+      Player.target(query, slot, false),
+      prisoners,
+      (p) => p.playerName ?? "",
+      (p) => p.slot,
+    );
+    if (found.kind !== "one") {
+      const text = found.kind === "none" ? msg.playerNotFound(query) : msg.playerFoundMultiple(query);
       reply(cmd, text);
       cmd.replyToConsole(text);
       return H;
     }
-    const target = eligible[0].slot;
+    const target = found.target.slot;
     setSpecialTreatment(target, !isSpecialTreatment(target));
     return H;
   });

@@ -39,7 +39,7 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, rebels, cells, ro
 | `!roll [min max]` | warden | Roll in [min, max) (default 0–10). |
 | `!chicken` | warden | Spawn a chicken (max `max_chickens` per round). |
 | `!soccer` (`!spawnball`) | warden | Spawn a soccer ball (max `max_soccers` per round). |
-| `!st <target>` (`!treat`) | warden | Toggle special treatment on one living prisoner. |
+| `!st <target>` (`!treat`) | warden | Toggle special treatment on one living prisoner. Takes a full name (spaces allowed), a unique partial name, `#userid` or `@me`; names are matched among living prisoners only. |
 | `!markertype` / `!markercolor` | `marker_customization_flag` | Pick marker shape / colour (centre menu, saved as cookies). |
 | `!aw` (`!autowarden`) | `autowarden_flag` | Toggle auto-joining the raffle (cookie `jb_warden_auto`). |
 | `sm_markst <target>` | admin (ROOT) | Debug: toggle special treatment on any target (C# `css_debug st`). |
