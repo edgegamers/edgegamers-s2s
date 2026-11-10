@@ -7,7 +7,7 @@ import { cfg } from "./config";
 import { hasFlagLetters, hasFlags, isWarmup, roundElapsed } from "./env";
 import { getMarker, isInMarker, openMarkerColorMenu, openMarkerTypeMenu } from "./markers";
 import { msg, who } from "./messages";
-import { isPeace, msSinceLastPeace, peaceMute } from "./peace";
+import { isPeace, msSinceLastPeace, peaceMute, toggleSpeakToAll } from "./peace";
 import { countdownSchedule, parseCountdown, parseRoll, rollBetween } from "./rules";
 import {
   isInQueue,
@@ -153,6 +153,16 @@ export function registerCommands(): void {
       return H;
     }
     peaceMute(fromWarden ? "warden" : "admin");
+    return H;
+  });
+
+  // ── !speaktoall: a chat admin is heard by everyone, through peace and death ─
+  on(["sm_speaktoall"], (cmd) => {
+    const slot = cmd.callerSlot;
+    if (slot < 0) return H;
+    const on = toggleSpeakToAll(slot);
+    if (on === null) reply(cmd, msg.noPermission("@css/chat"));
+    else reply(cmd, on ? msg.speakToAllOn : msg.speakToAllOff);
     return H;
   });
 

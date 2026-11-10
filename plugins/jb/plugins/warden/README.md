@@ -19,7 +19,7 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, rebels, cells, ro
 | `src/paint.ts` | +use laser paint. |
 | `src/icons.ts` | "W" / "S" glyph above the head (`point_worldtext`), via the icon Transforms. |
 | `src/special-treatment.ts` | Grant/revoke ST, colour, screen tint, revoke on rebel/death, per-round reset. |
-| `src/peace.ts` | Peace mute + dead-player mute + voice reminders. |
+| `src/peace.ts` | Voice policy: peace mute, dead-only voice, `!speaktoall`, prisoner mute until LR, reminders. |
 | `src/draw.ts` | Beam lines/loops and the text "hat". |
 | `src/messages.ts` | Every player-facing string. |
 | `src/queue.ts`, `src/rules.ts`, `src/shapes.ts` | Pure logic (raffle, durations, parsers, marker math, shape geometry) — unit-tested. |
@@ -32,7 +32,8 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, rebels, cells, ro
 | `!pass` (`!uw`, `!unwarden`) | warden | Resign. Undoes the first-warden buff; "freeday" is announced if nobody takes warden within 10 s. |
 | `!fire` | admin (BAN) | Remove the warden. Chat admins see who fired them. |
 | `!open` (`!o`) | warden (after `warden_open_cooldown`), admin (CHEATS) any time | Open the cells via `core.openCells("warden" / "admin")`. |
-| `!peace` | warden / chat admin (CHAT), 60 s cooldown; CHEATS admin & console no cooldown | Peace mute: everyone but the warden muted. |
+| `!peace` | warden / chat admin (CHAT), 60 s cooldown; CHEATS admin & console no cooldown | Peace mute: everyone alive but the warden muted, admins included. |
+| `!speaktoall` | chat admin (CHAT) | Toggle being heard by everyone, through peace and while dead. Resets each round. |
 | `!count` | warden (after `warden_count_cooldown`) | Count living prisoners inside the marker. |
 | `!countdown [s]` | warden (60 s cooldown) / CHAT or CHEATS admin | Chat countdown (3–15 s, default 5) plus a peace mute. |
 | `!roll [min max]` | warden | Roll in [min, max) (default 0–10). |
@@ -59,12 +60,21 @@ Hard-depends on `@edgegamers/jailbreak-core` (round lifecycle, rebels, cells, ro
 | `warden_open_cooldown` / `warden_count_cooldown` | 25 / 30 | Seconds after freeze time. |
 | `warden_countdown_min` / `_max` / `_default` | 3 / 15 / 5 | Countdown bounds. |
 | `peace_cooldown` | 60 | `!peace` cooldown. |
+| `prisoner_mute_min_players` | 0 | With at least this many humans on T/CT at round start, living prisoners stay muted until LR, last guard or a special day. 0 disables it. |
 | `max_chickens` / `max_soccers` | 5 / 3 | Per round. |
 | `marker_customization_flag` | `t` | SM flag letters for the marker menus. |
 | `warden_marker_min_radius` / `_max_radius` | 60 / 360 | Marker radius bounds. |
 | `warden_resize_time` | 800 | ms resize window. |
 | `warden_marker_segments` | 33 | Beams per curved shape (was the particle count). |
 | `warden_paint_lifetime` / `warden_paint_max_segments` | 10 / 300 | Paint trail lifetime and cap. |
+
+## Voice
+
+- Peace mutes every living player except the warden; guards get their voice back after at most
+  10 s, prisoners when peace ends. Admins are muted too unless they use `!speaktoall`.
+- Dead players and spectators are heard only by other dead players and spectators (TTT-style);
+  they still hear the living.
+- Rules are per-plugin `Voice` rules, so they never lift a basecomm `sm_mute`.
 
 ## Contract (`api.d.ts`)
 

@@ -11,9 +11,10 @@ import { clearPaint, paintFrame } from "./paint";
 import {
   isPeace,
   peaceMute,
-  peaceOnDeath,
   peaceOnDisconnect,
-  peaceOnSpawn,
+  peaceOnLifeChange,
+  peaceOnModeChanged,
+  peaceOnPluginEnd,
   peaceOnVoice,
   peaceRoundEnd,
   peaceRoundStart,
@@ -75,6 +76,7 @@ export function OnPluginStart(): void {
     specialRoundStart();
     peaceRoundEnd();
   });
+  core.on("OnModeChanged", (ev) => peaceOnModeChanged(ev.mode));
   core.on("OnRebelChanged", (ev) => {
     if (ev.rebel) revokeSpecialTreatment(ev.player.slot, false);
   });
@@ -109,16 +111,16 @@ export function OnPluginStart(): void {
     if (slot < 0) return;
     if (isWarden(slot)) removeWarden("death");
     specialOnDeath(slot);
-    peaceOnDeath(slot);
+    peaceOnLifeChange();
   });
   Events.on("player_spawn", (ev) => {
-    const slot = ev.getPlayerSlot("userid");
-    if (slot >= 0) peaceOnSpawn(slot);
+    if (ev.getPlayerSlot("userid") >= 0) peaceOnLifeChange();
   });
   Events.on("player_team", (ev) => {
     const slot = ev.getPlayerSlot("userid");
     if (slot < 0 || ev.getBool("disconnect")) return;
     if (isWarden(slot)) removeWarden("team_change");
+    peaceOnLifeChange();
   });
   Events.on("player_ping", (ev) => {
     markerOnPing(ev.getPlayerSlot("userid"), ev.getFloat("x"), ev.getFloat("y"), ev.getFloat("z"));
@@ -152,7 +154,7 @@ export function OnMapStart(_map: string): void {
 export function OnPluginEnd(): void {
   wardenRoundEnd();
   specialRoundStart();
-  unPeaceMute();
+  peaceOnPluginEnd();
   removeAllIcons();
   clearMarker();
   clearPaint();

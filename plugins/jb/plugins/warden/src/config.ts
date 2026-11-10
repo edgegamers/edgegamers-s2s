@@ -27,6 +27,7 @@ export const cfg = {
   countdownMax: 15,
   countdownDefault: 5,
   peaceCooldown: 60,
+  prisonerMuteMinPlayers: 0,
   maxChickens: 5,
   maxSoccers: 3,
   // markers + paint
@@ -68,6 +69,7 @@ export function loadConfig(): void {
   cfg.countdownMax = int("warden_countdown_max", 15);
   cfg.countdownDefault = int("warden_countdown_default", 5);
   cfg.peaceCooldown = Math.max(0, int("peace_cooldown", 60));
+  cfg.prisonerMuteMinPlayers = Math.max(0, int("prisoner_mute_min_players", 0));
   cfg.maxChickens = int("max_chickens", 5);
   cfg.maxSoccers = int("max_soccers", 3);
   cfg.markerFlag = str("marker_customization_flag", "t");

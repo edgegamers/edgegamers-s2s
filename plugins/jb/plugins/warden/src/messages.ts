@@ -97,9 +97,14 @@ export const msg = {
   unmutedGuards: V(`${ChatColors.Blue}Guards${G} were unmuted.`),
   unmutedPrisoners: V(`${ChatColors.LightRed}Prisoners${G} were unmuted.`),
   muteReminder: "You are currently muted.",
-  peaceReminder: "Peace is currently active. You should only be talking if absolutely necessary!",
-  deadReminder: "You are dead and cannot speak.",
-  adminDeadReminder: "You are dead. You should only be talking if absolutely necessary!",
+  deadReminder: "You are dead. Only dead players can hear you.",
+  adminDeadReminder: "You are dead. Only dead players can hear you. Use !speaktoall to talk to everyone.",
+  adminMutedReminder: "You are muted. Use !speaktoall to talk to everyone.",
+  lockedReminder: "Prisoners are muted until last request.",
+  prisonersLockedUntilLR: V(`${ChatColors.LightRed}Prisoners${G} are muted until last request.`),
+  peaceOverPrisonersLocked: V(`Peace is over. ${ChatColors.LightRed}Prisoners${G} stay muted until last request.`),
+  speakToAllOn: V("You are now speaking to everyone. Type !speaktoall again to stop."),
+  speakToAllOff: V("You are no longer speaking to everyone."),
   peaceActive: V("Peace is currently active."),
 
   // ── generic (GenericCmdLocale) ───────────────────────────────────────────
