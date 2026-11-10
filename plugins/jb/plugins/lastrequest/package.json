@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-lastrequest",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Last requests and last guard.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -12,7 +12,7 @@
     },
     "pluginDependencies": {
       "@edgegamers/jailbreak-core": "^1.1.5",
-      "@edgegamers/jailbreak-warden": "^1.0.5"
+      "@edgegamers/jailbreak-warden": "^1.1.0"
     },
     "config": {
       "lr_activate_lr_at": {

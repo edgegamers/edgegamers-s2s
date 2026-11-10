@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-warden
 
+## 1.1.0
+
+### Minor Changes
+
+- d035e48: Peace now mutes admins too unless they use the new `!speaktoall`, dead players and spectators can talk to each other without the living hearing them, and the new `prisoner_mute_min_players` setting (off by default) keeps prisoners muted until last request on full servers.
+
 ## 1.0.5
 
 ### Patch Changes
