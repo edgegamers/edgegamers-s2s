@@ -8,7 +8,7 @@ import { Clients } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { isAlive, Team } from "@edgegamers/jailbreak-shared";
 import type { LRType } from "../api";
-import { isAvailable } from "./games";
+import { isAvailable, meetsTier, requiredTier } from "./games";
 import { lrName, parseLRType } from "./logic";
 import { getActiveLR, initiateLastRequest, isBusy, isEnabled, isInLR } from "./manager";
 import { showPlayerMenu, showTypeMenu, wouldHavePlayers } from "./menus";
@@ -29,13 +29,20 @@ export function lastRequest(slot: number, typeArg: string, targetArg: string, re
   if (isBusy(slot) || isRebelling(slot)) return reply(msg.cannotLR("You are already in an LR"));
 
   if (typeArg === "") {
-    showTypeMenu(slot, TYPE_MENU_TITLE, isAvailable, (type) => lastRequest(slot, type, "", chatTo(slot)));
+    showTypeMenu(
+      slot,
+      TYPE_MENU_TITLE,
+      isAvailable,
+      (type) => lastRequest(slot, type, "", chatTo(slot)),
+      (type) => (meetsTier(type, slot) ? null : `Tier ${String(requiredTier(type))}+`),
+    );
     return;
   }
 
   const type = parseLRType(typeArg);
   if (type === null) return reply(msg.invalid(typeArg));
   if (!isAvailable(type)) return reply(msg.unavailable(type));
+  if (!meetsTier(type, slot)) return reply(msg.needsTier(type, requiredTier(type)));
 
   if (targetArg === "") {
     showPlayerMenu(slot, PLAYER_MENU_TITLE(type), false, isInLR, (target) =>

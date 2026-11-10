@@ -1,5 +1,7 @@
 /** The LR factory (C# `LastRequestFactory`). */
+import { Admin } from "@s2script/sdk";
 import type { LRType } from "../../api";
+import { donatorTierMask } from "../logic";
 import type { Participant } from "../players";
 import { settings } from "../settings";
 import type { LastRequest, LRHost } from "./base";
@@ -16,6 +18,18 @@ export type { LastRequest, LRHost } from "./base";
 /** Whether the type is offered (C#: everything but race; race is opt-in via `lr_race_enabled`). */
 export function isAvailable(type: LRType): boolean {
   return type !== "race" || settings.raceEnabled;
+}
+
+/** The donator tier a type needs (0 = none). Gun Toss is gated by `lr_gun_toss_min_tier`. */
+export function requiredTier(type: LRType): number {
+  return type === "gun_toss" ? settings.gunTossMinTier : 0;
+}
+
+/** Whether the player in `slot` is a high enough donator tier to pick `type`. */
+export function meetsTier(type: LRType, slot: number): boolean {
+  const mask = donatorTierMask(requiredTier(type), settings.donatorTierFlags);
+  if (mask === 0) return true;
+  return Admin.forSlot(slot)?.hasFlags(mask) ?? false;
 }
 
 export function createLastRequest(

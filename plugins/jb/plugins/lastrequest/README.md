@@ -45,6 +45,8 @@ Hard dependencies: `@edgegamers/jailbreak-core` (round mode, rebels, round log, 
 | `max_time_for_lr` | 60 | Round-time cap for the per-LR bonus |
 | `lr_b4b_kill_by_health` | true | Shot/mag for mag: after 60 s the lower-HP player dies |
 | `lr_race_enabled` | false | Offer the Race LR (the C# factory had it disabled) |
+| `lr_gun_toss_min_tier` | 3 | Lowest Dedicated Supporter tier that may pick Gun Toss; lower tiers see it greyed out in the menu (0 = everyone) |
+| `lr_donator_tier_flags` | `tsrq` | One SM flag letter per donator tier, lowest first (t Silver, s Gold, r Platinum, q Royal); tiers stack, so tier N holds letters 1..N |
 | `rebel_on` | true | Allow `!rebel` |
 | `rebel_t_weapon` | `weapon_m249` | LR rebel's weapon |
 | `rebel_ct_max_hp` | 200 | Max HP each guard contributes to the rebel |

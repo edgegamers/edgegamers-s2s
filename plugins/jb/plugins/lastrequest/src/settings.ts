@@ -13,6 +13,8 @@ export const settings = {
   maxTimeForLR: 60,
   b4bKillByHealth: true,
   raceEnabled: false,
+  gunTossMinTier: 3,
+  donatorTierFlags: "tsrq",
   // LR rebel
   rebelOn: true,
   rebelWeapon: "weapon_m249",
@@ -42,6 +44,8 @@ export function loadSettings(): void {
   settings.maxTimeForLR = config.getInt("max_time_for_lr");
   settings.b4bKillByHealth = config.getBool("lr_b4b_kill_by_health");
   settings.raceEnabled = config.getBool("lr_race_enabled");
+  settings.gunTossMinTier = clamp(config.getInt("lr_gun_toss_min_tier"), 0, 8);
+  settings.donatorTierFlags = config.getString("lr_donator_tier_flags");
 
   settings.rebelOn = config.getBool("rebel_on");
   settings.rebelWeapon = config.getString("rebel_t_weapon") || "weapon_m249";

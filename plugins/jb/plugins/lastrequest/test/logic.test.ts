@@ -6,6 +6,8 @@ import {
   cappedTimeDelta,
   coinflipResult,
   damageVerdict,
+  donatorTierMask,
+  flagsFromLetters,
   isGunDef,
   isKnifeDef,
   lastGuardHealth,
@@ -197,4 +199,16 @@ test("shot for shot: the shooter's own shot never counts as cheating, turns alte
   assert.equal(t.whosShot, prisoner);
   // an unreadable clip never passes the turn
   assert.equal(t.turnOver(null, guard), false);
+});
+
+test("donatorTierMask: one flag per tier, lowest first", () => {
+  assert.equal(donatorTierMask(0, "tsrq"), 0);
+  assert.equal(donatorTierMask(-1, "tsrq"), 0);
+  assert.equal(donatorTierMask(1, "tsrq"), flagsFromLetters("t"));
+  assert.equal(donatorTierMask(3, "tsrq"), flagsFromLetters("r"));
+  assert.equal(donatorTierMask(3, "tsrq"), 1 << 18); // r = CUSTOM4
+  assert.equal(donatorTierMask(4, "t,s,r,q"), flagsFromLetters("q"));
+  // Past the list: the highest listed tier. Empty list: no requirement.
+  assert.equal(donatorTierMask(6, "tsrq"), flagsFromLetters("q"));
+  assert.equal(donatorTierMask(3, ""), 0);
 });

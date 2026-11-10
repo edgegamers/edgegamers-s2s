@@ -27,16 +27,25 @@ export function closeAllMenus(): void {
   for (const slot of [...open.keys()]) closeMenu(slot);
 }
 
-/** "Which LR?" — every available type. */
+/**
+ * "Which LR?" — every available type. A type `locked` returns a note for is listed, disabled,
+ * with that note after its name (e.g. "Gun Toss (Tier 3+)").
+ */
 export function showTypeMenu(
   slot: number,
   title: string,
   available: (t: LRType) => boolean,
   onPick: (type: LRType) => void,
+  locked: (t: LRType) => string | null = () => null,
 ): void {
   const menu = new Menu(title);
   menu.style = MenuStyle.Center;
-  for (const t of LR_TYPES) if (available(t)) menu.addItem(t, lrName(t));
+  for (const t of LR_TYPES) {
+    if (!available(t)) continue;
+    const note = locked(t);
+    if (note === null) menu.addItem(t, lrName(t));
+    else menu.addItem(t, `${lrName(t)} (${note})`, { disabled: true });
+  }
   menu.onSelect((e) => {
     open.delete(e.slot);
     onPick(e.info as LRType);
