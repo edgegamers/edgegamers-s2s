@@ -72,6 +72,17 @@ function press(ref: EntityRef): boolean {
   return ref.acceptInput("Press", undefined, guard);
 }
 
+/** Why the last open attempt failed (for the round log); "" after a success. */
+let lastFailure = "";
+
+/** `name -> target` for every func_button on the map, for the failure log. */
+function describeButtons(candidates: ButtonCandidate[]): string {
+  if (candidates.length === 0) return "the map has no func_button";
+  const shown = candidates.slice(0, 8).map((b) => `${b.name || "Unlabeled"} -> ${b.target || "None"}`);
+  const more = candidates.length > shown.length ? ` (+${candidates.length - shown.length} more)` : "";
+  return `buttons: ${shown.join(", ")}${more}`;
+}
+
 /**
  * Find and press a cell button. Returns the level it matched at, or null if no button exists.
  * `source` = where "nearest" is measured from.
@@ -86,10 +97,20 @@ export function pressNearest(source: Point | null, start: SensitivityLevel): Sen
     candidates.push({ id: b.index, name: b.name ?? "", target: b.target ?? "", origin: o ? toPoint(o) : null });
   }
   const pick = pickCellButton(candidates, source, start);
-  if (!pick) return null;
+  if (!pick) {
+    lastFailure = `no button matched; ${describeButtons(candidates)}`;
+    return null;
+  }
+  const label = `${pick.button.name || "Unlabeled"} -> ${pick.button.target || "None"}`;
   const ref = refs.get(pick.button.id);
-  if (!ref || !press(ref)) return null;
-  log(`Cell button pressed: ${pick.button.name || "Unlabeled"} -> ${pick.button.target || "None"} (${SENSITIVITY_NAMES[pick.level]})`);
+  if (!ref || !press(ref)) {
+    lastFailure = `the game refused the Press input on ${label}`;
+    return null;
+  }
+  log(`Cell button pressed: ${label} (${SENSITIVITY_NAMES[pick.level]})`);
+  lastFailure = isConfidentLevel(pick.level)
+    ? ""
+    : `pressed ${label}, but it only matched "${SENSITIVITY_NAMES[pick.level]}" so it may not be the cells; ${describeButtons(candidates)}`;
   return pick.level;
 }
 
@@ -104,7 +125,7 @@ function tryOpen(): boolean {
 /** core.openCells. */
 export function openCells(source: string): boolean {
   const ok = tryOpen();
-  log(ok ? `Cells opened (${source}).` : `Failed to open the cells (${source}).`);
+  log(ok ? `Cells opened (${source}).` : `Failed to open the cells (${source}): ${lastFailure || "unknown reason"}.`);
   if (!ok) return false;
   opened = true;
   bus()?.emit("OnCellsOpened", { round: currentRound(), source });
