@@ -108,7 +108,8 @@ Nothing here has run on a CS2 server yet. Verify:
       HP decision; winner gets knife + AK; only knives can be picked up.
 - [ ] Shot for Shot / Mag for Mag: pistol menu, after 5 s both get the pistol empty, the starter
       gets 1 bullet / a full mag, turns alternate when the clip empties, shooting out of turn
-      slays the cheater, knives at 30 s, HP decision at 60 s.
+      slays the cheater, neither player can drop their gun (G does nothing), knives at 30 s, HP
+      decision at 60 s.
 - [ ] Gun Toss: knives + deagles (prisoner's empty clip, 7 reserve), thrown deagles turn red/blue,
       neither can pick up until 4 s after both
       threw, an outsider can't grab a deagle near a thrower.
