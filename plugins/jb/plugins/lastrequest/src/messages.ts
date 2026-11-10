@@ -23,6 +23,8 @@ export const msg = {
   notEnabled: (): string => `${PREFIX}Last Request is not enabled.`,
   invalid: (query: string): string => `${PREFIX}Invalid Last Request: ${hl(query)}`,
   unavailable: (type: LRType): string => `${PREFIX}${hl(lrName(type))} is not available right now.`,
+  needsTier: (type: LRType, tier: number): string =>
+    `${PREFIX}${hl(lrName(type))} is for ${hl(`Tier ${String(tier)}+`)} supporters only.`,
   cannotLR: (reason: string): string => `${PREFIX}You cannot LR, ${C.BlueGrey}${reason}${C.Default}.`,
   cannotLRWith: (name: string, reason: string): string =>
     `${PREFIX}You cannot LR ${name}, ${C.BlueGrey}${reason}${C.Red}.`,

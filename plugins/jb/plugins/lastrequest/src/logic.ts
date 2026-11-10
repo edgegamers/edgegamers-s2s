@@ -408,3 +408,35 @@ export const COINFLIP_EVENTS: readonly string[] = [
 export function coinflipResult(guardCalledHeads: boolean, landedHeads: boolean): "guard_win" | "prisoner_win" {
   return guardCalledHeads === landedHeads ? "guard_win" : "prisoner_win";
 }
+
+// ---------------------------------------------------------------------------------------------
+// Donator tier gating
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * SourceMod admin-flag letters → an ADMFLAG bitmask. a..n are bits 0..13, z is ROOT (bit 14),
+ * o..t are CUSTOM1..6 (bits 15..20). Unknown letters are ignored; "" is 0.
+ */
+export function flagsFromLetters(letters: string): number {
+  let mask = 0;
+  for (const ch of letters.toLowerCase()) {
+    const c = ch.charCodeAt(0);
+    if (ch === "z") mask |= 1 << 14;
+    else if (c >= 97 && c <= 110) mask |= 1 << (c - 97);
+    else if (c >= 111 && c <= 116) mask |= 1 << (c - 111 + 15);
+  }
+  return mask >>> 0;
+}
+
+/**
+ * The admin flag a Dedicated Supporter of `tier` holds. `tierFlags` lists one flag letter per tier,
+ * lowest first (default `tsrq`: Silver t, Gold s, Platinum r, Royal q). MAUL stacks tiers downward
+ * (tier N inherits donator_tier1..N), so holding tier N's flag means tier N or higher. Returns 0
+ * (no requirement) when `tier` is 0 or less; a tier past the list uses the last letter.
+ */
+export function donatorTierMask(tier: number, tierFlags: string): number {
+  if (tier <= 0) return 0;
+  const letters = tierFlags.replace(/[^a-z]/gi, "");
+  if (letters === "") return 0;
+  return flagsFromLetters(letters[Math.min(tier, letters.length) - 1]);
+}

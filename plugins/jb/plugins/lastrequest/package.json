@@ -50,6 +50,16 @@
         "default": false,
         "description": "Offer the Race LR (off by default, as in the original plugin)."
       },
+      "lr_gun_toss_min_tier": {
+        "type": "int",
+        "default": 3,
+        "description": "Lowest Dedicated Supporter tier that may pick Gun Toss (0 = everyone, 1-8)."
+      },
+      "lr_donator_tier_flags": {
+        "type": "string",
+        "default": "tsrq",
+        "description": "One SourceMod flag letter per donator tier, lowest first (t Silver, s Gold, r Platinum, q Royal)."
+      },
       "rebel_on": {
         "type": "bool",
         "default": true,
