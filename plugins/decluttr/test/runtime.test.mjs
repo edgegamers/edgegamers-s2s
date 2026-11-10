@@ -84,3 +84,18 @@ test('enabled deadchat opens spectators/public between rounds while team privacy
   const v = { sender: dead, receiver: alive, teamOnly: false, canHear: true }; assert.equal(f.hear(v), 2); assert.equal(v.canHear, false);
   f.event('round_end', {}); assert.equal(f.hear(v), 2); assert.equal(v.canHear, true); v.teamOnly = true; f.hear(v); assert.equal(v.canHear, false);
 });
+test('round and spawn render resets keep hidden legs hidden and visible choices visible', () => {
+  const f = fixture({ hud: { legs: true } }), hidden = f.add(0), visible = f.add(1); f.mod.OnPluginStart();
+  f.cmd('sm_legs', 1); f.frame();
+  assert.equal(hidden.pawn.render, 0xfeffffff); assert.equal(visible.pawn.render, 0xffffffff);
+  f.event('round_start', {});
+  for (let frame = 0; frame < 3; frame++) {
+    hidden.pawn.render = visible.pawn.render = 0xffffffff;
+    f.event('player_spawn', { userid: 0 }); f.event('player_spawn', { userid: 1 }); f.frame();
+    assert.equal(hidden.pawn.render, 0xfeffffff); assert.equal(visible.pawn.render, 0xffffffff);
+  }
+  hidden.pawn.isValid = false;
+  hidden.pawn = { ...hidden.pawn, isValid: true, ref: { ...hidden.pawn.ref, id: 1000 }, render: 0xffffffff };
+  f.event('player_spawn', { userid: 0 }); f.frame(); assert.equal(hidden.pawn.render, 0xfeffffff);
+  f.mod.OnPluginEnd(); assert.equal(hidden.pawn.render, 0xffffffff); assert.equal(visible.pawn.render, 0xffffffff);
+});

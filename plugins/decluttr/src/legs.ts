@@ -29,8 +29,9 @@ export function createLegs(enabled: () => boolean) {
       if (!enabled() || !state.hidden || !pawn?.isValid) continue;
       const key = `${pawn.ref.index}:${pawn.ref.id}`; active.add(key);
       // Alpha 254 hides one's first-person legs. Preserve other owners' transparency.
+      // Spawn/round setup can reset render on the same pawn, even after we applied it.
       const before = pawn.render;
-      if (renders.has(key) || before === null || before >>> 24 !== 255) continue;
+      if (before === null || before >>> 24 !== 255) continue;
       const applied = ((before & 0x00ffffff) | 0xfe000000) >>> 0;
       pawn.render = applied;
       if (pawn.render === applied) renders.set(key, { pawn, original: before, applied });
