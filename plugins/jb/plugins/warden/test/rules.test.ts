@@ -9,7 +9,9 @@ import {
   parseCountdown,
   parseRoll,
   peaceDuration,
+  prisonerLockApplies,
   rollBetween,
+  voiceRule,
 } from "../src/rules.ts";
 
 test("peace duration scales with living prisoners and the reason", () => {
@@ -108,4 +110,40 @@ test("peaceCoversSpawn: a respawned player stays muted only while peace covers t
   assert.equal(peaceCoversSpawn(prisoner, 31_000, 30_000, 10_000), false);
   // no team (spectator/unassigned) is never covered
   assert.equal(peaceCoversSpawn(1, 5_000, 30_000, 10_000), false);
+});
+
+test("voice rule: speak-to-all, dead channel, warden, peace and the prisoner lock", () => {
+  const quiet = { nowMs: 1000, peaceEndMs: 0, guardPeaceEndMs: 0, prisonerLock: false };
+  const peace = { nowMs: 1000, peaceEndMs: 30_000, guardPeaceEndMs: 10_000, prisonerLock: false };
+  const guardsBack = { ...peace, nowMs: 15_000 };
+  const locked = { ...quiet, prisonerLock: true };
+  const t = { alive: true, team: 2, warden: false, speakToAll: false };
+  const ct = { ...t, team: 3 };
+
+  assert.equal(voiceRule(t, quiet), "open");
+  assert.equal(voiceRule({ ...t, alive: false }, quiet), "dead");
+  assert.equal(voiceRule({ ...ct, alive: false }, peace), "dead");
+  assert.equal(voiceRule({ ...t, team: 1, alive: false }, quiet), "dead"); // spectators
+
+  // Peace mutes everyone alive but the warden; guards come back first.
+  assert.equal(voiceRule(t, peace), "muted");
+  assert.equal(voiceRule(ct, peace), "muted");
+  assert.equal(voiceRule({ ...ct, warden: true }, peace), "open");
+  assert.equal(voiceRule(ct, guardsBack), "open");
+  assert.equal(voiceRule(t, guardsBack), "muted");
+
+  // !speaktoall is the only way past peace or death.
+  assert.equal(voiceRule({ ...t, speakToAll: true }, peace), "open");
+  assert.equal(voiceRule({ ...t, alive: false, speakToAll: true }, quiet), "open");
+
+  // The prisoner lock mutes living prisoners only.
+  assert.equal(voiceRule(t, locked), "muted");
+  assert.equal(voiceRule(ct, locked), "open");
+  assert.equal(voiceRule({ ...t, alive: false }, locked), "dead");
+});
+
+test("prisoner lock is off at 0 and applies from the configured population", () => {
+  assert.equal(prisonerLockApplies(40, 0), false);
+  assert.equal(prisonerLockApplies(19, 20), false);
+  assert.equal(prisonerLockApplies(20, 20), true);
 });

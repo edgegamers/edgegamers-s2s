@@ -81,7 +81,7 @@ export function setWarden(slot: number): boolean {
   centerAll(msg.newWardenCenter(ref.name));
   playToAll(cfg.soundNew);
   assignWardenIcon(slot);
-  peaceOnWarden(slot);
+  peaceOnWarden();
   log(`${describe(slot)} is now the warden.`);
 
   unblueTimer?.kill();

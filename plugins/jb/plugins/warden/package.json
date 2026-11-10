@@ -109,6 +109,11 @@
         "default": 60,
         "description": "Seconds between !peace uses by the warden / chat admins."
       },
+      "prisoner_mute_min_players": {
+        "type": "int",
+        "default": 0,
+        "description": "Mute living prisoners until last request when at least this many players are on teams at round start (0 = off)."
+      },
       "max_chickens": {
         "type": "int",
         "default": 5,

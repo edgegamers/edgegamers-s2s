@@ -165,3 +165,47 @@ export function peaceCoversSpawn(team: number, nowMs: number, peaceEndMs: number
   if (team === 3) return nowMs < guardPeaceEndMs;
   return false;
 }
+
+/**
+ * How one player's voice is routed right now:
+ * - `open`: no rule from us, everyone hears them (the engine decides).
+ * - `dead`: only other dead players (and spectators) hear them, TTT-style.
+ * - `muted`: nobody hears them.
+ */
+export type VoiceRule = "open" | "dead" | "muted";
+
+export interface VoiceSubject {
+  alive: boolean;
+  /** 2 = prisoner, 3 = guard. */
+  team: number;
+  warden: boolean;
+  /** An admin who turned on `!speaktoall`. */
+  speakToAll: boolean;
+}
+
+export interface VoiceState {
+  nowMs: number;
+  peaceEndMs: number;
+  guardPeaceEndMs: number;
+  /** Living prisoners are muted until last request (`prisoner_mute_min_players`). */
+  prisonerLock: boolean;
+}
+
+/**
+ * The voice rule for one player. `!speaktoall` beats everything; the dead only reach the dead;
+ * the warden always has a voice; then the running peace window and the prisoner lock apply.
+ * Admins get no automatic exemption: they use `!speaktoall`.
+ */
+export function voiceRule(s: VoiceSubject, v: VoiceState): VoiceRule {
+  if (s.speakToAll) return "open";
+  if (!s.alive) return "dead";
+  if (s.warden) return "open";
+  if (peaceCoversSpawn(s.team, v.nowMs, v.peaceEndMs, v.guardPeaceEndMs)) return "muted";
+  if (v.prisonerLock && s.team === 2) return "muted";
+  return "open";
+}
+
+/** Whether prisoners are muted until LR this round: `minPlayers` 0 disables it. */
+export function prisonerLockApplies(playersOnTeams: number, minPlayers: number): boolean {
+  return minPlayers > 0 && playersOnTeams >= minPlayers;
+}
