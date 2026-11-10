@@ -1,5 +1,11 @@
 # @edgegamers/decluttr
 
+## 0.2.1
+
+### Patch Changes
+
+- c98db43: Reapply hidden leg preferences after round starts and respawns reset the player's render alpha, without requiring another /legs toggle. Preserve visible preferences, player colors and other plugins' transparency effects.
+
 ## 0.2.0
 
 ### Minor Changes
