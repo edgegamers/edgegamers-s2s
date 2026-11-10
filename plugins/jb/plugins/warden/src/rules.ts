@@ -219,9 +219,9 @@ export function targetPattern(argString: string): string {
 export type SingleTarget<T> = { kind: "one"; target: T } | { kind: "none" } | { kind: "many" };
 
 /**
- * Pick exactly one target from `pool` (the players the command may act on). `#userid` and `@...`
- * patterns are resolved by the framework (`native`, from `Player.target`) and only narrowed to the
- * pool. A plain name is matched against the pool itself, SourceMod style: a case-insensitive exact
+ * Pick exactly one target from `pool` (the players the command may act on). A `#userid` is resolved
+ * by the framework (`native`, from `Player.target`) and only narrowed to the pool. `@` group targets
+ * (`@me`, `@all`, ...) are not accepted. A plain name is matched against the pool itself, SourceMod style: a case-insensitive exact
  * name wins, otherwise a unique partial match. Matching in the pool matters because the framework
  * resolves names across every connected player, so an exact match on a dead or guard player would
  * otherwise hide the living prisoner the warden meant.
@@ -236,7 +236,8 @@ export function pickSingleTarget<T>(
   const pick = (list: readonly T[]): SingleTarget<T> =>
     list.length === 1 ? { kind: "one", target: list[0] } : list.length === 0 ? { kind: "none" } : { kind: "many" };
   if (pattern === "") return { kind: "none" };
-  if (pattern.startsWith("#") || pattern.startsWith("@")) {
+  if (pattern.startsWith("@")) return { kind: "none" };
+  if (pattern.startsWith("#")) {
     const hit = new Set(native.map(slotOf));
     return pick(pool.filter((t) => hit.has(slotOf(t))));
   }

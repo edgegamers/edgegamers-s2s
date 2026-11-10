@@ -156,7 +156,7 @@ test("!st target text keeps spaces and drops outer quotes", () => {
   assert.equal(targetPattern(""), "");
 });
 
-test("!st picks one living prisoner by name, #userid or @me", () => {
+test("!st picks one living prisoner by name or #userid, never an @ group", () => {
   type P = { slot: number; name: string };
   const gabe = { slot: 1, name: "Gabe" };
   const gabe2 = { slot: 2, name: "gabe2" };
@@ -173,8 +173,9 @@ test("!st picks one living prisoner by name, #userid or @me", () => {
   assert.deepEqual(pick("zed"), { kind: "none" });
   // The framework's exact match on someone outside the pool must not hide a living prisoner.
   assert.deepEqual(pick("gabe", [deadGabe], [gabe2, clan]), { kind: "one", target: gabe2 });
-  // #userid / @me come from the framework, narrowed to the pool (fresh objects, matched by slot).
+  // #userid comes from the framework, narrowed to the pool (fresh objects, matched by slot).
   assert.deepEqual(pick("#7", [{ slot: 3, name: "EG | Bob" }]), { kind: "one", target: clan });
-  assert.deepEqual(pick("@me", [deadGabe]), { kind: "none" });
+  assert.deepEqual(pick("@me", [gabe]), { kind: "none" }, "@ targets are rejected");
+  assert.deepEqual(pick("@all", pool), { kind: "none" });
   assert.deepEqual(pick(""), { kind: "none" });
 });
