@@ -2,7 +2,7 @@
  * Shot for Shot / Mag for Mag (C# `BulletForBullet`). The prisoner picks a pistol; after 5s both
  * get it empty and a random player gets the first shot (one bullet, or a full magazine for mag
  * for mag). Only the shooter ever holds ammo; once their magazine is empty the turn passes and the
- * other player is loaded. Firing a loaded gun out of turn is cheating and kills you. Knives at 30s; with `lr_b4b_kill_by_health` the lower-HP player dies at 60s.
+ * other player is loaded. Neither player can drop their weapon. Firing a loaded gun out of turn is cheating and kills you. Knives at 30s; with `lr_b4b_kill_by_health` the lower-HP player dies at 60s.
  */
 import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Weapon } from "@s2script/cs2";
@@ -162,5 +162,10 @@ export class BulletForBullet extends TeleportingRequest {
     if (this.state === "pending") return false;
     if (!this.isParticipant(slot)) return false;
     return !isKnifeDef(defIndex);
+  }
+
+  /** Neither participant can drop their weapon for the whole LR. */
+  preventDrop(slot: number): boolean {
+    return this.isParticipant(slot);
   }
 }

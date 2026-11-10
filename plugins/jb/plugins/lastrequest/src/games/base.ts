@@ -53,6 +53,11 @@ export abstract class LastRequest {
     return this.isParticipant(slot);
   }
 
+  /** Refuse a participant's `drop` command? Default: dropping is allowed. */
+  preventDrop(_slot: number): boolean {
+    return false;
+  }
+
   /** A participant dropped/threw a weapon (already tinted by the manager). */
   onWeaponDrop(_slot: number, _weapon: Weapon): void {}
   /** A participant fired (`weapon_fire`). */

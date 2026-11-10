@@ -264,6 +264,13 @@ export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
   return HookResult.Handled;
 }
 
+/** A player's `drop` command: refused (true) when their LR forbids dropping. */
+export function onDropCommand(slot: number): boolean {
+  if (!getActiveLR(slot)?.preventDrop(slot)) return false;
+  HintText.to(slot, msg.cannotDrop());
+  return true;
+}
+
 /** A pawn dropped a weapon (C# `OnDrop`): tint it by team and tell the owner's LR. */
 export function onWeaponDrop(owner: Player, weaponRef: EntityRef | null): void {
   const lr = getActiveLR(owner.slot);

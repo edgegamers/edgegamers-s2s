@@ -96,6 +96,8 @@ export function OnPluginStart(): void {
     endRaceCommand(cmd);
     return HookResult.Handled;
   });
+  // The client `drop` command (G): an LR may forbid dropping (Shot for Shot / Mag for Mag).
+  command.onClientCommand("drop", (slot) => (lr.onDropCommand(slot) ? HookResult.Handled : HookResult.Continue));
   command.admin("sm_lrdebug", ADMFLAG.ROOT, (cmd) => {
     lrDebugCommand(cmd);
     return HookResult.Handled;

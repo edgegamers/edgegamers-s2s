@@ -80,6 +80,7 @@ export const msg = {
   // --- shot for shot / mag for mag -------------------------------------------------------------
   goesFirst: (name: string): string => `${PREFIX}Randomly selected ${name} to go first.`,
   cheated: (name: string): string => `${PREFIX}${name} cheated.`,
+  cannotDrop: (): string => "You can't drop your weapon during this last request.",
   choosePistol: "Choose Pistol",
   chooseRifle: "Choose Rifle",
 
