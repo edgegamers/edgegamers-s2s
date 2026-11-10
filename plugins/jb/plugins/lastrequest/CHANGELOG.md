@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-lastrequest
 
+## 1.1.0
+
+### Minor Changes
+
+- 0d9f63d: Gun Toss is limited to Dedicated Supporters of tier 3 and up by default (`lr_gun_toss_min_tier`, 0 = everyone; tier flags set by `lr_donator_tier_flags`).
+
 ## 1.0.5
 
 ### Patch Changes
