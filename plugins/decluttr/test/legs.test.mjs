@@ -34,6 +34,22 @@ test('visible preference survives plugin reload and map reset', () => {
   const f = fixture(), p = f.add(0); f.values.set(p.client, 'visible'); f.api.start(); f.api.update();
   assert.equal(p.pawn.render, 0xff123456); f.api.reset(); f.api.update(); assert.equal(p.pawn.render, 0xff123456);
 });
+test('hidden preference reapplies after a round resets the same pawn render', () => {
+  const f = fixture(), p = f.add(0); f.values.set(p.client, 'hidden'); f.api.start(); f.api.update();
+  assert.equal(p.pawn.render, 0xfe123456);
+  for (const delay of [16, 200, 660]) {
+    f.advance(delay); p.pawn.render = 0xff123456; f.api.update();
+    assert.equal(p.pawn.render, 0xfe123456);
+  }
+  assert.equal(f.values.get(p.client), 'hidden');
+  assert.equal(f.api.toggle(p.client), false); assert.equal(p.pawn.render, 0xff123456);
+});
+test('reapplication preserves external transparency and restores the latest opaque color', () => {
+  const f = fixture(), p = f.add(0); f.api.start(); f.api.update();
+  p.pawn.render = 0x50654321; f.api.update(); assert.equal(p.pawn.render, 0x50654321);
+  p.pawn.render = 0xff654321; f.api.update(); assert.equal(p.pawn.render, 0xfe654321);
+  f.enable(false); f.api.update(); assert.equal(p.pawn.render, 0xff654321);
+});
 test('render ownership preserves other effects and stale connections never write new occupants', () => {
   const f = fixture(), old = f.add(0); f.api.start(); f.api.update(); old.pawn.render = 0x50123456;
   f.api.update(); f.api.dispose(); assert.equal(old.pawn.render, 0x50123456);
