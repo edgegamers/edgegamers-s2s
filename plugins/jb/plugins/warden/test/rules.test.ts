@@ -9,8 +9,10 @@ import {
   parseCountdown,
   parseRoll,
   peaceDuration,
+  pickSingleTarget,
   prisonerLockApplies,
   rollBetween,
+  targetPattern,
   voiceRule,
 } from "../src/rules.ts";
 
@@ -146,4 +148,34 @@ test("prisoner lock is off at 0 and applies from the configured population", () 
   assert.equal(prisonerLockApplies(40, 0), false);
   assert.equal(prisonerLockApplies(19, 20), false);
   assert.equal(prisonerLockApplies(20, 20), true);
+});
+
+test("!st target text keeps spaces and drops outer quotes", () => {
+  assert.equal(targetPattern("  EG | Gabe  "), "EG | Gabe");
+  assert.equal(targetPattern('"EG | Gabe"'), "EG | Gabe");
+  assert.equal(targetPattern(""), "");
+});
+
+test("!st picks one living prisoner by name or #userid, never an @ group", () => {
+  type P = { slot: number; name: string };
+  const gabe = { slot: 1, name: "Gabe" };
+  const gabe2 = { slot: 2, name: "gabe2" };
+  const clan = { slot: 3, name: "EG | Bob" };
+  const deadGabe = { slot: 4, name: "gabe" }; // a dead player or guard, outside the pool
+  const pool: P[] = [gabe, gabe2, clan];
+  const pick = (pattern: string, native: P[] = [], from: P[] = pool) =>
+    pickSingleTarget(pattern, native, from, (p) => p.name, (p) => p.slot);
+
+  assert.deepEqual(pick("gabe"), { kind: "one", target: gabe }, "exact name wins over partials");
+  assert.deepEqual(pick("GAB"), { kind: "many" });
+  assert.deepEqual(pick("eg | bob"), { kind: "one", target: clan }, "names with spaces");
+  assert.deepEqual(pick("bob"), { kind: "one", target: clan });
+  assert.deepEqual(pick("zed"), { kind: "none" });
+  // The framework's exact match on someone outside the pool must not hide a living prisoner.
+  assert.deepEqual(pick("gabe", [deadGabe], [gabe2, clan]), { kind: "one", target: gabe2 });
+  // #userid comes from the framework, narrowed to the pool (fresh objects, matched by slot).
+  assert.deepEqual(pick("#7", [{ slot: 3, name: "EG | Bob" }]), { kind: "one", target: clan });
+  assert.deepEqual(pick("@me", [gabe]), { kind: "none" }, "@ targets are rejected");
+  assert.deepEqual(pick("@all", pool), { kind: "none" });
+  assert.deepEqual(pick(""), { kind: "none" });
 });

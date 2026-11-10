@@ -83,6 +83,7 @@ export const msg = {
   countdownGo: CD("GO! GO! GO!"),
 
   // ── special treatment (WardenSTLocale) ───────────────────────────────────
+  stUsage: W(`Usage: ${cmd("!st <prisoner name | #userid>")}`),
   stGranted: W(`You now have ${ChatColors.Green}Special Treatment${ChatColors.White}!`),
   stGrantedCenter: "You now have Special Treatment!",
   stRevoked: W(`Your Special Treatment was ${ChatColors.Red}removed${ChatColors.White}.`),
