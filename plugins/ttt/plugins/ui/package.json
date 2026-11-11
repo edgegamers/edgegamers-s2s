@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.10"
+      "@edgegamers/ttt-core": "^2.1.0"
     }
   },
   "publishConfig": {

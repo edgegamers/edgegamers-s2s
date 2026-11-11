@@ -21,7 +21,7 @@
       "@edgegamers/decluttr": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.0.10"
+      "@edgegamers/ttt-core": "^2.1.0"
     }
   },
   "publishConfig": {

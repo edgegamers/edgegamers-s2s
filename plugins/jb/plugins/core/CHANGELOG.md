@@ -1,5 +1,12 @@
 # @edgegamers/jailbreak-core
 
+## 1.2.0
+
+### Minor Changes
+
+- a29229c: Random round-start jihad C4: add `c4_chance` (percent chance it is given at all) and `c4_min_cts` (guards alive needed, default 4).
+- 1038ce6: Jailbreak round timelines for the CS portal. Core's `OnCellsOpened` now names the player who opened the cells (`player`, and `openCells` takes an optional `slot`, which the warden's `!open` passes), and `OnRoundEnd` says whether an admin ended the round (`adminEnded`). The portal bridge now sends the whole round: live, mode changes, cells, rebels, jihad C4s, warden terms, LR availability, LRs and last guard, special days, deaths (with whether the victim and killer were rebels at that moment), prisoner-on-guard damage, round log lines, and the roster at round start and end.
+
 ## 1.1.6
 
 ### Patch Changes

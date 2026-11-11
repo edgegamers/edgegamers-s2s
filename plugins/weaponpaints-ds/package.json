@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-weaponpaints-ds",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Gates WeaponPaints skins, knives, gloves, agents, music kits, pins and StatTrak by MAUL Dedicated Supporter tier.",
   "main": "src/plugin.ts",
@@ -18,8 +18,8 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "pluginDependencies": {
-      "@edgegamers/s2s-weaponpaints": "^0.2.0",
-      "@edgegamers/s2s-maul": "^0.2.1"
+      "@edgegamers/s2s-weaponpaints": "^0.3.0",
+      "@edgegamers/s2s-maul": "^0.3.0"
     },
     "config": {
       "policy_url": {
