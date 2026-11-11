@@ -31,7 +31,7 @@ export const settings = {
   lgTWeapon: "",
   lgMaxHp: 125,
   lgTMaxHp: 200,
-  lgMinCts: 2,
+  lgMinCts: 4,
 };
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
