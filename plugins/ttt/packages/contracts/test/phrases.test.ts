@@ -63,7 +63,7 @@ test('the phrase file is plain SDK syntax: no splices or grammar markers, only c
 
 test('phrases render through the SDK with semantic colours, arguments and number formatting', () => {
   const p = load();
-  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08| \x08You have \x093\x08 point(s).\x08');
+  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
   assert.equal(p.phraseFor(-1, 'ttt.round.starting', 2.5), 'TTT | The game starts in 2.5 second(s).');
   assert.equal(p.phraseFor(-1, 'ttt.tripwire.defusing', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
   assert.equal(p.phraseFor(-1, 'ttt.missing.phrase'), 'ttt.missing.phrase', 'an unknown key renders as itself');
@@ -119,12 +119,26 @@ test('one shared phrase uses arrows only for chat, retaining console, HUD and me
   assert.equal(p.chatPhraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
   assert.equal(p.phraseFor(-1, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).');
   assert.equal(p.plainPhraseFor(3, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).');
-  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08| \x08You have \x093\x08 point(s).\x08');
+  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
   assert.equal(p.replyPhraseFor({callerSlot: 3, replySource: 'chat'}, 'ttt.shop.balance', 3), p.chatPhraseFor(3, 'ttt.shop.balance', 3));
   for (const replySource of ['console', 'server']) {
-    assert.equal(p.replyPhraseFor({callerSlot: 3, replySource}, 'ttt.shop.balance', 3), p.phraseFor(3, 'ttt.shop.balance', 3));
+    assert.equal(p.replyPhraseFor({callerSlot: 3, replySource}, 'ttt.shop.balance', 3), p.plainPhraseFor(3, 'ttt.shop.balance', 3));
   }
   assert.equal(p.chatPhraseFor(-1, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).', 'forced chat degrades to the server console');
+});
+
+test('blue and red TTT arrow templates preserve console layout and literal arguments', () => {
+  const body = 'TTT » Alice [T] | literal';
+  for (const [color, byte] of [['blue', '\x0b'], ['red', '\x07']]) {
+    const p = load({ttt: {'ttt.role.assigned': `{${color}}TTT {grey}» {1}`}});
+    assert.equal(p.phraseFor(3, 'ttt.role.assigned', body), `${byte}TTT \x08» ${body}`);
+    assert.equal(p.chatPhraseFor(3, 'ttt.role.assigned', body), `${byte}TTT \x08» ${body}`);
+    assert.equal(p.plainPhraseFor(3, 'ttt.role.assigned', body), `TTT | ${body}`);
+    assert.equal(p.phraseFor(-1, 'ttt.role.assigned', body), `TTT | ${body}`);
+  }
+  const p = load({}, {de: {ttt: {'ttt.role.assigned': '{1}'}}});
+  p.fixture.language[3] = 'de';
+  assert.equal(p.plainPhraseFor(3, 'ttt.role.assigned', body), body, 'a missing prefix never rewrites the player argument');
 });
 
 test('chat prefixes preserve translated names, prefix suppression, player data and nested colors', () => {

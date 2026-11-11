@@ -8,4 +8,4 @@
 "@edgegamers/ttt-special": patch
 ---
 
-Use grey arrow separators for existing TTT, SHOP, DNA and private fallback channel prefixes in chat. Select chat presentation at each output destination, preserving shared console, HUD, menu, Panorama and log formats, translated prefix names and literal player text.
+Declare grey arrow separators directly in TTT, SHOP and DNA chat phrase templates, and use arrows for private fallback channel prefixes in chat. Select presentation at each output destination, preserving shared console, HUD, menu, Panorama and log formats, translated prefix names and literal player text. Existing locale overrides using the former pipe separator still render with arrows in chat.

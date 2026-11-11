@@ -75,23 +75,30 @@ export function loadPhrases(): void {
  * the key itself. Colors are expanded here before the result can be nested as another SDK argument.
  */
 export function phraseFor(slot: number, key: string, ...args: (string | number)[]): string {
-  const text = applyColors(Translations.translate(slot, key, ...args.map(formatArg)));
-  return slot < 0 ? plainText(text) : text;
+  return slot < 0
+    ? plainPhraseFor(slot, key, ...args)
+    : applyColors(Translations.translate(slot, key, ...args.map(formatArg)));
 }
 
 // These are system-prefix templates owned by TTT, rather than player/channel markers or data.
 // Use the bundled phrase to declare ownership; a translator can still rename or omit its prefix.
-const pipePrefixes = ["{red}TTT {grey}| ", "{blue}SHOP {grey}| ", "{blue}DNA {grey}| "];
-const pipedChatKeys = new Set(Object.entries(PHRASES).filter(([, value]) =>
-  pipePrefixes.some(prefix => value.startsWith(prefix)),
+const systemPrefix = /^\{(?:red|blue)\}(?:TTT|SHOP|DNA) \{grey\}(?:»|\|) /;
+const prefixedChatKeys = new Set(Object.entries(PHRASES).filter(([, value]) =>
+  systemPrefix.test(value),
 ).map(([key]) => key));
+const localizedPrefix = /^((?:\{[a-z]+\})*[^{}\uFFF0|»]+ )(\{(?:grey|gray)\})[|»] /i;
+
+/** Console, menu and HUD layouts are independent of the arrow written in the chat phrase. */
+function plainTemplate(key: string, text: string): string {
+  return prefixedChatKeys.has(key) ? text.replace(localizedPrefix, "$1$2| ") : text;
+}
 
 /** Present an owned prefix in a localized template, before any player data is inserted. */
 function chatTemplate(key: string, text: string): string {
-  if (pipedChatKeys.has(key)) {
+  if (prefixedChatKeys.has(key)) {
     // Only the declared colored prefix at the start of the template is a separator. An override
     // without that structure (including an empty phrase) keeps its own wording and layout.
-    return text.replace(/^((?:\{[a-z]+\})*[^{}\uFFF0|]+ )(\{(?:grey|gray)\})\| /i, "$1$2» ");
+    return text.replace(localizedPrefix, "$1$2» ");
   }
   if (key === "ttt.chat.traitor_format") {
     return text.replace(/^(\{red\})\[([^\]{}\uFFF0]+)\] /, "$1$2 {grey}» ");
@@ -103,26 +110,30 @@ function chatTemplate(key: string, text: string): string {
 }
 
 /**
- * Chat-only rendering. Let the SDK resolve the language and argument positions with opaque
- * markers, then present the owned prefix and restore arguments in one pass. Restored data is
+ * Let the SDK resolve the language and argument positions with opaque markers, then apply the
+ * destination's prefix layout and restore arguments in one pass. Restored data is
  * never scanned for prefixes, color tags or more markers. Brace stripping matches SDK args.
  */
-export function chatPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
-  if (slot < 0) return phraseFor(slot, key, ...args); // replyToChat falls back to the server console.
+function renderTemplateFor(slot: number, key: string, args: (string | number)[], present: (key: string, text: string) => string): string {
   const text = Translations.translate(slot, key, ...args.map((_, i) => `\uFFF0${i}\uFFF1`));
-  return applyColors(chatTemplate(key, text)).replace(/\uFFF0(\d+)\uFFF1/g, (_, i: string) =>
+  return applyColors(present(key, text)).replace(/\uFFF0(\d+)\uFFF1/g, (_, i: string) =>
     String(formatArg(args[Number(i)] ?? "")).replace(/[{}]/g, ""),
   );
+}
+
+export function chatPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
+  if (slot < 0) return plainPhraseFor(slot, key, ...args); // replyToChat falls back to the server console.
+  return renderTemplateFor(slot, key, args, chatTemplate);
 }
 
 /** A player console has a slot too; only the command's actual chat destination gets arrows. */
 export function replyPhraseFor(command: Pick<CommandInvocation, "callerSlot" | "replySource">, key: string, ...args: (string | number)[]): string {
   return command.replySource === "chat"
     ? chatPhraseFor(command.callerSlot, key, ...args)
-    : phraseFor(command.callerSlot, key, ...args);
+    : plainPhraseFor(command.callerSlot, key, ...args);
 }
 
 /** Keep the recipient's language while rendering a menu, HUD label or other plain-text surface. */
 export function plainPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
-  return plainText(phraseFor(slot, key, ...args));
+  return plainText(renderTemplateFor(slot, key, args, plainTemplate));
 }
