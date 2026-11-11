@@ -24,7 +24,8 @@
     "plugins/decluttr",
     "plugins/customio",
     "plugins/extracommands",
-    "plugins/weaponpaints"
+    "plugins/weaponpaints",
+    "plugins/weaponpaints-ds"
   ],
   "s2script": {
     "workspace": {
@@ -38,7 +39,8 @@
         "plugins/decluttr",
         "plugins/customio",
         "plugins/extracommands",
-        "plugins/weaponpaints"
+        "plugins/weaponpaints",
+        "plugins/weaponpaints-ds"
       ],
       "bundles": [
         "plugins/ttt",

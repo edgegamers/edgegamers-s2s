@@ -24,7 +24,7 @@ function fixture(overrides: Record<string, unknown> = {}) {
   Object.assign(settings, overrides);
   const sdk = {
     ADMFLAG: { GENERIC: 2, ROOT: 16384 },
-    hook: { on() {}, onPre() {} }, command: { admin() {} }, watchOptional() {},
+    hook: { on() {}, onPre() {} }, command: { admin() {} }, watchOptional() {}, publish: () => ({ emit() {} }),
     config: { getBool: (key: string) => settings[key], getString: (key: string) => settings[key], getInt: (key: string) => settings[key],
       readFile: () => null, writeFile() {}, onChange() {} },
     Clients: { all: () => [...players.values()], fromSlot: (slot: number) => players.get(slot) ?? null },

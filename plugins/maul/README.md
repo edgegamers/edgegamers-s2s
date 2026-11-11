@@ -126,6 +126,19 @@ Dedicated Supporter tiers inherit `donator_tier1..N`.
 
 Output follows SourceMod's console-table convention: the wide report goes to the caller's console.
 
+## Contract for other plugins
+
+MAUL publishes `@edgegamers/s2s-maul` ([`api.d.ts`](api.d.ts)) so other plugins can read what it
+cached on connect without calling the API themselves:
+
+- `getDsTier(steamId)`: 0 for no Dedicated Supporter (or no answer yet), then 1 Silver, 2 Gold,
+  3 Platinum, 4 Royal.
+- `isVerified(steamId)`: MAUL has answered for this player.
+- `OnDsTierChanged`: a lookup finished with a different tier from the cached one (usually 0 to N
+  shortly after join).
+
+`@edgegamers/s2s-weaponpaints-ds` is the first consumer.
+
 ## API versions
 
 Both versions are fully wired for authentication, admin grants, name tagging and bans — everything
@@ -171,6 +184,7 @@ src/
   api.ts        v1 client        api-v2.ts   v2 client       v2-wire.ts  v2 shapes + pure mapping
   auth.ts       per-player verification flow, retry ladder
   grant.ts      rank -> admin flags/immunity fold (pure)
+  ds-tier.ts    the DS tier the contract reports (pure)
   rank-table.ts ranks-table default, template, parser (pure)
   bans.ts       ban hooks        names.ts    name enforcement
   presence.ts   v2 roster WebSocket
