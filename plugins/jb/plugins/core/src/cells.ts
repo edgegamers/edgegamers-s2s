@@ -19,7 +19,7 @@ import {
   SENSITIVITY_NAMES,
 } from "./cell-logic";
 import type { ButtonCandidate, Point, SensitivityLevel } from "./cell-logic";
-import { bus } from "./bus";
+import { bus, refOf } from "./bus";
 import { currentRound, isWarmup } from "./round";
 import { log } from "./logs";
 import { msg } from "./messages";
@@ -123,12 +123,13 @@ function tryOpen(): boolean {
 }
 
 /** core.openCells. */
-export function openCells(source: string): boolean {
+export function openCells(source: string, slot?: number): boolean {
   const ok = tryOpen();
   log(ok ? `Cells opened (${source}).` : `Failed to open the cells (${source}): ${lastFailure || "unknown reason"}.`);
   if (!ok) return false;
   opened = true;
-  bus()?.emit("OnCellsOpened", { round: currentRound(), source });
+  const by = slot !== undefined && slot >= 0 ? Player.fromSlot(slot) : null;
+  bus()?.emit("OnCellsOpened", { round: currentRound(), source, player: by ? refOf(by) : null });
   return true;
 }
 

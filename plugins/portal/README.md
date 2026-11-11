@@ -2,9 +2,8 @@
 
 # Portal bridge
 
-Sends game events from an EdgeGamers server to the CS portal (`edgegamers/s2s-cs-web`). This first
-slice reports Jailbreak round start and round end, so the portal's server page shows when the
-server was last seen and how many events it has sent.
+Sends game events from an EdgeGamers server to the CS portal (`edgegamers/s2s-cs-web`). It reports
+every Jailbreak round in full, which the portal turns into its round list and round timelines.
 
 Game plugins never import this one. It listens to their forwards as optional dependencies, so a
 server without it, or without a given game plugin, runs exactly as before.
@@ -50,14 +49,38 @@ A pause or a held event is logged. Fix the cause, then run `portal_resume`.
 
 Every event carries a ULID `id`, the `map` its round started on, a `round` id (a ULID made at round
 start), `seq` (0, 1, … within the round), `ts` (wall clock ms) and `data`. Durations come from the
-game's tick clock, not the wall clock.
+game's tick clock, not the wall clock: every event after the start has `data.atMs`, the ms since
+round start.
 
-| Type | When | `data` |
+A player on the wire is `{ steamId, name, team }` (`team` at that moment: `prisoner`, `guard`,
+`spectator`, `none`), plus `bot: true` for bots.
+
+| Type | From | `data` |
 | --- | --- | --- |
-| `jb.round.start` | `@edgegamers/jailbreak-core` OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans) |
-| `jb.round.end` | OnRoundEnd | `number`, `winner` (`prisoner`, `guard`, `none`), `mode` (`normal`, `lastrequest`, `lastguard`, `specialday`), `players`, `durationMs` (start to end), `liveMs` (freeze time end to end, or null) |
+| `jb.round.start` | core OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans), `bots`, `warmup`, `roster` (players on a team) |
+| `jb.round.live` | core OnRoundLive | (none) |
+| `jb.round.end` | core OnRoundEnd | `number`, `winner` (`prisoner`, `guard`, `none`), `mode` (`normal`, `lastrequest`, `lastguard`, `specialday`), `players`, `bots`, `adminEnded`, `roster`, `durationMs` (start to end), `liveMs` (freeze time end to end, or null) |
+| `jb.mode` | core OnModeChanged | `mode`, `previous` |
+| `jb.cells` | core OnCellsOpened | `source` (`warden`, `auto`, `admin`, `specialday`), `by` (player, or null) |
+| `jb.rebel` | core OnRebelChanged | `player`, `rebel` (marked or cleared), `reason` |
+| `jb.bomb` | core OnBombDetonated | `player` (the bomber), `killed`, `killedGuards` |
+| `jb.log` | core OnLog | `message` (the `!logs` line, at most 512 characters) |
+| `jb.warden.assigned` | warden OnWardenAssigned | `player` |
+| `jb.warden.removed` | warden OnWardenRemoved | `player`, `reason` (`pass`, `fire`, `death`, `disconnect`, `team_change`, `admin`, `round_end`) |
+| `jb.lr.enabled` | lastrequest OnLREnabled | `prisoners` (alive when LR became available) |
+| `jb.lr.start` | OnLRStart | `lr: { id, type, prisoner, guard }` |
+| `jb.lr.end` | OnLREnd | `lr`, `result` (`prisoner_win`, `guard_win`, `timed_out`, `interrupted`) |
+| `jb.lastguard.start` | OnLastGuardStart | `guard`, `prisoners` |
+| `jb.lastguard.end` | OnLastGuardEnd | `guard`, `result` |
+| `jb.specialday.start` / `.end` | specialdays forwards | `type`, `name`, `starterSteamId` |
+| `jb.death` | `player_death` (pre hook) | `victim`, `attacker` (null for the world or a suicide), `assister`, `weapon`, `headshot`, `victimRebel`, `attackerRebel` |
+| `jb.hurt` | `player_hurt` | prisoner on guard only: `attacker`, `victim`, `damage` (health), `weapon`, `attackerRebel` |
 
+Deaths are read in the pre hook because core clears the victim's rebel mark in its own handler.
 A round end with no start seen (the plugin or core loaded mid-round, or a map change) is not sent.
+Events between a round's end and the next start (a warden removed at round end, an LR's result,
+post-round deaths) keep the ended round's id. Warden, lastrequest and specialdays are optional:
+without one, its events are simply missing.
 
 ## Commands (server console)
 
@@ -82,9 +105,9 @@ A round end with no start seen (the plugin or core loaded mid-round, or a map ch
 
 | File | What |
 | --- | --- |
-| `src/plugin.ts` | Wiring: config, outbox open, sender timer, Jailbreak watch, commands |
+| `src/plugin.ts` | Wiring: config, outbox open, sender timer, Jailbreak watches, game events, commands |
 | `src/envelope.ts` | Event shape and the per-round builder (round id, seq, durations) — pure |
-| `src/jb.ts` | Jailbreak forward handlers — pure |
+| `src/jb.ts` | Jailbreak collector: forwards and game events to portal events — pure |
 | `src/outbox.ts` | SQLite outbox and the in-memory write buffer |
 | `src/sender.ts` | Batch sender: acks, holds, backoff, pause |
 | `src/token.ts` | API key to JWT exchange |

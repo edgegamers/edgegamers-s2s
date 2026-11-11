@@ -63,14 +63,16 @@ The warden's `!open` belongs to `@edgegamers/jailbreak-warden`, which calls `cor
 - **Order at round start**: mode reset (`OnModeChanged` if it was claimed) → log cleared → rebels
   cleared (`OnRebelChanged` reason `"round"` each) → C4 state reset → cells closed + auto-open armed
   → **`OnRoundStart`**. `OnRoundLive` on freeze end. Round end clears rebel model/screen tints and
-  blocks further rebel marks before emitting `OnRoundEnd { winner }`.
+  blocks further rebel marks before emitting `OnRoundEnd { winner, adminEnded }` (`adminEnded`
+  since 1.2.0: true when `css_debug endround` ended it).
 - **Rebels**: `markRebel(slot, seconds, reason)` only for living prisoners; refused (returns the
   current state) after `disableRebelsForRound()`. Otherwise `OnRebelRequested` (Hook) is dispatched — `Handled`/`Stop` veto. `seconds <= 0`
   uses `rebel_time`; re-marking refreshes the timer. `OnRebelChanged` fires on every transition:
   reasons on mark = the request reason (`damage`, `c4`, `admin`, …); on clear = `expired`, `death`,
   `disconnect`, `round`, or the `unmarkRebel` reason.
-- **Cells**: `openCells(source)` presses the cell button (see below); returns false if nothing
-  suitable was found. `OnCellsOpened { source }` on every successful press; `cellsOpened()` is true
+- **Cells**: `openCells(source, slot?)` presses the cell button (see below); returns false if nothing
+  suitable was found. `OnCellsOpened { source, player }` on every successful press, `player` being
+  whoever `slot` named (since 1.2.0; null for the server or auto-open); `cellsOpened()` is true
   after the first success this round.
 - **Log**: `log(message)` appends a line (timestamp = seconds since freeze end); every line is also
   emitted as `OnLog`. `describe(slot)` → `"Name #userid [CT]"`, `"Name #userid [T, rebel]"`,

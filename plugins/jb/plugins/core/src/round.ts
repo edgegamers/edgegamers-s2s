@@ -51,8 +51,13 @@ export function roundLive(): void {
 export function roundEnded(winnerTeamNum: number): TeamName {
   state.end();
   const winner = teamName(winnerTeamNum);
-  bus()?.emit("OnRoundEnd", { round: state.round, winner });
+  bus()?.emit("OnRoundEnd", { round: state.round, winner, adminEnded: state.adminEnded });
   return winner;
+}
+
+/** `css_debug endround`: the coming round end is an admin's, so stats can leave it unranked. */
+export function markAdminEnd(): void {
+  if (state.phase !== "ended") state.adminEnded = true;
 }
 
 export function mapStarted(): void {
