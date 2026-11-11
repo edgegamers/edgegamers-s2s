@@ -9,9 +9,11 @@
  */
 import { after, Clients, command, config, Database, every, fetch, Server, watchOptional } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
+import { WebSocket } from "@s2script/sdk/ws";
 import { EventBuilder, type Clock, type PortalEvent } from "./envelope.ts";
 import type { Fetch } from "./http.ts";
 import { JbEvents } from "./jb.ts";
+import { LiveClient } from "./live.ts";
 import { Outbox, OutboxWriter } from "./outbox.ts";
 import { Sender } from "./sender.ts";
 import { readSettings, type Settings } from "./settings.ts";
@@ -32,6 +34,12 @@ let sender: Sender | null = null;
 let pumpTimer: Timer | null = null;
 let lastTrim = 0;
 let idleLogged: string | null = null;
+let live: LiveClient | null = null;
+let liveKey = "";
+
+/** Optional game plugins the live channel drives; null while not loaded. */
+let weaponPaints: { reload(slot: number): boolean } | null = null;
+let weaponPaintsDs: { reloadPolicy(): void } | null = null;
 
 const writer = new OutboxWriter(Date.now, log);
 const ulid = ulidFactory();
@@ -94,6 +102,43 @@ function rebuildSender(): void {
   log(`sending to ${s.baseUrl} every ${s.batchIntervalMs / 1000}s`);
 }
 
+/** (Re)start the live channel when its URL or credentials changed. */
+function rebuildLive(): void {
+  const s = settings;
+  const key = s.liveUrl === null || s.baseUrl === null ? "" : `${s.liveUrl}|${s.baseUrl}|${s.apiKey}|${String(s.debug)}`;
+  if (key === liveKey && (live !== null) === (key !== "")) return;
+  live?.stop();
+  live = null;
+  liveKey = key;
+  if (s.liveUrl === null || s.baseUrl === null) return;
+  live = new LiveClient({
+    url: s.liveUrl,
+    tokens: new TokenClient(s.baseUrl, s.apiKey, sdkFetch, Date.now, s.httpTimeoutMs),
+    connect: (url, headers) => WebSocket.connect(url, { headers }),
+    schedule: (ms, fn) => {
+      const t = after(ms, fn);
+      return { cancel: () => t.kill() };
+    },
+    log,
+    debug: s.debug ? log : undefined,
+    onRefresh: refreshPlayer,
+    onPolicyChanged: () => weaponPaintsDs?.reloadPolicy(),
+  });
+  live.start();
+}
+
+/** A player saved skins on the web: reload them if they are on this server. */
+function refreshPlayer(steamId: string): void {
+  const wp = weaponPaints;
+  if (!wp) return;
+  for (const c of Clients.all()) {
+    if (c.isValid() && !c.isBot && c.steamId === steamId) {
+      const ok = wp.reload(c.slot);
+      if (settings.debug) log(`skins refresh for ${steamId} (slot ${String(c.slot)}): ${ok ? "reloading" : "not loaded"}`);
+    }
+  }
+}
+
 function tick(): void {
   void writer.drain();
   const dropped = writer.takeDropped();
@@ -117,6 +162,7 @@ function applySettings(): void {
     if (idleLogged !== settings.idleReason) log(`idle: ${settings.idleReason}. Set portal_url and api_key to send events.`);
     idleLogged = settings.idleReason;
     rebuildSender();
+    rebuildLive();
     return;
   }
   idleLogged = null;
@@ -129,6 +175,7 @@ function applySettings(): void {
     prev.httpTimeoutMs !== settings.httpTimeoutMs ||
     prev.debug !== settings.debug;
   if (changed || !sender) rebuildSender();
+  rebuildLive();
 }
 
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
@@ -146,12 +193,22 @@ export function OnPluginStart(): void {
     scope.own({ dispose: () => jbBuilder.reset() });
   });
 
+  watchOptional("@edgegamers/s2s-weaponpaints", (wp, scope) => {
+    weaponPaints = wp;
+    scope.own({ dispose: () => (weaponPaints = null) });
+  });
+  watchOptional("@edgegamers/s2s-weaponpaints-ds", (ds, scope) => {
+    weaponPaintsDs = ds;
+    scope.own({ dispose: () => (weaponPaintsDs = null) });
+  });
+
   command.server("portal_status", (cmd) => {
     if (settings.idleReason !== null) return cmd.reply(`[portal] idle: ${settings.idleReason}`);
     const st = sender?.status();
     const head = st
       ? `[portal] ${st.paused ? `PAUSED (${st.paused})` : st.failures > 0 ? `retrying (${st.failures} failures)` : "ok"}, sent ${st.sent} this session, last success ${st.lastSuccessAt ? new Date(st.lastSuccessAt).toISOString() : "never"}`
       : `[portal] outbox ${outbox ? "open" : "not open yet"}`;
+    cmd.reply(liveLine());
     if (!outbox) return cmd.reply(`${head}, ${writer.buffered} buffered in memory`);
     void outbox.counts().then(
       (c) => cmd.reply(`${head}; outbox ${c.pending} pending, ${c.held} held, ${writer.buffered} buffered`),
@@ -171,6 +228,20 @@ export function OnPluginStart(): void {
       (e: unknown) => cmd.reply(`[portal] release failed: ${errText(e)}`),
     );
   });
+}
+
+function liveLine(): string {
+  if (!live) return "[portal] live channel off";
+  const st = live.status();
+  const since = st.connectedAt ? ` since ${new Date(st.connectedAt).toISOString()}` : "";
+  const err = st.state !== "connected" && st.lastError ? ` (${st.lastError})` : "";
+  return `[portal] live ${st.state}${since}${err}, ${String(st.received)} message(s) this session`;
+}
+
+export function OnPluginEnd(): void {
+  live?.stop();
+  live = null;
+  liveKey = "";
 }
 
 export function OnMapStart(): void {

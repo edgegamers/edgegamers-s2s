@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Gates WeaponPaints skins, knives, gloves, agents, music kits, pins and StatTrak by MAUL Dedicated Supporter tier.",
   "main": "src/plugin.ts",
+  "types": "api.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgegamers/edgegamers-s2s.git",
@@ -15,6 +16,7 @@
   "s2script": {
     "game": "cs2",
     "interfaceProtocol": 2,
+    "publishes": "self",
     "pluginDependencies": {
       "@edgegamers/s2s-weaponpaints": "^0.2.0",
       "@edgegamers/s2s-maul": "^0.2.1"

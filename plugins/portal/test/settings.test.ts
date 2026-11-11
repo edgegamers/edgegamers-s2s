@@ -36,3 +36,9 @@ test("base64 helpers match Node's", () => {
   }
   assert.equal(normalizeBaseUrl("http://localhost:5173//"), "http://localhost:5173");
 });
+
+test("the live channel is on by default only when the plugin is configured", () => {
+  assert.equal(readSettings(reader({ live: true })).liveUrl, null);
+  assert.equal(readSettings(reader({ portal_url: "https://x", api_key: "k", live: true })).liveUrl, "wss://x/api/v1/live");
+  assert.equal(readSettings(reader({ portal_url: "https://x", api_key: "k", live: false })).liveUrl, null);
+});
