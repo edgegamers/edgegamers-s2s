@@ -46,6 +46,26 @@ is back, the backlog drains in order. A restart in between loses nothing.
 
 A pause or a held event is logged. Fix the cause, then run `portal_resume`.
 
+## Live channel
+
+Besides the outbox, the plugin holds one WebSocket to the portal's gateway
+(`wss://<portal>/api/v1/live`, authenticated with the same token) for messages that are useless when
+late. Contract: `docs/live.md` in `edgegamers/s2s-cs-web`.
+
+| Message | What the plugin does |
+| --- | --- |
+| `skins.refresh` (a player saved skins on the website) | If that player is on this server, `@edgegamers/s2s-weaponpaints` `reload(slot)`: reads their rows again and applies them, as `!wp` does |
+| `skins.policy.changed` (an admin changed the tier policy) | `@edgegamers/s2s-weaponpaints-ds` `reloadPolicy()`: fetches the policy now instead of at map start |
+
+Both plugins are optional dependencies; without them the messages are ignored.
+
+The socket reconnects by itself after any drop, waiting 2s doubling to 60s (with ±20% jitter) and
+resetting once the gateway says hello. A close with 4401 mints a new token first; a revoked key
+(4403) retries every minute. Three missed pings (75s of silence) count as a drop. After a
+reconnect the policy is refetched once, in case a change was missed. Messages sent while
+disconnected are not replayed: the player can always `!wp`, and nothing in game depends on the
+socket. Failures are logged on the first and every 10th attempt.
+
 ## Events
 
 Every event carries a ULID `id`, the `map` its round started on, a `round` id (a ULID made at round
@@ -63,7 +83,7 @@ A round end with no start seen (the plugin or core loaded mid-round, or a map ch
 
 | Command | What |
 | --- | --- |
-| `portal_status` | Sending state, events sent this session, last success, and outbox counts |
+| `portal_status` | Sending state, events sent this session, last success, outbox counts, and the live channel's state |
 | `portal_resume` | Clears a pause and puts held events back in the queue |
 
 ## Config
@@ -76,18 +96,21 @@ A round end with no start seen (the plugin or core loaded mid-round, or a map ch
 | `batch_size` | `200` | Events per batch, 1-500 |
 | `max_outbox_events` | `200000` | Unsent events kept on disk; past this the oldest are dropped and logged. 0 = no limit |
 | `http_timeout_ms` | `10000` | Per-request timeout |
-| `debug` | `false` | Log every event queued and batch sent |
+| `live` | `true` | Hold the live WebSocket (skin changes from the website apply at once) |
+| `live_url` | `""` | Live channel URL; empty = `portal_url` as `ws(s)://…/api/v1/live` |
+| `debug` | `false` | Log every event queued and batch sent, and every live message |
 
 ## Files
 
 | File | What |
 | --- | --- |
-| `src/plugin.ts` | Wiring: config, outbox open, sender timer, Jailbreak watch, commands |
+| `src/plugin.ts` | Wiring: config, outbox open, sender timer, live channel, Jailbreak and WeaponPaints watches, commands |
 | `src/envelope.ts` | Event shape and the per-round builder (round id, seq, durations) — pure |
 | `src/jb.ts` | Jailbreak forward handlers — pure |
 | `src/outbox.ts` | SQLite outbox and the in-memory write buffer |
 | `src/sender.ts` | Batch sender: acks, holds, backoff, pause |
 | `src/token.ts` | API key to JWT exchange |
+| `src/live.ts` | Live WebSocket client: reconnect backoff, heartbeat watchdog, message routing — pure |
 | `src/ulid.ts`, `src/http.ts`, `src/settings.ts` | Helpers |
 
 The portal side of the contract is `docs/server-api.md` in `edgegamers/s2s-cs-web`.
