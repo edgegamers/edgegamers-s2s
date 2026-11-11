@@ -21,7 +21,8 @@ read it.
 
 The policy comes from the CS portal when `policy_url` is set (for EdgeGamers,
 `https://<portal>/api/skins/policy`), where admins edit it at `/admin/skins`. It is fetched at
-every map start and by `wp_ds_reload` (server console). A good answer is saved to
+every map start, by `wp_ds_reload` (server console), and when the portal says it changed (through
+`@edgegamers/s2s-portal`'s live channel, which calls this plugin's `reloadPolicy()`). A good answer is saved to
 `addons/s2script/configs/weaponpaints_ds_policy.json` as the last good copy, and everyone's items
 are re-applied if it changed. If the portal cannot be reached or answers with something malformed,
 the error is logged and the current policy stays in force.

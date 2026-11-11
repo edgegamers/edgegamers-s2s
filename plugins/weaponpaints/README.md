@@ -102,6 +102,8 @@ decide who may use what without WeaponPaints knowing about it:
 - `OnApplyRequested` runs just before a saved item is put on the player. Handled or Stop applies
   the default this time; the saved row is left alone, so the item returns when it is allowed again.
 - `refresh(slot)` re-applies a player's loaded selections without a database reload.
+- `reload(slot)` reads the player's selections from the database again and applies them, like
+  `!wp`. The portal bridge calls it when a player saves a skin on the website.
 
 With no listener installed, behaviour is exactly as before. A listener that throws is ignored.
 EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter tiers).

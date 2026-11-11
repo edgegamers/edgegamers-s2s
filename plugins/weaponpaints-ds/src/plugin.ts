@@ -7,7 +7,7 @@
 // A refused apply only shows the default item: the player's saved rows are never touched, so a
 // lapsed supporter gets everything back on resubscribing.
 
-import { Chat, Clients, command, config, HookResult, use } from "@s2script/sdk";
+import { Chat, Clients, command, config, HookResult, publish, use } from "@s2script/sdk";
 import { fetch } from "@s2script/sdk/http";
 import type { HookResultValue } from "@s2script/sdk";
 import { ChatColors } from "@s2script/cs2";
@@ -45,9 +45,11 @@ function loadPolicy(): string {
  * Fetch the policy from the portal. A good answer replaces the policy and the file (the last good
  * copy); anything else is logged and the current policy stays. Re-applies items when it changed.
  */
-async function fetchPolicy(wp: WeaponPaints): Promise<void> {
-  const url = config.getString("policy_url").trim();
-  if (url === "") return;
+async function fetchPolicy(wp: WeaponPaints, bustCache = false): Promise<void> {
+  const base = config.getString("policy_url").trim();
+  if (base === "") return;
+  // After a change notice, skip any HTTP cache in between (the endpoint allows 30 s of caching).
+  const url = bustCache ? `${base}${base.includes("?") ? "&" : "?"}t=${String(Date.now())}` : base;
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
     const agent = config.getString("user_agent").trim();
@@ -91,6 +93,11 @@ function guard(what: string, fn: () => HookResultValue): HookResultValue {
 let weaponPaints: WeaponPaints | null = null;
 
 export function OnPluginStart(): void {
+  publish("@edgegamers/s2s-weaponpaints-ds", {
+    reloadPolicy: (): void => {
+      if (weaponPaints) void fetchPolicy(weaponPaints, true);
+    },
+  });
   const maul = use("@edgegamers/s2s-maul");
   const wp = use("@edgegamers/s2s-weaponpaints");
   weaponPaints = wp;

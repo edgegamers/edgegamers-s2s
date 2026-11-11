@@ -49,9 +49,16 @@ export interface WeaponPaints {
    * Returns false when the player has nothing loaded or is not in game.
    */
   refresh(slot: number): boolean;
+  /**
+   * Read the player's selections from the database again, then put them on the player, as
+   * `!wp` does. For a change saved somewhere else (the CS portal). Returns false when the slot
+   * holds no human player or the database is not connected; true means the reload started.
+   */
+  reload(slot: number): boolean;
 }
 
 export declare function refresh(slot: number): boolean;
+export declare function reload(slot: number): boolean;
 
 export interface Contract {
   methods: WeaponPaints;

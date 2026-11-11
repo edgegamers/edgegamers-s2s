@@ -2,7 +2,7 @@
   "name": "@edgegamers/s2s-portal",
   "version": "0.0.0",
   "type": "module",
-  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox: Jailbreak round start and end, and TTT rounds, kills, bodies, purchases and special rounds.",
+  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak round start and end; TTT rounds, kills, bodies, purchases and special rounds), and holds a live WebSocket that applies skin changes made on the portal.",
   "main": "src/plugin.ts",
   "repository": {
     "type": "git",
@@ -19,7 +19,9 @@
       "@edgegamers/jailbreak-core": "^1.1.0",
       "@edgegamers/ttt-core": "^2.1.0",
       "@edgegamers/ttt-shop": "^2.0.0",
-      "@edgegamers/ttt-special": "^2.0.0"
+      "@edgegamers/ttt-special": "^2.0.0",
+      "@edgegamers/s2s-weaponpaints": "^0.2.0",
+      "@edgegamers/s2s-weaponpaints-ds": "^0.0.0"
     },
     "config": {
       "portal_url": {
@@ -51,6 +53,16 @@
         "type": "int",
         "default": 10000,
         "description": "Per-request timeout for portal calls."
+      },
+      "live": {
+        "type": "bool",
+        "default": true,
+        "description": "Hold a WebSocket to the portal so skin changes made on the website apply in game at once. Off = players use !wp, and the policy updates at map start."
+      },
+      "live_url": {
+        "type": "string",
+        "default": "",
+        "description": "Live channel URL. Empty = portal_url's /api/v1/live as ws(s)://. Set only if the gateway is on another host."
       },
       "debug": {
         "type": "bool",
