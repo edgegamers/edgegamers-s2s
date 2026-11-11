@@ -1,0 +1,64 @@
+{
+  "name": "@edgegamers/s2s-portal",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox. Jailbreak round start and end for now.",
+  "main": "src/plugin.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/portal"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "s2script": {
+    "game": "cs2",
+    "interfaceProtocol": 2,
+    "optionalPluginDependencies": {
+      "@edgegamers/jailbreak-core": "^1.1.0"
+    },
+    "config": {
+      "portal_url": {
+        "type": "string",
+        "default": "",
+        "description": "Portal root, e.g. https://cs.edgegamers.com. Events go to {root}/api/v1/events. Empty = the plugin stays idle."
+      },
+      "api_key": {
+        "type": "string",
+        "default": "",
+        "description": "This server's API key (egs_...), shown once when an admin registers the server under Servers in the portal. Empty = the plugin stays idle."
+      },
+      "batch_interval_ms": {
+        "type": "int",
+        "default": 5000,
+        "description": "How often the sender drains the outbox, in ms. Floored at 1000."
+      },
+      "batch_size": {
+        "type": "int",
+        "default": 200,
+        "description": "Most events per batch. Clamped to 1-500 (the portal's limit)."
+      },
+      "max_outbox_events": {
+        "type": "int",
+        "default": 200000,
+        "description": "Most unsent events kept on disk. Past this the oldest are dropped and logged. 0 = no limit."
+      },
+      "http_timeout_ms": {
+        "type": "int",
+        "default": 10000,
+        "description": "Per-request timeout for portal calls."
+      },
+      "debug": {
+        "type": "bool",
+        "default": false,
+        "description": "Log every batch sent and every event queued."
+      }
+    }
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  }
+}

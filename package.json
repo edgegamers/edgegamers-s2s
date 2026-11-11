@@ -25,7 +25,8 @@
     "plugins/customio",
     "plugins/extracommands",
     "plugins/weaponpaints",
-    "plugins/weaponpaints-ds"
+    "plugins/weaponpaints-ds",
+    "plugins/portal"
   ],
   "s2script": {
     "workspace": {
@@ -40,7 +41,8 @@
         "plugins/customio",
         "plugins/extracommands",
         "plugins/weaponpaints",
-        "plugins/weaponpaints-ds"
+        "plugins/weaponpaints-ds",
+        "plugins/portal"
       ],
       "bundles": [
         "plugins/ttt",
