@@ -32,6 +32,8 @@ export interface AuthDeps {
   log: Logger;
   getConfig: () => MaulConfig;
   getRankTable: () => RankTable;
+  /** After a lookup cached a member's profile (or a re-lookup replaced it). */
+  onProfile?: (steamId: string, profile: PlayerLookup, previous: PlayerLookup | null) => void;
 }
 
 export class Authenticator {
@@ -157,7 +159,13 @@ export class Authenticator {
 
     if (player.verified) log.info(`verified ${steamId} as a new steam user`);
 
+    const previous = this.profiles.get(steamId) ?? null;
     this.profiles.set(steamId, player);
+    try {
+      this.deps.onProfile?.(steamId, player, previous);
+    } catch (err) {
+      log.error(`profile listener threw for ${steamId}: ${String(err)}`);
+    }
     this.applyGrant(slot, steamId, player);
     this.applyName(slot, steamId, player);
     if (greet) this.printJoinMessage(slot, steamId, player);

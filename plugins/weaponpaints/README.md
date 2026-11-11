@@ -87,6 +87,21 @@ plugin's files directory under `data/` and set `skins_language`. Chat text is in
 - **On spawn**: music kit, agent model, gloves and pin.
 - **MVP**: the round's first MVP plays the MVP's chosen music kit.
 
+## Gating hooks
+
+The plugin publishes `@edgegamers/s2s-weaponpaints` ([`api.d.ts`](api.d.ts)), so another plugin can
+decide who may use what without WeaponPaints knowing about it:
+
+- `OnSelectionRequested` runs when a player picks a skin, knife, gloves, agent, music kit or pin,
+  or turns StatTrak on. Handled or Stop refuses it: nothing is saved or applied, and the listener
+  tells the player why. Picking a default (None, the stock knife or gloves) is never asked.
+- `OnApplyRequested` runs just before a saved item is put on the player. Handled or Stop applies
+  the default this time; the saved row is left alone, so the item returns when it is allowed again.
+- `refresh(slot)` re-applies a player's loaded selections without a database reload.
+
+With no listener installed, behaviour is exactly as before. A listener that throws is ignored.
+EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter tiers).
+
 ## Differences from upstream
 
 - The MVP event is edited in place before it is broadcast, rather than suppressed and re-fired.

@@ -13,7 +13,7 @@ import { watchDecluttr, decluttrCall } from '../../decluttr/src/owner.ts';
 // OnPluginStart has built it. Commands, game-event hooks, config.onChange and the BaseBans watch
 // are load-window registrations and live inside OnPluginStart.
 
-import { hook } from "@s2script/sdk/plugin";
+import { hook, publish } from "@s2script/sdk/plugin";
 import { config } from "@s2script/sdk/config";
 import { Clients } from "@s2script/sdk/clients";
 import { Chat } from "@s2script/sdk/chat";
@@ -31,6 +31,7 @@ import { Authenticator } from "./auth.ts";
 import { registerBanHooks } from "./bans.ts";
 import { registerCommands } from "./commands.ts";
 import { loadRankTable, readConfig } from "./config.ts";
+import { dsTierOf } from "./ds-tier.ts";
 import { createLogger } from "./log.ts";
 import { NameManager } from "./names.ts";
 import { channelLabel, cleanChatText, literalChatText, receives, routeStaffChat } from "./staff-chat.ts";
@@ -142,12 +143,25 @@ export function OnPluginStart(): void {
         })
       : null;
 
-  const auth = new Authenticator({
+  // The contract other plugins read the cached profile through (api.d.ts). `auth` is assigned just
+  // below; nothing can call in before OnPluginStart returns.
+  let auth: Authenticator;
+  const iface = publish("@edgegamers/s2s-maul", {
+    getDsTier: (steamId: string): number => dsTierOf(auth.profileOf(steamId)),
+    isVerified: (steamId: string): boolean => auth.isVerified(steamId),
+  });
+
+  auth = new Authenticator({
     api,
     names,
     log,
     getConfig: () => cfg,
     getRankTable: () => rankTable,
+    onProfile: (steamId, profile, previous) => {
+      const tier = dsTierOf(profile);
+      const before = dsTierOf(previous);
+      if (tier !== before) iface.emit("OnDsTierChanged", { steamId, tier, previous: before });
+    },
   });
 
   maul = { api, names, auth, presence };

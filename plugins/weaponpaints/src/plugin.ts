@@ -1,6 +1,6 @@
 // WeaponPaints 3.3a by Nereziel & daffyy, ported to s2script 2026-11-09.
 // GPL-3.0-only. See LICENSE and NOTICE for upstream attribution.
-import { after, Clients, command, Files, HookResult, nextFrame } from '@s2script/sdk';
+import { after, Clients, command, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
 import type { Client, CommandInvocation, EntityRef, HookResultValue } from '@s2script/sdk';
 import { Events, Player } from '@s2script/cs2';
 import skinsEn from '../data/skins_en.json';
@@ -19,6 +19,7 @@ import {
 import {
   configureMenus, openAgentsMenu, openGlovesMenu, openKnifeMenu, openMusicMenu, openPinsMenu, openSkinsMenu,
 } from './menus';
+import { mayApply, maySelect, setGateHandle } from './gate';
 import { loadPhrases, say } from './messages';
 import { asTeam, changedKnife, changedPaint, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
 import { loadPlayer, openStore, saveStatTrak, storeReady } from './store';
@@ -174,6 +175,10 @@ function onStatTrak(cmd: CommandInvocation): HookResultValue {
   const player = caller(cmd, false);
   const info = player ? statTrakTarget(player) : null;
   if (!player || !info) return HookResult.Handled;
+  const defindex = player.pawn?.activeWeapon?.attributeManager.item.itemDefinitionIndex ?? 0;
+  if (!info.statTrak && !maySelect(player, asTeam(player.teamNum) ?? 0, 'stattrak', { defindex })) {
+    return HookResult.Handled;
+  }
   info.statTrak = !info.statTrak;
   refreshWeapons(player);
   say(player.slot, 'wp_stattrak_action');
@@ -252,7 +257,7 @@ function registerEvents(): void {
     const player = Player.fromSlot(slot);
     const team = asTeam(player?.teamNum);
     const music = team === null ? 0 : getLoadout(slot)?.music.get(team) ?? 0;
-    if (music === 0) return;
+    if (music === 0 || !player || !mayApply(player, team ?? 0, 'music', { defindex: music })) return;
     ev.setUint64('musickitid', String(music));
     ev.setInt('nomusic', 0);
     mvpPlayed = true;
@@ -278,7 +283,17 @@ function registerEvents(): void {
 
 // ---- lifecycle -------------------------------------------------------------------------------
 
+/** The contract's refresh(): re-apply loaded selections, no database round trip. */
+function refreshSlot(slot: number): boolean {
+  const player = Player.fromSlot(slot);
+  const loadout = getLoadout(slot);
+  if (!player || !loadout || loadout.userId !== player.userId) return false;
+  reapply(player);
+  return true;
+}
+
 export function OnPluginStart(): void {
+  setGateHandle(publish('@edgegamers/s2s-weaponpaints', { refresh: refreshSlot }));
   settings = readSettings();
   configureApply(settings, catalog);
   configureMenus(settings, catalog);

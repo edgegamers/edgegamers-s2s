@@ -5,6 +5,7 @@
   "license": "GPL-3.0-only",
   "type": "module",
   "main": "src/plugin.ts",
+  "types": "api.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/edgegamers/edgegamers-s2s.git",
@@ -18,6 +19,7 @@
     "access": "public"
   },
   "files": [
+    "api.d.ts",
     "src/",
     "data/",
     "gamedata/",
@@ -29,6 +31,8 @@
   ],
   "s2script": {
     "game": "cs2",
+    "interfaceProtocol": 2,
+    "publishes": "self",
     "config": {
       "skins_language": {
         "type": "string",
