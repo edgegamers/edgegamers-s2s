@@ -108,3 +108,15 @@ test("the CS portal's /api/skins/policy answer parses as a policy", () => {
   assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 44 })), 1);
   assert.equal(requiredTier(p, item("knife", { defindex: 507, model: "weapon_knife_karambit" })), 3);
 });
+
+test("a knife finish needs the knife tier too, as on the CS portal", () => {
+  const p = parsed(JSON.stringify({ rules: [
+    { kind: "skin", minTier: 1 },
+    { kind: "knife", minTier: 2 },
+    { kind: "knife", model: "weapon_knife_karambit", minTier: 3 },
+  ] }));
+  assert.equal(requiredTier(p, item("skin", { defindex: 507, paint: 38 })), 3);
+  assert.equal(requiredTier(p, item("skin", { defindex: 505, paint: 38 })), 2);
+  assert.equal(requiredTier(p, item("stattrak", { defindex: 505 })), 2);
+  assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 38 })), 1);
+});
