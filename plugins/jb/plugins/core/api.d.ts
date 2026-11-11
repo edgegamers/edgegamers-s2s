@@ -36,6 +36,8 @@ export interface RoundEvent {
 export interface RoundEndEvent {
   round: number;
   winner: TeamName;
+  /** True when an admin ended the round (`css_debug endround`). @since 1.2.0 */
+  adminEnded: boolean;
 }
 
 export interface ModeEvent {
@@ -71,6 +73,8 @@ export interface CellsEvent {
   round: number;
   /** Who/what opened them: "warden", "auto", "admin", "specialday", … */
   source: string;
+  /** The player who opened them (the warden or an admin), or null for the server/auto. @since 1.2.0 */
+  player: PlayerRef | null;
 }
 
 export interface LogEvent {
@@ -139,8 +143,11 @@ export interface JbCore {
    */
   skipRandomBombNextRound(): void;
 
-  /** Open the cell doors (zone-tagged button first, then the auto-detected one). */
-  openCells(source: string): boolean;
+  /**
+   * Open the cell doors (zone-tagged button first, then the auto-detected one). `slot` names the
+   * player who opened them, reported on {@link CellsEvent.player} (`slot` @since 1.2.0).
+   */
+  openCells(source: string, slot?: number): boolean;
   /** True once the cells were opened this round. */
   cellsOpened(): boolean;
 
@@ -162,7 +169,7 @@ export declare function unmarkRebel(slot: number, reason: string): boolean;
 export declare function disableRebelsForRound(): void;
 export declare function giveBomb(slot: number): boolean;
 export declare function skipRandomBombNextRound(): void;
-export declare function openCells(source: string): boolean;
+export declare function openCells(source: string, slot?: number): boolean;
 export declare function cellsOpened(): boolean;
 export declare function log(message: string): void;
 export declare function describe(slot: number): string;

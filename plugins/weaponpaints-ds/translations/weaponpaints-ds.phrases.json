@@ -1,0 +1,16 @@
+{
+  "weaponpaints_ds.chat.prefix": "{blue}DS {grey}» ",
+  "weaponpaints_ds.selection.skin_requires_tier": "{red}This skin needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.knife_requires_tier": "{red}This knife needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.gloves_requires_tier": "{red}These gloves need {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.agent_requires_tier": "{red}This agent needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.music_requires_tier": "{red}This music kit needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.pin_requires_tier": "{red}This pin needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.stattrak_requires_tier": "{red}StatTrak needs {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.tier.none": "None",
+  "weaponpaints_ds.tier.silver": "Silver",
+  "weaponpaints_ds.tier.gold": "Gold",
+  "weaponpaints_ds.tier.platinum": "Platinum",
+  "weaponpaints_ds.tier.royal": "Royal",
+  "weaponpaints_ds.tier.number": "tier {yellow}{1}{green}"
+}

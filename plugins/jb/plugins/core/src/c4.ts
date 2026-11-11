@@ -16,7 +16,7 @@ import { Clients } from "@s2script/sdk";
 import { Player, Weapon } from "@s2script/cs2";
 import type { GameEvents } from "@s2script/cs2";
 import { Team, alivePlayers, isAlive } from "@edgegamers/jailbreak-shared";
-import { applyC4Damage, c4Damage, pressedNow, randomBombDecision, resolveBombIcon, DEFAULT_BOMB_ICON } from "./c4-logic";
+import { applyC4Damage, c4Damage, pressedNow, randomBombDecision, randomBombRoll, resolveBombIcon, DEFAULT_BOMB_ICON } from "./c4-logic";
 import { distanceSquared } from "./cell-logic";
 import { bus, refOf } from "./bus";
 import { currentRound } from "./round";
@@ -63,7 +63,7 @@ export function untrackBomb(ref: EntityRef | null): void {
 /**
  * Round start (C4Behavior.OnRoundStart): forget every jihad C4 and kill-feed rewrite
  * (ClearActiveC4s), then hand a C4 to a random prisoner 1s later unless the RTD Bomb reward
- * asked to skip this round.
+ * asked to skip this round, fewer than `c4_min_cts` guards are alive, or the `c4_chance` roll fails.
  */
 export function resetC4(): void {
   bombs.clear();
@@ -101,6 +101,9 @@ export function giveC4(p: Player): boolean {
 }
 
 function giveToRandomPrisoner(): void {
+  // Guards are counted here (1s in) rather than on round_start itself, when pawns may not be alive yet.
+  const guards = alivePlayers(Team.Guard).length;
+  if (!randomBombRoll(guards, config.getInt("c4_min_cts"), config.getInt("c4_chance"), Math.random())) return;
   const candidates = alivePlayers(Team.Prisoner).filter((p) => !Clients.fromSlot(p.slot)?.isBot);
   if (candidates.length === 0) return;
   giveC4(candidates[Math.floor(Math.random() * candidates.length)]);

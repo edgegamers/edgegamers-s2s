@@ -16,12 +16,14 @@
 
 import { delay } from "@s2script/sdk/timers";
 import { bindRoundEpoch, nextPreFrame } from "../core/preframe";
+import { forwardRoundEnd, forwardRoundStart } from "../core/forwards";
 import { Server } from "@s2script/sdk/server";
 import { Events, GameRules, RoundEndReason, Teams, WinPanelFinalEvent } from "@s2script/cs2";
 import { GameState, MAX_SLOTS, RoleId, Team } from "../core/enums";
 import { cfg, roundDuration } from "../core/cvars";
 import { refreshSettings } from "../core/settings";
 import { msgFor, chatMsgFor } from "../core/msgs";
+import { plainText } from "../../../../packages/contracts/presentation.ts";
 import * as reg from "../core/registry";
 import type { EventBus } from "../core/bus";
 import type { TttEvents } from "../core/events";
@@ -376,6 +378,7 @@ function beginRound(attempt = 0): void {
   // own, so whoever arms last wins and it made sure that was Speed.
   setRoundDeadline(roundDuration(game.participants));
   if (!setState(GameState.InProgress)) return;
+  forwardRoundStart(game.startedAt);
 
   const traitors = reg.aliveCount(RoleId.Traitor);
   const nonTraitors = game.participants - traitors;
@@ -504,8 +507,10 @@ export function endGame(winner: RoleId, reason?: string): void {
   engineEndedRound = false;
 
   game.winner = winner;
+  const ending = epoch;
   epoch++; // invalidate round-owned work and timers
   if (!setState(GameState.Finished)) return;
+  forwardRoundEnd(ending, winner, reason === undefined ? undefined : plainText(msgFor(-1, reason)), Server.gameTime);
 
   tellAll(
     recipient => winner === RoleId.None ? chatMsgFor(recipient, "ttt.round.ended", msgFor(recipient, reason ?? "ttt.round.unknown_end")) : chatMsgFor(recipient, "ttt.round.team_won", roleNameFor(recipient, winner)),

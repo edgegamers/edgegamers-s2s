@@ -1,7 +1,8 @@
 {
   "name": "@edgegamers/s2s-maul",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "main": "src/plugin.ts",
+  "types": "api.d.ts",
   "publishConfig": {
     "access": "restricted"
   },
@@ -23,6 +24,7 @@
       "@s2script/basebans": "^1.0.0"
     },
     "interfaceProtocol": 2,
+    "publishes": "self",
     "config": {
       "maul_url": {
         "type": "string",

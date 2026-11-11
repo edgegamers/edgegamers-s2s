@@ -74,12 +74,13 @@ import { refreshSettings } from "./core/settings";
 import { config } from "@s2script/sdk/config";
 import { installPhrases, msg, msgFor, chatMsgFor } from "./core/msgs";
 import * as reg from "./core/registry";
+import { bindForwards, forwardKill, unbindForwards } from "./core/forwards";
 
 import {
   checkEndConditions, game, initGame, inWarmup, onEngineRoundEnd, onEngineRoundStart,
   reconcileRound, roundEpoch, setRoundDeadline, setRoundSanctions, startGame, syncRosterAndAnnounce, tickCountdown, tickWaiting,
 } from "./game/game";
-import { logPurchase, logRoleAssigned } from "./game/logger";
+import { logLines, logPurchase, logRoleAssigned } from "./game/logger";
 import { roleName } from "./game/roles";
 
 import {
@@ -229,7 +230,7 @@ export function OnPluginStart(): void {
   });
 
 
-  publish('@edgegamers/ttt-core', {
+  const handle = publish('@edgegamers/ttt-core', {
     ...uiModels,
     ...featureObservations,
     ...worldActionMethods,
@@ -260,6 +261,10 @@ export function OnPluginStart(): void {
     formatKarmaWarning: (remaining) => msg('ttt.karma.warning', remaining),
     dispatchDomain: event=>copyEvent(ordered.dispatchDomain(event)),
     hasDomain: (kind) => bus.has(kind),
+  });
+  bindForwards(handle, {
+    round: roundEpoch, mapName: () => Server.mapName, steamIdOf: reg.steamIdOf, nameOf: reg.nameOf,
+    roleOf: reg.roleOf, isConnected: reg.isConnected, isAlive: reg.isAlive, roundLog: logLines,
   });
   watchOptional('@edgegamers/ttt-karma', (provider, scope) => {
     scope.own(bindKarmaProvider(provider));
@@ -315,6 +320,7 @@ export function OnPluginStart(): void {
   setSelfSpectateHandler((slot) => {
     reg.setAlive(slot, false);
     bus.emit("death", { slot, killer: -1, assister: -1, weapon: "", headshot: false });
+    forwardKill(slot, -1, "", false);
     checkEndConditions();
   });
 
@@ -665,6 +671,8 @@ export function OnPluginStart(): void {
 
 /** Best-effort cleanup. The ledger is still the teardown authority; this restores the WORLD. */
 export function OnPluginEnd(): void {
+  // Unload abandons the live round without a result, so no OnRoundEnd is sent for it.
+  unbindForwards();
   closeWorldActionAdmission();
   try { teardownWorld(bus, "unload"); } finally { disposeCvars(); }
 }

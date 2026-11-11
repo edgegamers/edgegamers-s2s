@@ -1,0 +1,47 @@
+{
+  "name": "@edgegamers/s2s-weaponpaints-ds",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Gates WeaponPaints skins, knives, gloves, agents, music kits, pins and StatTrak by MAUL Dedicated Supporter tier.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/weaponpaints-ds"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "s2script": {
+    "game": "cs2",
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "pluginDependencies": {
+      "@edgegamers/s2s-weaponpaints": "^0.3.0",
+      "@edgegamers/s2s-maul": "^0.3.0"
+    },
+    "config": {
+      "policy_url": {
+        "type": "string",
+        "default": "",
+        "description": "Portal policy endpoint, e.g. https://cs.edgegamers.com/api/skins/policy. Fetched at every map start and by wp_ds_reload; the last good copy is saved to weaponpaints_ds_policy.json. Empty = use only that file."
+      },
+      "user_agent": {
+        "type": "string",
+        "default": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36",
+        "description": "User-Agent sent with the policy request (Cloudflare 403s unrecognised agents). Empty = send none."
+      },
+      "http_timeout_ms": {
+        "type": "int",
+        "default": 8000,
+        "description": "Timeout for the policy request."
+      }
+    }
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  }
+}

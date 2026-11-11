@@ -1,7 +1,9 @@
 import {settingsNumber} from './settings';
 import { Clients } from '@s2script/sdk/clients';
 import { Chat } from '@s2script/sdk/chat';
+import type { TypedPublishHandle } from '@s2script/sdk';
 import type { CoreMethods } from '../../core/api';
+import type { Contract, TttSpecialRoundInfo } from '../api';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
 export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
 export const enum RoleId { None=0, Innocent=1, Traitor=2, Detective=3, Spectator=4 }
@@ -11,6 +13,15 @@ let core: CoreMethods | null = null;
 export function bindCore(service:CoreMethods):void { core=service; }
 export function unbindCore():void { core=null; }
 function current():CoreMethods { if(core===null) throw new Error('Special requires the current Core provider'); return core; }
+// Stats forwards: emission only, so gameplay is identical with or without a listener.
+let forwards: TypedPublishHandle<Contract> | null = null;
+export function bindForwards(handle: TypedPublishHandle<Contract>): void { forwards = handle; }
+export function unbindForwards(): void { forwards = null; }
+/** After special rounds went live. */
+export function forwardSpecialRoundStarted(rounds: TttSpecialRoundInfo[]): void {
+  if (forwards === null || core === null || rounds.length === 0) return;
+  forwards.emit('OnSpecialRoundStarted', { round: core.getGame().epoch, rounds });
+}
 export const reg = {
   activeSlots:():number[]=>current().activeSlots(),
   roleOf:(slot:number):RoleId=>current().roleOf(slot),

@@ -30,7 +30,8 @@ const boundaries: Record<string, string> = {
     roleWeapons: [[], ['weapon_glock'], ['weapon_deagle'], ['weapon_taser'], []]};
     export const roundDuration = () => 120;`,
   '../core/settings': 'export const refreshSettings = () => {};',
-  '../core/msgs': "export const msg = key => key, msgFor = (slot, key) => key; export const chatMsgFor = msgFor;",
+  '../core/msgs': `export const msgFor = (slot, key) => fixture.phrases[key] ?? key;
+    export const msg = key => msgFor(-1, key); export const chatMsgFor = msgFor;`,
   '../core/reports-provider': 'export const owedBy = () => 0;',
   './logger': 'export const clearLog = () => {}, printLogs = () => {};',
   '../cs2/bodies': 'export const clearBodies = () => {}, bodyOfPlayer = () => null;',
@@ -65,7 +66,8 @@ const bundle = await build({
       export * from './core/preframe.ts';
       export * from './core/ui-actor.ts';
       export * as registry from './core/registry.ts';
-      export {EventBus} from './core/bus.ts';`,
+      export {EventBus} from './core/bus.ts';
+      export * as forwards from './core/forwards.ts';`,
     resolveDir: fileURLToPath(new URL('../src/', import.meta.url)), loader: 'ts',
   },
   bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -79,6 +81,8 @@ const bundle = await build({
 
 function lifecycle() {
   const state = {
+    phrases: { 'ttt.round.draw': '\x08Draw', 'ttt.round.map_change': '\x08Map Change',
+      'ttt.round.ended_by_admin': '\x08Ended by admin' } as Record<string, string>,
     phase: 'POST', frame: 0, clock: 0, terminations: 0,
     cvars: new Map<string, string>(),
     timers: [] as {milliseconds: number; resolve(): void; fired: boolean}[],
@@ -226,4 +230,59 @@ test('an InProgress listener can replace the default deadline without losing rol
   await f.wake(5000);
   f.pre();
   assert.equal(f.api.game.state, 3);
+});
+
+test('stats forwards fire once per real round, role and end, in round order', async () => {
+  const f = lifecycle();
+  const sent: [string, any][] = [];
+  // JSON copy: the wire's structured copy, and plain objects outside the test's VM realm.
+  const r = f.api.registry;
+  f.api.forwards.bindForwards({emit: (name: string, payload: unknown) => sent.push([name, JSON.parse(JSON.stringify(payload))])},
+    {round: f.api.roundEpoch, mapName: () => 'ttt_test', steamIdOf: r.steamIdOf, nameOf: r.nameOf, roleOf: r.roleOf,
+      isConnected: r.isConnected, isAlive: r.isAlive, roundLog: () => ['[00:01] line']});
+  await f.begin();
+  const round = f.api.roundEpoch();
+  const p0 = {slot: 0, steamId: '1', name: 'P0'}, p1 = {slot: 1, steamId: '2', name: 'P1'};
+  assert.deepEqual(sent.map(([name]) => name), ['OnRoleAssigned', 'OnRoleAssigned', 'OnRoundStart']);
+  assert.deepEqual(sent[2]![1], {round, map: 'ttt_test', players: [
+    {player: p0, role: 'traitor', alive: true}, {player: p1, role: 'innocent', alive: true}]});
+  assert.ok(sent.every(([, payload]) => payload.round === round));
+
+  f.api.endGame(2);
+  f.api.endGame(2); // Already finished: no second end.
+  assert.deepEqual(sent.slice(3).map(([name]) => name), ['OnRoundEnd']);
+  assert.equal(sent[3]![1].winner, 'traitor');
+  assert.equal(sent[3]![1].round, round);
+  assert.equal(sent[3]![1].players.length, 2);
+  assert.deepEqual(sent[3]![1].log, ['[00:01] line']);
+
+  // A round abandoned without a result (unload) sends no end; the next round starts cleanly.
+  sent.length = 0;
+  f.api.onEngineRoundStart();
+  await f.wake(1000);
+  f.pre();
+  assert.equal(f.api.game.state, 2);
+  assert.deepEqual(sent.map(([name]) => name), ['OnRoleAssigned', 'OnRoleAssigned', 'OnRoundStart']);
+  assert.notEqual(sent[2]![1].round, round);
+  sent.length = 0;
+  f.api.abandonRound();
+  f.api.endGame(1);
+  assert.deepEqual(sent, []);
+  f.api.forwards.unbindForwards();
+});
+
+test('round stats resolve translated end reasons without chat colors and preserve literal reasons', async () => {
+  for (const [reason, expected] of [
+    [undefined, ''], ['ttt.round.draw', 'Draw'], ['ttt.round.map_change', 'Map Change'],
+    ['ttt.round.ended_by_admin', 'Ended by admin'], ['custom | reason', 'custom | reason'],
+  ]) {
+    const f = lifecycle(), sent: [string, any][] = [];
+    const r = f.api.registry;
+    f.api.forwards.bindForwards({emit: (name: string, payload: unknown) => sent.push([name, JSON.parse(JSON.stringify(payload))])},
+      {round: f.api.roundEpoch, mapName: () => 'ttt_test', steamIdOf: r.steamIdOf, nameOf: r.nameOf, roleOf: r.roleOf,
+        isConnected: r.isConnected, isAlive: r.isAlive, roundLog: () => []});
+    await f.begin();
+    f.api.endGame(0, reason);
+    assert.equal(sent.find(([name]) => name === 'OnRoundEnd')![1].reason, expected);
+  }
 });

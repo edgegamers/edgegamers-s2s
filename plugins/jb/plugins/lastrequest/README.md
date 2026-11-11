@@ -52,7 +52,7 @@ Hard dependencies: `@edgegamers/jailbreak-core` (round mode, rebels, round log, 
 | `rebel_ct_max_hp` | 200 | Max HP each guard contributes to the rebel |
 | `rebel_t_hp_ratio` | 0.7 | Rebel HP = pooled guard HP × ratio |
 | `rebel_t_max_hp` | 800 | Rebel HP cap |
-| `lg_min_cts` | 2 | Guards alive at round start needed for last guard |
+| `lg_min_cts` | 4 | Guards alive at round start needed for last guard |
 | `lg_time_base` | 30 | Round time set when last guard starts (0 disables last guard) |
 | `lg_time_per_prisoner` | 10 | Seconds per living prisoner at LG start |
 | `lg_time_per_kill` | 10 | Seconds per prisoner killed during LG |

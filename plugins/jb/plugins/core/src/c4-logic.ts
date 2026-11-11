@@ -41,3 +41,13 @@ export function randomBombDecision(giveEnabled: boolean, skipNext: boolean): { g
   if (skipNext) return { give: false, skipNext: false };
   return { give: true, skipNext: false };
 }
+
+/**
+ * Whether this round's random bomb survives the extra gates: at least `minCts` guards alive and a
+ * `chancePercent` (0-100, clamped) roll. `roll` is a uniform number in [0, 1).
+ */
+export function randomBombRoll(guards: number, minCts: number, chancePercent: number, roll: number): boolean {
+  if (guards < minCts) return false;
+  const chance = Math.min(100, Math.max(0, chancePercent));
+  return roll * 100 < chance;
+}

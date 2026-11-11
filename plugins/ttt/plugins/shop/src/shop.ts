@@ -10,7 +10,7 @@
  * `Dictionary<string, int>` / `Dictionary<string, Dictionary<string, int>>` keyed by SteamID string.
  */
 
-import {MAX_SLOTS,RoleId,GameState,msg,msgFor,reg,tell,inProgress,captureShopViewState,matchesShopViewState,shopViewOwnerCurrent, chatMsgFor } from './runtime';
+import {MAX_SLOTS,RoleId,GameState,msg,msgFor,reg,tell,inProgress,captureShopViewState,matchesShopViewState,shopViewOwnerCurrent,chatMsgFor,forwardPurchase,forwardBalanceChanged} from './runtime';
 import type {DomainBus} from '../../../packages/contracts/ordered.ts';
 import type {ShopItemId,ShopView,ShopRow} from '../api';
 
@@ -145,6 +145,7 @@ export function addBalance(slot: number, amount: number, reason: string, print =
 
   viewRevision++;
   balances[slot] = ev.newBalance;
+  forwardBalanceChanged(slot, old, ev.newBalance, reason);
   if (!print) return;
 
   const delta = ev.newBalance - old;
@@ -215,6 +216,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
     }
     return PurchaseResult.NotPurchasable;
   }
+  forwardPurchase(slot, item.id, item.price);
   return PurchaseResult.Success;
 }
 

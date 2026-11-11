@@ -2,7 +2,7 @@
 
 Use exactly three lowercase dotted segments: `owner.feature.function`. Use `snake_case` within a segment and names that describe the message's purpose, such as `extracommands.beacon.toggle_for_players`, `ttt.role.innocent` or `jailbreak.warden.new_warden`.
 
-Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `maul`, `surftimer`, `ttt` and `weaponpaints`. Jailbreak uses its member name as the feature. Other products group messages by features such as `chat`, `shop`, `role`, `records` or `beacon`. Avoid extraction names such as `text_1` and `refusal_0`.
+Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `maul`, `surftimer`, `ttt`, `weaponpaints` and `weaponpaints_ds`. Jailbreak uses its member name as the feature. Other products group messages by features such as `chat`, `shop`, `role`, `records` or `beacon`. Avoid extraction names such as `text_1` and `refusal_0`.
 
 | Tag | Meaning |
 | --- | --- |

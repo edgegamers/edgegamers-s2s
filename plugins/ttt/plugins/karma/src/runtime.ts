@@ -1,6 +1,8 @@
 import { Player } from '@s2script/cs2';
 import { Chat } from '@s2script/sdk/chat';
+import type { TypedPublishHandle } from '@s2script/sdk';
 import type { CoreMethods } from '../../core/api';
+import type { Contract } from '../api';
 import {roundNumber,settingsNumber} from './settings';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
 export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
@@ -16,6 +18,15 @@ export function unbindCore(): void { core = null; }
 function current(): CoreMethods {
   if (core === null) throw new Error('Karma requires the current Core provider');
   return core;
+}
+// Stats forwards: emission only, so gameplay is identical with or without a listener.
+let forwards: TypedPublishHandle<Contract> | null = null;
+export function bindForwards(handle: TypedPublishHandle<Contract>): void { forwards = handle; }
+export function unbindForwards(): void { forwards = null; }
+/** After a karma write committed. `steamId` is the identity the write was stored under. */
+export function forwardKarmaChanged(slot: number, steamId: string, oldKarma: number, value: number): void {
+  if (forwards === null || core === null || oldKarma === value) return;
+  forwards.emit('OnKarmaChanged', { player: { slot, steamId, name: core.nameOf(slot) }, oldKarma, karma: value });
 }
 export const reg = {
   activeSlots: (): number[] => current().activeSlots(),

@@ -2,14 +2,15 @@
 // GPL-3.0-only. See LICENSE and NOTICE.
 import { Menu, MenuStyle } from '@s2script/sdk';
 import { Player } from '@s2script/cs2';
-import { KNIVES, SKIN_WEAPONS, type Catalog } from './catalog';
+import { defindexOf, KNIVES, SKIN_WEAPONS, type Catalog } from './catalog';
 import type { Settings } from './config';
 import { newWeaponInfo } from './rows';
 import {
   commandsAllowed, giveGloves, giveMusicKit, givePin, refreshWeapons, showImage,
 } from './apply';
+import { maySelect } from './gate';
 import { plainPhrase as phrase, say } from './messages';
-import { getLoadout, selectionTeams, teamWeapons, type Loadout } from './state';
+import { asTeam, getLoadout, selectionTeams, teamWeapons, type Loadout } from './state';
 import { saveAgent, saveGlove, saveKnife, saveMusic, savePin, saveWeaponPaints } from './store';
 
 let settings!: Settings;
@@ -35,6 +36,9 @@ function selector(slot: number, userId: number): { player: Player; loadout: Load
   return { player, loadout };
 }
 
+/** The team a choice is for, as the hooks report it: 2, 3, or 0 for both. */
+const choiceTeam = (player: Player): number => asTeam(player.teamNum) ?? 0;
+
 const alive = (player: Player): boolean => player.pawn?.isValid === true && player.pawn.lifeState === 0;
 
 export function openKnifeMenu(player: Player): void {
@@ -46,6 +50,8 @@ export function openKnifeMenu(player: Player): void {
     if (!s) return;
     const name = KNIVES.find(([cls]) => cls === e.info)?.[1];
     if (!name) return;
+    if (e.info !== 'weapon_knife' &&
+      !maySelect(s.player, choiceTeam(s.player), 'knife', { defindex: defindexOf(e.info), model: e.info })) return;
     const teams = selectionTeams(s.player.teamNum);
     say(slot, 'weaponpaints.knife.selected', name);
     if (settings.commandKillEnabled) say(slot, 'weaponpaints.knife.kill_hint');
@@ -79,6 +85,7 @@ function openWeaponSkins(slot: number, userId: number, className: string, weapon
     const s = selector(slot, userId);
     const paint = Number(e.info);
     if (!s || !Number.isInteger(paint)) return;
+    if (paint > 0 && !maySelect(s.player, choiceTeam(s.player), 'skin', { defindex, paint })) return;
     showImage(slot, skins.find(x => x.paint === paint)?.image ?? '');
     say(slot, 'weaponpaints.skin.selected', e.display);
     for (const team of selectionTeams(s.player.teamNum)) {
@@ -103,6 +110,8 @@ export function openGlovesMenu(player: Player): void {
     const s = selector(slot, userId);
     const glove = catalog.gloves[Number(e.info)];
     if (!s || !glove) return;
+    if (glove.paint !== 0 &&
+      !maySelect(s.player, choiceTeam(s.player), 'gloves', { defindex: glove.defindex, paint: glove.paint })) return;
     showImage(slot, glove.image);
     say(slot, 'weaponpaints.glove.selected', glove.paintName);
     const teams = selectionTeams(s.player.teamNum);
@@ -135,6 +144,7 @@ export function openAgentsMenu(player: Player): void {
     const s = selector(slot, userId);
     const agent = catalog.agents[Number(e.info)];
     if (!s || !agent || agent.team !== s.player.teamNum) return;
+    if (agent.model && !maySelect(s.player, choiceTeam(s.player), 'agent', { model: agent.model })) return;
     showImage(slot, agent.image);
     say(slot, 'weaponpaints.agent.selected', agent.name);
     if (s.player.teamNum === 3) s.loadout.agent.ct = agent.model;
@@ -155,6 +165,7 @@ function openCollectibleMenu(player: Player, kind: 'music' | 'pin'): void {
     if (!s) return;
     const item = e.info === 'none' ? null : items[Number(e.info)];
     const id = item?.id ?? 0;
+    if (id !== 0 && !maySelect(s.player, choiceTeam(s.player), kind, { defindex: id })) return;
     if (item) showImage(slot, item.image);
     const teams = selectionTeams(s.player.teamNum);
     const choices = kind === 'music' ? s.loadout.music : s.loadout.pin;

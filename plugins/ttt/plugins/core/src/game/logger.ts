@@ -306,12 +306,16 @@ function isLogAdmin(slot: number): boolean {
   return Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) === true;
 }
 
+/** The live round's entries as rendered lines, without the header and footer. */
+export function logLines(): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < entries.length; i++) out.push(render(entries[i]!));
+  return out;
+}
+
 /** Build the full log as lines (header + entries + footer). */
 export function makeLogs(): string[] {
-  const out: string[] = [msg("ttt.logs.header")];
-  for (let i = 0; i < entries.length; i++) out.push(render(entries[i]!));
-  out.push(msg("ttt.logs.footer"));
-  return out;
+  return [msg("ttt.logs.header"), ...logLines(), msg("ttt.logs.footer")];
 }
 
 /**

@@ -8,6 +8,7 @@ import type { Pawn } from '@s2script/cs2';
 import {
   DEFINDEX_CLASS, defindexOf, isKnifeClass, isKnifeDefindex, isLegacyModel, randomPaint, type Catalog,
 } from './catalog';
+import { mayApply } from './gate';
 import type { WeaponInfo } from './rows';
 import type { Settings } from './config';
 import {
@@ -40,6 +41,65 @@ export function setCommandsAllowed(value: boolean): void {
 export function resetMapState(): void {
   nextItemId = MINIMUM_CUSTOM_ITEM_ID;
   fadeSeed = 0;
+  ungivableKnives.clear();
+  painted.clear();
+}
+
+// ---- knife replacement -----------------------------------------------------------------------
+
+/** Knife classes the engine refused to give this map: those players keep the stock knife. */
+const ungivableKnives = new Set<string>();
+/** Slots whose knife is being replaced right now, so the nested apply cannot recurse. */
+const replacing = new Set<number>();
+/** Weapons already painted on creation, so their own next-frame spawn apply skips them. */
+const painted = new Set<string>();
+const refKey = (ref: EntityRef): string => `${ref.index}:${ref.id}`;
+
+/**
+ * Swap a knife of the wrong model for a fresh one of the chosen class.
+ *
+ * Upstream changes the model in place (ChangeSubclass) from inside GiveNamedItem, before the knife
+ * is ever networked. s2script has no GiveNamedItem hook, so here the knife has already been sent
+ * to the client, and often deployed, when it is seen. Changing its subclass then leaves the view
+ * model out of step with the world model: the knife is invisible, or the player's own inventory
+ * knife is drawn held backwards while inspect plays the chosen one. A newly given knife is created
+ * with the right model, so the client never sees a mismatch.
+ */
+function replaceKnife(player: Player, weapon: Weapon, knife: string, def: number): void {
+  const pawn = player.pawn;
+  const slot = player.slot;
+  if (!pawn?.isValid || replacing.has(slot) || ungivableKnives.has(knife)) return;
+  const wasActive = pawn.activeWeapon?.ref.index === weapon.ref.index;
+  if (!pawn.removeWeapon(weapon)) return;
+  replacing.add(slot);
+  try {
+    const fresh = pawn.giveNamedItem(knife);
+    if (!fresh?.isValid()) {
+      ungivableKnives.add(knife);
+      console.log(`[WeaponPaints] could not give ${knife}; keeping the stock knife this map`);
+      pawn.giveNamedItem('weapon_knife');
+    } else {
+      // Same tick as its creation, before it is networked: safe to fix the subclass if the engine
+      // mapped the class name to another definition.
+      if (weaponDefindex(fresh) !== def) fresh.ref.acceptInput('ChangeSubclass', String(def));
+      applyWeaponSkin(player, fresh, knife);
+      painted.add(refKey(fresh.ref));
+    }
+  } finally {
+    replacing.delete(slot);
+  }
+  if (wasActive) Clients.fromSlot(slot)?.command('slot3');
+}
+
+/** The knife class to give the player: their chosen knife when it may be applied, else the stock one. */
+function knifeToGive(player: Player): string {
+  const loadout = getLoadout(player.slot);
+  const team = asTeam(player.teamNum);
+  const knife = settings.skinEnabled && loadout?.userId === player.userId ? changedKnife(loadout, team) : null;
+  if (!knife || ungivableKnives.has(knife)) return 'weapon_knife';
+  const def = defindexOf(knife);
+  if (def === 0 || !mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife })) return 'weapon_knife';
+  return knife;
 }
 
 // ---- offsets ---------------------------------------------------------------------------------
@@ -184,7 +244,13 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     if (!knife) return;
     const def = defindexOf(knife);
     if (def === 0) return;
-    if (weaponDefindex(weapon) !== def) weapon.ref.acceptInput('ChangeSubclass', String(def));
+    // Vetoed: the stock knife stays, unpainted (a knife paint is keyed to the knife's own defindex).
+    if (!mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife })) return;
+    if (weaponDefindex(weapon) !== def && !replacing.has(player.slot)) {
+      // A fresh knife of the chosen class is painted as it is given.
+      replaceKnife(player, weapon, knife, def);
+      return;
+    }
     item.itemDefinitionIndex = def;
     item.entityQuality = 3;
   } else {
@@ -196,6 +262,8 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
   item.accountID = accountIdOf(loadout.steamId);
 
   let info = changedPaint(loadout, team, defindex);
+  // Vetoed: the stock finish this time. The saved row is kept, so it comes back once allowed.
+  if (info && !mayApply(player, team ?? 0, 'skin', { defindex, paint: info.paint })) return;
   if (settings.giveRandomSkin && !info) {
     const paint = randomPaint(catalog, defindex);
     if (paint === 0) return;
@@ -218,7 +286,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
   weapon.fallbackWear = info.wear;
   weapon.setAttribute('set item texture prefab', info.paint);
 
-  if (info.statTrak) {
+  if (info.statTrak && mayApply(player, team ?? 0, 'stattrak', { defindex })) {
     item.entityQuality = 9;
     weaponAttribute(weapon, 'kill eater', bitsAsFloat(info.statTrakCount));
     weaponAttribute(weapon, 'kill eater score type', 0);
@@ -246,6 +314,7 @@ function weaponPlayer(weapon: Weapon): Player | null {
 export function onWeaponSpawned(ref: EntityRef, className: string): void {
   if (!settings.skinEnabled) return;
   nextFrame().then(() => {
+    if (painted.delete(refKey(ref))) return;
     const weapon = Weapon.fromEntity(ref);
     if (!weapon?.isValid()) return;
     const player = weaponPlayer(weapon);
@@ -307,7 +376,11 @@ export function refreshWeapons(player: Player): void {
     if (!commandsAllowed || !current || current.userId !== userId || !isAlive(current)) return;
     const body = current.pawn!;
     if (hadKnife && !body.weapons.some(w => w.isValid() && w.data?.gearSlot === GEAR_SLOT_KNIFE)) {
-      body.giveNamedItem('weapon_knife');
+      const knife = body.giveNamedItem(knifeToGive(current));
+      if (knife?.isValid()) {
+        applyWeaponSkin(current, knife, null);
+        painted.add(refKey(knife.ref));
+      }
       Clients.fromSlot(slot)?.command('slot3');
     }
     for (const gun of guns) {
@@ -324,19 +397,16 @@ export function refreshWeapons(player: Player): void {
   });
 }
 
-/** item_pickup of a knife: re-apply skins to everything held (GiveOnItemPickup). */
-export function reapplyHeld(player: Player): void {
-  const pawn = player.pawn;
-  if (!pawn) return;
-  for (const weapon of pawn.weapons) if (weapon.isValid()) applyWeaponSkin(player, weapon, null);
-}
-
 /** player_death: count the kill on the attacker's active StatTrak weapon. */
 export function countStatTrakKill(attacker: Player): void {
   const weapon = attacker.pawn?.activeWeapon;
   if (!weapon?.isValid()) return;
-  const info = changedPaint(getLoadout(attacker.slot), asTeam(attacker.teamNum), weaponDefindex(weapon));
+  const team = asTeam(attacker.teamNum);
+  const defindex = weaponDefindex(weapon);
+  const info = changedPaint(getLoadout(attacker.slot), team, defindex);
   if (!info?.statTrak) return;
+  // A locked StatTrak is not shown, so it does not count either.
+  if (!mayApply(attacker, team ?? 0, 'stattrak', { defindex })) return;
   info.statTrakCount += 1;
   weaponAttribute(weapon, 'kill eater', bitsAsFloat(info.statTrakCount));
   weaponAttribute(weapon, 'kill eater score type', 0);
@@ -364,7 +434,7 @@ export function giveGloves(player: Player): void {
     const team = asTeam(current.teamNum);
     const gloveId = team === null ? 0 : loadout?.glove.get(team) ?? 0;
     const info = gloveId === 0 ? null : changedPaint(loadout, team, gloveId);
-    if (!info) return;
+    if (!info || !mayApply(current, team ?? 0, 'gloves', { defindex: gloveId, paint: info.paint })) return;
     const item = pawn.econGloves;
     item.itemDefinitionIndex = gloveId;
     freshItemId(pawn.ref, gloveItemBase());
@@ -387,7 +457,7 @@ export function giveAgent(player: Player): void {
   if (!loadout) return;
   const team = asTeam(player.teamNum);
   const model = team === 3 ? loadout.agent.ct : team === 2 ? loadout.agent.t : null;
-  if (!model) return;
+  if (!model || !mayApply(player, team ?? 0, 'agent', { model })) return;
   const slot = player.slot, userId = player.userId;
   nextFrame().then(() => {
     const pawn = Player.fromSlot(slot);
@@ -409,7 +479,7 @@ function inventory(): { services: number; music: number; rank: number } {
 export function giveMusicKit(player: Player): void {
   const team = asTeam(player.teamNum);
   const music = team === null ? 0 : getLoadout(player.slot)?.music.get(team) ?? 0;
-  if (music === 0) return;
+  if (music === 0 || !mayApply(player, team ?? 0, 'music', { defindex: music })) return;
   player.musicKitID = music;
   const inv = inventory();
   if (inv.services < 0 || inv.music < 0) return;
@@ -426,6 +496,7 @@ export function givePin(player: Player): void {
   const loadout = getLoadout(player.slot);
   if (!loadout || team === null || !loadout.pin.has(team)) return;
   const pin = loadout.pin.get(team) ?? 0;
+  if (pin > 0 && !mayApply(player, team, 'pin', { defindex: pin })) return;
   const inv = inventory();
   if (inv.services < 0 || inv.rank < 0) return;
   if (player.ref.writeInt32Via([inv.services], inv.rank + 5 * 4, pin > 0 ? pin : 0)) {

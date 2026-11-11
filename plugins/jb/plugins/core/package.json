@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/jailbreak-core",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "Jailbreak round state, rebels, cells and the round log.",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
@@ -23,6 +23,16 @@
         "type": "bool",
         "default": true,
         "description": "Give a random prisoner a jihad C4 at the start of every round (css_edgegamers_jailbreak-c4_give)."
+      },
+      "c4_chance": {
+        "type": "int",
+        "default": 100,
+        "description": "Percent chance (0-100) that the random round-start jihad C4 is given at all (css_edgegamers_jailbreak-c4_chance)."
+      },
+      "c4_min_cts": {
+        "type": "int",
+        "default": 4,
+        "description": "Guards alive at round start needed before the random jihad C4 can be given (css_edgegamers_jailbreak-c4_min_cts)."
       },
       "c4_delay": {
         "type": "float",

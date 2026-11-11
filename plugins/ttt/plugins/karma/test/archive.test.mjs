@@ -11,7 +11,7 @@ const members = JSON.parse(execFileSync('python3', ['-c','import zipfile,json,sy
 const copy = value => JSON.parse(JSON.stringify(value));
 function fixture(existingConfiguration) {
   let methods;
-  const trace=[], scores=[], ids=['A','B'], roles=[1,1];
+  const forwarded=[], trace=[], scores=[], ids=['A','B'], roles=[1,1];
   let banThrows=false;
   const settings={karmaDefault:50,karmaMin:0,karmaTimeoutThreshold:20,karmaRoundTimeout:4,karmaWarningWindowMs:86400000,karmaPerRound:1,karmaPerRoundWin:2};
   function deliver(kind,payload) {
@@ -21,14 +21,14 @@ function fixture(existingConfiguration) {
     for(const key of ['karma','role','canceled']) if(key in reply) result[key]=reply[key];
     return {kind,payload:result};
   }
-  const core={activeSlots:()=>[0,1],roleOf:s=>roles[s],steamIdOf:s=>ids[s]??'',isParticipating:()=>true,
+  const core={activeSlots:()=>[0,1],roleOf:s=>roles[s],steamIdOf:s=>ids[s]??'',nameOf:s=>'P'+s,isParticipating:()=>true,
     getGame:()=>({state:2,winner:1,startedAt:0,participants:2,roundsThisMap:0,epoch:1}),getKarmaSettings:()=>{throw Error("Core must not own Karma settings");},
     getNumber:()=>{throw Error('Core must not supply Karma scoring config');},
     formatKarmaWarning:n=>`wait ${n}`,hasDomain:()=>true,dispatchDomain:event=>deliver(event.kind,event.payload)};
   const player=s=>({userId:s+100,set score(v){scores.push([s,v]);},kick(){deliver('leave',{slot:s});ids[s]='';}});
   const configuration=existingConfiguration??configFixture(SPECS,{sm_ttt_karma_per_round_win:2,sm_ttt_karma_inno_on_inno_guilty:-10,sm_ttt_karma_inno_on_inno_victim_innocent:4});
   const context=vm.createContext({module:{exports:{}},console:{log(){}},require(name){
-    if(name==='@s2script/sdk/plugin') return {use:n=>{assert.equal(n,'@edgegamers/ttt-core');return core;},publish:(n,m)=>{assert.equal(n,'@edgegamers/ttt-karma');methods=m;return {};}};
+    if(name==='@s2script/sdk/plugin') return {use:n=>{assert.equal(n,'@edgegamers/ttt-core');return core;},publish:(n,m)=>{assert.equal(n,'@edgegamers/ttt-karma');methods=m;return {emit:(e,p)=>forwarded.push([e,copy(p)])};}};
     if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatKarmaWarning(args[0]));
     if(name==='@s2script/cs2') return {ChatColors:testChatColors,Player:{fromSlot:player}};
     if(name==='@s2script/sdk/config') return {config:configuration.config};
@@ -38,7 +38,7 @@ function fixture(existingConfiguration) {
     throw Error(name);
   }});
   vm.runInContext(members['plugin.js'],context);context.module.exports.OnPluginStart();
-  return {get methods(){return methods;},deliver,trace,scores,ids,settings,context,configuration,setBanThrows:v=>banThrows=v};
+  return {get methods(){return methods;},forwarded,deliver,trace,scores,ids,settings,context,configuration,setBanThrows:v=>banThrows=v};
 }
 test('archive registers exactly old Karma handlers, seeds only by Core join replay, and rejects foreign handlers',()=>{
  const f=fixture();assert.equal(f.scores.length,0);
@@ -97,4 +97,9 @@ test('archive handles deferred native alias notifications and malformed section 
  const configuration=configFixture(SPECS);configuration.deferNotifications(true);const f=fixture(configuration);
  const raw='// operator comment\n{"defaultKarma":80,"scoring":null}';configuration.setFile(raw);configuration.materialize();configuration.flush();assert.equal(configuration.getFile(),raw);assert.equal(f.methods.refreshSettings().defaultKarma,80);assert.equal(f.methods.getRoundSettings().scoring.innocentOnTraitor,3);
  configuration.server.setCvar('sm_ttt_karma_default','81');configuration.server.setCvar('sm_ttt_karma_default','82');configuration.flush();assert.equal(f.methods.refreshSettings().defaultKarma,82);
+});
+test('OnKarmaChanged forwards committed writes with the stored value and skips no-op writes',()=>{
+ const f=fixture();f.deliver('join',{slot:1});f.forwarded.length=0;
+ f.methods.adminSetKarma(1,70);f.methods.adminSetKarma(1,70);
+ assert.deepEqual(f.forwarded,[['OnKarmaChanged',{player:{slot:1,steamId:'B',name:'P1'},oldKarma:50,karma:70}]]);
 });

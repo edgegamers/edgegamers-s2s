@@ -51,6 +51,7 @@ import { resetPawnColor, setPawnAlpha } from "./color";
 import { spoofAlive, unspoofAlive, clearSpoof } from "./spoof";
 import { refreshInvulnerability } from "./handlers";
 import { stripToSidearms, weaponClass, weaponDef, TASER_DEF, type HeldWeapon } from "./inventory";
+import { forwardKill } from "../core/forwards";
 
 /** Maps a pawn entity index back to the slot that owns it — filled lazily per damage event. */
 function slotOfPawn(entityIndex: number): number {
@@ -801,6 +802,7 @@ function handleDeath(
   }
 
   bus.emit("death", { slot: victim, killer, assister, weapon, headshot });
+  forwardKill(victim, killer, weapon, headshot);
   checkEndConditions();
 }
 

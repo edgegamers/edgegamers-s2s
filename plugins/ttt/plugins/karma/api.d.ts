@@ -1,6 +1,7 @@
 /** Existing-port Karma 2.0.0. All wire types are self-contained for protocol 2. */
 /** Finite copied domain types for extracting the existing port. */
 import type { EntityRef } from '@s2script/sdk/entity';
+import type { Notification } from '@s2script/sdk/interfaces';
 export type RoleId = 0 | 1 | 2 | 3 | 4;
 export type GameState = 0 | 1 | 2 | 3;
 export type HandlerId =
@@ -160,4 +161,14 @@ export interface KarmaMethods {
   getHandlers(): HandlerId[];
   handleDomain(call: HandlerCall): HandlerReply;
 }
-export interface Contract { methods: KarmaMethods; forwards: {}; }
+/** A player copied onto a forward. `steamId` is the decimal SteamID64 string (`""` when unknown). */
+export interface TttPlayerRef { slot: number; steamId: string; name: string; }
+/** Karma is persisted per player and changes mostly at round end, so this carries no round. */
+export interface TttKarmaChangedEvent { player: TttPlayerRef; oldKarma: number; karma: number; }
+export interface Contract {
+  methods: KarmaMethods;
+  forwards: {
+    /** A karma write committed (not vetoed), with the value actually stored. Unchanged writes are not sent. */
+    OnKarmaChanged: Notification<TttKarmaChangedEvent>;
+  };
+}

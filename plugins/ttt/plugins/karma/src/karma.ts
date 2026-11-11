@@ -23,7 +23,7 @@ import {lowKarmaCommand} from "./settings";
 
 import { Server } from "@s2script/sdk/server";
 import { Bans } from "@s2script/sdk/bans";
-import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msg, msgFor, reg, setScore, tell, game, chatMsgFor } from "./runtime";
+import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msg, msgFor, reg, setScore, tell, game, chatMsgFor, forwardKarmaChanged } from "./runtime";
 import type { DomainBus, KarmaEvent } from "../../../packages/contracts/ordered.ts";
 import { Player } from "@s2script/cs2";
 
@@ -129,6 +129,7 @@ export function setKarma(slot: number, value: number): void {
   karma[slot] = ev.karma;
   if (id !== "" && id !== "0") persisted.set(id, ev.karma);
   setScore(slot, ev.karma);
+  forwardKarmaChanged(slot, id, old, ev.karma);
 }
 
 /** Queue a karma delta; deltas accumulate and are applied once at round end. */

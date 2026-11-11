@@ -18,6 +18,8 @@ export class RoundState {
   phase: RoundPhase = "waiting";
   mode: Mode = "normal";
   startedAt = 0;
+  /** An admin ended this round (set by `css_debug endround`, cleared at round start). */
+  adminEnded = false;
 
   info(): RoundInfo {
     return { round: this.round, phase: this.phase, mode: this.mode, startedAt: this.startedAt };
@@ -30,6 +32,7 @@ export class RoundState {
     this.phase = "waiting";
     this.mode = "normal";
     this.startedAt = 0;
+    this.adminEnded = false;
     return previous;
   }
 
@@ -40,6 +43,7 @@ export class RoundState {
     this.phase = warmup ? "warmup" : "freeze";
     this.mode = "normal";
     this.startedAt = nowSeconds;
+    this.adminEnded = false;
     return previous;
   }
 

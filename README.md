@@ -20,8 +20,9 @@ CS2 server plugins maintained by edgegamers. One install, native s2s tooling, in
 | [CustomIO](plugins/customio/) | `@edgegamers/s2s-customio` | Public plugin |
 | [WeaponPaints](plugins/weaponpaints/) | `@edgegamers/s2s-weaponpaints` | Public plugin · skins, knives, gloves, agents, music kits, pins |
 | [MAUL](plugins/maul/) | `@edgegamers/s2s-maul` | Restricted plugin |
+| [Portal bridge](plugins/portal/) | `@edgegamers/s2s-portal` | Restricted plugin · sends game events to the CS portal |
 
-All source is public. MAUL's registry downloads are restricted to authorized members of the edgegamers organization.
+All source is public. Registry downloads of the restricted plugins (MAUL, Portal bridge) are restricted to authorized members of the edgegamers organization.
 
 ## Develop
 
