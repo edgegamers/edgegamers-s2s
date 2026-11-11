@@ -82,7 +82,7 @@
       "leadership_chat": {
         "type": "bool",
         "default": true,
-        "description": "Leadership chat: '%message' in team chat goes to leadership; '%message' in all chat is a LEADERSHIP TO ALL broadcast."
+        "description": "Leadership chat: anyone can contact leadership with '%message' in either chat channel. Leaders use '%message' in all chat to broadcast, or '%%target message' in either channel to message one player privately."
       },
       "leadership_min_rank": {
         "type": "int",

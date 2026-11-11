@@ -33,7 +33,8 @@ import { registerCommands } from "./commands.ts";
 import { loadRankTable, readConfig } from "./config.ts";
 import { createLogger } from "./log.ts";
 import { NameManager } from "./names.ts";
-import { channelLabel, cleanChatText, receives, routeStaffChat } from "./staff-chat.ts";
+import { channelLabel, cleanChatText, literalChatText, receives, routeStaffChat } from "./staff-chat.ts";
+import { loadStaffChatPhrases, staffChatPhraseFor } from "./staff-chat-phrases.ts";
 import type { MaulConfig } from "./config.ts";
 import type { RankTable } from "./types.ts";
 
@@ -79,6 +80,7 @@ function sweepUnverified(auth: Authenticator): void {
 }
 
 export function OnPluginStart(): void {
+  loadStaffChatPhrases();
   cfg = readConfig();
   reloadRankTable();
 
@@ -298,16 +300,39 @@ function staffChat(
 ): HookResultValue | void {
   const route = routeStaffChat(text, teamonly, auth.profileOf(steamId), cfg);
   if (route === null) return;
+  if (route.channel === "leadershipPrivate") {
+    if (!route.target || !route.body) {
+      Chat.toSlot(slot, staffChatPhraseFor(slot, "MAUL_CHAT_PRIVATE_USAGE"));
+      return HookResult.Handled;
+    }
+    const targets = Player.target(route.target, slot);
+    if (targets.length !== 1) {
+      Chat.toSlot(slot, staffChatPhraseFor(slot, targets.length === 0 ? "MAUL_CHAT_NO_TARGET" : "MAUL_CHAT_AMBIGUOUS_TARGET", route.target));
+      return HookResult.Handled;
+    }
+    const target = targets[0]!;
+    const name = cleanChatText(Player.fromSlot(slot)?.playerName ?? "");
+    const targetName = cleanChatText(target.playerName ?? "");
+    const body = literalChatText(route.body);
+    Chat.toSlot(target.slot, staffChatPhraseFor(target.slot, "MAUL_CHAT_PRIVATE_TO", targetName, name) + body);
+    if (slot !== target.slot) Chat.toSlot(slot, staffChatPhraseFor(slot, "MAUL_CHAT_PRIVATE_ECHO", targetName) + body);
+    return HookResult.Handled;
+  }
   if (route.body.length === 0) return HookResult.Handled; // a bare trigger: consume, send nothing
 
   const sender = Player.fromSlot(slot);
   const name = cleanChatText(sender?.playerName ?? "");
-  const line =
-    `${ChatColors.Green}${channelLabel(route.channel)} ${name}: ${ChatColors.Default}${cleanChatText(route.body)}`;
+  const body = route.channel === "ds" ? cleanChatText(route.body) : literalChatText(route.body);
 
   for (const p of Player.allConnected()) {
     if (p.steamId === "0") continue;
-    if (receives(route.channel, auth.profileOf(p.steamId), p.slot === slot, cfg)) Chat.toSlot(p.slot, line);
+    if (!receives(route.channel, auth.profileOf(p.steamId), p.slot === slot, cfg)) continue;
+    const key = route.channel === "leadershipAll" ? "MAUL_CHAT_LEADERSHIP_ALL"
+      : route.channel === "leadershipTo" ? "MAUL_CHAT_TO_LEADERSHIP" : "MAUL_CHAT_LEADERSHIP";
+    const line = route.channel === "ds"
+      ? `${ChatColors.Green}${channelLabel(route.channel)} ${name}: ${ChatColors.Default}${body}`
+      : staffChatPhraseFor(p.slot, key, name) + body;
+    Chat.toSlot(p.slot, line);
   }
   log.info(`${route.channel} chat from ${steamId}: ${route.body}`);
   return HookResult.Handled;

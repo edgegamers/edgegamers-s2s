@@ -32,12 +32,24 @@ describe("routeStaffChat", () => {
     expect(routeStaffChat("$hi", true, profile({ ds: { ds: false, tier: 2 } }), CFG)).toBeNull();
   });
 
-  it("routes % by chat channel for leadership only", () => {
+  it("routes a leader's % by chat channel", () => {
     expect(routeStaffChat("%hi", true, manager, CFG)).toEqual({ channel: "leadership", body: "hi" });
     expect(routeStaffChat("%hi", false, manager, CFG)).toEqual({ channel: "leadershipAll", body: "hi" });
-    expect(routeStaffChat("%hi", true, ego, CFG)).toBeNull();
-    expect(routeStaffChat("%hi", false, ds, CFG)).toBeNull();
   });
+
+  for (const teamonly of [false, true]) {
+    it(`routes non-leadership % to leadership in ${teamonly ? "team" : "all"} chat`, () => {
+      for (const sender of [pub, ds, ego, null, notFound()]) {
+        expect(routeStaffChat("% hello", teamonly, sender, CFG)).toEqual({ channel: "leadershipTo", body: "hello" });
+      }
+    });
+
+    it(`reserves %% for leadership in ${teamonly ? "team" : "all"} chat`, () => {
+      expect(routeStaffChat("%%player hello", teamonly, manager, CFG)).toEqual({ channel: "leadershipPrivate", target: "player", body: "hello" });
+      for (const sender of [pub, ds, ego, null]) expect(routeStaffChat("%%player hello", teamonly, sender, CFG)).toBeNull();
+      expect(routeStaffChat("%%player hello", teamonly, manager, { ...CFG, leadershipChat: false })).toBeNull();
+    });
+  }
 
   it("honours the config switches", () => {
     expect(routeStaffChat("$hi", true, ds, { ...CFG, dsChat: false })).toBeNull();

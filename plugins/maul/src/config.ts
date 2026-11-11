@@ -37,7 +37,7 @@ export interface MaulConfig {
   joinMessage: boolean;
   /** `$` in team chat goes to every Dedicated Supporter. */
   dsChat: boolean;
-  /** `%` in team chat goes to leadership; `%` in all chat is a leadership broadcast. */
+  /** `%` contacts leadership; leaders can broadcast in all chat and use `%%` privately. */
   leadershipChat: boolean;
   /** Lowest MAUL rank that counts as leadership for `%` chat. */
   leadershipMinRank: number;

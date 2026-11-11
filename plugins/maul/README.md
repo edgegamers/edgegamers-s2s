@@ -11,9 +11,9 @@ On connect it asks MAUL who the player is, then:
 - **grants admin** by mapping the player's MAUL rank onto groups in the server's `admin_groups.json`,
 - **renames** them to `<rank tag> <MAUL name>` and keeps that name enforced,
 - **greets** Dedicated Supporters with their join message,
-- runs **staff chat**: `$message` in team chat reaches every Dedicated Supporter, and `%message`
-  reaches leadership (team chat) or goes out as a LEADERSHIP TO ALL broadcast (all chat). A `$` or
-  `%` from someone not entitled to it is sent as ordinary chat,
+- runs **staff chat**: `$message` in team chat reaches only Dedicated Supporters. Anyone can
+  contact leadership with `%message` in either chat channel. Leaders can broadcast with `%message`
+  in all chat and send a private message with `%%target message` in either channel,
 - **routes bans** issued in-game to MAUL instead of the local `bans.json`, which stays empty of
   MAUL-owned bans so MAUL remains the single source of truth,
 - optionally **reports the live roster** to MAUL's presence dashboard (v2 only).
@@ -51,7 +51,7 @@ defaults). The ones that matter:
 | `autotag` | `true` | Rename players to `<tag> <MAUL name>`. |
 | `join_message` | `true` | Broadcast a Dedicated Supporter's join message on first join. |
 | `ds_chat` | `true` | `$message` in team chat goes to every Dedicated Supporter. |
-| `leadership_chat` | `true` | `%message` in team chat goes to leadership; in all chat it is a LEADERSHIP TO ALL broadcast. |
+| `leadership_chat` | `true` | Enables `%` contact/broadcast messages and leaders' `%%target message` private messages. |
 | `leadership_min_rank` | `60` | Lowest MAUL rank (primary or any group) counted as leadership. 60 = manager. |
 | `http_timeout_ms` | `8000` | Per-request timeout. |
 | `debug` | `false` | Log request URLs and response bodies. |
@@ -75,6 +75,28 @@ the division, the game-id type and the owner that penalties are attributed to.
 
 `user_agent` applies to both, and is **required** against maul3 — it sits behind Cloudflare, which
 403s unrecognised agents.
+
+### Staff chat
+
+| Sender | Input | All chat | Team chat |
+| --- | --- | --- | --- |
+| Non-leader | `%message` | Leadership and sender | Leadership and sender |
+| Leader | `%message` | Everyone | Leadership and sender |
+| Leader | `%%target message` | Target and sender | Target and sender |
+| Dedicated Supporter | `$message` | Ordinary chat | Dedicated Supporters only |
+
+Leadership membership uses the highest primary/group MAUL rank and `leadership_min_rank`.
+Private messages use basechat's player targeting and require exactly one match. Missing arguments
+and target errors reply only to the sender. Non-leaders' `%%`, non-supporters' `$`, and disabled
+chat features pass through as ordinary chat. Bare authorized `%` / `$` triggers send nothing.
+
+DS membership requires a found MAUL profile with `ds.ds` set to `true`; rank alone grants no DS
+access. These recipient restrictions apply to in-game delivery. Existing server logging and the
+optional MAUL presence dashboard still record chat, including staff messages.
+
+Leadership wrappers use the startup-loaded `maul` translation set, with English embedded in the
+plugin. Operator overrides belong at `addons/s2script/translations/maul.phrases.json`, or under a
+language-code subdirectory for another locale. Reload the plugin after changing a phrase file.
 
 ### Ranks table
 
