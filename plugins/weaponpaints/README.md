@@ -30,10 +30,20 @@ PlayerSettingsCS2 and AnyBaseLibCS2 are not needed.
    Without that entry the plugin keeps selections in s2script's local SQLite file, which the
    website cannot read. Missing tables are created on first connect.
 
-   `"driver": "postgres"` works too. EdgeGamers keeps these tables in the CS portal's Postgres
-   (edgegamers/s2s-cs-web `docs/skins.md`), with a role whose `search_path` is the portal's
-   `weaponpaints` schema.
+   `"driver": "postgres"` works too.
 4. Check `sm plugins list` and the server log for `[WeaponPaints] database connected`.
+
+### Storage from another plugin
+
+Set `storage` to `plugin` and the plugin opens no database at all. It asks for each player with
+the `OnLoadRequested` forward (on join, on `!wp`, on `reload(slot)`), another plugin answers with
+`supply(slot, userId, rows)`, and every change made in game goes out as `OnStoreWrite`. The rows and
+writes are exactly the tables' (see [`api.d.ts`](api.d.ts)), so the provider can pass them through.
+A request nobody answers gives up after 20 seconds; the player can `!wp` to try again.
+
+EdgeGamers servers run this way: the `@edgegamers/s2s-portal` bridge loads and saves through the
+CS portal's HTTPS API with the server's key (edgegamers/s2s-cs-web `docs/skins.md`), so the game
+servers need no database credentials. Look for `[WeaponPaints] storage: plugin` in the log.
 
 Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is painted twice.
 
@@ -48,7 +58,7 @@ Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is p
 | Music menu | `!music` | Pick a music kit, or None |
 | Pin menu | `!pin` `!pins` `!coin` `!coins` | Pick a scoreboard pin, or None |
 | StatTrak | `!stattrak` | Toggle StatTrak on the held weapon |
-| Refresh | `!wp` | Reload your selections from the database and re-give your weapons |
+| Refresh | `!wp` | Reload your selections from storage and re-give your weapons |
 | Info | `!ws` | Print the website and the other commands |
 | Suicide | `!kill` | Kill yourself (to respawn with a new knife) |
 | `wp_refresh <steamid64\|all>` | server console | Refresh one or every player |
@@ -102,8 +112,10 @@ decide who may use what without WeaponPaints knowing about it:
 - `OnApplyRequested` runs just before a saved item is put on the player. Handled or Stop applies
   the default this time; the saved row is left alone, so the item returns when it is allowed again.
 - `refresh(slot)` re-applies a player's loaded selections without a database reload.
-- `reload(slot)` reads the player's selections from the database again and applies them, like
+- `reload(slot)` reads the player's selections from storage again and applies them, like
   `!wp`. The portal bridge calls it when a player saves a skin on the website.
+- `OnLoadRequested`, `supply(slot, userId, rows)` and `OnStoreWrite` are the storage provider's side
+  (`storage = "plugin"`, above).
 
 With no listener installed, behaviour is exactly as before. A listener that throws is ignored.
 EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter tiers).
@@ -112,7 +124,8 @@ EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter t
 
 - The MVP event is edited in place before it is broadcast, rather than suppressed and re-fired.
 - Selections are written to the database even when made while dead (upstream skipped the save).
-- `!wp` waits for the database reload before re-applying; in-session StatTrak kills survive it.
+- `!wp` waits for the reload before re-applying; in-session StatTrak kills survive it.
+- `storage = "plugin"` hands loading and saving to another plugin instead of a database.
 - Re-giving a knife skips upstream's temporary USP/knife swap; the player is switched to slot 3.
 - A stock knife is swapped for a newly given knife of the chosen model, not changed in place with
   `ChangeSubclass`. Upstream changes it inside a GiveNamedItem hook, before the client has seen the

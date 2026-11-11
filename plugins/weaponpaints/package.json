@@ -1,7 +1,7 @@
 {
   "name": "@edgegamers/s2s-weaponpaints",
   "version": "0.2.0",
-  "description": "An s2script port of Nereziel/cs2-WeaponPaints: weapon skins, knives, gloves, agents, music kits and pins stored in the WeaponPaints MySQL tables.",
+  "description": "An s2script port of Nereziel/cs2-WeaponPaints: weapon skins, knives, gloves, agents, music kits and pins stored in the WeaponPaints MySQL tables, or by another plugin.",
   "license": "GPL-3.0-only",
   "type": "module",
   "main": "src/plugin.ts",
@@ -34,6 +34,11 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "config": {
+      "storage": {
+        "type": "string",
+        "default": "database",
+        "description": "Where selections live. database: the weaponpaints connection in databases.json (upstream). plugin: no database; another plugin answers OnLoadRequested and saves OnStoreWrite (the EdgeGamers portal bridge, s2s-portal)."
+      },
       "skins_language": {
         "type": "string",
         "default": "en",

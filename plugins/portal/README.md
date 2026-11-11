@@ -59,6 +59,20 @@ late. Contract: `docs/live.md` in `edgegamers/s2s-cs-web`.
 
 Both plugins are optional dependencies; without them the messages are ignored.
 
+## Skins storage
+
+With WeaponPaints' `storage` set to `plugin`, this plugin is where its selections live: game
+servers need no database credentials and the portal's Postgres is never exposed.
+
+| WeaponPaints asks | What the plugin does |
+| --- | --- |
+| `OnLoadRequested` (join, `!wp`, a `skins.refresh`) | `GET /api/v1/skins/{steamId}` with the server token, then `supply(slot, userId, rows)`; `null` on failure so the player can `!wp` again |
+| `OnStoreWrite` (in-game menu choices, StatTrak counters) | `POST /api/v1/skins/{steamId}` with the writes; network errors, 429 and 5xx are retried 3 times (2s, 4s, 8s), then the change is logged as not saved |
+
+While idle (no `portal_url` or `api_key`) loads answer `null` at once. When this plugin loads after
+WeaponPaints, it asks WeaponPaints to reload everyone so nobody waits. With WeaponPaints'
+`storage = "database"` none of this runs.
+
 The socket reconnects by itself after any drop, waiting 2s doubling to 60s (with ±20% jitter) and
 resetting once the gateway says hello. A close with 4401 mints a new token first; a revoked key
 (4403) retries every minute. Three missed pings (75s of silence) count as a drop. After a

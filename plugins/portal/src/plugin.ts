@@ -19,6 +19,7 @@ import { Outbox, OutboxWriter } from "./outbox.ts";
 import { Sender } from "./sender.ts";
 import { TttEvents } from "./ttt.ts";
 import { readSettings, type Settings } from "./settings.ts";
+import { SkinsClient } from "./skins.ts";
 import { errText, TokenClient } from "./token.ts";
 import { ulidFactory } from "./ulid.ts";
 
@@ -40,7 +41,14 @@ let live: LiveClient | null = null;
 let liveKey = "";
 
 /** Optional game plugins the live channel drives; null while not loaded. */
-let weaponPaints: { reload(slot: number): boolean } | null = null;
+interface WeaponPaintsApi {
+  reload(slot: number): boolean;
+  supply(slot: number, userId: number, data: never): boolean;
+}
+let weaponPaints: WeaponPaintsApi | null = null;
+/** WeaponPaints storage over the portal API (its `storage = "plugin"`); null while idle. */
+let skins: SkinsClient | null = null;
+let skinsKey = "";
 let weaponPaintsDs: { reloadPolicy(): void } | null = null;
 
 const writer = new OutboxWriter(Date.now, log);
@@ -131,6 +139,48 @@ function rebuildLive(): void {
   live.start();
 }
 
+/** (Re)create the skins client when the portal or key changed. */
+function rebuildSkins(): void {
+  const s = settings;
+  const key = s.baseUrl === null ? "" : `${s.baseUrl}|${s.apiKey}|${String(s.httpTimeoutMs)}|${String(s.debug)}`;
+  if (key === skinsKey) return;
+  skinsKey = key;
+  skins =
+    s.baseUrl === null
+      ? null
+      : new SkinsClient({
+          baseUrl: s.baseUrl,
+          tokens: new TokenClient(s.baseUrl, s.apiKey, sdkFetch, Date.now, s.httpTimeoutMs),
+          fetch: sdkFetch,
+          schedule: (ms, fn) => void after(ms, fn),
+          log,
+          debug: s.debug ? log : undefined,
+          timeoutMs: s.httpTimeoutMs,
+        });
+  if (skins) reloadAllSkins();
+}
+
+/** Ask WeaponPaints to load everyone again, so loads asked for before we could answer get answered. */
+function reloadAllSkins(): void {
+  const wp = weaponPaints;
+  if (!wp) return;
+  for (const c of Clients.all()) if (c.isValid() && !c.isBot) wp.reload(c.slot);
+}
+
+/** WeaponPaints (storage "plugin") wants a player's rows. */
+function loadSkins(slot: number, userId: number, steamId: string): void {
+  const wp = weaponPaints;
+  if (!wp) return;
+  const client = skins;
+  if (!client) {
+    wp.supply(slot, userId, null as never);
+    return;
+  }
+  void client.load(steamId).then((data) => {
+    guard("supply", () => weaponPaints?.supply(slot, userId, data as never));
+  });
+}
+
 /** A player saved skins on the web: reload them if they are on this server. */
 function refreshPlayer(steamId: string): void {
   const wp = weaponPaints;
@@ -167,6 +217,7 @@ function applySettings(): void {
     idleLogged = settings.idleReason;
     rebuildSender();
     rebuildLive();
+    rebuildSkins();
     return;
   }
   idleLogged = null;
@@ -180,6 +231,7 @@ function applySettings(): void {
     prev.debug !== settings.debug;
   if (changed || !sender) rebuildSender();
   rebuildLive();
+  rebuildSkins();
 }
 
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
@@ -271,6 +323,22 @@ export function OnPluginStart(): void {
   watchOptional("@edgegamers/s2s-weaponpaints", (wp, scope) => {
     weaponPaints = wp;
     scope.own({ dispose: () => (weaponPaints = null) });
+    // Only sent with WeaponPaints' storage = "plugin": then we are its storage, over the portal API.
+    scope.own(
+      wp.on("OnLoadRequested", (ev) =>
+        guard("OnLoadRequested", () => loadSkins(ev.player.slot, ev.player.userId, ev.player.steamId)),
+      ),
+    );
+    scope.own(
+      wp.on("OnStoreWrite", (ev) =>
+        guard("OnStoreWrite", () => {
+          if (skins) void skins.save(ev.steamId, ev.writes);
+          else log(`skins save for ${ev.steamId}: idle, ${ev.writes.length} change(s) not saved`);
+        }),
+      ),
+    );
+    // Loads WeaponPaints asked for before this attached went unheard: ask again.
+    if (skins) after(0, reloadAllSkins);
   });
   watchOptional("@edgegamers/s2s-weaponpaints-ds", (ds, scope) => {
     weaponPaintsDs = ds;
