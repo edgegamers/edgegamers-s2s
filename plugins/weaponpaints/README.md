@@ -47,7 +47,7 @@ Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is p
 | Agent menu | `!agents` | Pick an agent for your current team |
 | Music menu | `!music` | Pick a music kit, or None |
 | Pin menu | `!pin` `!pins` `!coin` `!coins` | Pick a scoreboard pin, or None |
-| StatTrak | `!stattrak` `!st` | Toggle StatTrak on the held weapon |
+| StatTrak | `!stattrak` | Toggle StatTrak on the held weapon |
 | Refresh | `!wp` | Reload your selections from the database and re-give your weapons |
 | Info | `!ws` | Print the website and the other commands |
 | Suicide | `!kill` | Kill yourself (to respawn with a new knife) |
@@ -85,7 +85,7 @@ plugin's files directory under `data/` and set `skins_language`. Chat text is in
 ## What is applied, and when
 
 - **Weapons**: when any `weapon_*` entity spawns, on the next frame, for its original owner (or its
-  holder): knife model (`ChangeSubclass`), paint kit, wear, seed (a fresh pattern per weapon for an
+  holder): knife model, paint kit, wear, seed (a fresh pattern per weapon for an
   unseeded Fade), name tag, StatTrak counter, up to five stickers and one keychain, and the legacy
   model body group. Kills with a StatTrak weapon count up and are written back on disconnect.
 - **On spawn**: music kit, agent model, gloves and pin.
@@ -114,6 +114,12 @@ EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter t
 - Selections are written to the database even when made while dead (upstream skipped the save).
 - `!wp` waits for the database reload before re-applying; in-session StatTrak kills survive it.
 - Re-giving a knife skips upstream's temporary USP/knife swap; the player is switched to slot 3.
+- A stock knife is swapped for a newly given knife of the chosen model, not changed in place with
+  `ChangeSubclass`. Upstream changes it inside a GiveNamedItem hook, before the client has seen the
+  knife; s2script has no such hook, and changing a knife the client already holds leaves it
+  invisible or drawn backwards. For the same reason the `item_pickup` re-apply is dropped: a
+  picked-up knife keeps the skin of the player it was given to.
+- `!st` is not a default StatTrak alias, because the JailBreak warden plugin uses it.
 - Weapons are removed through their owner's weapon services, not a delayed `Kill` input.
 - The database layer is portable SQL (no `ON DUPLICATE KEY`), so SQLite and Postgres also work.
   New tables use `SMALLINT` for `weapon_stattrak`; existing MySQL tables are left as they are.

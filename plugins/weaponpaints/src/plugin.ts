@@ -14,14 +14,14 @@ import {
 import { readSettings, type Settings } from './config';
 import {
   configureApply, countStatTrakKill, giveAgent, giveGloves, giveMusicKit, givePin, onWeaponSpawned,
-  reapplyHeld, refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
+  refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
 } from './apply';
 import {
   configureMenus, openAgentsMenu, openGlovesMenu, openKnifeMenu, openMusicMenu, openPinsMenu, openSkinsMenu,
 } from './menus';
 import { mayApply, maySelect, setGateHandle } from './gate';
 import { loadPhrases, say } from './messages';
-import { asTeam, changedKnife, changedPaint, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
+import { asTeam, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
 import { loadPlayer, openStore, saveStatTrak, storeReady } from './store';
 
 let settings: Settings;
@@ -269,15 +269,6 @@ function registerEvents(): void {
     if (attacker < 0 || victim < 0 || attacker === victim) return;
     const player = Player.fromSlot(attacker);
     if (player && getLoadout(attacker)) countStatTrakKill(player);
-  });
-  Events.on('item_pickup', ev => {
-    if (!ev.getString('item').includes('knife')) return;
-    const player = Player.fromSlot(ev.getPlayerSlot('userid'));
-    const loadout = player ? getLoadout(player.slot) : undefined;
-    if (!player || !loadout) return;
-    const team = asTeam(player.teamNum);
-    if (!changedKnife(loadout, team) || !changedPaint(loadout, team, Number(ev.getUint64('defindex')))) return;
-    if (player.pawnIsAlive && player.pawn?.isValid) reapplyHeld(player);
   });
 }
 
