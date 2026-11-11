@@ -24,6 +24,8 @@ export interface ForwardSource {
   roleOf(slot: number): number;
   isConnected(slot: number): boolean;
   isAlive(slot: number): boolean;
+  /** The live round's log lines (see `TttRoundEndEvent.log`). */
+  roundLog(): string[];
 }
 
 interface Bound { handle: TypedPublishHandle<Contract>; src: ForwardSource; }
@@ -93,7 +95,7 @@ export function forwardRoundEnd(ending: number, winner: number, reason: string |
   const b = bound, round = open;
   if (b === null || round === null || round.round !== ending) return;
   open = null;
-  b.handle.emit('OnRoundEnd', roundEndPayload(round.round, round.map, winner, reason, now - round.startedAt, rosterRows(b.src)));
+  b.handle.emit('OnRoundEnd', roundEndPayload(round.round, round.map, winner, reason, now - round.startedAt, rosterRows(b.src), b.src.roundLog()));
 }
 
 /** After `death` dispatched. Only deaths inside a live round are forwarded. */

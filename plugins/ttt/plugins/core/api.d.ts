@@ -576,6 +576,12 @@ export interface TttRoundEndEvent {
   durationSeconds: number;
   /** Everyone dealt a role this round, including players who left (`alive: false`). */
   players: TttRoundPlayer[];
+  /**
+   * The round's action log, one rendered line per entry exactly as `!logs` shows it
+   * (`[MM:SS] (12345) Name [T] killed (67890) Other [I] using weapon_ak47`), without the header and
+   * footer lines. Damage is coalesced and the log keeps the round's newest 512 entries.
+   */
+  log: string[];
 }
 export interface TttRoleAssignedEvent { round: number; player: TttPlayerRef; role: TttRoleName; }
 export interface TttPlayerKilledEvent {

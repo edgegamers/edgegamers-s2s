@@ -26,6 +26,13 @@ export function forwardPurchase(slot:number,itemId:ShopItemId,price:number):void
  forwards.emit('OnPurchase',{round:owner.getGame().epoch,player:{slot,steamId:owner.steamIdOf(slot),name:owner.nameOf(slot)},
   role:ROLE_NAMES[owner.roleOf(slot)]??'none',itemId,price});
 }
+/** After a balance change committed. */
+export function forwardBalanceChanged(slot:number,oldBalance:number,balance:number,reason:string):void{
+ const owner=service;
+ if(forwards===null||owner===null||oldBalance===balance)return;
+ forwards.emit('OnBalanceChanged',{round:owner.getGame().epoch,player:{slot,steamId:owner.steamIdOf(slot),name:owner.nameOf(slot)},
+  oldBalance,balance,reason});
+}
 export interface ShopViewState {owner:CoreMethods;state:number;epoch:number;role:number;}
 export function captureShopViewState(slot:number):ShopViewState|null{
  const owner=core(),game=owner.getGame(),role=owner.roleOf(slot);

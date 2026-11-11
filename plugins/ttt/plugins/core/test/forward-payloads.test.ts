@@ -56,9 +56,11 @@ test('round winner is a playing role or none', () => {
 
 test('round end payload carries winner, reason, rounded duration and copied players', () => {
   const players = [{ player: alice, role: 'traitor' as const, alive: true }, { player: bob, role: 'innocent' as const, alive: false }];
-  const end = roundEndPayload(7, 'ttt_minecraft', TRAITOR, undefined, 93.6, players);
-  assert.deepEqual(end, { round: 7, map: 'ttt_minecraft', winner: 'traitor', reason: '', durationSeconds: 94, players });
+  const log = ['[00:05] (00001) Alice [T] killed (00002) Bob [I] using weapon_ak47'];
+  const end = roundEndPayload(7, 'ttt_minecraft', TRAITOR, undefined, 93.6, players, log);
+  assert.deepEqual(end, { round: 7, map: 'ttt_minecraft', winner: 'traitor', reason: '', durationSeconds: 94, players, log });
   assert.notEqual(end.players[0]!.player, alice);
+  assert.notEqual(end.log, log);
 
   const timeout = roundEndPayload(8, 'ttt_minecraft', INNOCENT, 'Round ended due to timeout', 300, []);
   assert.equal(timeout.winner, 'innocent');
@@ -68,4 +70,5 @@ test('round end payload carries winner, reason, rounded duration and copied play
   assert.equal(draw.winner, 'none');
   assert.equal(draw.reason, 'Draw');
   assert.equal(draw.durationSeconds, 0);
+  assert.deepEqual(draw.log, []);
 });

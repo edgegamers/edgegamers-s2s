@@ -8,7 +8,7 @@
  * Wiring only; the logic lives in the other files.
  */
 import { after, Clients, command, config, Database, every, fetch, Server, watchOptional } from "@s2script/sdk";
-import type { Timer } from "@s2script/sdk";
+import type { Client, Timer } from "@s2script/sdk";
 import { WebSocket } from "@s2script/sdk/ws";
 import { EventBuilder, type Clock, type PortalEvent } from "./envelope.ts";
 import type { Fetch } from "./http.ts";
@@ -16,6 +16,7 @@ import { JbEvents } from "./jb.ts";
 import { LiveClient } from "./live.ts";
 import { Outbox, OutboxWriter } from "./outbox.ts";
 import { Sender } from "./sender.ts";
+import { TttEvents } from "./ttt.ts";
 import { readSettings, type Settings } from "./settings.ts";
 import { errText, TokenClient } from "./token.ts";
 import { ulidFactory } from "./ulid.ts";
@@ -179,6 +180,7 @@ function applySettings(): void {
 }
 
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
+const ttt = new TttEvents(new EventBuilder("ttt", ulid, clock, () => Server.mapName), clock, emit);
 
 export function OnPluginStart(): void {
   applySettings();
@@ -193,6 +195,21 @@ export function OnPluginStart(): void {
     scope.own({ dispose: () => jbBuilder.reset() });
   });
 
+  watchOptional("@edgegamers/ttt-core", (core, scope) => {
+    scope.own(core.on("OnRoleAssigned", (ev) => guard("OnRoleAssigned", () => ttt.onRoleAssigned(ev))));
+    scope.own(core.on("OnRoundStart", (ev) => guard("OnRoundStart", () => ttt.onRoundStart(ev))));
+    scope.own(core.on("OnPlayerKilled", (ev) => guard("OnPlayerKilled", () => ttt.onPlayerKilled(ev))));
+    scope.own(core.on("OnBodyFound", (ev) => guard("OnBodyFound", () => ttt.onBodyFound(ev))));
+    scope.own(core.on("OnRoundEnd", (ev) => guard("OnRoundEnd", () => ttt.onRoundEnd(ev))));
+    scope.own({ dispose: () => ttt.reset() });
+  });
+  watchOptional("@edgegamers/ttt-shop", (shop, scope) => {
+    scope.own(shop.on("OnPurchase", (ev) => guard("OnPurchase", () => ttt.onPurchase(ev))));
+    scope.own(shop.on("OnBalanceChanged", (ev) => guard("OnBalanceChanged", () => ttt.onBalanceChanged(ev))));
+  });
+  watchOptional("@edgegamers/ttt-special", (special, scope) => {
+    scope.own(special.on("OnSpecialRoundStarted", (ev) => guard("OnSpecialRoundStarted", () => ttt.onSpecialRoundStarted(ev))));
+  });
   watchOptional("@edgegamers/s2s-weaponpaints", (wp, scope) => {
     weaponPaints = wp;
     scope.own({ dispose: () => (weaponPaints = null) });
@@ -246,6 +263,11 @@ export function OnPluginEnd(): void {
 
 export function OnMapStart(): void {
   jbBuilder.reset();
+  ttt.reset();
+}
+
+export function OnClientDisconnect(client: Client): void {
+  if (!client.isBot) guard("OnClientDisconnect", () => ttt.onLeave(client.steamId));
 }
 
 /** Forward handlers must never throw. */
