@@ -2,7 +2,7 @@ import {initializeSettings,disposeSettings,getRoundSettings,refreshSettings} fro
 import { publish, use } from '@s2script/sdk/plugin';
 import type { KarmaMethods } from '../api';
 import { createFeatureAdapter, type FeatureAdapter } from '../../../packages/contracts/ordered.ts';
-import { bindCore, unbindCore } from './runtime';
+import { bindCore, unbindCore, bindForwards, unbindForwards } from './runtime';
 import {loadPhrases} from '../../../packages/contracts/phrases.ts';
 import {
   installKarma, karmaOf, adminSetKarma, timeoutRemaining,
@@ -29,12 +29,13 @@ export function OnPluginStart(): void {
     getHandlers: () => current.getHandlers(),
     handleDomain: call => current.handleDomain(call),
   };
-  publish('@edgegamers/ttt-karma', methods);
+  bindForwards(publish('@edgegamers/ttt-karma', methods));
   // Core attaches these handlers in its original installation order, then replays
   // join for current occupants. Seeding here would race that handshake or double-load.
 }
 
 export function OnPluginEnd(): void {
+  unbindForwards();
   adapter?.bus.clear();
   adapter = null;
   disposeSettings();

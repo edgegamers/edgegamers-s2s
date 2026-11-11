@@ -17,7 +17,7 @@ import { Server } from "@s2script/sdk/server";
 import { GameRules } from "@s2script/cs2";
 import type { DomainBus } from "../../../packages/contracts/ordered.ts";
 import { GameState, RoleId, Priority, n, msg, reg, tell, tellAll, game,
-  setRoundDeadline, addBalance, balanceOf, setSuppressPistols } from "./runtime";
+  setRoundDeadline, addBalance, balanceOf, setSuppressPistols, forwardSpecialRoundStarted } from "./runtime";
 import { clearSlot, GearSlot, RIFLES, heldWeapons, weaponClass } from "./inventory";
 
 /** A special round definition. */
@@ -232,6 +232,7 @@ export function startSpecialRounds(forced?: readonly string[]): string[] {
     r.apply();
   }
   sinceSpecial = 0;
+  forwardSpecialRoundStarted(chosen.map((r) => ({ id: r.id, name: r.name })));
   return chosen.map((r) => r.id);
 }
 

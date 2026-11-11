@@ -1,5 +1,6 @@
 /** Finite copied domain types for extracting the existing port. */
 import type { EntityRef } from '@s2script/sdk/entity';
+import type { Notification } from '@s2script/sdk/interfaces';
 export type RoleId = 0 | 1 | 2 | 3 | 4;
 export type GameState = 0 | 1 | 2 | 3;
 export type HandlerId =
@@ -250,4 +251,15 @@ export interface ShopMethods {
  getRoundSettings():ShopSettings;
  refreshCatalog():void;
 }
-export interface Contract {methods:ShopMethods;forwards:{}}
+/** A player copied onto a forward. `steamId` is the decimal SteamID64 string (`""` when unknown). */
+export interface TttPlayerRef { slot:number; steamId:string; name:string; }
+export type TttRoleName = 'none' | 'innocent' | 'traitor' | 'detective' | 'spectator';
+/** `round` is Core's round identity (`GameSnapshot.epoch`), shared with Core's own stats forwards. */
+export interface TttPurchaseEvent { round:number; player:TttPlayerRef; role:TttRoleName; itemId:ShopItemId; price:number; }
+export interface Contract {
+ methods:ShopMethods;
+ forwards:{
+  /** A purchase was charged and delivered. Refused, vetoed and refunded purchases are not sent. */
+  OnPurchase:Notification<TttPurchaseEvent>;
+ };
+}
