@@ -292,8 +292,17 @@ function refreshSlot(slot: number): boolean {
   return true;
 }
 
+/** The contract's reload(): read the database again, then re-apply (what `!wp` does). */
+function reloadSlot(slot: number): boolean {
+  const client = Clients.fromSlot(slot);
+  const player = Player.fromSlot(slot);
+  if (!client?.isValid() || client.isBot || !player || player.userId !== client.userId || !storeReady()) return false;
+  refreshPlayer(player);
+  return true;
+}
+
 export function OnPluginStart(): void {
-  setGateHandle(publish('@edgegamers/s2s-weaponpaints', { refresh: refreshSlot }));
+  setGateHandle(publish('@edgegamers/s2s-weaponpaints', { refresh: refreshSlot, reload: reloadSlot }));
   settings = readSettings();
   configureApply(settings, catalog);
   configureMenus(settings, catalog);

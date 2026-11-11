@@ -57,7 +57,7 @@ export function killPayload(
 
 export function roundEndPayload(
   round: number, map: string, winner: number, reason: string | undefined,
-  durationSeconds: number, players: readonly TttRoundPlayer[],
+  durationSeconds: number, players: readonly TttRoundPlayer[], log: readonly string[] = [],
 ): TttRoundEndEvent {
   const won = winnerName(winner);
   return {
@@ -67,5 +67,6 @@ export function roundEndPayload(
     reason: reason ?? '',
     durationSeconds: Math.max(0, Math.round(durationSeconds)),
     players: players.map(row => ({ player: { ...row.player }, role: row.role, alive: row.alive })),
+    log: [...log],
   };
 }

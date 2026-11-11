@@ -236,7 +236,7 @@ test('stats forwards fire once per real round, role and end, in round order', as
   const r = f.api.registry;
   f.api.forwards.bindForwards({emit: (name: string, payload: unknown) => sent.push([name, JSON.parse(JSON.stringify(payload))])},
     {round: f.api.roundEpoch, mapName: () => 'ttt_test', steamIdOf: r.steamIdOf, nameOf: r.nameOf, roleOf: r.roleOf,
-      isConnected: r.isConnected, isAlive: r.isAlive});
+      isConnected: r.isConnected, isAlive: r.isAlive, roundLog: () => ['[00:01] line']});
   await f.begin();
   const round = f.api.roundEpoch();
   const p0 = {slot: 0, steamId: '1', name: 'P0'}, p1 = {slot: 1, steamId: '2', name: 'P1'};
@@ -251,6 +251,7 @@ test('stats forwards fire once per real round, role and end, in round order', as
   assert.equal(sent[3]![1].winner, 'traitor');
   assert.equal(sent[3]![1].round, round);
   assert.equal(sent[3]![1].players.length, 2);
+  assert.deepEqual(sent[3]![1].log, ['[00:01] line']);
 
   // A round abandoned without a result (unload) sends no end; the next round starts cleanly.
   sent.length = 0;
