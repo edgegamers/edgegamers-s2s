@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-core
 
+## 1.1.6
+
+### Patch Changes
+
+- 18da8c9: When the cells fail to open, the round log now says why: no matching button (with the map's func_buttons listed), only a weak name match, or the game refusing the Press input.
+
 ## 1.1.5
 
 ### Patch Changes

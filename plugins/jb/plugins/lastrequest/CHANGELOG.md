@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-lastrequest
 
+## 1.1.1
+
+### Patch Changes
+
+- 6d34dad: Shot for Shot and Mag for Mag participants can no longer drop their weapon for the whole last request.
+
 ## 1.1.0
 
 ### Minor Changes
