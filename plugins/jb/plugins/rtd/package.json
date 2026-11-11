@@ -9,7 +9,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.6"
+      "@edgegamers/jailbreak-core": "^1.2.0"
     },
     "optionalPluginDependencies": {
       "@edgegamers/decluttr": "^1.0.0",

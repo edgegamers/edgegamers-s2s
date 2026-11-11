@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-portal",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, and is WeaponPaints' storage over the portal API.",
   "main": "src/plugin.ts",

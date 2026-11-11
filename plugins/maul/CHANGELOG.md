@@ -1,5 +1,11 @@
 # @edgegamers/s2s-maul
 
+## 0.3.0
+
+### Minor Changes
+
+- 8997a85: Publish an `@edgegamers/s2s-maul` contract: `getDsTier(steamId)` (0 none, 1 Silver to 4 Royal), `isVerified(steamId)` and an `OnDsTierChanged` forward, all read from the profile MAUL already caches on connect.
+
 ## 0.2.1
 
 ### Patch Changes

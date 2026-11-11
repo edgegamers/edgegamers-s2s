@@ -11,7 +11,7 @@
       "@edgegamers/jailbreak-shared": "^1.0.0"
     },
     "pluginDependencies": {
-      "@edgegamers/jailbreak-core": "^1.1.6"
+      "@edgegamers/jailbreak-core": "^1.2.0"
     },
     "config": {
       "prisoner_to_guard_ratio": {
