@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LogBook, formatClock, formatLine, playerLabel } from "../src/log-book.ts";
-import { applyC4Damage, c4Damage, pressedNow, randomBombDecision, resolveBombIcon } from "../src/c4-logic.ts";
+import { applyC4Damage, c4Damage, pressedNow, randomBombDecision, randomBombRoll, resolveBombIcon } from "../src/c4-logic.ts";
 
 test("formatClock", () => {
   assert.equal(formatClock(0), "[00:00]");
@@ -52,4 +52,14 @@ test("randomBombDecision mirrors C4Behavior.OnRoundStart", () => {
   assert.deepEqual(randomBombDecision(true, true), { give: false, skipNext: false });
   assert.deepEqual(randomBombDecision(false, true), { give: false, skipNext: true });
   assert.deepEqual(randomBombDecision(false, false), { give: false, skipNext: false });
+});
+
+test("randomBombRoll gates on guard count and chance", () => {
+  assert.equal(randomBombRoll(3, 4, 100, 0), false);
+  assert.equal(randomBombRoll(4, 4, 100, 0.999), true);
+  assert.equal(randomBombRoll(8, 4, 0, 0), false);
+  assert.equal(randomBombRoll(8, 4, 50, 0.49), true);
+  assert.equal(randomBombRoll(8, 4, 50, 0.5), false);
+  assert.equal(randomBombRoll(8, 4, 150, 0.999), true);
+  assert.equal(randomBombRoll(8, 4, -5, 0), false);
 });
