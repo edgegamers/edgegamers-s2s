@@ -22,6 +22,7 @@ import { applyRoleTeam } from "./teams";
 
 import { nextPreFrame, nextPreFrameSpread } from "../core/preframe";
 import { getTttHud } from "../cs2/ttthud";
+import { forwardRoleAssigned } from "../core/forwards";
 
 /** The display name for a role, resolved through the phrase table. */
 export function roleName(role: RoleId): string {
@@ -155,6 +156,7 @@ function deal(bus: EventBus<TttEvents>, pool: number[], role: RoleId, count: num
     const moved = applyRoleTeam(slot, ev.role);
     // Observers (icons, credits, map context) run AFTER the commit and team intent.
     bus.emit("roleAssigned", { slot, role: ev.role });
+    forwardRoleAssigned(slot, ev.role);
     if (moved) {
       const target = slot;
       const assigned = ev.role;

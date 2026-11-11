@@ -16,6 +16,7 @@
 
 import { delay } from "@s2script/sdk/timers";
 import { bindRoundEpoch, nextPreFrame } from "../core/preframe";
+import { forwardRoundEnd, forwardRoundStart } from "../core/forwards";
 import { Server } from "@s2script/sdk/server";
 import { Events, GameRules, RoundEndReason, Teams, WinPanelFinalEvent } from "@s2script/cs2";
 import { GameState, MAX_SLOTS, RoleId, Team } from "../core/enums";
@@ -376,6 +377,7 @@ function beginRound(attempt = 0): void {
   // own, so whoever arms last wins and it made sure that was Speed.
   setRoundDeadline(roundDuration(game.participants));
   if (!setState(GameState.InProgress)) return;
+  forwardRoundStart(game.startedAt);
 
   const traitors = reg.aliveCount(RoleId.Traitor);
   const nonTraitors = game.participants - traitors;
@@ -504,8 +506,10 @@ export function endGame(winner: RoleId, reason?: string): void {
   engineEndedRound = false;
 
   game.winner = winner;
+  const ending = epoch;
   epoch++; // invalidate round-owned work and timers
   if (!setState(GameState.Finished)) return;
+  forwardRoundEnd(ending, winner, reason, Server.gameTime);
 
   tellAll(
     winner === RoleId.None

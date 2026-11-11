@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {translationsVia,ChatColors as testChatColors} from '../../../packages/contracts/test/translations-double.mjs';
 export const copy=value=>JSON.parse(JSON.stringify(value));
 export function fixture(code,existingConfiguration) {
-  let methods;const log=[],chat=[],commands=[],deadlines=[],suppression=[],removed=[],balances=[100,0,20];
+  let methods;const forwarded=[],log=[],chat=[],commands=[],deadlines=[],suppression=[],removed=[],balances=[100,0,20];
   const slots=[0,1,2],alive=[true,true,false],roles=[1,2,3],players=new Map();
   const cvars={sv_gravity:'900'};
   const values={sm_ttt_special_lowgrav_multiplier:0.5,sm_ttt_special_rich_bonus_multiplier:3,sm_ttt_special_rich_gain_multiplier:2,
@@ -23,7 +23,7 @@ export function fixture(code,existingConfiguration) {
   pawn(0,[7,4,42,43,49]);pawn(1,[16,1]);pawn(2,[9]);
   const randomMath=Object.create(Math);randomMath.random=()=>randoms.length?randoms.shift():0;
   const context=vm.createContext({module:{exports:{}},console:{log:m=>log.push(['log',m])},Math:randomMath,require(name){
-    if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatPhrase(key,args));if(name==='@s2script/sdk/plugin')return {use:id=>{assert.equal(id,'@edgegamers/ttt-core');return core;},publish:(id,m)=>{assert.equal(id,'@edgegamers/ttt-special');methods=m;return {};}};
+    if(name==='@s2script/sdk/translations')return translationsVia((slot,key,args)=>core.formatPhrase(key,args));if(name==='@s2script/sdk/plugin')return {use:id=>{assert.equal(id,'@edgegamers/ttt-core');return core;},publish:(id,m)=>{assert.equal(id,'@edgegamers/ttt-special');methods=m;return {emit:(e,p)=>forwarded.push([e,copy(p)])};}};
     if(name==='@s2script/cs2')return {ChatColors:testChatColors,Player:{fromSlot:s=>players.get(s)??null},GameRules:{get:()=>({timeRemaining:remaining})}};
     if(name==='@s2script/sdk/config')return {config:configuration.config};
     if(name==='@s2script/sdk/server')return {Server:{...configuration.server,command:c=>{commands.push(c);if(c===commandThrow)throw Error('command failed');},getCvar:n=>n.startsWith('sm_ttt_')?configuration.server.getCvar(n):cvars[n]??'',setCvar:(n,v)=>{if(n.startsWith('sm_ttt_'))return configuration.server.setCvar(n,v);cvars[n]=v;log.push(['cvar',n,v]);return true;}}};
@@ -31,10 +31,13 @@ export function fixture(code,existingConfiguration) {
     throw Error(`Unexpected dependency ${name}`);
   }});
   vm.runInContext(code,context);context.module.exports.OnPluginStart();
-  return {get methods(){return methods;},core,context,deliver,configuration,log,chat,commands,deadlines,suppression,removed,balances,slots,alive,roles,players,cvars,values,game,pawn,
+  return {get methods(){return methods;},forwarded,core,context,deliver,configuration,log,chat,commands,deadlines,suppression,removed,balances,slots,alive,roles,players,cvars,values,game,pawn,
     random:values=>{randoms=[...values];},remaining:value=>{remaining=value;},commandThrow:value=>{commandThrow=value;}};
 }
 export function behaviorTests(test,assert,make,prefix){
+ test(prefix+' OnSpecialRoundStarted forwards only rounds that actually started, once per start',()=>{const f=make();
+  f.methods.startSpecialRounds(['vanilla','rich','vanilla','nope']);f.methods.startSpecialRounds(['vanilla']);
+  assert.deepEqual(f.forwarded,[['OnSpecialRoundStarted',{round:1,rounds:[{id:'vanilla',name:'Vanilla'},{id:'rich',name:'Rich'}]}]]);});
  test(prefix+' registers only five old rows; forced unknown and duplicate IDs are ignored',()=>{const f=make();assert.deepEqual(copy(f.methods.roundIds()),['bhop','lowgrav','pistol','suppressed','vanilla','rich','speed']);assert.deepEqual(copy(f.methods.getHandlers()),['special.gameState','special.purchase','special.balance','special.death','special.damage']);assert.deepEqual(copy(f.methods.startSpecialRounds(['unknown','bhop','bhop'])),['bhop']);assert.deepEqual(f.commands,['sv_enablebunnyhopping 1','sv_autobunnyhopping 1']);assert.deepEqual(copy(f.methods.startSpecialRounds(['bhop'])),[]);});
  test(prefix+' cleanup restores only active gravity/BHop/suppression and is idempotent',()=>{const f=make();f.methods.clearSpecialRounds();assert.equal(f.cvars.sv_gravity,'900');assert.equal(f.commands.length,0);f.methods.startSpecialRounds(['lowgrav','bhop','suppressed']);assert.equal(f.cvars.sv_gravity,'450');f.methods.clearSpecialRounds();assert.equal(f.cvars.sv_gravity,'900');assert.deepEqual(f.suppression,[true,false]);assert.deepEqual(f.commands,['sv_enablebunnyhopping 1','sv_autobunnyhopping 1','sv_enablebunnyhopping 0','sv_autobunnyhopping 0']);const n=f.log.length;f.methods.clearSpecialRounds();assert.equal(f.log.length,n);});
  test(prefix+' invalid gravity falls back800 while cleanup restores captured string',()=>{const f=make();f.cvars.sv_gravity='bad';f.methods.startSpecialRounds(['lowgrav']);assert.equal(f.cvars.sv_gravity,'400');f.methods.clearSpecialRounds();assert.equal(f.cvars.sv_gravity,'bad');});

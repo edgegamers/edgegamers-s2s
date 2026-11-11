@@ -1,5 +1,6 @@
 /** Finite copied domain types for extracting the existing port. */
 import type { EntityRef } from '@s2script/sdk/entity';
+import type { Notification } from '@s2script/sdk/interfaces';
 export type RoleId = 0 | 1 | 2 | 3 | 4;
 export type GameState = 0 | 1 | 2 | 3;
 export type HandlerId =
@@ -148,4 +149,13 @@ export interface SpecialMethods {
   getHandlers(): HandlerId[];
   handleDomain(call: HandlerCall): HandlerReply;
 }
-export interface Contract { methods: SpecialMethods; forwards: {}; }
+export interface TttSpecialRoundInfo { id: string; name: string; }
+/** `round` is Core's round identity (`GameSnapshot.epoch`), shared with Core's own stats forwards. */
+export interface TttSpecialRoundStartedEvent { round: number; rounds: TttSpecialRoundInfo[]; }
+export interface Contract {
+  methods: SpecialMethods;
+  forwards: {
+    /** One or more special rounds went live (random or admin-forced). Only rounds that actually started are listed. */
+    OnSpecialRoundStarted: Notification<TttSpecialRoundStartedEvent>;
+  };
+}

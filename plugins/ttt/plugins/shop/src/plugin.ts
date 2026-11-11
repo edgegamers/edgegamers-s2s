@@ -1,7 +1,7 @@
 import {publish,use} from '@s2script/sdk/plugin';
 import type {ShopMethods,ShopItemView} from '../api';
 import {createFeatureAdapter,type FeatureAdapter} from '../../../packages/contracts/ordered.ts';
-import {bindCore,unbindCore} from './runtime';
+import {bindCore,unbindCore,bindForwards,unbindForwards} from './runtime';
 import {initializeSettings,disposeSettings,getRoundSettings,refreshSettings} from './settings';
 import {registerItems} from './catalog';
 import {installEconomy,tickEconomy} from './economy';
@@ -18,6 +18,6 @@ export function OnPluginStart():void{
  getItem:id=>{const item=shop.itemById(id);return item?itemView(item):null;},balanceOf:shop.balanceOf,addBalance:shop.addBalance,
  tryPurchase:(slot,id,tellWhy)=>{const item=shop.itemById(id);return item?shop.tryPurchase(slot,item,tellWhy):shop.PurchaseResult.NotFound;},
  resetShop:shop.resetShop,tickEconomy,refreshSettings,getRoundSettings,refreshCatalog:shop.refreshItems};
- publish('@edgegamers/ttt-shop',methods);
+ bindForwards(publish('@edgegamers/ttt-shop',methods));
 }
-export function OnPluginEnd():void{adapter?.bus.clear();adapter=null;shop.resetShop();disposeSettings();unbindCore();}
+export function OnPluginEnd():void{unbindForwards();adapter?.bus.clear();adapter=null;shop.resetShop();disposeSettings();unbindCore();}

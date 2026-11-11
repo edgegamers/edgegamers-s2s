@@ -51,6 +51,7 @@ export interface UiMethods {
 
 /** Finite copied domain types for extracting the existing port. */
 import type { EntityRef } from '@s2script/sdk/entity';
+import type { Notification } from '@s2script/sdk/interfaces';
 export type RoleId = 0 | 1 | 2 | 3 | 4;
 export type GameState = 0 | 1 | 2 | 3;
 export type HandlerId =
@@ -546,7 +547,70 @@ export interface CoreMethods extends UiModelMethods, WorldCoreMethods, Communica
   dispatchDomain(event: DomainEvent): DomainEvent;
   hasDomain(kind: DomainEvent['kind']): boolean;
 }
+/**
+ * Stats forwards. Copied, synchronous Notification payloads for any sink (the EdgeGamers portal
+ * bridge is the first). Core behaves identically with or without a listener.
+ *
+ * `round` is Core's round identity (`GameSnapshot.epoch` while the round is live): every forward
+ * from the same round, including Shop/Karma/Special ones, carries the same value. Roles are dealt
+ * before the round goes live, so `OnRoleAssigned` arrives before `OnRoundStart` for that round.
+ */
+/** A player copied onto the wire. `steamId` is the decimal SteamID64 string (`""` when unknown). */
+export interface TttPlayerRef { slot: number; steamId: string; name: string; }
+export type TttRoleName = 'none' | 'innocent' | 'traitor' | 'detective' | 'spectator';
+export interface TttRoundPlayer { player: TttPlayerRef; role: TttRoleName; alive: boolean; }
+export interface TttRoundStartEvent {
+  round: number;
+  map: string;
+  /** Everyone dealt a playing role this round. */
+  players: TttRoundPlayer[];
+}
+export interface TttRoundEndEvent {
+  round: number;
+  /** The map the round started on (a map change ends the round after the map has moved on). */
+  map: string;
+  /** Winning role, or `'none'` for a draw or a non-role end (timeouts count as an innocent win). */
+  winner: TttRoleName;
+  /** Why it ended when Core gave a reason (`"Draw"`, `"Map Change"`, the timeout), else `""`. */
+  reason: string;
+  durationSeconds: number;
+  /** Everyone dealt a role this round, including players who left (`alive: false`). */
+  players: TttRoundPlayer[];
+}
+export interface TttRoleAssignedEvent { round: number; player: TttPlayerRef; role: TttRoleName; }
+export interface TttPlayerKilledEvent {
+  round: number;
+  victim: TttPlayerRef;
+  victimRole: TttRoleName;
+  /** Null for a suicide, world or self-spectate death. */
+  killer: TttPlayerRef | null;
+  /** `'none'` when `killer` is null. */
+  killerRole: TttRoleName;
+  weapon: string;
+  headshot: boolean;
+  /** The kill was right for the killer's role: a Traitor killing a non-Traitor, or an Innocent or Detective killing a Traitor. */
+  correct: boolean;
+}
+export interface TttBodyFoundEvent {
+  round: number;
+  finder: TttPlayerRef;
+  finderRole: TttRoleName;
+  /** The dead player. Resolved from the round's roster, so it survives the owner disconnecting. */
+  owner: TttPlayerRef;
+  ownerRole: TttRoleName;
+}
 export interface Contract {
   methods: CoreMethods;
-  forwards: {};
+  forwards: {
+    /** The round went live (roles dealt, not vetoed). Once per round. */
+    OnRoundStart: Notification<TttRoundStartEvent>;
+    /** The round finished. Only for a round that sent `OnRoundStart`; once per round. */
+    OnRoundEnd: Notification<TttRoundEndEvent>;
+    /** A player's final dealt role (after any Karma rewrite). */
+    OnRoleAssigned: Notification<TttRoleAssignedEvent>;
+    /** A player died while the round was live. */
+    OnPlayerKilled: Notification<TttPlayerKilledEvent>;
+    /** A body was identified (not vetoed). */
+    OnBodyFound: Notification<TttBodyFoundEvent>;
+  };
 }

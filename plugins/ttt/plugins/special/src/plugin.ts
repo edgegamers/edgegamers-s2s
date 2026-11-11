@@ -2,7 +2,7 @@ import {initializeSettings,disposeSettings,getRoundSettings,refreshSettings} fro
 import {publish,use} from '@s2script/sdk/plugin';
 import type {SpecialMethods} from '../api';
 import {createFeatureAdapter,type FeatureAdapter} from '../../../packages/contracts/ordered.ts';
-import {bindCore,unbindCore} from './runtime';
+import {bindCore,unbindCore,bindForwards,unbindForwards} from './runtime';
 import {installSpecialRounds,isActive,startSpecialRounds,clearSpecialRounds,roundIds,tickSpecialRounds} from './rounds';
 import {loadPhrases} from '../../../packages/contracts/phrases.ts';
 let adapter:FeatureAdapter|null=null;
@@ -22,10 +22,11 @@ export function OnPluginStart():void {
     startRandomSpecialRounds:()=>startSpecialRounds(),clearSpecialRounds,roundIds,tickSpecialRounds,
     getHandlers:()=>current.getHandlers(),handleDomain:call=>current.handleDomain(call),
   };
-  publish('@edgegamers/ttt-special',methods);
+  bindForwards(publish('@edgegamers/ttt-special',methods));
 }
 export function OnPluginEnd():void {
   // Cleanup must retain Core access until Suppressed is restored.
+  unbindForwards();
   try { clearSpecialRounds(); }
   finally { adapter?.bus.clear();adapter=null;disposeSettings();unbindCore(); }
 }

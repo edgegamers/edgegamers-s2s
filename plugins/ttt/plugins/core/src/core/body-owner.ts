@@ -7,6 +7,7 @@ import {cfg,n} from './cvars';
 import {matchesUiActor} from './ui-actor';
 import {getBodyProjection,isCurrentBody,scheduleBodyPreFrame} from './body-provider';
 import {appliedModelOf} from './world-provider';
+import {forwardBodyFound} from './forwards';
 import {readDna} from '../shop/weaponfx';
 import {hasGloves,spendGlove,hasBodyPaint,spendBodyPaint,tryDefuseTripwire,tryPlaceHeldTripwire} from '../shop/effects';
 
@@ -23,6 +24,6 @@ export function createBodyCoreMethods(bus:EventBus<TttEvents>):CoreBodiesMethods
   spendBodyPaint(actor,ref){if(!matchesUiActor(actor))return false;const body=getBodyProjection(ref);return body!==null&&matchesUiActor(actor)&&isCurrentBody(body)&&spendBodyPaint(actor.slot,body);},
   tryDefuseTripwire:(actor,dt)=>matchesUiActor(actor)&&tryDefuseTripwire(actor.slot,dt),
   tryPlaceHeldTripwire:actor=>matchesUiActor(actor)&&tryPlaceHeldTripwire(actor.slot),
-  emitBodyIdentify(actor,ref){if(!matchesUiActor(actor))return null;const body=getBodyProjection(ref);if(body===null||!matchesUiActor(actor)||!isCurrentBody(body))return null;const result=bus.emit('bodyIdentify',{body,identifier:actor.slot,canceled:false});return {canceled:result.canceled};},
+  emitBodyIdentify(actor,ref){if(!matchesUiActor(actor))return null;const body=getBodyProjection(ref);if(body===null||!matchesUiActor(actor)||!isCurrentBody(body))return null;const result=bus.emit('bodyIdentify',{body,identifier:actor.slot,canceled:false});if(!result.canceled)forwardBodyFound(actor.slot,body.owner,body.ownerName,body.ownerRole);return {canceled:result.canceled};},
  };
 }

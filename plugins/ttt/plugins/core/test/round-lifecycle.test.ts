@@ -65,7 +65,8 @@ const bundle = await build({
       export * from './core/preframe.ts';
       export * from './core/ui-actor.ts';
       export * as registry from './core/registry.ts';
-      export {EventBus} from './core/bus.ts';`,
+      export {EventBus} from './core/bus.ts';
+      export * as forwards from './core/forwards.ts';`,
     resolveDir: fileURLToPath(new URL('../src/', import.meta.url)), loader: 'ts',
   },
   bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -226,4 +227,42 @@ test('an InProgress listener can replace the default deadline without losing rol
   await f.wake(5000);
   f.pre();
   assert.equal(f.api.game.state, 3);
+});
+
+test('stats forwards fire once per real round, role and end, in round order', async () => {
+  const f = lifecycle();
+  const sent: [string, any][] = [];
+  // JSON copy: the wire's structured copy, and plain objects outside the test's VM realm.
+  const r = f.api.registry;
+  f.api.forwards.bindForwards({emit: (name: string, payload: unknown) => sent.push([name, JSON.parse(JSON.stringify(payload))])},
+    {round: f.api.roundEpoch, mapName: () => 'ttt_test', steamIdOf: r.steamIdOf, nameOf: r.nameOf, roleOf: r.roleOf,
+      isConnected: r.isConnected, isAlive: r.isAlive});
+  await f.begin();
+  const round = f.api.roundEpoch();
+  const p0 = {slot: 0, steamId: '1', name: 'P0'}, p1 = {slot: 1, steamId: '2', name: 'P1'};
+  assert.deepEqual(sent.map(([name]) => name), ['OnRoleAssigned', 'OnRoleAssigned', 'OnRoundStart']);
+  assert.deepEqual(sent[2]![1], {round, map: 'ttt_test', players: [
+    {player: p0, role: 'traitor', alive: true}, {player: p1, role: 'innocent', alive: true}]});
+  assert.ok(sent.every(([, payload]) => payload.round === round));
+
+  f.api.endGame(2);
+  f.api.endGame(2); // Already finished: no second end.
+  assert.deepEqual(sent.slice(3).map(([name]) => name), ['OnRoundEnd']);
+  assert.equal(sent[3]![1].winner, 'traitor');
+  assert.equal(sent[3]![1].round, round);
+  assert.equal(sent[3]![1].players.length, 2);
+
+  // A round abandoned without a result (unload) sends no end; the next round starts cleanly.
+  sent.length = 0;
+  f.api.onEngineRoundStart();
+  await f.wake(1000);
+  f.pre();
+  assert.equal(f.api.game.state, 2);
+  assert.deepEqual(sent.map(([name]) => name), ['OnRoleAssigned', 'OnRoleAssigned', 'OnRoundStart']);
+  assert.notEqual(sent[2]![1].round, round);
+  sent.length = 0;
+  f.api.abandonRound();
+  f.api.endGame(1);
+  assert.deepEqual(sent, []);
+  f.api.forwards.unbindForwards();
 });

@@ -117,7 +117,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
     require(name: string) {
       if (name === '@s2script/sdk/plugin') return { createScope: () => scope,
         previous: () => handoff,
-        publish(name: string, methods: any) { assert.equal(name, '@edgegamers/ttt-core'); published = methods; },
+        publish(name: string, methods: any) { assert.equal(name, '@edgegamers/ttt-core'); published = methods; return { emit() {} }; },
         watchOptional(name: string, callback: any) { attachments.push({ name, callback }); } };
       if (name === '@s2script/sdk/config') return { config: cf.config };
       if (name === '@s2script/sdk/server') return { Server: server };
