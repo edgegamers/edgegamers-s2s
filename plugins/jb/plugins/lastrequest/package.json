@@ -87,7 +87,7 @@
       },
       "lg_min_cts": {
         "type": "int",
-        "default": 2,
+        "default": 4,
         "description": "Guards alive at round start needed for last guard to be possible (1-32)."
       },
       "lg_time_base": {
