@@ -91,3 +91,20 @@ test("the refusal names the tier that unlocks the item", () => {
   assert.equal(refusal("gloves", 3), "These gloves need Platinum Dedicated Supporter or higher.");
   assert.equal(refusal("knife", 2), "This knife needs Gold Dedicated Supporter or higher.");
 });
+
+test("the CS portal's /api/skins/policy answer parses as a policy", () => {
+  // The portal (edgegamers/s2s-cs-web) serves this shape: numeric tiers, optional narrowing
+  // fields left out, plus an updatedAt stamp the plugin ignores.
+  const p = parsed(JSON.stringify({
+    defaultTier: 0,
+    rules: [
+      { kind: "skin", minTier: 1 },
+      { kind: "skin", defindex: 7, paint: 801, minTier: 4 },
+      { kind: "knife", model: "weapon_knife_karambit", minTier: 3 },
+    ],
+    updatedAt: "2026-11-11T04:43:20.717Z",
+  }));
+  assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 801 })), 4);
+  assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 44 })), 1);
+  assert.equal(requiredTier(p, item("knife", { defindex: 507, model: "weapon_knife_karambit" })), 3);
+});

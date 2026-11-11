@@ -2,14 +2,20 @@
 //
 // WeaponPaints asks (OnSelectionRequested, OnApplyRequested); this plugin answers from the policy
 // file and the tier MAUL cached on connect. Remove this plugin and WeaponPaints is ungated again.
+// With `policy_url` set, the policy comes from the CS portal at every map start, and the file keeps
+// the last good copy for when the portal cannot be reached.
 // A refused apply only shows the default item: the player's saved rows are never touched, so a
 // lapsed supporter gets everything back on resubscribing.
 
 import { Chat, Clients, command, config, HookResult, use } from "@s2script/sdk";
+import { fetch } from "@s2script/sdk/http";
 import type { HookResultValue } from "@s2script/sdk";
 import { ChatColors } from "@s2script/cs2";
 import type { ItemRequest } from "@edgegamers/s2s-weaponpaints";
 import { allows, DEFAULT_POLICY, parsePolicy, refusal, requiredTier, type Policy } from "./policy.ts";
+
+/** The one WeaponPaints method this plugin calls. */
+type WeaponPaints = { refresh(slot: number): boolean };
 
 const POLICY_FILE = "weaponpaints_ds_policy.json";
 const log = (m: string): void => console.log(`[WeaponPaints-DS] ${m}`);
@@ -35,6 +41,43 @@ function loadPolicy(): string {
   return `loaded ${POLICY_FILE} (${String(policy.rules.length)} rules)`;
 }
 
+/**
+ * Fetch the policy from the portal. A good answer replaces the policy and the file (the last good
+ * copy); anything else is logged and the current policy stays. Re-applies items when it changed.
+ */
+async function fetchPolicy(wp: WeaponPaints): Promise<void> {
+  const url = config.getString("policy_url").trim();
+  if (url === "") return;
+  try {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    const agent = config.getString("user_agent").trim();
+    if (agent !== "") headers["User-Agent"] = agent;
+    const res = await fetch(url, { method: "GET", headers, timeoutMs: config.getInt("http_timeout_ms") });
+    if (!res.ok) {
+      log(`policy fetch from ${url} failed: HTTP ${String(res.status)}; keeping the current policy`);
+      return;
+    }
+    const parsed = parsePolicy(res.text());
+    if (!parsed.ok) {
+      log(`policy from ${url} is malformed: ${parsed.error}; keeping the current policy`);
+      return;
+    }
+    const before = JSON.stringify(policy);
+    policy = parsed.policy;
+    loaded = true;
+    config.writeFile(POLICY_FILE, JSON.stringify(policy, null, 2) + "\n");
+    const changed = JSON.stringify(policy) !== before;
+    log(`fetched the policy from ${url} (${String(policy.rules.length)} rules${changed ? ", changed" : ""})`);
+    if (changed) refreshAll(wp);
+  } catch (e) {
+    log(`policy fetch from ${url} failed: ${e instanceof Error ? e.message : String(e)}; keeping the current policy`);
+  }
+}
+
+function refreshAll(wp: WeaponPaints): void {
+  for (const client of Clients.all()) if (client.isValid() && !client.isBot) wp.refresh(client.slot);
+}
+
 /** Forward handlers must never throw; a failure here allows, so cosmetics fail open. */
 function guard(what: string, fn: () => HookResultValue): HookResultValue {
   try {
@@ -45,10 +88,14 @@ function guard(what: string, fn: () => HookResultValue): HookResultValue {
   }
 }
 
+let weaponPaints: WeaponPaints | null = null;
+
 export function OnPluginStart(): void {
   const maul = use("@edgegamers/s2s-maul");
   const wp = use("@edgegamers/s2s-weaponpaints");
+  weaponPaints = wp;
   log(loadPolicy());
+  void fetchPolicy(wp);
 
   const tierOf = (req: ItemRequest): number => maul.getDsTier(req.player.steamId);
 
@@ -71,10 +118,12 @@ export function OnPluginStart(): void {
 
   command.server("wp_ds_reload", (cmd) => {
     cmd.reply(`[WeaponPaints-DS] ${loadPolicy()}`);
-    for (const client of Clients.all()) if (client.isValid() && !client.isBot) wp.refresh(client.slot);
+    refreshAll(wp);
+    void fetchPolicy(wp);
   });
 }
 
 export function OnMapStart(): void {
   log(loadPolicy());
+  if (weaponPaints) void fetchPolicy(weaponPaints);
 }

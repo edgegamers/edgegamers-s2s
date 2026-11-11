@@ -29,6 +29,10 @@ PlayerSettingsCS2 and AnyBaseLibCS2 are not needed.
 
    Without that entry the plugin keeps selections in s2script's local SQLite file, which the
    website cannot read. Missing tables are created on first connect.
+
+   `"driver": "postgres"` works too. EdgeGamers keeps these tables in the CS portal's Postgres
+   (edgegamers/s2s-cs-web `docs/skins.md`), with a role whose `search_path` is the portal's
+   `weaponpaints` schema.
 4. Check `sm plugins list` and the server log for `[WeaponPaints] database connected`.
 
 Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is painted twice.
