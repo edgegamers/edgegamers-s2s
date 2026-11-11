@@ -8,10 +8,11 @@
 import { Admin } from "@s2script/sdk/admin";
 import { Chat } from "@s2script/sdk/chat";
 import { Clients } from "@s2script/sdk/clients";
-import { ChatColors, Player } from "@s2script/cs2";
+import { Player } from "@s2script/cs2";
 import { delay } from "@s2script/sdk/timers";
 import { computeGrant, shouldRegisterAdmin, taggedName } from "./grant.ts";
 import { stripPort } from "./encoding.ts";
+import { staffChatPhraseFor } from "./staff-chat-phrases.ts";
 import { banKickMessage } from "./bans.ts";
 
 import type { MaulBackend, PlayerLookup } from "./backend.ts";
@@ -241,7 +242,9 @@ export class Authenticator {
 
     this.greeted.add(steamId);
 
-    Chat.toAll(`${ChatColors.Green}${DS_TAG} ${name} ${ChatColors.Default}${message}`);
+    for (const client of Clients.all()) {
+      Chat.toSlot(client.slot, staffChatPhraseFor(client.slot, "maul.supporter.join", name) + message);
+    }
     for (const client of Clients.all()) client.print(`${DS_TAG} ${name} ${message}`);
 
     // Both sinks are player-facing, so without this the server log cannot tell a fired greet from

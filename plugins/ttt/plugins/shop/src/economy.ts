@@ -11,7 +11,7 @@
  */
 
 import {Server} from '@s2script/sdk/server';
-import {GameState,MAX_SLOTS,RoleId,cfg,msg,reg,Priority,karmaOf,MAX_KARMA,minimumKarma,pawnOf,game} from './runtime';
+import {GameState,MAX_SLOTS,RoleId,cfg,msg,msgFor,reg,Priority,karmaOf,MAX_KARMA,minimumKarma,pawnOf,game} from './runtime';
 import {n} from './settings';
 import type {DomainBus} from '../../../packages/contracts/ordered.ts';
 import {addBalance,balanceOf,resetShop} from './shop';
@@ -124,12 +124,12 @@ function payExplorationRewards(): void {
   const min = n("sm_ttt_shop_reward_min");
   const max = n("sm_ttt_shop_reward_max");
   const count = ranking.length;
-  const reason = msg("SHOP_EXPLORATION");
+
   for (let i = 0; i < count; i++) {
     const slot = ranking[i]!;
     // Rank 0 (most movement) gets `max`; the least-moved gets `min`.
     const position = count === 1 ? 1 : (count - i - 1) / (count - 1);
-    addBalance(slot, Math.ceil(min + (max - min) * position), reason);
+    addBalance(slot, Math.ceil(min + (max - min) * position), msgFor(slot, "ttt.rewards.exploration"));
     travelled[slot] = 0;
   }
 }
@@ -172,7 +172,7 @@ export function installEconomy(bus: DomainBus): void {
     const base = cfg.roleCredits[ev.role] ?? 0;
     if (base === 0) return;
     const percent = (karmaOf(ev.slot) + minimumKarma()) / MAX_KARMA;
-    addBalance(ev.slot, Math.ceil(base * karmaScale(percent)), "Round Start", false);
+    addBalance(ev.slot, Math.ceil(base * karmaScale(percent)), msgFor(ev.slot, "ttt.rewards.round_start"), false);
   }, { priority: Priority.LOW });
 
   // Kill rewards.
@@ -188,15 +188,15 @@ export function installEconomy(bus: DomainBus): void {
       const assistCredits = Math.trunc(
         creditsForKill(reg.roleOf(assister), victimRole) * n("sm_ttt_shop_assist_multiplier"),
       );
-      addBalance(assister, assistCredits, `Assisted on ${reg.nameOf(ev.slot)}`);
+      addBalance(assister, assistCredits, msgFor(assister, "ttt.rewards.assist", reg.nameOf(ev.slot)));
     } else {
       killerCredits = Math.trunc(killerCredits * n("sm_ttt_shop_solo_kill_multiplier"));
     }
-    addBalance(killer, killerCredits, `Killed ${reg.nameOf(ev.slot)}`);
+    addBalance(killer, killerCredits, msgFor(killer, "ttt.rewards.kill", reg.nameOf(ev.slot)));
 
     // The victim's remaining balance is partly inherited by the killer, as in the C#.
     const victimBalance = balanceOf(ev.slot);
-    if (victimBalance > 0) addBalance(killer, (victimBalance / 2) | 0, "Loot");
+    if (victimBalance > 0) addBalance(killer, (victimBalance / 2) | 0, msgFor(killer, "ttt.rewards.loot"));
 
     clearTrail(ev.slot);
   });
@@ -206,16 +206,16 @@ export function installEconomy(bus: DomainBus): void {
     if (ev.canceled || ev.identifier < 0) return;
     const body = ev.body;
     const victimBalance = balanceOf(body.owner);
-    addBalance(ev.identifier, (victimBalance / 4) | 0, `Identified ${body.ownerName}`);
+    addBalance(ev.identifier, (victimBalance / 4) | 0, msgFor(ev.identifier, "ttt.rewards.body_identified", body.ownerName));
 
     const killer = body.killer;
     if (killer < 0 || !reg.isConnected(killer)) return;
     const goodKill = (reg.roleOf(killer) === RoleId.Traitor) !== (body.ownerRole === RoleId.Traitor);
     if (goodKill) {
-      addBalance(killer, (victimBalance / 4) | 0, "Good Kill");
+      addBalance(killer, (victimBalance / 4) | 0, msgFor(killer, "ttt.rewards.good_kill"));
     } else {
       const killerBalance = balanceOf(killer);
-      addBalance(killer, -(((killerBalance / 3) | 0) + ((victimBalance / 2) | 0)), "Bad Kill");
+      addBalance(killer, -(((killerBalance / 3) | 0) + ((victimBalance / 2) | 0)), msgFor(killer, "ttt.rewards.bad_kill"));
     }
   }, { ignoreCanceled: true });
 
@@ -226,7 +226,7 @@ export function installEconomy(bus: DomainBus): void {
     // while the pre-hook reports `weapon_taser`, so equality misses the live path.
     if (ev.attacker < 0 || !ev.weapon.includes("taser")) return;
     ev.canceled = true;
-    addBalance(ev.attacker, 30, "Successful Tase");
+    addBalance(ev.attacker, 30, msgFor(ev.attacker, "ttt.rewards.tase"));
   }, { priority: Priority.HIGH });
 
   // Wipe balances and per-round state when a round finishes.

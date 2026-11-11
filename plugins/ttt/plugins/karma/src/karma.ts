@@ -23,7 +23,7 @@ import {lowKarmaCommand} from "./settings";
 
 import { Server } from "@s2script/sdk/server";
 import { Bans } from "@s2script/sdk/bans";
-import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msg, reg, setScore, tell, game } from "./runtime";
+import { GameState, MAX_SLOTS, RoleId, Priority, cfg, n, msg, msgFor, reg, setScore, tell, game, chatMsgFor } from "./runtime";
 import type { DomainBus, KarmaEvent } from "../../../packages/contracts/ordered.ts";
 import { Player } from "@s2script/cs2";
 
@@ -493,7 +493,7 @@ export function installKarma(eventBus: DomainBus): void {
     (ev) => {
       const remaining = timeoutRounds[ev.slot]!;
       if (remaining <= 0) return;
-      tell(ev.slot, msg("KARMA_WARNING", remaining));
+      tell(ev.slot, chatMsgFor(ev.slot, "ttt.karma.warning", remaining));
       timeoutRounds[ev.slot] = remaining - 1;
       ev.role = RoleId.Spectator;
     },

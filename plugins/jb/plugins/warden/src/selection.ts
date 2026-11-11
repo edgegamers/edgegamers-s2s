@@ -1,4 +1,6 @@
-import { Chat, Clients, Cookies } from "@s2script/sdk";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { Clients, Cookies } from "@s2script/sdk";
 import type { Cookie } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { Team, isAlive, isSteamId64 } from "@edgegamers/jailbreak-shared";
@@ -106,7 +108,7 @@ function runAutoWarden(): void {
 }
 
 /** `!aw` / `!autowarden`: toggle the auto-warden preference. Returns the message to show. */
-export function toggleAutoWarden(slot: number): string {
+export function toggleAutoWarden(slot: number): Text {
   const c = Clients.fromSlot(slot);
   if (!autoCookie || !c || c.isBot) return msg.togglingNotEnabled;
   const enable = Cookies.get(c, autoCookie) !== "Y";

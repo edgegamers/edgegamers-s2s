@@ -241,8 +241,8 @@ export function tell(slot: number, message: string): void {
 }
 
 /** Send a chat line to every player. */
-export function tellAll(message: string): void {
-  Chat.toAll(message);
+export function tellAll(format: (slot: number) => string): void {
+  for (const client of Clients.all()) Chat.toSlot(client.slot, format(client.slot));
 }
 
 /** The only applied-model record is the World writer's private record. */

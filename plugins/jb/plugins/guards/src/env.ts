@@ -1,5 +1,7 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /** Runtime helpers: publisher, player refs, humans per team, empty-CT check, chat by SteamID. */
-import { Chat, Clients } from "@s2script/sdk";
+import { Clients } from "@s2script/sdk";
 import type { TypedPublishHandle } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { nowSeconds, Team } from "@edgegamers/jailbreak-shared";
@@ -54,11 +56,11 @@ export function playerBySteam(steamId: string): Player | null {
   return Player.allConnected().find((p) => p.steamId === steamId) ?? null;
 }
 
-export function broadcast(line: string): void {
+export function broadcast(line: Text): void {
   Chat.toAll(line);
 }
 
-export function toSteam(steamId: string, line: string): void {
+export function toSteam(steamId: string, line: Text): void {
   const p = playerBySteam(steamId);
   if (p) Chat.toSlot(p.slot, line);
 }

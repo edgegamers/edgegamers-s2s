@@ -1,9 +1,11 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * Rock Paper Scissors (C# `RockPaperScissors`): after 3s both pick from a chat menu. A tie
  * replays; otherwise the loser is slain. If time runs out (25s, or the round clock), whoever
  * picked wins — nobody picked is a timeout.
  */
-import { Chat, Menu, MenuStyle } from "@s2script/sdk";
+import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import type { LRResult, LRType } from "../../api";
 import { RPS, rpsTimeoutResult, rpsWinner } from "../logic";
@@ -24,8 +26,8 @@ export class RockPaperScissors extends LastRequest {
     this.after(3000, () => this.execute());
   }
 
-  private menu(): Menu {
-    const m = new Menu(msg.rpsTitle(this.prisoner.name, this.guard.name));
+  private menu(slot: number): Menu {
+    const m = new Menu(consoleText(msg.rpsTitle(this.prisoner.name, this.guard.name), slot));
     m.style = MenuStyle.Chat;
     RPS.forEach((name, i) => m.addItem(String(i), name));
     m.onSelect((e) => this.onSelect(e.slot, Number(e.info)));
@@ -34,8 +36,8 @@ export class RockPaperScissors extends LastRequest {
 
   execute(): void {
     this.state = "active";
-    showMenu(this.prisoner.slot, this.menu());
-    showMenu(this.guard.slot, this.menu());
+    showMenu(this.prisoner.slot, this.menu(this.prisoner.slot));
+    showMenu(this.guard.slot, this.menu(this.guard.slot));
     const seconds = Math.max(1, Math.min(timeRemaining() - 1, 25));
     this.timeout?.kill();
     this.timeout = this.after(seconds * 1000, () => {

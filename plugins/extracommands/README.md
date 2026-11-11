@@ -6,7 +6,7 @@ Extracted from [s2script/s2script#327](https://github.com/s2script/s2script/pull
 
 ## Build and install
 
-Use the root workspace's Node 24/npm 11 dependencies and published SDK 0.35.0/CS2 types 0.22.0:
+Use the root workspace's Node 24/npm 11 dependencies and published SDK 0.37.0/CS2 types 0.22.0. The server runtime must support the SDK 0.37 admin activity API:
 
 ```bash
 npm ci
@@ -45,6 +45,8 @@ Targets use native player targeting, including names, `#userid` and target group
 
 Item names accept `CsItem` enum names, class names (`weapon_ak47`) or unprefixed aliases (`ak47`). Equip creates the new item first and replaces only its gear slot; a failed creation leaves existing inventory alone. Oneup respawns a dead player and moves the new pawn to the captured death position on the next frame. Teleport without a destination uses the caller's saved location on this map. Swap exchanges T/CT; spectators remain spectators.
 
+Successful admin actions announce through the same native `Activity.showT` API as the stock admin plugins, respecting `sm_show_activity` and each recipient's language. The caller receives one success copy on their original reply channel. Failed actions and usage errors remain private; saving a location and public self-kill keep their private replies. Delayed oneup announces after its teleport succeeds. Each successful action also writes an activity log entry.
+
 ## Menus
 
 With stock `adminmenu` loaded, `sm_admin` shows player actions under **Player Commands** and effects under **Fun Commands**. Actions use native target and option menus, including common numeric/item presets and saved-location/player teleport destinations. Text commands retain the full validated ranges and all SDK item names. Native command dispatch checks permissions and overrides again at execution, and handlers recheck immunity.
@@ -54,6 +56,8 @@ Public `sm_menu` includes **Kill yourself**, with confirmation. Menu callbacks a
 ## Translations
 
 English is embedded in the archive; no loose files are required. Operator overrides use `addons/s2script/translations/extracommands.phrases.json`; locale overrides use `translations/<language-code>/extracommands.phrases.json`. Partial locales fall back to English per key. Replies follow the caller's language and chat/console destination. Follow-up menus resolve titles/options per recipient; the published SDK's static topmenu item/tab labels use the server language at startup. Player names and numbers remain literal labels.
+
+Edit `translations/extracommands.phrases.json` to revise the embedded English, then rebuild. Keys use `extracommands.feature.function`, for example `extracommands.beacon.toggle_for_players`. Functions ending in `_activity` are action fragments: the runtime adds the editable `extracommands.chat.activity_prefix` and actor's display name. The prefix leaves the actor dark red, while each action phrase supplies its own semantic colors. Keep positional placeholders such as `{1}` and `{2}` intact. Existing translation overrides must migrate their old keys to the dotted names.
 
 ## Verification and live acceptance
 

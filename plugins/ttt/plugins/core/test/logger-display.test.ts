@@ -29,7 +29,7 @@ async function setup({ui=true,bots=false,admins=false,shop=false,rdm=false,accep
  return {...f,f,api,clients};
 }
 const line='[00:00] (00000)               P0 [I] purchased M4';
-const consoleRows=[['console','GAME_LOGS_HEADER'],['console',line],['console','GAME_LOGS_FOOTER']];
+const consoleRows=[['console','ttt.logs.header'],['console',line],['console','ttt.logs.footer']];
 const plain=(value:unknown)=>JSON.parse(JSON.stringify(value));
 
 test('round-end logs do not materialize UI rows for bots, nonadmins, absent UI or occupied modals',async()=>{
@@ -45,8 +45,8 @@ test('eligible admins share one copied row projection and retain original modal/
  const {f,api}=await setup({admins:true,accept:false});api.printLogs();
  assert.equal(f.rowBuilds,1);
  assert.deepEqual(plain(f.ops),[
-  ['admin',0],['shop',0],['rdm',0],['rows',0,[{a:line}]],['print',0,'GAME_LOGS_HEADER'],['print',0,line],['print',0,'GAME_LOGS_FOOTER'],
-  ['admin',1],['shop',1],['rdm',1],['rows',1,[{a:line}]],['print',1,'GAME_LOGS_HEADER'],['print',1,line],['print',1,'GAME_LOGS_FOOTER'],...consoleRows,
+  ['admin',0],['shop',0],['rdm',0],['rows',0,[{a:line}]],['print',0,'ttt.logs.header'],['print',0,line],['print',0,'ttt.logs.footer'],
+  ['admin',1],['shop',1],['rdm',1],['rows',1,[{a:line}]],['print',1,'ttt.logs.header'],['print',1,line],['print',1,'ttt.logs.footer'],...consoleRows,
  ]);
  assert.equal(f.ops[3]![2],f.ops[10]![2]);
 });
@@ -65,7 +65,7 @@ test('public log rows still show archived history when the current log is empty'
  const {f,api}=await setup({admins:true});api.clearLog(2);api.printLogs();
  assert.equal(f.rowBuilds,1);
  assert.deepEqual(plain(f.ops.filter(x=>x[0]==='rows').map(x=>x[2])),[[{a:line}],[{a:line}]]);
- assert.deepEqual(f.ops.filter(x=>x[0]==='console'),[['console','GAME_LOGS_HEADER'],['console','GAME_LOGS_FOOTER']]);
+ assert.deepEqual(f.ops.filter(x=>x[0]==='console'),[['console','ttt.logs.header'],['console','ttt.logs.footer']]);
 });
 test('admin/UI reentry cannot rewrite already captured coalesced damage strings or tones',async()=>{
  const {f,api}=await setup({admins:true});api.logDamage(1,0,'glock',10);
@@ -74,7 +74,7 @@ test('admin/UI reentry cannot rewrite already captured coalesced damage strings 
  const damage='[00:00] [BAD] (00000)               P0 [I] damaged (00000)               P1 [I] for 10 damage with glock';
  const expected=[{a:line},{a:damage,tone:'warn'}];
  assert.deepEqual(plain(f.ops.filter(x=>x[0]==='rows').map(x=>x[2])),[expected,expected]);
- assert.deepEqual(f.ops.filter(x=>x[0]==='console'),[['console','GAME_LOGS_HEADER'],['console',line],['console',damage],['console','GAME_LOGS_FOOTER']]);
+ assert.deepEqual(f.ops.filter(x=>x[0]==='console'),[['console','ttt.logs.header'],['console',line],['console',damage],['console','ttt.logs.footer']]);
  assert.equal(api.makeLogRows()[1].a,damage.replace('10 damage','40 damage'),'later public reads still see the actual current log');
 });
 test('a recipient retired during UI checks keeps its original SDK client fallback handle',async()=>{

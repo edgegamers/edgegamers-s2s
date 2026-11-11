@@ -1,3 +1,4 @@
+import { expandChatColors, renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * SpecialDayManager: who may start a day, starting and ending it, the rounds-since-last counter, and
  * routing engine events to the running day.
@@ -13,7 +14,7 @@ import { DayRun, resetFixedConvars } from "./runner.ts";
 import { checkStart, nextRoundsSince } from "./eligibility.ts";
 import type { StartDenial } from "./eligibility.ts";
 import { parseSDTypeList } from "./sdtype.ts";
-import { msg } from "./messages.ts";
+import { DAY_NAMES, msg, phrase } from "./messages.ts";
 import { timeElapsed, toAll, toSlot } from "./game.ts";
 
 /** The @edgegamers/jailbreak-core methods the manager uses. */
@@ -43,9 +44,9 @@ function flagByName(name: string): number {
 }
 
 /** Message lines for a print-to-caller (console gets them on the server console). */
-export function say(slot: number, lines: string | readonly string[]): void {
+export function say(slot: number, lines: Text | readonly Text[]): void {
   if (slot >= 0) toSlot(slot, lines);
-  else for (const l of typeof lines === "string" ? [lines] : lines) console.log(l.replace(/[\x01-\x10]/g, ""));
+  else for (const l of Array.isArray(lines) ? lines : [lines as Text]) console.log(consoleText(l));
 }
 
 export class Manager {
@@ -107,7 +108,7 @@ export class Manager {
         say(slot, msg.notWarden());
         break;
       case "running":
-        say(slot, msg.running(this.current?.info.name ?? "Unknown"));
+        say(slot, msg.running(this.current ? DAY_NAMES[this.current.info.type] : phrase("jailbreak.specialdays.unknown")));
         break;
       case "cooldown":
         say(slot, msg.cooldown(d.rounds));
@@ -116,7 +117,7 @@ export class Manager {
         say(slot, msg.tooLate(d.maxSeconds));
         break;
       case "gated":
-        say(slot, msg.cannotCall(config.getString("sd_gated_message")));
+        say(slot, msg.cannotCall(expandChatColors(config.getString("sd_gated_message"))));
         break;
     }
     return false;
@@ -140,7 +141,7 @@ export class Manager {
     };
     this.roundsSince = 0;
     this.current = { run, info };
-    toAll(msg.dayStart(day.name, day.description));
+    toAll(msg.dayStart(DAY_NAMES[day.type], day.description));
     try {
       run.start();
     } catch (e) {
@@ -161,7 +162,7 @@ export class Manager {
     if (!cur) return;
     this.current = null;
     cur.run.end();
-    if (announce) toAll(msg.dayEnd(cur.info.name));
+    if (announce) toAll(msg.dayEnd(DAY_NAMES[cur.info.type]));
     this.forwards.ended({ ...cur.info });
     this.core.log(`Special day ended: ${cur.info.name}`);
   }

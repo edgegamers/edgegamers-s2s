@@ -10,7 +10,7 @@
  * `Dictionary<string, int>` / `Dictionary<string, Dictionary<string, int>>` keyed by SteamID string.
  */
 
-import {MAX_SLOTS,RoleId,GameState,msg,msgFor,reg,tell,inProgress,captureShopViewState,matchesShopViewState,shopViewOwnerCurrent} from './runtime';
+import {MAX_SLOTS,RoleId,GameState,msg,msgFor,reg,tell,inProgress,captureShopViewState,matchesShopViewState,shopViewOwnerCurrent, chatMsgFor } from './runtime';
 import type {DomainBus} from '../../../packages/contracts/ordered.ts';
 import type {ShopItemId,ShopView,ShopRow} from '../api';
 
@@ -27,7 +27,7 @@ export const enum PurchaseResult {
 }
 
 /** A human-readable reason for a refusal. */
-export function resultMessage(r: PurchaseResult): string {
+export function resultMessage(r: PurchaseResult, slot = -1): string {
   switch (r) {
     // Success is not a refusal and has no reason to give. Named explicitly so `default` keeps
     // meaning "a value nobody accounted for" — without this case it reads as an error, and a
@@ -35,19 +35,19 @@ export function resultMessage(r: PurchaseResult): string {
     case PurchaseResult.Success:
       return "";
     case PurchaseResult.InsufficientFunds:
-      return "You do not have enough funds to complete this purchase";
+      return msgFor(slot, "ttt.shop.insufficient_funds");
     case PurchaseResult.NotFound:
-      return "The item was not found in the shop";
+      return msgFor(slot, "ttt.shop.purchase_not_found");
     case PurchaseResult.NotPurchasable:
-      return "You cannot purchase this item at the moment";
+      return msgFor(slot, "ttt.shop.purchase_unavailable");
     case PurchaseResult.WrongRole:
-      return "You do not have the required role to purchase this item";
+      return msgFor(slot, "ttt.shop.wrong_role");
     case PurchaseResult.Canceled:
-      return "The purchase was canceled";
+      return msgFor(slot, "ttt.shop.purchase_canceled");
     case PurchaseResult.AlreadyOwned:
-      return "You have purchased the maximum amount of this item";
+      return msgFor(slot, "ttt.shop.purchase_limit");
     default:
-      return "An unexpected error occurred";
+      return msgFor(slot, "ttt.shop.purchase_error");
   }
 }
 
@@ -151,9 +151,7 @@ export function addBalance(slot: number, amount: number, reason: string, print =
   const sign = delta > 0 ? "+" : "";
   tell(
     slot,
-    reason === ""
-      ? msg("CREDITS_GIVEN", sign, delta)
-      : msg("CREDITS_GIVEN_REASON", sign, delta, reason),
+    reason === "" ? chatMsgFor(slot, "ttt.shop.credits_given", sign, delta) : chatMsgFor(slot, "ttt.shop.credits_given_reason", sign, delta, reason),
   );
 }
 
@@ -178,7 +176,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
   const balance = balances[slot]!;
   if (item.price > balance) {
     if (tellWhy)
-      tell(slot, msgFor(slot, "SHOP_INSUFFICIENT_BALANCE", msgFor(slot, item.nameKey), item.price, balance));
+      tell(slot, chatMsgFor(slot, "ttt.shop.insufficient_balance", msgFor(slot, item.nameKey), item.price, balance));
     return PurchaseResult.InsufficientFunds;
   }
 
@@ -187,9 +185,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
     if (tellWhy) {
       tell(
         slot,
-        gate === PurchaseResult.UnknownError
-          ? msg("SHOP_CANNOT_PURCHASE")
-          : msg("SHOP_CANNOT_PURCHASE_WITH_REASON", resultMessage(gate)),
+        gate === PurchaseResult.UnknownError ? chatMsgFor(slot, "ttt.shop.cannot_purchase") : chatMsgFor(slot, "ttt.shop.cannot_purchase_reason", resultMessage(gate, slot)),
       );
     }
     return gate;
@@ -198,7 +194,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
   const ev = bus.emit("purchase", { slot, itemId: item.id, canceled: false });
   if (ev.canceled) return PurchaseResult.Canceled;
 
-  addBalance(slot, -item.price, msg(item.nameKey), tellWhy);
+  addBalance(slot, -item.price, msgFor(slot, item.nameKey), tellWhy);
 
   const idx = items.indexOf(item);
   if (idx >= 0) {
@@ -211,7 +207,7 @@ export function tryPurchase(slot: number, item: ShopItem, tellWhy = true): Purch
    // (no surface in reach), and the player was already debited above — so the money and the
   // per-round purchase count both have to come back, or "too far away" quietly costs full price.
   if (item.onPurchase(slot) === false) {
-    addBalance(slot, item.price, msgFor(slot, "SHOP_REFUNDED", msgFor(slot, item.nameKey)), tellWhy);
+    addBalance(slot, item.price, msgFor(slot, "ttt.shop.refunded", msgFor(slot, item.nameKey)), tellWhy);
     if (idx >= 0) {
       const key = slot * items.length + idx;
       viewRevision++;

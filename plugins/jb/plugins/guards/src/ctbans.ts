@@ -1,5 +1,6 @@
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /** CT ban lifecycle: issue, revoke, expiry timers, repeat penalty, broadcasts, forwards. */
-import { after, Chat } from "@s2script/sdk";
+import { after } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";

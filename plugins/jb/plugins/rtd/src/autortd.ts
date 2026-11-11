@@ -1,3 +1,4 @@
+import { replyChat } from "@edgegamers/jailbreak-shared";
 /**
  * Auto-RTD (C# AutoRTD): players with the `autortd_flag` admin flag(s) roll automatically at every
  * round end unless they turned it off with `!autortd`. The preference is a clientprefs cookie
@@ -42,23 +43,23 @@ export function cmdAutoRtd(cmd: Command): HookResultValue {
   const slot = cmd.callerSlot;
   if (slot < 0) return HookResult.Handled;
   if (minPlayers() === -1) {
-    cmd.replyToChat(msg.rollingDisabled);
+    replyChat(cmd, msg.rollingDisabled);
     return HookResult.Handled;
   }
   if (!hasAutoFlag(slot)) {
-    cmd.replyToChat(msg.noPermission);
+    replyChat(cmd, msg.noPermission);
     return HookResult.Handled;
   }
   const client = Clients.fromSlot(slot);
   if (cookie === null || !client || client.isBot || !Cookies.areCached(client)) {
-    cmd.replyToChat(msg.autoNotSupported);
+    replyChat(cmd, msg.autoNotSupported);
     return HookResult.Handled;
   }
   const next = toggledAutoRtd(Cookies.get(client, cookie));
   if (!Cookies.set(client, cookie, next.value)) {
-    cmd.replyToChat(msg.autoNotSupported);
+    replyChat(cmd, msg.autoNotSupported);
     return HookResult.Handled;
   }
-  cmd.replyToChat(msg.autoToggled(next.enabled));
+  replyChat(cmd, msg.autoToggled(next.enabled));
   return HookResult.Handled;
 }

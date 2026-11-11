@@ -13,7 +13,7 @@ const mocks:Record<string,string>={
  '../core/cvars':'export const n=()=>2,b=()=>true,s=()=>"LimeGreen";',
  '../shop/weaponfx':'export const readDna=()=>fixture.calls.push("dna");',
  './weaponfx':'export const poisonShotsLeft=()=>0;',
- '../core/msgs':'export const msg=k=>k,msgFor=(s,k)=>k;',
+ '../core/msgs':"export const msg=k=>k,msgFor=(s,k)=>k; export const chatMsgFor = msgFor;",
  '../core/registry':'export const roleOf=()=>2,isAlive=()=>true,isConnected=()=>true,nameOf=()=>"P1",activeSlots=()=>[1];',
  '../cs2/pawn':'export const pawnOf=()=>null,setHealth=()=>{},tell=(s,text)=>fixture.calls.push(text);',
  '../cs2/color':'export const ROLE_COLORS={},setEntityColor=()=>true,setPawnColor=()=>{fixture.calls.push("pawnTint");return true;},setPawnAlpha=()=>true;',
@@ -38,7 +38,7 @@ function fixture(){
  return {state,api,ref,body,methods,events,items};
 }
 test('actual Paint grant/gateway spends charge, commits canonical flag, tints corpse then current pawn and announces exhaustion',()=>{
- const f=fixture();f.api.grantBodyPaint(1,1);assert.equal(f.methods.spendBodyPaint(f.state.actor,f.ref),true);assert.equal(f.api.hasBodyPaint(1),false);assert.equal(f.body.painted,true);assert.deepEqual(f.state.calls,['mark','corpseTint','pawnTint']);assert.ok(f.items.ops.some(op=>op[0]==='chat'&&op[2].startsWith('SHOP_ITEM_BODY_PAINT_OUT')));
+ const f=fixture();f.api.grantBodyPaint(1,1);assert.equal(f.methods.spendBodyPaint(f.state.actor,f.ref),true);assert.equal(f.api.hasBodyPaint(1),false);assert.equal(f.body.painted,true);assert.deepEqual(f.state.calls,['mark','corpseTint','pawnTint']);assert.ok(f.items.ops.some(op=>op[0]==='chat'&&op[2].startsWith('ttt.body_paint.depleted')));
 });
 test('throw after paint charge debit preserves original partial charge state and stops before tint',()=>{
  const f=fixture();f.api.grantBodyPaint(1,1);f.state.throwPaint=true;assert.throws(()=>f.methods.spendBodyPaint(f.state.actor,f.ref),/owner disappeared/);assert.equal(f.api.hasBodyPaint(1),false);assert.equal(f.body.painted,false);assert.deepEqual(f.state.calls,['mark']);

@@ -21,11 +21,11 @@ import { Events, GameRules, RoundEndReason, Teams, WinPanelFinalEvent } from "@s
 import { GameState, MAX_SLOTS, RoleId, Team } from "../core/enums";
 import { cfg, roundDuration } from "../core/cvars";
 import { refreshSettings } from "../core/settings";
-import { msg } from "../core/msgs";
+import { msgFor, chatMsgFor } from "../core/msgs";
 import * as reg from "../core/registry";
 import type { EventBus } from "../core/bus";
 import type { TttEvents } from "../core/events";
-import { assignRoles, revealTraitorBuddies, roleName, stripRoundWeapons } from "./roles";
+import { assignRoles, revealTraitorBuddies, roleNameFor, stripRoundWeapons } from "./roles";
 import { clearLog, printLogs } from "./logger";
 import { owedBy } from "../core/reports-provider";
 import { clearBodies } from "../cs2/bodies";
@@ -198,14 +198,14 @@ export function startGame(quiet = false): void {
   // bots never fire `onActive`, so an event-only roster is empty on a bot-populated server.
   syncRosterAndAnnounce();
   if (reg.playerCount() < cfg.minPlayers) {
-    if (!quiet) tellAll(msg("NOT_ENOUGH_PLAYERS", cfg.minPlayers));
+    if (!quiet) tellAll(recipient => chatMsgFor(recipient, "ttt.round.insufficient_players", cfg.minPlayers));
     return;
   }
 
   refreshSettings(); // pick up accepted edits before Countdown and role dealing
 
   if (!setState(GameState.Countdown)) return;
-  tellAll(msg("GAME_STATE_STARTING", cfg.countdownSeconds));
+  tellAll(recipient => chatMsgFor(recipient, "ttt.round.starting", cfg.countdownSeconds));
 
   const mine = ++epoch;
   // EXACTLY the countdown, with nothing added. This used to be `countdownSeconds + 5`, which put the
@@ -339,7 +339,7 @@ function beginRound(attempt = 0): void {
   const pool = eligible(poolBuffer);
 
   if (pool.length < cfg.minPlayers) {
-    tellAll(msg("NOT_ENOUGH_PLAYERS", cfg.minPlayers));
+    tellAll(recipient => chatMsgFor(recipient, "ttt.round.insufficient_players", cfg.minPlayers));
     setState(GameState.Waiting);
     return;
   }
@@ -379,7 +379,7 @@ function beginRound(attempt = 0): void {
 
   const traitors = reg.aliveCount(RoleId.Traitor);
   const nonTraitors = game.participants - traitors;
-  tellAll(msg("GAME_STATE_STARTED", traitors === 1 ? "is" : "are", traitors, nonTraitors));
+  tellAll(recipient => chatMsgFor(recipient, "ttt.round.started", msgFor(recipient, traitors === 1 ? "ttt.grammar.singular_verb" : "ttt.grammar.plural_verb"), traitors, nonTraitors));
   revealTraitorBuddies();
 }
 
@@ -417,7 +417,7 @@ export function checkEndConditions(): boolean {
   const nonTraitors = innocents + detectives;
 
   if (traitors === 0 && nonTraitors === 0) {
-    endGame(RoleId.None, "Draw");
+    endGame(RoleId.None, "ttt.round.draw");
     return true;
   }
   if (traitors > 0 && nonTraitors === 0) {
@@ -508,9 +508,7 @@ export function endGame(winner: RoleId, reason?: string): void {
   if (!setState(GameState.Finished)) return;
 
   tellAll(
-    winner === RoleId.None
-      ? msg("GAME_STATE_ENDED_OTHER", reason ?? "Unknown")
-      : msg("GAME_STATE_ENDED_TEAM_WON", roleName(winner)),
+    recipient => winner === RoleId.None ? chatMsgFor(recipient, "ttt.round.ended", msgFor(recipient, reason ?? "ttt.round.unknown_end")) : chatMsgFor(recipient, "ttt.round.team_won", roleNameFor(recipient, winner)),
   );
 
   revealRoles();
@@ -742,7 +740,7 @@ export function abandonRound(): void {
 export function onMapChange(): void {
   clearBodies(false);
   if (game.state === GameState.InProgress || game.state === GameState.Countdown) {
-    endGame(RoleId.None, "Map Change");
+    endGame(RoleId.None, "ttt.round.map_change");
   }
   game.state = GameState.Waiting;
   // Zero the counter AFTER the round is folded up, not before: `endGame` increments it, and the

@@ -1,3 +1,6 @@
+import { phrase } from "./messages.ts";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { reply as replyMessage } from "@edgegamers/jailbreak-shared";
 /** Every command (CTBans commands/*). */
 import { command, HookResult, Server } from "@s2script/sdk";
 import type { CommandInvocation, HookResultValue } from "@s2script/sdk";
@@ -21,18 +24,18 @@ const lastGuard = new Map<string, number>();
 
 function requireEg(cmd: CommandInvocation): boolean {
   if (cmd.callerSlot < 0 || atLeast(rankOfSlot(cmd.callerSlot), "eg")) return true;
-  cmd.reply(msg.noPermission("=(eG)=", "rank"));
+  replyMessage(cmd, msg.noPermission(phrase("jailbreak.guards.required_eg_rank"), phrase("jailbreak.guards.rank_kind")));
   return false;
 }
 
 function single(cmd: CommandInvocation, n: number): Player | null {
   const found = Player.target(cmd.arg(n), cmd.callerSlot, true).filter((p) => isHuman(p.slot));
   if (found.length === 0) {
-    cmd.reply(msg.playerNotFound(cmd.arg(n)));
+    replyMessage(cmd, msg.playerNotFound(cmd.arg(n)));
     return null;
   }
   if (found.length > 1) {
-    cmd.reply(msg.playerFoundMultiple(cmd.arg(n)));
+    replyMessage(cmd, msg.playerFoundMultiple(cmd.arg(n)));
     return null;
   }
   return found[0];
@@ -42,19 +45,19 @@ function single(cmd: CommandInvocation, n: number): Player | null {
  * A reply function safe to call after an await: it captures the caller (console, or slot + SteamID) now
  * and later only replies to console or to the same player still in that slot.
  */
-function deferredReply(cmd: CommandInvocation): (line: string) => void {
+function deferredReply(cmd: CommandInvocation): (line: Text) => void {
   const slot = cmd.callerSlot;
-  if (slot < 0) return (line) => cmd.reply(line);
+  if (slot < 0) return (line) => replyMessage(cmd, line);
   const steamId = Player.fromSlot(slot)?.steamId;
   return (line) => {
-    if (steamId !== undefined && Player.fromSlot(slot)?.steamId === steamId) cmd.reply(line);
+    if (steamId !== undefined && Player.fromSlot(slot)?.steamId === steamId) replyMessage(cmd, line);
   };
 }
 
 /** Refuse to act on an online target whose cached ban/priority is not loaded yet. */
 function targetLoaded(cmd: CommandInvocation, target: Player): boolean {
   if (entry(target.steamId)?.loaded) return true;
-  cmd.reply(msg.targetNotLoaded(target.playerName ?? target.steamId));
+  replyMessage(cmd, msg.targetNotLoaded(target.playerName ?? target.steamId));
   return false;
 }
 
@@ -69,26 +72,26 @@ function issuerMax(cmd: CommandInvocation): number {
 
 function guard(cmd: CommandInvocation): HookResultValue {
   const slot = cmd.callerSlot;
-  if (slot < 0) return cmd.reply(msg.playersOnly()), H;
+  if (slot < 0) return replyMessage(cmd, msg.playersOnly()), H;
   const p = Player.fromSlot(slot);
-  if (!p || p.steamId === "0") return cmd.reply(msg.guardUnverified()), H;
-  if (p.teamNum === Team.Guard) return cmd.reply(msg.guardAlreadyGuard()), H;
+  if (!p || p.steamId === "0") return replyMessage(cmd, msg.guardUnverified()), H;
+  if (p.teamNum === Team.Guard) return replyMessage(cmd, msg.guardAlreadyGuard()), H;
   const s = settings();
   const last = lastGuard.get(p.steamId) ?? 0;
   const wait = last + s.guardCooldown - now();
-  if (wait > 0) return cmd.reply(msg.guardCooldown(wait)), H;
+  if (wait > 0) return replyMessage(cmd, msg.guardCooldown(wait)), H;
   lastGuard.set(p.steamId, now());
 
   const ban = activeBan(p.steamId);
   if (ban) return remind(slot, ban), H;
   if (!atLeast(rankOfSlot(slot), "eg")) {
     const e = entry(p.steamId);
-    if (!e?.loaded) return cmd.reply(msg.guardPriorityUnavailable()), H;
+    if (!e?.loaded) return replyMessage(cmd, msg.guardPriorityUnavailable()), H;
     const prio = e.priority ?? 0;
-    if (prio < s.minPriority) return cmd.reply(msg.guardInsufficient(prio, s.minPriority)), H;
+    if (prio < s.minPriority) return replyMessage(cmd, msg.guardInsufficient(prio, s.minPriority)), H;
   }
   const pos = queue.position(p.steamId);
-  if (pos >= 0) return cmd.reply(msg.guardAlreadyQueued(pos + 1, queue.size())), H;
+  if (pos >= 0) return replyMessage(cmd, msg.guardAlreadyQueued(pos + 1, queue.size())), H;
 
   joinQueue(slot);
   if (ctEmpty() && isLiveRound() && markRestartUsed(p.steamId)) Server.command(`mp_restartgame ${s.restartDelay}`);
@@ -96,19 +99,19 @@ function guard(cmd: CommandInvocation): HookResultValue {
 }
 
 function leave(cmd: CommandInvocation): HookResultValue {
-  if (cmd.callerSlot < 0) return cmd.reply(msg.playersOnly()), H;
+  if (cmd.callerSlot < 0) return replyMessage(cmd, msg.playersOnly()), H;
   const p = Player.fromSlot(cmd.callerSlot);
-  if (!p || !leaveQueue(p.steamId)) return cmd.reply(msg.leaveNotQueued()), H;
-  cmd.reply(msg.leaveRemoved());
+  if (!p || !leaveQueue(p.steamId)) return replyMessage(cmd, msg.leaveNotQueued()), H;
+  replyMessage(cmd, msg.leaveRemoved());
   return H;
 }
 
 function showQueue(cmd: CommandInvocation): HookResultValue {
-  if (queue.size() === 0) return cmd.reply(msg.queueEmpty()), H;
+  if (queue.size() === 0) return replyMessage(cmd, msg.queueEmpty()), H;
   queue.ids().forEach((id, i) => {
     const p = Player.allConnected().find((x) => x.steamId === id);
     const cap = p ? capOfSlot(p.slot) : settings().normalCap;
-    cmd.reply(msg.queueLine(i + 1, effectiveOf(id), cap, p?.playerName ?? id));
+    replyMessage(cmd, msg.queueLine(i + 1, effectiveOf(id), cap, p?.playerName ?? id));
   });
   return H;
 }
@@ -120,57 +123,57 @@ function priority(cmd: CommandInvocation): HookResultValue {
   let targets: Player[];
   if (cmd.argCount >= 1 && atLeast(callerRank, "eg")) {
     targets = Player.target(cmd.arg(0), caller, setting).filter((p) => isHuman(p.slot));
-    if (targets.length === 0) return cmd.reply(msg.playerNotFound(cmd.arg(0))), H;
+    if (targets.length === 0) return replyMessage(cmd, msg.playerNotFound(cmd.arg(0))), H;
   } else if (caller < 0) {
-    return cmd.reply(msg.usage("sm_priority <player> [priority]")), H;
+    return replyMessage(cmd, msg.usage(phrase("jailbreak.guards.priority_usage"))), H;
   } else {
     const self = Player.fromSlot(caller);
     if (!self) return H;
     targets = [self];
   }
   if (setting) {
-    if (!/^-?\d+$/.test(cmd.arg(1))) return cmd.reply(msg.invalidParam(cmd.arg(1), "number")), H;
+    if (!/^-?\d+$/.test(cmd.arg(1))) return replyMessage(cmd, msg.invalidParam(cmd.arg(1), phrase("jailbreak.guards.expected_number"))), H;
     const value = Number.parseInt(cmd.arg(1), 10);
     for (const t of targets) setPriority(t.steamId, value);
-    cmd.reply(msg.prioritySet(targets.length === 1 ? (targets[0].playerName ?? "") : cmd.arg(0), value));
+    replyMessage(cmd, msg.prioritySet(targets.length === 1 ? (targets[0].playerName ?? "") : cmd.arg(0), value));
     return H;
   }
   for (const t of targets) {
     const raw = rawPriority(t.steamId);
     const cap = capOfSlot(t.slot);
-    cmd.reply(msg.priorityLine(t.playerName ?? "", effectivePriority(raw, cap), cap, raw ?? -1));
+    replyMessage(cmd, msg.priorityLine(t.playerName ?? "", effectivePriority(raw, cap), cap, raw ?? -1));
   }
   return H;
 }
 
 function ctban(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount < 3) return cmd.reply(msg.usage("sm_ctban <player> <time> <reason>")), H;
+  if (cmd.argCount < 3) return replyMessage(cmd, msg.usage(phrase("jailbreak.guards.ctban_usage"))), H;
   const target = single(cmd, 0);
   if (!target || !targetLoaded(cmd, target)) return H;
-  if (!/^\d+$/.test(cmd.arg(1))) return cmd.reply(msg.invalidParam(cmd.arg(1), "non-negative int")), H;
+  if (!/^\d+$/.test(cmd.arg(1))) return replyMessage(cmd, msg.invalidParam(cmd.arg(1), phrase("jailbreak.guards.expected_nonnegative_integer"))), H;
   const existing = activeBan(target.steamId);
   if (existing) {
     const name = target.playerName ?? target.steamId;
-    return cmd.reply(isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
+    return replyMessage(cmd, isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
   }
   const capped = capDuration(Number.parseInt(cmd.arg(1), 10) * 60, issuerMax(cmd));
-  if (capped.reduced) cmd.reply(msg.ctbanReduced(Math.floor(capped.seconds / 60)));
+  if (capped.reduced) replyMessage(cmd, msg.ctbanReduced(Math.floor(capped.seconds / 60)));
   leaveQueue(target.steamId);
   const r = issueBan({ steamId: target.steamId, name: target.playerName ?? target.steamId }, cmd.callerSlot, capped.seconds, cmd.argsFrom(2));
-  if (!r.written && !storeReady()) cmd.reply(msg.savedLocally());
+  if (!r.written && !storeReady()) replyMessage(cmd, msg.savedLocally());
   return H;
 }
 
 function revoke(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount < 2) return cmd.reply(msg.usage("sm_revoke <player> <reason>")), H;
+  if (cmd.argCount < 2) return replyMessage(cmd, msg.usage(phrase("jailbreak.guards.revoke_usage"))), H;
   const target = single(cmd, 0);
   if (!target || !targetLoaded(cmd, target)) return H;
   const existing = activeBan(target.steamId);
   if (existing) {
     const name = target.playerName ?? target.steamId;
-    return cmd.reply(isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
+    return replyMessage(cmd, isPermanent(existing) ? msg.ctbanAlreadyPermanent(name) : msg.ctbanAlready(name, minutesLeft(existing, now()))), H;
   }
   leaveQueue(target.steamId);
   issueBan({ steamId: target.steamId, name: target.playerName ?? target.steamId }, cmd.callerSlot, settings().revokeMinutes * 60, cmd.argsFrom(1));
@@ -179,11 +182,11 @@ function revoke(cmd: CommandInvocation): HookResultValue {
 
 function unctban(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount !== 1) return cmd.reply(msg.usage("sm_unctban <player|steamid>")), H;
+  if (cmd.argCount !== 1) return replyMessage(cmd, msg.usage(phrase("jailbreak.guards.unctban_usage"))), H;
   const online = Player.target(cmd.arg(0), cmd.callerSlot, false).filter((p) => isHuman(p.slot));
-  if (online.length > 1) return cmd.reply(msg.playerFoundMultiple(cmd.arg(0))), H;
+  if (online.length > 1) return replyMessage(cmd, msg.playerFoundMultiple(cmd.arg(0))), H;
   const steamId = online[0]?.steamId ?? parseSteamId(cmd.arg(0));
-  if (!steamId) return cmd.reply(msg.invalidParam(cmd.arg(0), "SteamID 3/64/CommunityID")), H;
+  if (!steamId) return replyMessage(cmd, msg.invalidParam(cmd.arg(0), phrase("jailbreak.guards.expected_steam_id_format"))), H;
   const name = online[0]?.playerName ?? steamId;
   const by = cmd.callerSlot >= 0 ? (Player.fromSlot(cmd.callerSlot)?.playerName ?? "Console") : "Console";
   const max = issuerMax(cmd);
@@ -197,7 +200,7 @@ function unctban(cmd: CommandInvocation): HookResultValue {
   };
   const cached = online[0] ? activeBan(steamId) : null;
   if (cached) finish(cached);
-  else latestBan(steamId).then(finish).catch(() => reply(msg.error("database unavailable")));
+  else latestBan(steamId).then(finish).catch(() => reply(msg.error(phrase("jailbreak.guards.unctban_database_unavailable"))));
   return H;
 }
 
@@ -213,23 +216,23 @@ function listBans(cmd: CommandInvocation): HookResultValue {
     }
   };
   if (cmd.arg(0) === "1") {
-    activeBansFromDb(now()).then(show).catch(() => reply(msg.error("database unavailable")));
+    activeBansFromDb(now()).then(show).catch(() => reply(msg.error(phrase("jailbreak.guards.ctbans_database_unavailable"))));
   } else {
     show(Player.allConnected().map((p) => activeBan(p.steamId)).filter((b): b is Ban => b !== null));
   }
   return H;
 }
 
-function whenText(ts: number): string {
+function whenText(ts: number): Text {
   const minutesAgo = Math.floor((now() - ts) / 60);
   if (minutesAgo > 1440) {
     const d = new Date(ts * 1000);
     const pad = (n: number): string => String(n).padStart(2, "0");
-    return `on ${pad(d.getUTCMonth() + 1)}/${pad(d.getUTCDate())}/${d.getUTCFullYear()}`;
+    return phrase("jailbreak.guards.history_date", pad(d.getUTCMonth() + 1), pad(d.getUTCDate()), d.getUTCFullYear());
   }
-  if (minutesAgo < 60) return `${minutesAgo} minute${minutesAgo === 1 ? "" : "s"} ago`;
+  if (minutesAgo < 60) return phrase("jailbreak.guards.history_minutes", minutesAgo, minutesAgo === 1 ? "" : "s");
   const h = Math.floor(minutesAgo / 60);
-  return `${h} hour${h === 1 ? "" : "s"} ago`;
+  return phrase("jailbreak.guards.history_hours", h, h === 1 ? "" : "s");
 }
 
 function stamp(): string {
@@ -240,11 +243,11 @@ function stamp(): string {
 
 function history(cmd: CommandInvocation): HookResultValue {
   if (!requireEg(cmd)) return H;
-  if (cmd.argCount !== 1) return cmd.reply(msg.usage("sm_ctbans <player>")), H;
+  if (cmd.argCount !== 1) return replyMessage(cmd, msg.usage(phrase("jailbreak.guards.ctbans_usage"))), H;
   const online = Player.target(cmd.arg(0), cmd.callerSlot, false).filter((p) => isHuman(p.slot));
-  if (online.length > 1) return cmd.reply(msg.playerFoundMultiple(cmd.arg(0))), H;
+  if (online.length > 1) return replyMessage(cmd, msg.playerFoundMultiple(cmd.arg(0))), H;
   const steamId = online[0]?.steamId ?? parseSteamId(cmd.arg(0));
-  if (!steamId) return cmd.reply(msg.invalidParam(cmd.arg(0), "SteamID")), H;
+  if (!steamId) return replyMessage(cmd, msg.invalidParam(cmd.arg(0), phrase("jailbreak.guards.expected_steam_id"))), H;
   const name = online[0]?.playerName ?? steamId;
   const reply = deferredReply(cmd);
   banHistory(steamId)
@@ -252,16 +255,16 @@ function history(cmd: CommandInvocation): HookResultValue {
       if (bans.length === 0) return reply(msg.historyNone(name));
       reply(msg.historyHeader(bans.length, name, stamp()));
       bans.forEach((b, i) => {
-        const suffix = isRevoked(b) ? " (Revoked)"
+        const suffix = isRevoked(b) ? phrase("jailbreak.guards.history_revoked")
           : isPermanent(b) ? ""
-          : isActive(b, now()) ? ` (${minutesLeft(b, now())} minutes left)`
-          : " (Expired)";
+          : isActive(b, now()) ? phrase("jailbreak.guards.history_left", minutesLeft(b, now()))
+          : phrase("jailbreak.guards.history_expired");
         reply(isPermanent(b)
           ? msg.historyLinePermanent(i + 1, whenText(b.timestamp), b.reason, suffix)
           : msg.historyLine(i + 1, Math.floor(effectiveDuration(b) / 60), whenText(b.timestamp), b.reason, suffix));
       });
     })
-    .catch(() => reply(msg.error("database unavailable")));
+    .catch(() => reply(msg.error(phrase("jailbreak.guards.history_database_unavailable"))));
   return H;
 }
 

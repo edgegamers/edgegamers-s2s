@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * No Scope (C# `NoScope`): the prisoner picks a sniper rifle, countdown, then both get it with
  * the scope disabled every frame. Knives at 30s; at 60s the healthier player wins (guard needs
@@ -18,7 +19,7 @@ export class NoScope extends WeaponizedRequest {
   private weapon = "weapon_ssg08";
 
   configure(done: () => void, cancel: () => void): void {
-    const menu = new Menu(msg.chooseRifle);
+    const menu = new Menu(consoleText(msg.chooseRifle, this.prisoner.slot));
     menu.style = MenuStyle.Center;
     for (const r of NOSCOPE_RIFLES) menu.addItem(r.weapon, r.name);
     menu.onSelect((e) => {

@@ -11,6 +11,7 @@ import {
 import { Player } from "@s2script/cs2";
 import { STYLES, styleById } from "@edgegamers/surftimer-shared";
 import type { Contract, MapInfo, RunState } from "../api";
+import { loadPhrases } from "./phrases";
 import { refreshPrefix } from "./chat";
 import { registerCommands } from "./commands";
 import * as rec from "./records";
@@ -204,6 +205,7 @@ function readConfig(): void {
 }
 
 export async function OnPluginStart(): Promise<void> {
+  loadPhrases();
   readConfig();
   await rec.openRecords(config.getString("database") || "surftimer");
 

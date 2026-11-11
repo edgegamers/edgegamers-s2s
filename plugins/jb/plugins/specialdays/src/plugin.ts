@@ -1,3 +1,5 @@
+import { reply as replyMessage } from "@edgegamers/jailbreak-shared";
+import { loadPhrases } from "./messages.ts";
 import { watchDecluttr } from '../../../../decluttr/src/owner.ts';
 /**
  * @edgegamers/jailbreak-specialdays — special days and the speedrun trail (ported from Jailbreak.SpecialDay + Jailbreak.Trail).
@@ -12,7 +14,7 @@ import { buildMenu } from "./menu.ts";
 import { registerPickupGate } from "./pickup.ts";
 import { setZoneProvider } from "./zones.ts";
 import { parseSDType } from "./sdtype.ts";
-import { msg } from "./messages.ts";
+import { DAY_NAMES, msg } from "./messages.ts";
 import { playerOfPawn } from "./game.ts";
 
 let manager: Manager | null = null;
@@ -34,6 +36,7 @@ function hookPawn(ref: EntityRef | null): void {
 }
 
 export function OnPluginStart(): void {
+  loadPhrases();
   watchDecluttr();
   const core = use("@edgegamers/jailbreak-core");
   const handle = publish("@edgegamers/jailbreak-specialdays", {
@@ -65,11 +68,11 @@ export function OnPluginStart(): void {
     const arg = cmd.argString.trim();
     if (arg === "") {
       if (slot < 0) {
-        cmd.reply(msg.usage);
+        replyMessage(cmd, msg.usage);
         return HookResult.Handled;
       }
       const current = m.getCurrent();
-      if (current) say(slot, msg.running(current.name));
+      if (current) say(slot, msg.running(DAY_NAMES[current.type]));
       else menu.display(slot, 30);
       return HookResult.Handled;
     }

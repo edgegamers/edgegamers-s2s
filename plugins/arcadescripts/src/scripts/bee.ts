@@ -1,9 +1,10 @@
 // ArcadeScripts for s2script. Derived from ArcadeScripts-CSS by Supergosciuツ (GPL-3.0).
 // See LICENSE and NOTICE. Port of Scripts/Bee/Bee.cs and Entities.cs (bee.nut): a spelling bee
 // and mental-math game with sixteen keyboard booths.
-import { Chat } from '@s2script/sdk';
+import { Chat, Clients } from '@s2script/sdk';
+import { phrase } from '../phrases';
 import type { EntityRef } from '@s2script/sdk';
-import { ChatColors, wrapEntity } from '@s2script/cs2';
+import { wrapEntity } from '@s2script/cs2';
 import { Script } from '../script';
 import type { Runtime } from '../runtime';
 import { Colors, fire, inBox, pawnOf, players, randomInt, setMessage, valid, vec } from '../util';
@@ -417,7 +418,9 @@ export class Bee extends Script {
     for (const keyboard of this.keyboards) fire(keyboard, 'Lock');
     const spelling = this.currentGame === GAME_SPELLING;
     const answer = spelling ? this.spellWord : this.currentProblem + this.currentAnswer;
-    Chat.toAll(`${ChatColors.Default}${spelling ? 'Correct spelling of word: ' : 'Correct solution: '}${ChatColors.Olive}${answer}${ChatColors.Default} `);
+    for (const client of Clients.all()) {
+      Chat.toSlot(client.slot, phrase(client.slot, spelling ? 'arcadescripts.bee.correct_spelling' : 'arcadescripts.bee.correct_solution', answer));
+    }
     if ((spelling && this.spellWord.length > 0) || (!spelling && this.currentAnswer.length > 0)) {
       for (let booth = 1; booth <= NUM_BOOTHS; booth++) this.checkSpelling(booth);
     }

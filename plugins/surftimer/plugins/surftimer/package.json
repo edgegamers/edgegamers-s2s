@@ -15,7 +15,7 @@
       "chat_prefix": {
         "type": "string",
         "default": "Surf",
-        "description": "Chat prefix label (shown as [label] in colour)."
+        "description": "Chat prefix label (shown as label » in colour)."
       },
       "database": {
         "type": "string",

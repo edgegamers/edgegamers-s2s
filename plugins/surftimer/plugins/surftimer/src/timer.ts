@@ -3,10 +3,10 @@
 import { Server } from "@s2script/sdk";
 import { Pawn } from "@s2script/cs2";
 import {
-  FL_ONGROUND, MOVETYPE_NONE, MOVETYPE_WALK, STYLE_BACKWARDS, STYLES, styleById, formatTicks, formatTickDiff, trackName,
+  FL_ONGROUND, MOVETYPE_NONE, MOVETYPE_WALK, STYLE_BACKWARDS, STYLES, styleById, formatTicks, formatTickDiff,
 } from "@edgegamers/surftimer-shared";
 import type { FinishEvent, RunState, SplitEvent } from "../api";
-import { C, diffColor, hl, tell, tellAll } from "./chat";
+import { tr, trackFor, C, diffColor, hl, target, tell, tellAll } from "./chat";
 import * as rec from "./records";
 import * as replay from "./replay";
 import {
@@ -112,10 +112,10 @@ export function onEnter(r: Runner, z: ZoneDef, tick: number): void {
     case ZoneKind.Stage: enterStage(r, z.index, tick); break;
     case ZoneKind.Checkpoint: enterCheckpoint(r, z.track < 0 ? r.track : z.track, z.index, tick); break;
     case ZoneKind.Stop:
-      if (r.status === "running" || r.status === "practice") { resetRun(r, "idle"); tell(r.slot, "Timer stopped."); changed(r); }
+      if (r.status === "running" || r.status === "practice") { resetRun(r, "idle"); tell(r.slot, tr(r.slot, "surftimer.timer.stopped")); changed(r); }
       break;
     case ZoneKind.Reset:
-      tell(r.slot, "Timer reset.");
+      tell(r.slot, tr(r.slot, "surftimer.timer.reset"));
       teleportToTrack(r, r.track);
       break;
   }
@@ -169,7 +169,7 @@ function enterStage(r: Runner, n: number, tick: number): void {
   r.stageZone = n;
   if (r.status === "running" && r.track === 0 && r.stageRun === 0) {
     if (n === r.stage + 1) stageSplit(r, n, tick);
-    else if (n > r.stage + 1) { resetRun(r, "idle"); tell(r.slot, `Run stopped: skipped to stage ${n}.`); changed(r); }
+    else if (n > r.stage + 1) { resetRun(r, "idle"); tell(r.slot, tr(r.slot, "surftimer.timer.stage_skipped", n)); changed(r); }
     return;
   }
   if ((r.status === "running" || r.status === "practice") && r.stageRun > 0) {
@@ -207,9 +207,9 @@ function stageSplit(r: Runner, n: number, tick: number): void {
     stageTicks, stageRecord,
   };
   emitter.split(ev);
-  let line = `Stage ${hl(n)} ${C.Default}| ${formatTicks(t, tickInterval)}`;
-  if (ev.pbDiffTicks !== null) line += ` PB ${diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval))}`;
-  if (ev.wrDiffTicks !== null) line += ` WR ${diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval))}`;
+  let line = tr(r.slot, "surftimer.timer.stage_split", hl(n), C.Grey, formatTicks(t, tickInterval));
+  if (ev.pbDiffTicks !== null) line += tr(r.slot, "surftimer.timer.personal_best_split", diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval)));
+  if (ev.wrDiffTicks !== null) line += tr(r.slot, "surftimer.timer.world_record_split", diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval)));
   tell(r.slot, line);
   changed(r);
 }
@@ -221,9 +221,9 @@ function recordStage(r: Runner, stage: number, ticks: number): boolean {
   const st = styleById(r.style);
   if (res.record) {
     const diff = res.previousRecord ? ` (${formatTickDiff(ticks - res.previousRecord, tickInterval)})` : "";
-    tellAll(`${hl(r.name)} set the ${C.Purple}stage ${stage} record${C.Default}${st.id ? " [" + st.tag + "]" : ""}: ${hl(formatTicks(ticks, tickInterval))}${diff}`);
+    tellAll(recipient => tr(recipient, "surftimer.records.stage_record", target(r.name), C.White, stage, C.Grey, st.id ? ((" [" + st.tag) + "]") : "", hl(formatTicks(ticks, tickInterval)), diff));
   } else if (res.pb) {
-    tell(r.slot, `Stage ${stage} PB: ${hl(formatTicks(ticks, tickInterval))}`);
+    tell(r.slot, tr(r.slot, "surftimer.records.stage_personal_best", stage, hl(formatTicks(ticks, tickInterval))));
   }
   return res.record;
 }
@@ -233,7 +233,7 @@ function completeStageRun(r: Runner, tick: number): void {
   const stage = r.stageRun;
   const record = recordStage(r, stage, t);
   const sr = rec.stageRecord(stage, r.style);
-  if (!record) tell(r.slot, `Stage ${stage}: ${hl(formatTicks(t, tickInterval))}${sr ? ` (SR ${formatTicks(sr.ticks, tickInterval)})` : ""}`);
+  if (!record) tell(r.slot, tr(r.slot, "surftimer.timer.stage_time", stage, hl(formatTicks(t, tickInterval)), sr ? tr(r.slot, "surftimer.records.stage_record_suffix", formatTicks(sr.ticks, tickInterval)) : ""));
 }
 
 function enterCheckpoint(r: Runner, track: number, n: number, tick: number): void {
@@ -251,9 +251,9 @@ function enterCheckpoint(r: Runner, track: number, n: number, tick: number): voi
     stageTicks: 0, stageRecord: false,
   };
   emitter.split(ev);
-  let line = `CP ${hl(n)} ${C.Default}| ${formatTicks(t, tickInterval)}`;
-  if (ev.pbDiffTicks !== null) line += ` PB ${diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval))}`;
-  if (ev.wrDiffTicks !== null) line += ` WR ${diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval))}`;
+  let line = tr(r.slot, "surftimer.timer.checkpoint_split", hl(n), C.Grey, formatTicks(t, tickInterval));
+  if (ev.pbDiffTicks !== null) line += tr(r.slot, "surftimer.timer.personal_best_split", diffColor(ev.pbDiffTicks, formatTickDiff(ev.pbDiffTicks, tickInterval)));
+  if (ev.wrDiffTicks !== null) line += tr(r.slot, "surftimer.timer.world_record_split", diffColor(ev.wrDiffTicks, formatTickDiff(ev.wrDiffTicks, tickInterval)));
   tell(r.slot, line);
   changed(r);
 }
@@ -271,7 +271,7 @@ function enterEnd(r: Runner, track: number, tick: number): void {
     resetRun(r, "idle");
     r.status = "finished";
     r.finishTicks = t;
-    tell(r.slot, `Practice finish: ${hl(formatTicks(t, tickInterval))} (not saved)`);
+    tell(r.slot, tr(r.slot, "surftimer.timer.practice_finished", hl(formatTicks(t, tickInterval))));
     changed(r);
     return;
   }
@@ -301,18 +301,18 @@ function finish(r: Runner, tick: number): void {
   blockInput[r.slot] = 0;
 
   const st = styleById(style);
-  const where = `${trackName(track)}${st.id ? " [" + st.tag + "]" : ""}`;
+  const where = (slot: number) => `${trackFor(slot, track)}${st.id ? " [" + st.tag + "]" : ""}`;
   const time = hl(formatTicks(t, tickInterval));
-  const pbDiff = res.previousPbTicks ? ` (PB ${diffColor(t - res.previousPbTicks, formatTickDiff(t - res.previousPbTicks, tickInterval))})` : "";
+  const pbDiff = (slot: number) => res.previousPbTicks ? tr(slot, "surftimer.records.personal_best_suffix", diffColor(t - res.previousPbTicks, formatTickDiff(t - res.previousPbTicks, tickInterval))) : "";
   if (res.newWr) {
     const wrDiff = res.previousWrTicks ? ` (${diffColor(t - res.previousWrTicks, formatTickDiff(t - res.previousWrTicks, tickInterval))})` : "";
-    tellAll(`${C.Purple}NEW RECORD${C.Default} ${hl(r.name)} ${where}: ${time}${wrDiff}`);
+    tellAll(recipient => tr(recipient, "surftimer.records.new_record", C.White, C.Grey, target(r.name), where(recipient), time, wrDiff));
   } else if (res.newPb && announcePb) {
-    tellAll(`${hl(r.name)} finished ${where} in ${time}${pbDiff} · rank ${hl(res.rank)}/${res.rankTotal}`);
+    tellAll(recipient => tr(recipient, "surftimer.records.player_finished", target(r.name), where(recipient), time, pbDiff(recipient), hl(res.rank), res.rankTotal));
   } else {
-    tell(r.slot, `Finished ${where} in ${time}${pbDiff} · rank ${hl(res.rank)}/${res.rankTotal}`);
+    tell(r.slot, tr(r.slot, "surftimer.records.finished", where(r.slot), time, pbDiff(r.slot), hl(res.rank), res.rankTotal));
   }
-  if (replaySaved) tell(r.slot, "Your run was saved as the replay.");
+  if (replaySaved) tell(r.slot, tr(r.slot, "surftimer.replay.saved"));
 
   emitter.finish({
     slot: r.slot, userId: r.userId, name: r.name, track, style, ticks: t,
@@ -452,17 +452,17 @@ export function togglePause(r: Runner, now: number): string {
     if (loc) teleportLoc(r, loc, true);
     r.pauseLoc = null;
     changed(r);
-    return "Resumed.";
+    return tr(r.slot, "surftimer.timer.resumed");
   }
-  if (r.status !== "running") return "You can only pause a running timer.";
-  if (!readKin(r, now)) return "No pawn to pause.";
+  if (r.status !== "running") return tr(r.slot, "surftimer.timer.not_running");
+  if (!readKin(r, now)) return tr(r.slot, "surftimer.timer.no_pawn");
   r.pauseLoc = snapshotLoc(r.kin);
   r.pauseTick = now;
   r.status = "paused";
   r.pawn!.moveType = MOVETYPE_NONE;
   r.pawn!.setVelocity(0, 0, 0);
   changed(r);
-  return "Paused. Type !pause again to resume.";
+  return tr(r.slot, "surftimer.timer.paused");
 }
 
 export function saveLoc(r: Runner, now: number): number {

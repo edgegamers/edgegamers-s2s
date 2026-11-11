@@ -13,7 +13,7 @@ const code = (await build({
       "./cells": "export const resetCells=()=>{},stopAutoOpen=()=>{},setZones=()=>{},openCells=()=>{},cellsOpened=()=>false;",
       "./logs": "export const clearLogs=()=>{},log=()=>{},describe=()=>'',dumpToAll=()=>{},onPlayerHurt=()=>{},onPlayerDeath=()=>{},onGrenadeThrown=()=>{},onItemPickup=()=>{},onButtonPressed=()=>{},onBreakableBroken=()=>{},logsCommand=()=>{};",
       "./admin": "export const debugCommand=()=>{};",
-      "./messages": "export const msg={noLongerRebel:()=>''};",
+      "./messages": "export const loadPhrases=()=>{}; export const msg={noLongerRebel:()=>''};",
     };
     build.onResolve({ filter: /^\.\// }, args => args.importer.startsWith(fileURLToPath(new URL("../src/", import.meta.url))) && args.path in mocks ? { path: args.path, namespace: "runtime" } : undefined);
     build.onLoad({ filter: /.*/, namespace: "runtime" }, args => ({ contents: mocks[args.path], loader: "js" }));

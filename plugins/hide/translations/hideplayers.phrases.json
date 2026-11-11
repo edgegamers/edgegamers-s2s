@@ -1,5 +1,7 @@
 {
-  "Player.Hide.Enabled": "{orange}[Hide]{default} You {green}turned on{default} hide players!",
-  "Player.Hide.Disabled": "{orange}[Hide]{default} You {lightred}turned off{default} hide players!",
-  "Player.SaveFailed": "{orange}[Hide]{default} Your setting changed, but could not be saved yet. Retrying while you stay connected."
+  "hide.players.enabled": "{blue}Hide {grey}» You {orange}turned on{grey} hide players!",
+  "hide.players.disabled": "{blue}Hide {grey}» You {orange}turned off{grey} hide players!",
+  "hide.preferences.save_failed": "{red}Hide {grey}» Your setting changed, but {red}could not be saved{grey} yet. {white}Retrying while you stay connected.{grey}",
+  "hide.config.reloaded": "{blue}[HidePlayers]{grey} You have successfully {orange}reloaded{grey} the config.",
+  "hide.config.reload_failed": "{red}[HidePlayers] {darkred}Error: {white}An error occurred.{grey}"
 }

@@ -1,13 +1,15 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * The last-request manager (C# `LastRequestManager`): when LR turns on, starting and ending LRs,
  * the damage and pickup rules while LRs run, and the per-round reset.
  */
-import { after, Chat, HookResult } from "@s2script/sdk";
+import { after, HookResult } from "@s2script/sdk";
 import type { DamageInfo, EntityRef, HookResultValue } from "@s2script/sdk";
 import { HintText, Player, Weapon } from "@s2script/cs2";
 import type { AcquireMethod, AcquireResult } from "@s2script/cs2";
 import type { CanAcquireView } from "@s2script/cs2";
-import { Colors, hl, isAlive, packColor32, parseColor, RAINBOW, Team } from "@edgegamers/jailbreak-shared";
+import { Colors, isAlive, packColor32, parseColor, RAINBOW, Team } from "@edgegamers/jailbreak-shared";
 import { getRound, log, unmarkRebel } from "@edgegamers/jailbreak-core";
 import type { LRInfo, LRResult, LRType } from "../api";
 import { createLastRequest } from "./games";
@@ -177,7 +179,7 @@ function applyColor(lr: LastRequest): void {
     if (parsed === RAINBOW) startRainbow(p.userId);
     else tintPlayer(p.userId, parsed);
   }
-  lr.tell(parsed === RAINBOW ? msg.lrRainbow() : msg.lrColor(hl(color)));
+  lr.tell(parsed === RAINBOW ? msg.lrRainbow() : msg.lrColor(color));
 }
 
 /** End an LR (C# `EndLastRequest`). Safe to call twice; the second call is ignored. */
@@ -250,7 +252,7 @@ export function onTakeDamage(info: DamageInfo): HookResultValue | void {
   if (!isReal(attacker) || !victim) return;
   const verdict = damageVerdict(getActiveLR(victim.slot)?.id ?? null, getActiveLR(attacker.slot)?.id ?? null);
   if (verdict === "allow") return;
-  HintText.to(attacker.slot, verdict === "block_one_in_lr" ? msg.damageBlockedInside : msg.damageBlockedOtherLR);
+  HintText.to(attacker.slot, consoleText(verdict === "block_one_in_lr" ? msg.damageBlockedInside : msg.damageBlockedOtherLR, attacker.slot));
   return HookResult.Handled;
 }
 
@@ -267,7 +269,7 @@ export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
 /** A player's `drop` command: refused (true) when their LR forbids dropping. */
 export function onDropCommand(slot: number): boolean {
   if (!getActiveLR(slot)?.preventDrop(slot)) return false;
-  HintText.to(slot, msg.cannotDrop());
+  HintText.to(slot, consoleText(msg.cannotDrop(), slot));
   return true;
 }
 

@@ -64,9 +64,9 @@ test("respawn picker includes dead and pawnless controllers and skips living pla
 });
 
 test("player names are literal picker labels, even when they match a translation key", () => {
-  const f = fixture(); f.player(1); const target = f.player(2); target.playerName = "Health Item";
+  const f = fixture(); f.player(1); const target = f.player(2); target.playerName = "extracommands.health.menu_label";
   const picker = open(f, "health");
-  assert.equal(picker.items.find(item => item.info === String(target.userId)).display, "Health Item");
+  assert.equal(picker.items.find(item => item.info === String(target.userId)).display, "extracommands.health.menu_label");
 });
 
 test("a late disconnect cannot cancel a replacement caller's menu", () => {
@@ -142,24 +142,24 @@ test("cancelled, repeated and unknown selections cannot execute an action", () =
 });
 
 test("recipient locale, English fallback and plain console output work without deployed phrases", () => {
-  const f = fixture({ locales: { xx: { "Health Set": "{blue}Admin {grey}» XX {yellow}{2}{grey}.", "Health Item": "XX Health" } } });
-  const caller = f.player(1), target = f.player(2); caller.language = "xx";
-  f.call("sm_health", ["#2", "200"], 1, "chat");
-  assert.equal(f.messages.at(-1).text, "\x0bAdmin \x08» XX \x09200\x08.");
-  f.call("sm_health", ["#2", "50"], 1, "console");
-  assert.equal(f.messages.at(-1).text, "Admin » XX 50.");
-  f.call("sm_armor", ["#2", "100"], 1, "console");
-  assert.match(f.messages.at(-1).text, /^Admin » Set armor/);
-  assert.ok(f.sets.get("extracommands")["Health Set"]);
+  const f = fixture({ locales: { xx: { "extracommands.items.invalid_item": "{red}Admin {grey}» XX invalid.", "extracommands.health.menu_label": "XX Health" } } });
+  const caller = f.player(1); f.player(2); caller.language = "xx";
+  f.call("sm_give", ["#2", "unknown"], 1, "chat");
+  assert.equal(f.messages.at(-1).text, "\x07Admin \x08» XX invalid.");
+  f.call("sm_give", ["#2", "unknown"], 1, "console");
+  assert.equal(f.messages.at(-1).text, "Admin » XX invalid.");
+  f.call("sm_armor", ["#2", "invalid"], 1, "console");
+  assert.match(f.messages.at(-1).text, /^Admin » Usage: sm_armor/);
+  assert.ok(f.sets.get("extracommands")["extracommands.items.invalid_item"]);
   assert.equal(open(f, "health").title, "XX Health");
 });
 
 test("public self-kill rejects console, missing, dead and invalid pawns", () => {
   const f = fixture();
   assert.equal(f.commands.get("sm_kill").flags, 0);
-  f.call("sm_kill"); assert.equal(f.replies.at(-1)[0], "Kill Requires Player");
+  f.call("sm_kill"); assert.equal(f.replies.at(-1)[0], "extracommands.kill.player_only");
   for (const pawn of [null, { isValid: false, health: 100 }, { isValid: true, health: 0 }]) {
     const p = f.player(1); p.pawn = pawn;
-    f.call("sm_kill", [], 1); assert.equal(f.replies.at(-1)[0], "Player no longer available");
+    f.call("sm_kill", [], 1); assert.equal(f.replies.at(-1)[0], "extracommands.target.unavailable");
   }
 });

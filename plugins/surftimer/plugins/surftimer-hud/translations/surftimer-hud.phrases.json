@@ -1,0 +1,8 @@
+{
+  "surftimer.hud.on": "{orange}on{grey}",
+  "surftimer.hud.off": "{orange}off{grey}",
+  "surftimer.hud.toggled": "{grey}HUD {1}{grey}.",
+  "surftimer.hud.keys_toggled": "{grey}Key display {1}{grey}.",
+  "surftimer.hud.panorama_required": "{red}The live leaderboard needs the Panorama HUD {grey}({blue}surftimer-hud.workshop_addon{grey}).",
+  "surftimer.hud.leaderboard_toggled": "{grey}Leaderboard {1}{grey}."
+}

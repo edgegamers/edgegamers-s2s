@@ -10,12 +10,9 @@ import type { CBasePlayerController, CCSPlayerPawnBase } from '@s2script/cs2';
 import { commandNames, readConfig } from './config';
 import type { HideConfig } from './config';
 
-// Embedded English keeps a standalone .s2sp usable; operator phrase files override it.
-const english = {
-  'Player.Hide.Enabled': '{orange}[Hide]{default} You {green}turned on{default} hide players!',
-  'Player.Hide.Disabled': '{orange}[Hide]{default} You {lightred}turned off{default} hide players!',
-  'Player.SaveFailed': '{orange}[Hide]{default} Your setting changed, but could not be saved yet. Retrying while you stay connected.',
-};
+// Embedded English keeps standalone archives usable; operator phrase files override it.
+import { phrase, plain } from './phrases';
+import english from '../translations/hideplayers.phrases.json';
 
 interface Preference {
   client: Client;
@@ -66,9 +63,9 @@ function toggle(cmd: CommandInvocation): HookResultValue {
   if (!client?.isValid()) return HookResult.Handled;
   const state = preference(client);
   state.enabled = !state.enabled;
-  cmd.replyToChat(Translations.translate(client.slot, state.enabled ? 'Player.Hide.Enabled' : 'Player.Hide.Disabled'));
+  cmd.replyToChat(phrase(client.slot, state.enabled ? 'hide.players.enabled' : 'hide.players.disabled'));
   if (!client.isBot && !save(state)) {
-    cmd.replyToChat(Translations.translate(client.slot, 'Player.SaveFailed'));
+    cmd.replyToChat(phrase(client.slot, 'hide.preferences.save_failed'));
   }
   updateVisibility();
   return HookResult.Handled;
@@ -80,9 +77,9 @@ function reload(cmd: CommandInvocation): HookResultValue {
     commandNames(next.cmds); // Reject malformed edits before replacing working settings.
     settings = next;
     updateVisibility();
-    cmd.reply('[HidePlayers] You have successfully reloaded the config.');
+    replyPhrase(cmd, 'hide.config.reloaded');
   } catch (error) {
-    cmd.reply('[HidePlayers] An error occurred.');
+    replyPhrase(cmd, 'hide.config.reload_failed');
     console.log(`[HidePlayers] An error occurred while reloading the configuration: ${String(error)}`);
   }
   return HookResult.Handled;
@@ -207,3 +204,12 @@ function clearRules(): void {
 export function OnMapEnd(): void { mapActive = false; clearRules(); }
 export function OnMapStart(): void { clearRules(); mapActive = true; }
 export function OnPluginEnd(): void { clearRules(); preferences.clear(); }
+
+function replyPhrase(cmd: CommandInvocation, key: string): void {
+  const text = phrase(cmd.callerSlot, key);
+  // Reload phrases also serve console callers; only the owned leading chat header changes.
+  cmd.reply(cmd.replySource === 'chat' && cmd.callerSlot >= 0 ? text.replace(
+    /^([\x01-\x10])\[([^\]\r\n]+)\] ?(?:\x08 ?)?/,
+    (_prefix, color: string, label: string) => `${color}${label} \x08» `,
+  ) : plain(text));
+}

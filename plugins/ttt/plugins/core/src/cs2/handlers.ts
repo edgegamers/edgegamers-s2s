@@ -20,7 +20,7 @@ import { Vector } from "@s2script/sdk/math";
 import { hudLine, HUD_FONT_BIG, setCenterHud } from "./hud";
 import { GameState, MAX_SLOTS, RoleId, Team } from "../core/enums";
 import { cfg } from "../core/cvars";
-import { msg, msgFor } from "../core/msgs";
+import { msgFor, chatMsgFor } from "../core/msgs";
 import * as reg from "../core/registry";
 import { Priority, type EventBus } from "../core/bus";
 import type { TttEvents } from "../core/events";
@@ -33,7 +33,7 @@ import { ROLE_COLORS, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
 import { unspoofAlive } from "./spoof";
 import { game, inProgress, inWarmup } from "../game/game";
-import { roleName } from "../game/roles";
+import { roleNameFor } from "../game/roles";
 import { logIdentify } from "../game/logger";
 import { isCamouflaged } from "../shop/effects";
 import { tryPurchase, itemById, PurchaseResult } from "../shop/shop";
@@ -231,10 +231,10 @@ export function onItemPurchase(slot: number, weapon: string): boolean {
   // itself (tryPurchase reports insufficient funds, wrong role and limits itself). That asymmetry is
   // what made buying through the menu feel broken even when it worked.
   if (tryPurchase(slot, item) === PurchaseResult.Success) {
-    tell(slot, msgFor(slot, "SHOP_PURCHASED", msgFor(slot, item.nameKey)));
-    const desc = msg(item.descKey);
+    tell(slot, chatMsgFor(slot, "ttt.shop.purchased", msgFor(slot, item.nameKey)));
+    const desc = msgFor(slot, item.descKey);
     if (desc !== "" && desc !== item.descKey) {
-      tell(slot, msgFor(slot, "SHOP_PURCHASED_DETAIL", desc));
+      tell(slot, chatMsgFor(slot, "ttt.shop.purchased_detail", desc));
     }
   }
   return true;
@@ -403,7 +403,7 @@ function updateAfk(dt: number): void {
     afkFor[slot] = afkFor[slot]! + dt;
     if (afkWarned[slot] === 0 && afkFor[slot]! >= limit / 2) {
       afkWarned[slot] = 1;
-      tell(slot, msgFor(slot, "AFK_WARNING", Math.round(limit / 2)));
+      tell(slot, chatMsgFor(slot, "ttt.afk.warning", Math.round(limit / 2)));
       continue;
     }
     if (afkFor[slot]! >= limit) {
@@ -416,7 +416,7 @@ function updateAfk(dt: number): void {
       afkFor[slot] = 0;
       afkWarned[slot] = 0;
       toSpectator(slot);
-      tell(slot, msgFor(slot, "AFK_MOVED"));
+      tell(slot, chatMsgFor(slot, "ttt.afk.moved"));
     }
   }
 }
@@ -492,7 +492,7 @@ export function benchLateJoiner(slot: number): void {
   toSpectator(slot);
   setPawnIsAlive(slot, false);
   reg.setAlive(slot, false);
-  tell(slot, msgFor(slot, "LATE_JOIN_SPECTATE"));
+  tell(slot, chatMsgFor(slot, "ttt.round.late_join"));
 }
 
 /**
@@ -548,7 +548,7 @@ export function onCanAcquire(view: CanAcquireView): HookResultValue | void {
   if (itemId !== undefined && slot >= 0 && !isRepeatAcquire(slot, view.defIndex)) {
     const item = itemById(itemId);
     if (item !== undefined && tryPurchase(slot, item) === PurchaseResult.Success) {
-      tell(slot, msgFor(slot, "SHOP_PURCHASED", msgFor(slot, item.nameKey)));
+      tell(slot, chatMsgFor(slot, "ttt.shop.purchased", msgFor(slot, item.nameKey)));
     }
   }
   return HookResult.Handled;
@@ -563,7 +563,7 @@ const lastAcquire = new Map<number, { def: number; at: number }>();
  *
  * `CanAcquire` is a QUESTION, not a purchase event: the engine asks it more than once around a
  * single buy (and again as the menu re-evaluates), so running the purchase on every call charged
- * the player repeatedly and spammed the SHOP_PURCHASED line. The old deferred version hid this by
+ * the player repeatedly and spammed the ttt.shop.purchased line. The old deferred version hid this by
  * accident — it coalesced through a per-slot pre-frame job — so inlining the purchase, which is
  * otherwise correct, exposed it.
  */
@@ -651,12 +651,7 @@ export function installHandlers(bus: EventBus<TttEvents>): void {
       if (role === RoleId.None) return;
 
       tellAll(
-        msg(
-          "BODY_IDENTIFIED",
-          ev.identifier >= 0 ? reg.nameOf(ev.identifier) : "Someone",
-          body.ownerName,
-          roleName(role),
-        ),
+        recipient => chatMsgFor(recipient, "ttt.body.identified", ev.identifier >= 0 ? reg.nameOf(ev.identifier) : msgFor(recipient, "ttt.common.someone"), body.ownerName, roleNameFor(recipient, role)),
       );
       logIdentify(ev.identifier, body.ownerName, role);
 

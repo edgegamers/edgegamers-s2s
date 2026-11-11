@@ -115,7 +115,7 @@ test('config reload is root-only and changes mode without changing toggle state'
   assert.equal(f.hidden(pawn(f, 1), 0), true);
   f.invoke('css_hide_reload', 0, true); f.frame();
   assert.equal(f.hidden(pawn(f, 1), 0), false);
-  assert.match(f.messages.at(-1).text, /successfully reloaded/);
+  assert.match(f.messages.at(-1).text, /successfully (?:[\x01-\x10])?reloaded/);
 });
 
 test('bad config reload retains working settings and reports the error', () => {
@@ -124,6 +124,7 @@ test('bad config reload retains working settings and reports the error', () => {
     f.setConfig(bad); f.invoke('css_hide_reload', -1); f.frame();
     assert.equal(f.hidden(pawn(f, 1), 0), true);
     assert.match(f.messages.at(-1).text, /error occurred/);
+    assert.doesNotMatch(f.messages.at(-1).text, /\{[a-z]+\}|[\x01-\x10]/);
   }
 });
 
@@ -158,6 +159,44 @@ test('Russian feedback is translated with no unresolved placeholders', () => {
   const f = pair(); f.clients.get(0).language = 'ru'; f.invoke('hide');
   assert.match(f.messages[0].text, /включили/);
   assert.doesNotMatch(f.messages[0].text, /\{[012]\}/);
+});
+
+test('English and Russian toggle feedback use blue or red labels with grey arrows', () => {
+  for (const language of ['en', 'ru']) {
+    const f = pair(); f.clients.get(0).language = language;
+    f.admission = false; f.invoke('hide');
+    assert.ok(f.messages[0].text.startsWith('\x0bHide \x08» '));
+    assert.ok(f.messages[1].text.startsWith('\x07Hide \x08» '));
+  }
+});
+
+test('reload uses an arrow only for chat and preserves both console destinations', () => {
+  const f = pair();
+  f.invoke('hide_reload', 0, true);
+  assert.ok(f.messages.at(-1).text.startsWith('\x0bHidePlayers \x08» '));
+  for (const slot of [0, -1]) {
+    f.invoke('hide_reload', slot, true, 'console');
+    assert.equal(f.messages.at(-1).text, '[HidePlayers] You have successfully reloaded the config.');
+  }
+  f.setConfig('{'); f.invoke('hide_reload', 0, true);
+  assert.ok(f.messages.at(-1).text.startsWith('\x07HidePlayers \x08» \x02Error:'));
+  assert.ok(f.logs.at(-1).startsWith('[HidePlayers]'));
+});
+
+test('reload keeps translated labels and literal brackets and pipes in the message', () => {
+  const f = pair({ phrases: { 'hide.config.reloaded': '{blue}[Masquer]{grey} [map] | > ready' } });
+  f.invoke('hide_reload', 0, true);
+  assert.equal(f.messages.at(-1).text, '\x0bMasquer \x08» [map] | > ready');
+  f.invoke('hide_reload', 0, true, 'console');
+  assert.equal(f.messages.at(-1).text, '[Masquer] [map] | > ready');
+});
+
+test('server-source reload replies stay plain even with a player caller slot', () => {
+  const f = pair();
+  for (const slot of [0, -1]) {
+    f.invoke('hide_reload', slot, true, 'server');
+    assert.equal(f.messages.at(-1).text, '[HidePlayers] You have successfully reloaded the config.');
+  }
 });
 
 test('stable frames reuse live schema views and disabled viewers need none', () => {

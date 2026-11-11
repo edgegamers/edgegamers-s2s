@@ -1,3 +1,4 @@
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Rebels (Jailbreak.Rebel RebelManager + RebelListener). A prisoner who hurts a guard is a rebel
  * for `rebel_time` seconds: their model fades from red back to white and their screen pulses red
@@ -102,7 +103,7 @@ function clear(slot: number, reason: string, notify: boolean): boolean {
   if (notify && same) log(`${describe(slot)} is no longer a rebel.`);
   book.unmark(slot);
   if (same && p) {
-    if (notify) Clients.fromSlot(slot)?.chat(msg.noLongerRebel());
+    if (notify) Clients.fromSlot(slot)?.chat(chatText(msg.noLongerRebel(), slot));
     clearColor(p);
     bus()?.emit("OnRebelChanged", { player: refOf(p), rebel: false, reason });
   }

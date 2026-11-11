@@ -1,3 +1,4 @@
+import { tr, loadPhrases, plain } from "./phrases";
 // @edgegamers/surftimer-hud — the HUD for @edgegamers/surftimer-core, kept as its own plugin so servers can
 // swap or drop it without touching the timer.
 //
@@ -288,6 +289,7 @@ function readMode(): Mode {
 }
 
 export function OnPluginStart(): void {
+  loadPhrases();
   timer = use("@edgegamers/surftimer-core");
   timer.on("OnRunUpdate", onRunUpdate);
   timer.on("OnSplit", onSplit);
@@ -314,7 +316,7 @@ export function OnPluginStart(): void {
     const v = view(cmd.callerSlot);
     v.enabled = !v.enabled;
     if (layout) { const p = layout.forSlot(cmd.callerSlot); if (v.enabled) p.show("st_main"); else p.hide("st_main"); }
-    cmd.reply(`HUD ${v.enabled ? "on" : "off"}.`);
+    cmd.reply(renderReply(cmd, tr(cmd.callerSlot, "surftimer.hud.toggled", v.enabled ? tr(cmd.callerSlot, "surftimer.hud.on") : tr(cmd.callerSlot, "surftimer.hud.off"))));
     return HookResult.Handled;
   });
   command("sm_hudkeys", (cmd) => {
@@ -322,16 +324,16 @@ export function OnPluginStart(): void {
     const v = view(cmd.callerSlot);
     v.keys = !v.keys;
     if (layout) { const p = layout.forSlot(cmd.callerSlot); if (v.keys) p.show("st_keys"); else p.hide("st_keys"); }
-    cmd.reply(`Key display ${v.keys ? "on" : "off"}.`);
+    cmd.reply(renderReply(cmd, tr(cmd.callerSlot, "surftimer.hud.keys_toggled", v.keys ? tr(cmd.callerSlot, "surftimer.hud.on") : tr(cmd.callerSlot, "surftimer.hud.off"))));
     return HookResult.Handled;
   });
   command("sm_hudtop", (cmd) => {
     if (cmd.callerSlot < 0) return HookResult.Handled;
     const v = view(cmd.callerSlot);
     v.board = !v.board;
-    if (mode !== "panorama") { cmd.reply("The live leaderboard needs the Panorama HUD (surftimer-hud.workshop_addon)."); return HookResult.Handled; }
+    if (mode !== "panorama") { cmd.reply(renderReply(cmd, tr(cmd.callerSlot, "surftimer.hud.panorama_required"))); return HookResult.Handled; }
     paintBoard(cmd.callerSlot);
-    cmd.reply(`Leaderboard ${v.board ? "on" : "off"}.`);
+    cmd.reply(renderReply(cmd, tr(cmd.callerSlot, "surftimer.hud.leaderboard_toggled", v.board ? tr(cmd.callerSlot, "surftimer.hud.on") : tr(cmd.callerSlot, "surftimer.hud.off"))));
     return HookResult.Handled;
   });
 
@@ -341,4 +343,8 @@ export function OnPluginStart(): void {
   for (const c of Clients.all()) adopt(c);
   for (const b of timer.getReplayBots()) onReplayBot(b);
   console.log(`[surftimer-hud] ${mode} mode, ${hz} Hz (every ${period} ticks)`);
+}
+
+function renderReply(cmd: { replySource: string }, text: string): string {
+  return cmd.replySource === "console" ? plain(text) : text;
 }

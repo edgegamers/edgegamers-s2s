@@ -13,7 +13,7 @@ const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.
 const leader = { ...notFound(), found: true, primaryRank: 60 };
 const supporter = { ...notFound(), found: true, ds: { ds: true, tier: 1 } };
 const ordinary = { ...notFound(), found: true };
-const colors = { Green: "\x04", Default: "\x01", Blue: "\x0b", Grey: "\x08", Yellow: "\x09", Red: "\x02" };
+const colors = { Default: "\x01", White: "\x01", DarkRed: "\x02", LightPurple: "\x03", Green: "\x04", Olive: "\x05", Lime: "\x06", Red: "\x07", Grey: "\x08", Yellow: "\x09", Silver: "\x0a", Blue: "\x0b", DarkBlue: "\x0c", BlueGrey: "\x0d", Purple: "\x0e", LightRed: "\x0f", Orange: "\x10" };
 const nativeColors = Object.fromEntries(Object.entries(colors).map(([name, code]) => [name.toLowerCase(), code]));
 
 function fixture(overrides: Record<string, unknown> = {}) {
@@ -35,7 +35,8 @@ function fixture(overrides: Record<string, unknown> = {}) {
       load: (_name: string, seed: Record<string, string>) => { for (const [key, value] of Object.entries(seed)) seeds.set(key, value); },
       translate: (slot: number, key: string, ...args: (string | number)[]) => {
         // Recipient 1 has one translated phrase; all other keys must fall back to English.
-        const translated = slot === 1 && key === "MAUL_CHAT_TO_LEADERSHIP" ? "{blue}Équipe {grey}» {blue}{1}{grey}: " : seeds.get(key) ?? key;
+        const translated = slot === 1 && key === "maul.leadership.to_leadership" ? "{blue}Équipe {grey}» {blue}{1}{grey}: "
+          : slot === 5 && key === "maul.supporter.chat" ? "{green}Soutien {1}: {default}" : seeds.get(key) ?? key;
         return translated.replace(/\{(\d+)\}/g, (_, index) => String(args[Number(index) - 1] ?? "").replace(/[{}]/g, ""));
       },
     },
@@ -169,7 +170,24 @@ for (const [slot, text, teamonly, audience] of [
     f.add(1, leader, "Leader{red}\x04");
     expect(f.api.OnClientSayCommand(slot, text, teamonly)).toBe(2);
     expect(f.sent.map(([recipient]) => recipient)).toEqual([...audience]);
-    expect(f.sent.every(([, line]) => !line.includes("\x04") && !line.includes("\x02") && line.endsWith("body｛blue｝ and ｛literal｝"))).toBe(true);
+    expect(f.sent.every(([, line]) => !line.includes("\x04") && line.endsWith("body｛blue｝ and ｛literal｝"))).toBe(true);
     if (slot === 1) expect(f.sent[0]![1]).toContain("Leaderred");
   });
 }
+
+test("DS wrappers use each recipient's language while preserving the player's body", () => {
+  const f = fixture(); f.add(5, supporter);
+  f.api.OnClientSayCommand(3, "$private room", true);
+  expect(f.sent.find(([slot]) => slot === 5)?.[1]).toContain("Soutien player-3: ");
+  expect(f.sent.find(([slot]) => slot === 3)?.[1]).toContain("\x0bDS \x08» \x0fplayer-3\x08: ");
+  expect(f.sent.every(([, line]) => line.endsWith("private room"))).toBe(true);
+});
+
+test("staff chat changes only its owned header, preserving bracketed and pipe body text", () => {
+  const f = fixture();
+  f.api.OnClientSayCommand(3, "$[body] | > »", true);
+  expect(f.sent.every(([, line]) => line.endsWith("[body] | > »"))).toBe(true);
+  expect(f.sent[0]![1]).toStartWith("\x0bDS \x08» ");
+  f.api.OnClientSayCommand(1, "%%missing text", false);
+  expect(f.sent.at(-1)![1]).toStartWith("\x07Leadership \x08» ");
+});

@@ -46,9 +46,11 @@ Dead/spectator players can read all public chat. Warmup and between-round public
 
 ### Templates
 
-`templates` has `public`, `team`, `dead`, `spectator` and `traitor` entries. Supported values: `{name}`, `{message}`, `{prefix}`, `{team}`, `{channel}`, `{location}`, `{grenade}` plus native color tags such as `{blue}`, `{grey}`, `{yellow}`, `{red}`. The first matching permission entry in `prefixes: [{flags, text}]` wins. Operator templates are literal; player text cannot inject placeholders or colors.
+`templates` has `public`, `team`, `dead`, `spectator` and `traitor` entries. Supported values: `{name}`, `{message}`, `{prefix}`, `{team}`, `{channel}`, `{location}`, `{grenade}`, `{dead}` and `{team_chat}` plus native color tags such as `{blue}`, `{grey}`, `{yellow}`, `{red}`. The first matching permission entry in `prefixes: [{flags, text}]` wins. Operator templates are literal; player text cannot inject placeholders or colors.
 
-`teamJoin` and `grenade` each have their own `enabled`, `includeBots` and `template` settings. These replacements work independently of ordinary chat formatting and stock suppression. Grenade replacements stay within the thrower's team. First-party warnings/replies use recipient-language `decluttr.phrases.json` with an English fallback; custom templates and player text are not translated.
+The default public/team/dead/spectator layout follows the old MAUL chat: white names and colons, grey messages, a light-red `☠` for a dead pawn, and team-chat labels `[T]` in red, `[CT]` in blue or `[S]` in white (`[?]` in grey when unassigned). Dead team chat combines the skull and team label before the permission tag and name. Spectator public chat has no separate `SPEC` label; pawnless spectators have no skull. Edit the `decluttr.chat.*` entries in `translations/decluttr.phrases.json` to revise this presentation. Older generated stock templates adopt the new defaults; customized layouts remain in effect. Enable `chat.format.enabled` and reload to use the formatter.
+
+`teamJoin` and `grenade` each have their own `enabled`, `includeBots` and `template` settings. These replacements work independently of ordinary chat formatting and stock suppression. Grenade replacements stay within the thrower's team. First-party warnings, replies, default chat templates and team/channel labels use recipient-language `decluttr.phrases.json` with an English fallback. Templates that match the shipped configuration defaults use the corresponding `decluttr.chat.*` or `decluttr.announcements.*` phrase; editing a config template overrides that phrase. Custom templates, player text and map locations remain literal. Existing locale overrides must use the new `decluttr.feature.function` keys.
 
 ### Other plugins and restoration
 

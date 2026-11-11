@@ -1,3 +1,5 @@
+import { reply as replyMessage, localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { loadPhrases } from "./messages.ts";
 /**
  * @edgegamers/jailbreak-gangperks — the only bridge between Gangs (`@edgegamers/gangs`) and Jailbreak.
  *
@@ -8,7 +10,7 @@
  *
  * Wiring only; the logic lives in the feature files.
  */
-import { after, command, config, pluginId, use, watchOptional, Chat } from "@s2script/sdk";
+import { after, command, config, pluginId, use, watchOptional } from "@s2script/sdk";
 import { Events, Player } from "@s2script/cs2";
 import { ALL_PERKS } from "./perks.ts";
 import { runPerk } from "./commands.ts";
@@ -48,6 +50,7 @@ function readConfig(): void {
 }
 
 export function OnPluginStart(): void {
+  loadPhrases();
   const gangs = use("@edgegamers/gangs");
   deps.gangs = gangs;
   const provider = pluginId();
@@ -73,13 +76,13 @@ export function OnPluginStart(): void {
 
   for (const def of ALL_PERKS) {
     command(def.command, (cmd) => {
-      if (cmd.callerSlot < 0) return cmd.reply(msg.playerOnly());
+      if (cmd.callerSlot < 0) return replyMessage(cmd, msg.playerOnly());
       guard(def.command, undefined, () => runPerk(def, cmd.callerSlot, cmd.args));
     });
   }
 
   command("sm_jbstats", (cmd) => {
-    if (cmd.callerSlot < 0) return cmd.reply(msg.playerOnly());
+    if (cmd.callerSlot < 0) return replyMessage(cmd, msg.playerOnly());
     const g = readyGangs();
     if (!g) return Chat.toSlot(cmd.callerSlot, msg.notReady());
     const steam = steamOfSlot(cmd.callerSlot);

@@ -94,7 +94,7 @@ DS membership requires a found MAUL profile with `ds.ds` set to `true`; rank alo
 access. These recipient restrictions apply to in-game delivery. Existing server logging and the
 optional MAUL presence dashboard still record chat, including staff messages.
 
-Leadership wrappers use the startup-loaded `maul` translation set, with English embedded in the
+Staff-chat wrappers, DS join wrappers and command feedback use the startup-loaded `maul` translation set, with English embedded in the
 plugin. Operator overrides belong at `addons/s2script/translations/maul.phrases.json`, or under a
 language-code subdirectory for another locale. Reload the plugin after changing a phrase file.
 

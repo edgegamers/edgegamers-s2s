@@ -1,3 +1,4 @@
+import { phrase } from "../messages.ts";
 /**
  * Speedrunners (SpeedrunDay): one player runs somewhere, everyone else must follow; each race the
  * slowest are eliminated until a few remain, and the fastest gets a weapon to finish the rest.
@@ -13,7 +14,7 @@ import type { BeamHandle } from "@s2script/cs2";
 import type { DayContext, SpecialDay } from "../day.ts";
 import { baseSettings, withAutoBhop, withFriendlyFire } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DESCRIPTIONS, msg, placeText } from "../messages.ts";
 import type { Vec3 } from "../geometry.ts";
 import { copy, dist, dist2, hdist2 } from "../geometry.ts";
 import {
@@ -161,7 +162,7 @@ export function speedrunDay(): SpecialDay {
       const stillSeconds = Math.ceil(trail.didntMoveTicks / tps);
       const threshold = Math.ceil(tps * 3);
       if (start === null) {
-        ctx.panic("start is null");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_start_missing"));
         return;
       }
       const runnerPos = originOf(current);
@@ -176,7 +177,7 @@ export function speedrunDay(): SpecialDay {
         candidates.sort((a, b) => dist2(originOf(a) as Vec3, end) - dist2(originOf(b) as Vec3, end));
         const next = candidates[0];
         if (!next) {
-          ctx.panic("Speedrunner is invalid, and we cannot find a new one");
+          ctx.panic(phrase("jailbreak.specialdays.speedrun_runner_replacement_missing"));
           return;
         }
         assign(next);
@@ -197,14 +198,14 @@ export function speedrunDay(): SpecialDay {
       // The runner left mid-run: the nearest player to the path end takes over.
       const end = trail.path.newest()?.end ?? start;
       if (end === null) {
-        ctx.panic("Speedrunner is invalid, and we cannot find the start");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_runner_start_missing"));
         return;
       }
       const candidates = alive().filter((q) => originOf(q) !== null);
       candidates.sort((a, b) => dist2(originOf(a) as Vec3, end) - dist2(originOf(b) as Vec3, end));
       const next = candidates[0];
       if (!next) {
-        ctx.panic("Speedrunner is invalid, and we cannot find a new one");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_round_runner_missing"));
         return;
       }
       assign(next);
@@ -271,7 +272,7 @@ export function speedrunDay(): SpecialDay {
       setColor(p, GOLD);
     } else {
       const position = finishers.length + 1;
-      toAll(msg.srFinished(nameOf(p), placeName(position), position, time));
+      toAll(msg.srFinished(nameOf(p), placeText(position), position, time));
     }
     finishers.push({ slot: p.slot, finished: true, value: time });
     finishedSlots.add(p.slot);
@@ -334,7 +335,7 @@ export function speedrunDay(): SpecialDay {
     roundEndTimer?.kill();
     roundEndTimer = null;
     if (target === null) {
-      ctx.panic("endRound: Target is null");
+      ctx.panic(phrase("jailbreak.specialdays.speedrun_finish_target_missing"));
       return;
     }
     if (!ctx.active) return;
@@ -361,7 +362,7 @@ export function speedrunDay(): SpecialDay {
       const other = pick(alive(tMade ? Team.Guard : Team.Prisoner));
       const otherTrail = other ? activeTrails.get(other.slot) : undefined;
       if (other && otherTrail) {
-        toAll(msg.srImpossible(ctMade ? "Prisoners" : "Guards", nameOf(other)));
+        toAll(msg.srImpossible(ctMade ? phrase("jailbreak.specialdays.team_prisoners") : phrase("jailbreak.specialdays.team_guards"), nameOf(other)));
         otherTrail.stopTracking();
         bestBeams?.kill();
         bestBeams = BeamTrail.fromPath(otherTrail.path, (ms, fn) => ctx.every(ms, fn));
@@ -380,7 +381,7 @@ export function speedrunDay(): SpecialDay {
     order.forEach((s, i) => {
       if (s.finished) return;
       const p = Player.fromSlot(s.slot);
-      if (p) toSlot(p.slot, msg.srDistance(nameOf(p), placeName(i + 1), i + 1, s.value));
+      if (p) toSlot(p.slot, msg.srDistance(nameOf(p), placeText(i + 1), i + 1, s.value));
     });
 
     if (aliveCount <= cfg.finishAt) {
@@ -426,7 +427,7 @@ export function speedrunDay(): SpecialDay {
     const first = order[0];
     const winner = first ? Player.fromSlot(first.slot) : null;
     if (!winner) {
-      ctx.panic("endRound: Winner is null");
+      ctx.panic(phrase("jailbreak.specialdays.speedrun_winner_missing"));
       return;
     }
     gameOver = true;
@@ -458,7 +459,7 @@ export function speedrunDay(): SpecialDay {
       for (const p of playing()) if (p.pawnIsAlive === false) p.respawn();
       const first = getRunner();
       if (!first) {
-        ctx.panic("Could not find a speedrunner");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_runner_not_found"));
         return;
       }
       runner = first.userId;
@@ -473,7 +474,7 @@ export function speedrunDay(): SpecialDay {
       ctx.at(cfg.firstFreeze - 4, () => {
         const p = runnerPlayer() ?? getRunner();
         if (!p) {
-          ctx.panic("Speedrunner is invalid, and we cannot find a new one");
+          ctx.panic(phrase("jailbreak.specialdays.speedrun_goal_runner_missing"));
           return;
         }
         assign(p);
@@ -485,7 +486,7 @@ export function speedrunDay(): SpecialDay {
         if (!p) {
           p = getRunner();
           if (!p) {
-            ctx.panic("Original speedrunner is invalid, and we cannot find a new one");
+            ctx.panic(phrase("jailbreak.specialdays.speedrun_original_runner_missing"));
             return;
           }
           assign(p);
@@ -502,7 +503,7 @@ export function speedrunDay(): SpecialDay {
           if (target !== null) return;
           const p = runnerPlayer() ?? getRunner();
           if (!p) {
-            ctx.panic("Original speedrunner is invalid, and we cannot find a new one");
+            ctx.panic(phrase("jailbreak.specialdays.speedrun_original_replacement_missing"));
             return;
           }
           toSlot(p.slot, msg.srRuntimeLeft(timeRemaining()));
@@ -517,22 +518,22 @@ export function speedrunDay(): SpecialDay {
     execute(ctx) {
       const p = runnerPlayer();
       if (!p) {
-        ctx.panic("Execute: Speedrunner is null");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_execute_runner_missing"));
         return;
       }
       const at = originOf(p);
       if (!at) {
-        ctx.panic("Execute: Could not get the speedrunner's position");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_runner_position_missing"));
         return;
       }
       if (start === null || dist2(start, at) < 100) {
-        ctx.panic("Execute: Start is null or too close to speedrunner");
+        ctx.panic(phrase("jailbreak.specialdays.speedrun_start_too_close"));
         return;
       }
       target = copy(at);
       drawCircle(target);
       if (!firstTrail) {
-        toAll(msg.error("Execute: bestTrail is null"));
+        toAll(msg.error(phrase("jailbreak.specialdays.speedrun_best_trail_missing")));
         return;
       }
       bestBeams = firstTrail.detachBeams();

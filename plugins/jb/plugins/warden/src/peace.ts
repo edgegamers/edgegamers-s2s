@@ -1,4 +1,6 @@
-import { ADMFLAG, after, Chat, Clients, Voice } from "@s2script/sdk";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { ADMFLAG, after, Clients, Voice } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { Team, alivePrisoners, isAlive } from "@edgegamers/jailbreak-shared";
@@ -266,7 +268,7 @@ export function peaceOnPluginEnd(): void {
   for (const slot of [...applied.keys()]) release(slot);
 }
 
-function remind(slot: number, text: string, everyMs: number): void {
+function remind(slot: number, text: Text, everyMs: number): void {
   const now = Date.now();
   if (now - (lastReminder.get(slot) ?? 0) < everyMs) return;
   lastReminder.set(slot, now);

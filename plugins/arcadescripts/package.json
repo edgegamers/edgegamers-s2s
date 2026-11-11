@@ -19,6 +19,7 @@
   },
   "files": [
     "src/",
+    "translations/",
     "test/",
     "tsconfig.json",
     "LICENSE",

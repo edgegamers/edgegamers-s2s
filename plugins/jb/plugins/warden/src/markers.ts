@@ -1,10 +1,12 @@
-import { Chat, Clients, Cookies, HookResult, Menu, MenuStyle, Vector } from "@s2script/sdk";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { Clients, Cookies, HookResult, Menu, MenuStyle, Vector } from "@s2script/sdk";
 import type { Cookie, HookResultValue } from "@s2script/sdk";
 import type { BeamHandle } from "@s2script/cs2";
 import { cfg } from "./config";
 import { hasFlagLetters } from "./env";
 import { drawLine, drawLoop, removeBeams } from "./draw";
-import { msg } from "./messages";
+import { MARKER_LABELS, MARKER_COLOR_LABELS, msg } from "./messages";
 import { inMarker, markerPing, type MarkerPlacement, type Point3 } from "./rules";
 import {
   MARKER_COLORS,
@@ -94,7 +96,7 @@ export function clearMarker(): void {
 // ── customisation menus (!markertype / !markercolor) ───────────────────────
 
 /** Returns an error message, or null when the menu was opened. */
-export function openMarkerTypeMenu(slot: number): string | null {
+export function openMarkerTypeMenu(slot: number): Text | null {
   if (!hasFlagLetters(slot, cfg.markerFlag)) return msg.noPermission(cfg.markerFlag);
   const menu = new Menu("Marker Type");
   menu.style = MenuStyle.Center;
@@ -107,14 +109,14 @@ export function openMarkerTypeMenu(slot: number): string | null {
       Chat.toSlot(e.slot, msg.markerSaveFailed);
       return;
     }
-    Chat.toSlot(e.slot, msg.markerTypeChanged(name));
+    Chat.toSlot(e.slot, msg.markerTypeChanged(MARKER_LABELS[parseShape(e.info)]));
     if (isWarden(e.slot)) redraw();
   });
   menu.display(slot, 30);
   return null;
 }
 
-export function openMarkerColorMenu(slot: number): string | null {
+export function openMarkerColorMenu(slot: number): Text | null {
   if (!hasFlagLetters(slot, cfg.markerFlag)) return msg.noPermission(cfg.markerFlag);
   const menu = new Menu("Marker Color");
   menu.style = MenuStyle.Center;
@@ -126,7 +128,7 @@ export function openMarkerColorMenu(slot: number): string | null {
       Chat.toSlot(e.slot, msg.markerSaveFailed);
       return;
     }
-    Chat.toSlot(e.slot, msg.markerColorChanged(e.info));
+    Chat.toSlot(e.slot, msg.markerColorChanged(MARKER_COLOR_LABELS[e.info] ?? e.info));
     if (isWarden(e.slot)) redraw();
   });
   menu.display(slot, 30);

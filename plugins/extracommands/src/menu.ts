@@ -81,12 +81,12 @@ function execute(selection: Selection, action: Action, ...values: string[]): voi
 
 function finish(selection: Selection, action: Action): void {
   if (action.destination) {
-    show(selection, "Teleport Destination", choices(["saved", "Saved Location"], ["player", "Another Player"]), mode => {
+    show(selection, "extracommands.teleport.destination_title", choices(["saved", "extracommands.teleport.saved_location"], ["player", "extracommands.teleport.another_player"]), mode => {
       if (mode === "saved") execute(selection, action);
-      else pickPlayer(selection, "Choose Destination", "alive", false, player => execute(selection, action, `#${player.userId}`));
+      else pickPlayer(selection, "extracommands.teleport.choose_destination", "alive", false, player => execute(selection, action, `#${player.userId}`));
     });
   } else if (action.values) show(selection, action.label, action.values, value => execute(selection, action, value));
-  else if (action.confirm) show(selection, "Confirm Self Kill", choices(["confirm", "Confirm"], ["cancel", "Cancel"]), value => {
+  else if (action.confirm) show(selection, "extracommands.kill.confirm_title", choices(["confirm", "extracommands.menu.confirm"], ["cancel", "extracommands.menu.cancel"]), value => {
     if (value === "confirm") execute(selection, action);
   });
   else execute(selection, action);
@@ -94,34 +94,34 @@ function finish(selection: Selection, action: Action): void {
 
 export function registerMenu(): void {
   const slay = ADMFLAG.SLAY, cheats = ADMFLAG.CHEATS, kick = ADMFLAG.KICK;
-  const items = choices(["ak47", "AK-47"], ["m4a1_silencer", "M4A1-S"], ["awp", "AWP"], ["usp_silencer", "USP-S"],
-    ["deagle", "Desert Eagle"], ["hegrenade", "HE Grenade"], ["smokegrenade", "Smoke Grenade"], ["kevlar", "Kevlar"]);
+  const items = choices(["ak47", "extracommands.items.ak47"], ["m4a1_silencer", "extracommands.items.m4a1s"], ["awp", "extracommands.items.awp"], ["usp_silencer", "extracommands.items.usps"],
+    ["deagle", "extracommands.items.deagle"], ["hegrenade", "extracommands.items.he_grenade"], ["smokegrenade", "extracommands.items.smoke_grenade"], ["kevlar", "extracommands.items.kevlar"]);
   const actions: Action[] = [
-    { id: "health", label: "Health Item", command: "sm_health", flags: slay, target: "alive", values: numbers(1, 50, 100, 200, 1000) },
-    { id: "armor", label: "Armor Item", command: "sm_armor", flags: slay, target: "alive", values: numbers(0, 50, 100, 200, 250) },
-    { id: "give", label: "Give Item", command: "sm_give", flags: cheats, target: "alive", values: items },
-    { id: "equip", label: "Equip Item", command: "sm_equip", flags: cheats, target: "alive", values: items },
-    { id: "disarm", label: "Disarm Item", command: "sm_disarm", flags: slay, target: "alive" },
-    { id: "respawn", label: "Respawn Item", command: "sm_respawn", flags: slay, target: "dead" },
-    { id: "oneup", label: "Oneup Item", command: "sm_1up", flags: slay, target: "dead" },
-    { id: "team", label: "Team Item", command: "sm_team", flags: kick, target: "any",
-      values: choices(["t", "Terrorists"], ["ct", "Counter-Terrorists"], ["spec", "Spectators"]) },
-    { id: "spec", label: "Spec Item", command: "sm_spec", flags: kick, target: "any" },
-    { id: "swap", label: "Swap Item", command: "sm_swap", flags: kick, target: "any" },
-    { id: "saveloc", label: "Save Location Item", command: "sm_saveloc", flags: cheats },
-    { id: "teleport", label: "Teleport Item", command: "sm_tp", flags: slay, target: "alive", destination: true },
-    { id: "god", label: "God Item", command: "sm_god", flags: cheats, target: "alive", fun: true,
-      values: choices(["0", "Toggle"], ["1", "Enable"], ["-1", "Disable"]) },
-    { id: "speed", label: "Speed Item", command: "sm_speed", flags: slay, target: "alive", fun: true, values: numbers(0.5, 1, 1.5, 2, 3) },
-    { id: "size", label: "Size Item", command: "sm_size", flags: slay, target: "alive", fun: true, values: numbers(0.5, 1, 1.5, 2, 4) },
-    { id: "unblind", label: "Unblind Item", command: "sm_unblind", flags: slay, target: "alive", fun: true },
-    { id: "drug", label: "Drug Item", command: "sm_drug", flags: slay, target: "alive", fun: true, values: numbers(0, 5, 10, 30, 60) },
-    { id: "undrug", label: "Undrug Item", command: "sm_undrug", flags: slay, target: "alive", fun: true },
-    { id: "beacon", label: "Beacon Item", command: "sm_beacon", flags: slay, target: "alive", fun: true },
-    { id: "kill", label: "Kill Item", command: "sm_kill", flags: 0, confirm: true },
+    { id: "health", label: "extracommands.health.menu_label", command: "sm_health", flags: slay, target: "alive", values: numbers(1, 50, 100, 200, 1000) },
+    { id: "armor", label: "extracommands.armor.menu_label", command: "sm_armor", flags: slay, target: "alive", values: numbers(0, 50, 100, 200, 250) },
+    { id: "give", label: "extracommands.give.menu_label", command: "sm_give", flags: cheats, target: "alive", values: items },
+    { id: "equip", label: "extracommands.equip.menu_label", command: "sm_equip", flags: cheats, target: "alive", values: items },
+    { id: "disarm", label: "extracommands.disarm.menu_label", command: "sm_disarm", flags: slay, target: "alive" },
+    { id: "respawn", label: "extracommands.respawn.menu_label", command: "sm_respawn", flags: slay, target: "dead" },
+    { id: "oneup", label: "extracommands.oneup.menu_label", command: "sm_1up", flags: slay, target: "dead" },
+    { id: "team", label: "extracommands.team.menu_label", command: "sm_team", flags: kick, target: "any",
+      values: choices(["t", "extracommands.team.terrorists"], ["ct", "extracommands.team.counter_terrorists"], ["spec", "extracommands.team.spectators"]) },
+    { id: "spec", label: "extracommands.spec.menu_label", command: "sm_spec", flags: kick, target: "any" },
+    { id: "swap", label: "extracommands.swap.menu_label", command: "sm_swap", flags: kick, target: "any" },
+    { id: "saveloc", label: "extracommands.saveloc.menu_label", command: "sm_saveloc", flags: cheats },
+    { id: "teleport", label: "extracommands.teleport.menu_label", command: "sm_tp", flags: slay, target: "alive", destination: true },
+    { id: "god", label: "extracommands.god.menu_label", command: "sm_god", flags: cheats, target: "alive", fun: true,
+      values: choices(["0", "extracommands.menu.toggle"], ["1", "extracommands.menu.enable"], ["-1", "extracommands.menu.disable"]) },
+    { id: "speed", label: "extracommands.speed.menu_label", command: "sm_speed", flags: slay, target: "alive", fun: true, values: numbers(0.5, 1, 1.5, 2, 3) },
+    { id: "size", label: "extracommands.size.menu_label", command: "sm_size", flags: slay, target: "alive", fun: true, values: numbers(0.5, 1, 1.5, 2, 4) },
+    { id: "unblind", label: "extracommands.unblind.menu_label", command: "sm_unblind", flags: slay, target: "alive", fun: true },
+    { id: "drug", label: "extracommands.drug.menu_label", command: "sm_drug", flags: slay, target: "alive", fun: true, values: numbers(0, 5, 10, 30, 60) },
+    { id: "undrug", label: "extracommands.undrug.menu_label", command: "sm_undrug", flags: slay, target: "alive", fun: true },
+    { id: "beacon", label: "extracommands.beacon.menu_label", command: "sm_beacon", flags: slay, target: "alive", fun: true },
+    { id: "kill", label: "extracommands.kill.menu_label", command: "sm_kill", flags: 0, confirm: true },
   ];
   topmenu.addCategory("Player Commands");
-  topmenu.addTab({ id: "funcommands", title: plainPhraseFor(-1, "Fun Commands") });
+  topmenu.addTab({ id: "funcommands", title: plainPhraseFor(-1, "extracommands.menu.fun_commands") });
   for (const action of actions) topmenu.addItem(action.fun ? "funcommands" : "Player Commands", {
     id: `extracommands:${action.id}`, name: plainPhraseFor(-1, action.label), flags: action.flags,
     sheets: action.id === "kill" ? ["menu"] : ["admin"],

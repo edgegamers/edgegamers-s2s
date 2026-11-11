@@ -18,13 +18,13 @@ export function OnPluginStart(): void {
   effects.start();
   Events.on("player_death", ev => effects.removeSlot(ev.getPlayerSlot("userid")));
   command("sm_kill", cmd => {
-    if (cmd.callerSlot < 0) { cmd.replyT("Kill Requires Player"); return HookResult.Handled; }
+    if (cmd.callerSlot < 0) { cmd.replyT("extracommands.kill.player_only"); return HookResult.Handled; }
     const pawn = Player.fromSlot(cmd.callerSlot)?.pawn;
     if (!pawn?.isValid || pawn.health === null || pawn.health <= 0) {
-      cmd.replyT("Player no longer available"); return HookResult.Handled;
+      cmd.replyT("extracommands.target.unavailable"); return HookResult.Handled;
     }
     pawn.slay();
-    cmd.replyT("Killed Yourself");
+    cmd.replyT("extracommands.kill.confirm");
     return HookResult.Handled;
   });
   registerMenu();

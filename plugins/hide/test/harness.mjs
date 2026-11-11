@@ -63,7 +63,7 @@ export function fixture(options = {}) {
       assert.equal(opts?.phase, 'post'); frames.push(fn);
     } } }),
     Translations: {
-      load(name, seed) { phraseSets.set(name, { ...seed }); },
+      load(name, seed) { phraseSets.set(name, { ...seed, ...options.phrases }); },
       translate(slot, name, ...args) {
         for (const [set, seed] of phraseSets) {
           let phrases = seed;
@@ -77,6 +77,7 @@ export function fixture(options = {}) {
     },
   };
   const cs2 = {
+    ChatColors: { Default: '\x01', White: '\x01', DarkRed: '\x02', LightPurple: '\x03', Green: '\x04', Olive: '\x05', Lime: '\x06', Red: '\x07', Grey: '\x08', Yellow: '\x09', Silver: '\x0a', Blue: '\x0b', DarkBlue: '\x0c', BlueGrey: '\x0d', Purple: '\x0e', LightRed: '\x0f', Orange: '\x10' },
     Player: { allConnected: () => [...players.values()] },
     PlayerConnectedState: { Connected: 0 },
     CSPlayerState: { STATE_OBSERVER_MODE: 6 },
@@ -118,11 +119,11 @@ export function fixture(options = {}) {
     players.set(slot, { slot, teamNum: opts.team ?? 2, connected: 0, ref: controller, playerPawn: pawn });
     return c;
   }
-  function invoke(name, slot = 0, root = false) {
+  function invoke(name, slot = 0, root = false, replySource = slot < 0 ? 'console' : 'chat') {
     const entry = commands.get(name);
     assert.ok(entry, `command ${name} must be registered`);
     if (entry.flags && slot >= 0 && !root) return false;
-    entry.handler({ callerSlot: slot, args: [], argString: '', argCount: 0,
+    entry.handler({ callerSlot: slot, args: [], argString: '', argCount: 0, replySource,
       reply: text => messages.push({ slot, text }), replyToChat: text => messages.push({ slot, text }) });
     return true;
   }

@@ -10,7 +10,7 @@ import {Trace,TraceMask} from '@s2script/sdk/trace';
 import {ChatColors,wrapEntity} from '@s2script/cs2';
 import {Engine} from '@s2script/sdk/unsafe';
 import {createEntity,isOpen} from './lifecycle';
-import {GameState,MAX_SLOTS,RoleId,reg,inProgress,cfg,n,s,msg,msgFor,pawnOf,setHealth,teamOf,tell,killWithGadget,roleModel,type Body} from './runtime';
+import {GameState,MAX_SLOTS,RoleId,reg,inProgress,cfg,n,s,msg,msgFor,pawnOf,setHealth,teamOf,tell,killWithGadget,roleModel,type Body, chatMsgFor } from './runtime';
 import {hudLine,HUD_FONT_BIG,HUD_FONT_MID,HUD_FONT_SMALL,setCenterHud} from './hud';
 import type {DomainBus as EventBus} from '../../../packages/contracts/ordered.ts';
 import {PISTOLS} from './inventory';
@@ -56,17 +56,17 @@ const lastDnaRead = new Map<number, number>();
 
 /** Flavour text for a body with no recoverable DNA, as the C# `missingDnaExplanations`. */
 const NO_DNA: readonly string[] = [
-  "the killer used gloves... for their bullets",
-  "the killer was very careful",
-  "the killer wiped the weapon clean",
-  "the killer retrieved the bullets",
-  "the bullets disintegrated on impact",
-  "the killer was GOATed",
-  "but no DNA was found",
-  "but legal litigation caused the DNA to be lost",
-  "and confirmed they were dead",
-  "and they will remember that",
-  "good job",
+  "ttt.dna.gloved_bullets",
+  "ttt.dna.careful_killer",
+  "ttt.dna.clean_weapon",
+  "ttt.dna.retrieved_bullets",
+  "ttt.dna.disintegrated_bullets",
+  "ttt.dna.goated_killer",
+  "ttt.dna.no_trace",
+  "ttt.dna.legal_dispute",
+  "ttt.dna.confirmed_death",
+  "ttt.dna.remembered_death",
+  "ttt.dna.good_job",
 ];
 
 /** Grant `count` silenced shots to a slot. */
@@ -228,7 +228,7 @@ export function onWeaponFire(slot: number, weapon: string): void {
   if (!PISTOLS.has(cls)) return;
 
   poisonShots[slot] = left - 1;
-  if (left - 1 === 0) tell(slot, msgFor(slot, "SHOP_ITEM_POISON_OUT"));
+  if (left - 1 === 0) tell(slot, chatMsgFor(slot, "ttt.poison_shots.depleted"));
 }
 
 // ── poison smoke clouds ──────────────────────────────────────────────────────
@@ -310,7 +310,7 @@ function rolePrefix(role: RoleId): string {
     ? ChatColors.Red
     : role === RoleId.Detective
       ? ChatColors.DarkBlue
-      : ChatColors.Lime;
+      : ChatColors.Green;
 }
 
 /**
@@ -335,27 +335,27 @@ export function readDna(slot: number, body: Body): void {
 
   const roleColour = rolePrefix(body.ownerRole);
   if (now - body.timeOfDeath > n("sm_ttt_shop_dna_decay_time")) {
-    tell(slot, msgFor(slot, "SHOP_ITEM_DNA_EXPIRED", roleColour, body.ownerName));
+    tell(slot, chatMsgFor(slot, "ttt.dna.expired", roleColour, body.ownerName));
     return;
   }
   // Order matters and follows the C#: a wiped trace (`body.Killer == null`) is reported before the
   // suicide case, so Gloves still read as "no DNA" rather than "they killed themselves".
   if (body.dnaSuppressed || body.killer < 0) {
-    const why = NO_DNA[(Math.random() * NO_DNA.length) | 0]!;
-    tell(slot, msgFor(slot, "SHOP_ITEM_DNA_SCANNED_OTHER", roleColour, body.ownerName, why));
+    const why = msgFor(slot, NO_DNA[(Math.random() * NO_DNA.length) | 0]!);
+    tell(slot, chatMsgFor(slot, "ttt.dna.scanned_other", roleColour, body.ownerName, why));
     return;
   }
   // `SHOP_ITEM_DNA_SCANNED_SUICIDE` in the C# is just `SCANNED_OTHER` with a fixed explanation.
   if (body.killer === body.owner) {
     tell(
       slot,
-      msg("SHOP_ITEM_DNA_SCANNED_OTHER", roleColour, body.ownerName, "they killed themselves"),
+      chatMsgFor(slot, "ttt.dna.scanned_other", roleColour, body.ownerName, msgFor(slot, "ttt.dna.suicide")),
     );
     return;
   }
   // The killer is NOT named here. The scan yields a trace; identifying whoever left it is the work,
   // and handing over the name for free is what made the item trivialise the round.
-  tell(slot, msgFor(slot, "SHOP_ITEM_DNA_TRACE", roleColour, body.ownerName));
+  tell(slot, chatMsgFor(slot, "ttt.dna.trace_recovered", roleColour, body.ownerName));
   dnaTarget[slot] = body.killer;
   dnaExpiry[slot] = body.timeOfDeath + n("sm_ttt_shop_dna_decay_time");
   dnaProgress[slot] = 0;
@@ -589,7 +589,7 @@ export function tickDnaTracker(dt: number): void {
         dnaLockedAt[slot] = now;
         // The lock is the payoff, so it is announced three ways: chat (permanent record), a banner
         // that owns the screen for a moment, and a cue — a Detective mid-chase is not reading chat.
-        tell(slot, msgFor(slot, "DNA_TRACK_IDENTIFIED", reg.nameOf(target)));
+        tell(slot, chatMsgFor(slot, "ttt.dna.tracking_identified", reg.nameOf(target)));
         checked(() => Sound.emit(SND_DNA_LOCK, { recipients: [slot] }));
         // The reward for the work: from here the killer is visible through walls, to this Detective
         // only, until the trace goes cold.
@@ -624,7 +624,7 @@ export function tickDnaTracker(dt: number): void {
       setCenterHud(
         slot,
         banner
-          ? hudLine(msgFor(slot, "DNA_TRACK_IDENTIFIED", reg.nameOf(target)), "#66ff88", HUD_FONT_BIG) +
+          ? hudLine(msgFor(slot, "ttt.dna.tracking_identified", reg.nameOf(target)), "#66ff88", HUD_FONT_BIG) +
               `<br>${hudLine(range, "#aaaaaa", HUD_FONT_MID)}`
           : hudLine(`${range}  ${reg.nameOf(target)}`, "#66ccff", HUD_FONT_BIG) +
               `<br>${hudLine(`${String(secs)}s`, clockColour, HUD_FONT_SMALL)}`,
@@ -637,10 +637,10 @@ export function tickDnaTracker(dt: number): void {
     // it, rather than leaving them to guess why nothing is happening.
     const frac = dnaProgress[slot]! / DNA_ID_SECONDS;
     const stage =
-      !visible ? msgFor(slot, "DNA_TRACK_SEARCHING")
-      : frac < 0.4 ? msgFor(slot, "DNA_TRACK_ATTEMPTING")
-      : frac < 0.75 ? msgFor(slot, "DNA_TRACK_ALMOST")
-      : msgFor(slot, "DNA_TRACK_IDENTIFYING");
+      !visible ? msgFor(slot, "ttt.dna.tracking_searching")
+      : frac < 0.4 ? msgFor(slot, "ttt.dna.tracking_attempting")
+      : frac < 0.75 ? msgFor(slot, "ttt.dna.tracking_almost")
+      : msgFor(slot, "ttt.dna.tracking_identifying");
     setCenterHud(
       slot,
       hudLine(range, visible ? "#ffcc00" : "#888888", HUD_FONT_BIG) +

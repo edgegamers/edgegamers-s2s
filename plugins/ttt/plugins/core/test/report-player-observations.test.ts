@@ -17,7 +17,7 @@ const mocks:Record<string,string>={
  '../game/game':'export const roundEpoch=()=>fixture.epoch,game={state:2};',
  '../cs2/pawn':`export const tell=()=>{},pawnOf=s=>{fixture.observations.push(s);return {ref:fixture.ref};};`,
  './world-settings':'export const getWorldSettings=()=>({});',
- './msgs':'export const msgFor=()=>"";',
+ './msgs':"export const msgFor=()=>\"\"; export const chatMsgFor = msgFor;",
  './reports-provider':'export const getReport=()=>null,owedBy=()=>0,reportsBinding=()=>0;',
  '../karma/karma':'export const didStrikeFirst=()=>false;',
  '../cs2/ttthud':'export const getTttHud=()=>null;',

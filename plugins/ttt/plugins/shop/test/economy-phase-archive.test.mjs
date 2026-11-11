@@ -33,9 +33,9 @@ test('sample and reward due boundaries retain the original ordered queries nativ
  before.length=after.length=0;a.methods.tickEconomy(5);b.methods.tickEconomy(5,2);assert.deepEqual(after,before);
  before.length=after.length=0;a.methods.tickEconomy(20);b.methods.tickEconomy(20,2);assert.deepEqual(after,before);
  assert.deepEqual([0,1,2].map(s=>b.methods.balanceOf(s)),[15,9,2]);assert.deepEqual(b.trace,a.trace);assert.deepEqual(b.chat,a.chat);
- assert.deepEqual(after.map(x=>x.slice(0,2)),[['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['Core','isAlive'],['Core','isAlive'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase'],['Core','dispatchDomain'],['Core','formatPhrase']]);
- assert.deepEqual(after.filter(x=>x[1]==='dispatchDomain').map(x=>x[2][0]),[0,1,2].map((slot,i)=>({kind:'balance',payload:{slot,oldBalance:0,newBalance:[15,9,2][i],reason:'SHOP_EXPLORATION',canceled:false}})));
- assert.deepEqual(b.chat,[[0,'CREDITS_GIVEN_REASON|+|15|SHOP_EXPLORATION'],[1,'CREDITS_GIVEN_REASON|+|9|SHOP_EXPLORATION'],[2,'CREDITS_GIVEN_REASON|+|2|SHOP_EXPLORATION']]);
+ assert.deepEqual(after.map(x=>x.slice(0,2)),[['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','isAlive'],['SDK','Player.fromSlot'],['Core','getGame'],['Core','activeSlots'],['Core','isAlive'],['Core','isAlive'],['Core','isAlive'],['Core','formatPhraseFor'],['Core','dispatchDomain'],['Core','formatPhraseFor'],['Core','formatPhraseFor'],['Core','dispatchDomain'],['Core','formatPhraseFor'],['Core','formatPhraseFor'],['Core','dispatchDomain'],['Core','formatPhraseFor']]);
+ assert.deepEqual(after.filter(x=>x[1]==='dispatchDomain').map(x=>x[2][0]),[0,1,2].map((slot,i)=>({kind:'balance',payload:{slot,oldBalance:0,newBalance:[15,9,2][i],reason:`${slot}|ttt.rewards.exploration`,canceled:false}})));
+ assert.deepEqual(b.chat,[[0,'0|ttt.shop.credits_given_reason|+|15|0|ttt.rewards.exploration'],[1,'1|ttt.shop.credits_given_reason|+|9|1|ttt.rewards.exploration'],[2,'2|ttt.shop.credits_given_reason|+|2|2|ttt.rewards.exploration']]);
  const firstReward=after.findIndex(x=>x[1]==='dispatchDomain');assert.ok(firstReward>after.findIndex(x=>x[0]==='SDK'),'sample work precedes reward callbacks');
 });
 

@@ -33,7 +33,7 @@ test('a round change during the native lookup cannot publish a mixed World roste
 test('Communication receives copied connected observations and recipient-specific phrases',()=>{
   const f=fixture();f.state.valid.delete(2);const view=f.api.getCommunicationSnapshot();assert.equal(view.state,2);assert.equal(view.epoch,4);assert.equal(view.players.length,1);
   view.players[0].name='changed';assert.equal(f.api.getCommunicationSnapshot().players[0].name,'P1');
-  assert.equal(f.api.formatCommunication(1,'DEAD_CHAT_FORMAT',['P2','secret']),'1|DEAD_CHAT_FORMAT|P2|secret');
+  assert.equal(f.api.formatCommunication(1,'ttt.chat.dead_format',['P2','secret']),'1|ttt.chat.dead_format|P2|secret');
 });
 test('a single-slot World observation reads only the requested current pawn',()=>{
   const f=fixture(),rows=f.api.getWorldPlayers(1);

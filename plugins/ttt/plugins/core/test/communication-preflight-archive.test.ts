@@ -91,7 +91,7 @@ test('actual failed voice application retries through the full snapshot path',()
 });
 
 test('actual formatter and voice-reset reentry keep the existing stale-round and logical-life fences',()=>{
- const f=setup();f.read('setAlive(2,false);');f.translation.onRead=(_slot:number,key:string)=>{if(key==='DEAD_MUTE_REMINDER')f.read('setAlive(2,true);');};
+ const f=setup();f.read('setAlive(2,false);');f.translation.onRead=(_slot:number,key:string)=>{if(key==='ttt.chat.dead_mute_reminder')f.read('setAlive(2,true);');};
  f.communication.methods.tick();assert.deepEqual(f.communication.voice,[['set',2,[2]],['reset',2]]);assert.deepEqual(f.communication.chat,[]);
  const g=setup();g.read('setAlive(2,false);');let reset=false;g.communication.on((kind:string)=>{if(kind==='voice'&&!reset){reset=true;g.read('epoch++;game.state=0;');g.communication.methods.reset();}});
  g.communication.methods.tick();assert.deepEqual(g.communication.voice,[['set',2,[2]],['reset',2]]);assert.deepEqual(g.communication.chat,[]);

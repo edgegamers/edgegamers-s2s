@@ -19,7 +19,7 @@ import {
 import {
   configureMenus, openAgentsMenu, openGlovesMenu, openKnifeMenu, openMusicMenu, openPinsMenu, openSkinsMenu,
 } from './menus';
-import { loadPhrases, say } from './messages';
+import { loadPhrases, plainPhrase as phrase, say } from './messages';
 import { asTeam, changedKnife, changedPaint, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
 import { loadPlayer, openStore, saveStatTrak, storeReady } from './store';
 
@@ -129,7 +129,7 @@ function caller(cmd: CommandInvocation, needsRoundLive: boolean, needsLoadout = 
 function takeCooldown(slot: number): boolean {
   const now = Date.now();
   if (now < (cooldowns.get(slot) ?? 0)) {
-    say(slot, 'wp_command_cooldown');
+    say(slot, 'weaponpaints.commands.cooldown');
     return false;
   }
   cooldowns.set(slot, now + settings.cooldownSeconds * 1000);
@@ -152,7 +152,7 @@ function onRefresh(cmd: CommandInvocation): HookResultValue {
   const player = caller(cmd, true, false);
   if (!player || !takeCooldown(player.slot)) return HookResult.Handled;
   refreshPlayer(player);
-  say(player.slot, 'wp_command_refresh_done');
+  say(player.slot, 'weaponpaints.commands.refresh');
   return HookResult.Handled;
 }
 
@@ -160,13 +160,13 @@ function onInfo(cmd: CommandInvocation): HookResultValue {
   const player = caller(cmd, false);
   if (!player || !settings.skinEnabled) return HookResult.Handled;
   const slot = player.slot;
-  say(slot, 'wp_info_website', settings.website);
-  say(slot, 'wp_info_refresh');
-  if (settings.gloveEnabled) say(slot, 'wp_info_glove');
-  if (settings.agentEnabled) say(slot, 'wp_info_agent');
-  if (settings.musicEnabled) say(slot, 'wp_info_music');
-  if (settings.pinsEnabled) say(slot, 'wp_info_pin');
-  if (settings.knifeEnabled) say(slot, 'wp_info_knife');
+  say(slot, 'weaponpaints.info.website', settings.website);
+  say(slot, 'weaponpaints.info.refresh');
+  if (settings.gloveEnabled) say(slot, 'weaponpaints.info.glove');
+  if (settings.agentEnabled) say(slot, 'weaponpaints.info.agent');
+  if (settings.musicEnabled) say(slot, 'weaponpaints.info.music');
+  if (settings.pinsEnabled) say(slot, 'weaponpaints.info.pin');
+  if (settings.knifeEnabled) say(slot, 'weaponpaints.info.knife');
   return HookResult.Handled;
 }
 
@@ -176,7 +176,7 @@ function onStatTrak(cmd: CommandInvocation): HookResultValue {
   if (!player || !info) return HookResult.Handled;
   info.statTrak = !info.statTrak;
   refreshWeapons(player);
-  say(player.slot, 'wp_stattrak_action');
+  say(player.slot, 'weaponpaints.stattrak.changed');
   return HookResult.Handled;
 }
 
@@ -191,25 +191,25 @@ function onAdminRefresh(cmd: CommandInvocation): HookResultValue {
   if (!settings.commandWpEnabled || !settings.skinEnabled || !commandsAllowed) return HookResult.Handled;
   const arg = cmd.arg(0).trim();
   if (arg === '') {
-    cmd.reply('[WeaponPaints] Usage: wp_refresh <steamid64|all>');
-    cmd.reply('[WeaponPaints]   wp_refresh all - Refresh skins for all players');
-    cmd.reply('[WeaponPaints]   wp_refresh 76561198012345678 - Refresh skins by SteamID64');
+    cmd.reply(phrase(cmd.callerSlot, 'weaponpaints.admin.refresh_usage'));
+    cmd.reply(phrase(cmd.callerSlot, 'weaponpaints.admin.refresh_all_usage'));
+    cmd.reply(phrase(cmd.callerSlot, 'weaponpaints.admin.refresh_player_usage'));
     return HookResult.Handled;
   }
   const clients = Clients.all().filter(c => c.isValid() && !c.isBot && c.userId >= 0 &&
     (arg.toLowerCase() === 'all' || c.steamId === arg));
   if (clients.length === 0) {
     cmd.reply(arg.toLowerCase() === 'all'
-      ? '[WeaponPaints] No players connected to refresh.'
-      : `[WeaponPaints] Player with SteamID64 '${arg}' not found.`);
+      ? phrase(cmd.callerSlot, 'weaponpaints.admin.no_players')
+      : phrase(cmd.callerSlot, 'weaponpaints.admin.player_not_found', arg));
     return HookResult.Handled;
   }
   for (const client of clients) {
     const player = Player.fromSlot(client.slot);
     if (!player) continue;
     refreshPlayer(player);
-    say(client.slot, 'wp_command_refresh_done');
-    cmd.reply(`[WeaponPaints] Skins refreshed for ${client.name}`);
+    say(client.slot, 'weaponpaints.commands.refresh');
+    cmd.reply(phrase(cmd.callerSlot, 'weaponpaints.admin.refreshed', client.name));
   }
   return HookResult.Handled;
 }

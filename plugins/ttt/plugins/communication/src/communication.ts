@@ -5,7 +5,7 @@ import {Admin,ADMFLAG} from '@s2script/sdk/admin';
 import {Voice} from '@s2script/sdk/voice';
 import {Server} from '@s2script/sdk/server';
 import type {CommunicationCoreMethods,CommunicationMethods,CommunicationPlayer,CommunicationSnapshot} from '../../../packages/contracts/communication-types';
-import {phraseFor} from '../../../packages/contracts/phrases.ts';
+import {chatPhraseFor} from '../../../packages/contracts/phrases.ts';
 
 const LIVE=2, TRAITOR=2, FULL_CHECK_SECONDS=1;
 type Captured={player:CommunicationPlayer;client:Client};
@@ -64,7 +64,7 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
       if(!to||!entitled(mode,from,to,teamOnly))continue;
       const fromSlot=from.slot,toSlot=to.slot;
       const line=decluttrCall<string|null>(null,provider=>provider.formatChat(fromSlot,body,teamOnly,toSlot,mode))
-        ?? phraseFor(to.slot,mode==='dead'?'DEAD_CHAT_FORMAT':'TRAITOR_CHAT_FORMAT',from.name,'\uFFFC').replace('\uFFFC',()=>body);
+        ?? chatPhraseFor(to.slot,mode==='dead'?'ttt.chat.dead_format':'ttt.chat.traitor_format',from.name,'\uFFFC').replace('\uFFFC',()=>body);
       // Translation/interop and each preceding native send may synchronously reenter.
       now=core.getCommunicationSnapshot();from=current(speaker,now);to=current(recipient,now);
       if(closed||!sameRound(snapshot,now)||!from)break;
@@ -115,7 +115,7 @@ export function createCommunication(core:CommunicationCoreMethods):Communication
         now=core.getCommunicationSnapshot();
         if(closed||token!==revision||fingerprint(now)!==sig||!current(entry,now)){reset();return;}
         if(!reminded){
-          const line=phraseFor(entry.player.slot,'DEAD_MUTE_REMINDER');
+          const line=chatPhraseFor(entry.player.slot,'ttt.chat.dead_mute_reminder');
           now=core.getCommunicationSnapshot();
           if(closed||token!==revision||fingerprint(now)!==sig||!current(entry,now)){reset();return;}
           Chat.toSlot(entry.player.slot,line);

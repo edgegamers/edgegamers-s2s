@@ -90,3 +90,5 @@ not been run on a live server yet. A first live check on `jb_arcade_b6`:
 - [ ] Bee shows a word and definition, takes keyboard input, and grades it.
 - [ ] Lightning, Poison, Grab, Lunge and the decoys work when their secret items are picked up.
 - [ ] Surf, Decathlon and Strafe Jump send winners to the podiums.
+
+Chat answer announcements use `translations/arcadescripts.phrases.json`, with embedded English as a fallback. Copy phrase files to `addons/s2script/translations/`; another language belongs under its language-code subdirectory. Labels resolve separately for each recipient while the spelling word or math solution stays unchanged. Reload the plugin after editing phrases.

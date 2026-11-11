@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * What a special day is: its settings plus optional hooks. Each file in `days/` exports a factory
  * returning one of these (fresh state per run). The shared setup/execute/teardown lives in `runner.ts`.
@@ -32,16 +33,16 @@ export interface DayContext {
   /** Set a convar for the rest of the day (restored at the end). */
   setConvar(name: string, value: string): void;
   /** Stop the day's custom logic and end the round now (C# speedrun `panic`). */
-  panic(reason: string): void;
+  panic(reason: Text): void;
 }
 
 export interface SpecialDay {
   readonly type: SDType;
   readonly name: string;
-  readonly description: readonly string[];
+  readonly description: readonly Text[];
   readonly settings: DaySettings;
   /** Keep a team inside the armory/cells until the day executes (Abstract*RestrictedDay). */
-  readonly restrict?: { kind: "armory" | "cell"; teamNum: number; reminder: string };
+  readonly restrict?: { kind: "armory" | "cell"; teamNum: number; reminder: Text };
   /** Execute without the shared part (no damage enable, no pickup gate) — SpeedrunDay never called base.Execute(). */
   readonly skipBaseExecute?: boolean;
 
@@ -54,7 +55,7 @@ export interface SpecialDay {
   /** Round end or abort: undo what the day changed beyond its settings. */
   teardown?(ctx: DayContext): void;
   /** Custom "begins in" wording (Hide and Seek). */
-  beginsIn?(seconds: number): string;
+  beginsIn?(seconds: number): Text;
   /** Replace the settings-based pickup rule (Gun Game). */
   pickupRule?(player: Player, item: string): boolean;
 

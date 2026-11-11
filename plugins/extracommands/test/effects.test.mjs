@@ -19,7 +19,7 @@ for (const [command, bad] of [["sm_god", ["", " ", "1x", "2", ".5", "NaN", "Infi
     const f = fixture(), p = f.addPlayer(); f.setTargets([p]);
     for (const token of bad) {
       f.call(command, token === undefined ? ["@all"] : ["@all", token]);
-      assert.match(f.replies.at(-1)[0], /Invalid|Usage/);
+      assert.match(f.replies.at(-1)[0], /\.(?:invalid_[a-z_]+|usage)$/);
     }
     assert.equal(p.pawn.takesDamage, true); assert.equal(p.pawn.velocityModifier, 1);
     assert.equal(p.pawn.scales.length, 0); assert.equal(f.fades.length, 0); assert.equal(f.timers.size, 0);
@@ -29,7 +29,7 @@ for (const [command, bad] of [["sm_god", ["", " ", "1x", "2", ".5", "NaN", "Infi
 test("new commands require targets, filter immunity, and use standard permissions", () => {
   const f = fixture(), p = f.addPlayer(); f.setTargets([p]);
   for (const name of ["sm_god", "sm_speed", "sm_size", "sm_scale", "sm_unblind", "sm_drug", "sm_undrug", "sm_beacon"]) {
-    assert.equal(f.call(name, [], 1), 2); assert.match(f.replies.at(-1)[0], /Usage/);
+    assert.equal(f.call(name, [], 1), 2); assert.match(f.replies.at(-1)[0], /\.usage$/);
     f.call(name, ["@all", "1"], 1);
     assert.deepEqual(f.targetsCalled.at(-1), ["@all", 1, true]);
     assert.equal(f.commands.get(name).flags, name === "sm_god" ? 8192 : 32);

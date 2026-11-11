@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * The shape every last-request game shares (C# `AbstractLastRequest`, `TeleportingRequest`,
  * `WeaponizedRequest`). A game owns its timers; they all die when the LR ends.
@@ -74,7 +75,7 @@ export abstract class LastRequest {
     return slot === this.prisoner.slot ? this.guard : this.prisoner;
   }
 
-  tell(message: string): void {
+  tell(message: Text): void {
     this.prisoner.chat(message);
     this.guard.chat(message);
   }

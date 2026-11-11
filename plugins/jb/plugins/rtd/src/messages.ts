@@ -1,40 +1,43 @@
 /**
  * Every player-facing RTD string (ported from lang/Jailbreak.English/RTD/*).
  */
+import { createPhrases, joinText, type Text } from "@edgegamers/jailbreak-shared";
+import english from "../translations/jailbreak-rtd.phrases.json";
+export const { phrase, loadPhrases } = createPhrases("jailbreak-rtd", english);
 import { ChatColors } from "@s2script/cs2";
-import { tag, hl } from "@edgegamers/jailbreak-shared";
+import { tag, withChatPrefix } from "@edgegamers/jailbreak-shared";
 
-const P = tag("RTD", ChatColors.DarkBlue);
+const P = tag(phrase("jailbreak.rtd.prefix"), ChatColors.Blue);
 
 export const msg = {
-  rewardSelected: (name: string): string => `${P}You rolled ${ChatColors.BlueGrey}${name}${ChatColors.Grey}.`,
-  rewardDescription: (description: string): string => `${P}${ChatColors.Grey}${description}`,
-  alreadyRolled: (name: string): string => `${P}You already rolled ${ChatColors.Red}${name}${ChatColors.Grey}.`,
-  cannotRollYet: `${P}You can only roll when round ends or while dead.`,
-  rollingDisabled: `${P}Rolling is disabled.`,
+  rewardSelected: (name: Text): Text => phrase("jailbreak.rtd.reward_selected", P, name),
+  rewardDescription: (description: Text): Text => joinText(P, ChatColors.Grey, description),
+  alreadyRolled: (name: Text): Text => phrase("jailbreak.rtd.already_rolled", P, name),
+  cannotRollYet: phrase("jailbreak.rtd.cannot_roll_yet", P),
+  rollingDisabled: phrase("jailbreak.rtd.rolling_disabled", P),
   /** Not in the C#: the reward refused to be prepared (e.g. Gangs went away mid-roll). */
-  rollFailed: (name: string): string => `${P}Could not roll ${hl(name)} right now, try again.`,
-  jackpot: (player: string, credits: number): string =>
-    `${P}${hl(player)} won the jackpot of ${hl(credits)} credits!`,
+  rollFailed: (name: Text): Text => phrase("jailbreak.rtd.roll_failed", P, name),
+  jackpot: (player: string, credits: number): Text =>
+    phrase("jailbreak.rtd.jackpot", P, player, credits),
 
-  autoToggled: (enabled: boolean): string =>
-    `${P}${ChatColors.Grey}You ${enabled ? `${ChatColors.Green}enabled` : `${ChatColors.Red}disabled`} ${ChatColors.Grey}Auto-RTD.`,
-  autoNotSupported: `${P}Toggling Auto-RTD is not supported on this server.`,
-  noPermission: `${P}${ChatColors.Red}You do not have permission to use this command.`,
+  autoToggled: (enabled: boolean): Text =>
+    phrase("jailbreak.rtd.auto_toggled", P, enabled ? phrase("jailbreak.rtd.auto_enabled") : phrase("jailbreak.rtd.auto_disabled")),
+  autoNotSupported: phrase("jailbreak.rtd.auto_not_supported", P),
+  noPermission: phrase("jailbreak.rtd.no_permission", P),
 
-  invalidParameter: (value: string, expected: string): string =>
-    `${P}${ChatColors.Red}Invalid parameter ${hl(value)}${ChatColors.Red}, expected ${hl(expected)}.`,
+  invalidParameter: (value: string, expected: Text): Text =>
+    phrase("jailbreak.rtd.invalid_parameter", P, value, expected),
 
-  statsLine: (index: number, name: string, percent: string): string =>
-    `${ChatColors.Orange}${index}. ${ChatColors.Blue}${name}${ChatColors.Grey}: ${ChatColors.Yellow}${percent}%`,
-  statsConsole: (index: number, name: string, percent: string): string => `${index}. ${name}: ${percent}%`,
+  statsLine: (index: number, name: Text, percent: string): Text =>
+    phrase("jailbreak.rtd.stats_line", index, name, percent),
+  statsConsole: (index: number, name: Text, percent: string): Text => phrase("jailbreak.rtd.stats_console", index, name, percent),
 
-  spy: (teamLabel: string, name: string, text: string): string =>
-    `${ChatColors.Grey}[Spy] ${teamLabel === "T" ? ChatColors.LightRed : ChatColors.Blue}(${teamLabel}) ${name}${ChatColors.Default}: ${text}`,
+  spy: (teamLabel: string, name: Text, text: string): Text =>
+    withChatPrefix(phrase("jailbreak.rtd.spy", teamLabel === "T" ? ChatColors.LightRed : ChatColors.Blue, teamLabel, name, text), "brackets"),
 
-  debugMenuTitle: "Debug RTD",
-  debugMenuItem: (name: string, weight: number): string => `${name} - Prob: ${weight}`,
-  debugSet: (name: string): string => `${P}Debug: your next reward is ${hl(name)}.`,
+  debugMenuTitle: phrase("jailbreak.rtd.debug_menu_title"),
+  debugMenuItem: (name: Text, weight: number): Text => phrase("jailbreak.rtd.debug_menu_item", name, weight),
+  debugSet: (name: Text): Text => phrase("jailbreak.rtd.debug_set", P, name),
 
   /** Colour reward names are printed in their colour. */
   colorCode: { green: ChatColors.Green } as Record<"green", string>,

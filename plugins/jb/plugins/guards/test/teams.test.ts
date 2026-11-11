@@ -13,7 +13,7 @@ const code = (await build({
       "./ctbans": "export const activeBan=id=>fixture.banned.has(id)?{steamId:id}:null, remind=()=>{}, armExpiry=()=>{}, clearExpiry=()=>{};",
       "./store": "export const onStoreConnected=()=>{}, openStore=()=>{}, pendingWrites=()=>0, pruneBans=()=>{};",
       "./commands": "export const registerCommands=()=>{}, resetCommandState=()=>{};",
-      "./messages": "export const msg=new Proxy({}, {get:()=>()=>''});",
+      "./messages": "export const loadPhrases=()=>{}; export const msg=new Proxy({}, {get:()=>()=>''});",
     };
     build.onResolve({ filter: /^\.\// }, args => args.importer.startsWith(fileURLToPath(new URL("../src/", import.meta.url))) && args.path in mocks ? { path: args.path, namespace: "runtime" } : undefined);
     build.onLoad({ filter: /.*/, namespace: "runtime" }, args => ({ contents: mocks[args.path], loader: "js" }));

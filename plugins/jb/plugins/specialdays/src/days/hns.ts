@@ -6,7 +6,7 @@ import { config } from "@s2script/sdk";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DAY_NAMES, DESCRIPTIONS, msg } from "../messages.ts";
 import { parseItemList } from "../weapons.ts";
 import { alive, onTeam, setArmor, setHealth, setSpeed, setTakesDamage, Team, toTeam } from "../game.ts";
 
@@ -24,7 +24,7 @@ export function hnsDay(): SpecialDay {
     type: "hns",
     name,
     description: DESCRIPTIONS.hns,
-    restrict: { kind: "armory", teamNum: seekers, reminder: msg.hnsStayInArmory(name) },
+    restrict: { kind: "armory", teamNum: seekers, reminder: msg.hnsStayInArmory(DAY_NAMES.hns) },
     settings: baseSettings({
       tTeleport: "armory",
       ctTeleport: "armory",
@@ -33,7 +33,7 @@ export function hnsDay(): SpecialDay {
       allowedWeapons: (p) => (isT(p.teamNum) ? tWeapons : ctWeapons),
       freezeTime: (p) => (p.teamNum === Team.Guard ? 3 : 8),
     }),
-    beginsIn: (seconds) => msg.hnsBeginsIn(name, seconds),
+    beginsIn: (seconds) => msg.hnsBeginsIn(DAY_NAMES.hns, seconds),
     setup(ctx) {
       if (seekTime >= 10) {
         ctx.at(10, () => {

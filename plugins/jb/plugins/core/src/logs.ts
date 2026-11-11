@@ -1,3 +1,4 @@
+import { reply as replyMessage, replyConsole, replyChat } from "@edgegamers/jailbreak-shared";
 /**
  * The round log (Jailbreak.Logs): a timestamped list of what happened this round — damage,
  * kills, grenades, button presses, breakables, rebels, C4s, plus lines other plugins append with
@@ -72,13 +73,13 @@ function mayViewLogs(slot: number): boolean {
 
 export function logsCommand(cmd: CommandInvocation): HookResultValue {
   if (!mayViewLogs(cmd.callerSlot)) {
-    cmd.reply(msg.logsNoPermission());
+    replyMessage(cmd, msg.logsNoPermission());
     return HookResult.Handled;
   }
-  for (const l of LOG_BANNER_BEGIN) cmd.replyToConsole(l);
-  for (const l of book.all()) cmd.replyToConsole(formatLine(l));
-  for (const l of LOG_BANNER_END) cmd.replyToConsole(l);
-  if (cmd.replySource === "chat") cmd.replyToChat(msg.logsPrinted(book.size));
+  for (const l of LOG_BANNER_BEGIN) replyConsole(cmd, l);
+  for (const l of book.all()) replyConsole(cmd, formatLine(l));
+  for (const l of LOG_BANNER_END) replyConsole(cmd, l);
+  if (cmd.replySource === "chat") replyChat(cmd, msg.logsPrinted(book.size));
   return HookResult.Handled;
 }
 

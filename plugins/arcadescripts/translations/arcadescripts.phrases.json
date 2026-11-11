@@ -1,0 +1,4 @@
+{
+  "arcadescripts.bee.correct_spelling": "{grey}Correct spelling of word: {green}{1}{grey} ",
+  "arcadescripts.bee.correct_solution": "{grey}Correct solution: {yellow}{1}{grey} "
+}

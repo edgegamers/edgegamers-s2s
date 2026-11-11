@@ -21,7 +21,7 @@ export function handleChat(slot: number, text: string): HookResultValue | void {
       const other = active[i]!;
       // Dead players see it; so do admins, alive or not. The speaker always sees their own line.
       if (other !== slot && reg.isAlive(other) && !isChatAdmin(other)) continue;
-      tell(other, msgFor(other, "DEAD_CHAT_FORMAT", reg.nameOf(slot), body));
+      tell(other, msgFor(other, "ttt.chat.dead_format", reg.nameOf(slot), body));
     }
     return HookResult.Handled;
   }
@@ -38,7 +38,7 @@ export function handleChat(slot: number, text: string): HookResultValue | void {
   for (let i = 0; i < active.length; i++) {
     const other = active[i]!;
     if (reg.roleOf(other) === RoleId.Traitor) {
-      tell(other, msgFor(other, "TRAITOR_CHAT_FORMAT", reg.nameOf(slot), body));
+      tell(other, msgFor(other, "ttt.chat.traitor_format", reg.nameOf(slot), body));
     }
   }
   return HookResult.Handled;

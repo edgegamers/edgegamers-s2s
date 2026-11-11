@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * The perk menu (C# `AbstractEnumMenu`): the equipped option first, then unlocked options, then
  * locked ones with their price. Picking an entry runs the perk command with that option, exactly
@@ -17,10 +18,10 @@ export function openPerkMenu(
   equipped: number,
   onPick: (slot: number, optionName: string) => void,
 ): void {
-  const menu = new Menu(msg.menuTitle(def));
+  const menu = new Menu(consoleText(msg.menuTitle(def), slot));
   menu.addItem("", def.description, { disabled: true });
   for (const { opt, state } of menuOrder(def, unlocked, equipped)) {
-    menu.addItem(opt.name, msg.menuItem(opt, state));
+    menu.addItem(opt.name, consoleText(msg.menuItem(def, opt, state), slot));
   }
   menu.onSelect((e) => {
     if (e.info !== "") onPick(e.slot, e.info);

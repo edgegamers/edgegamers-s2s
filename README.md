@@ -2,7 +2,7 @@
 
 [![Checks](https://shieldcn.dev/github/ci/edgegamers/edgegamers-s2s.svg?variant=outline)](https://github.com/edgegamers/edgegamers-s2s/actions)
 [![Node 24](https://shieldcn.dev/badge/Node-24-green.svg?variant=outline&logo=nodedotjs)](https://nodejs.org/)
-[![s2script SDK](https://shieldcn.dev/badge/s2script-0.35.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
+[![s2script SDK](https://shieldcn.dev/badge/s2script-0.37.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
 
 CS2 server plugins maintained by edgegamers. One install, native s2s tooling, independent releases.
 
@@ -42,6 +42,21 @@ npm run changeset                # record release intent
 ```
 
 The root owns the only npm workspace, lockfile and Changesets configuration. Bundle containers hold descriptors; their runtime plugins and shared libraries are workspace packages. Keep additions inside `plugins/` and update the root's discovery lists when adding a product.
+
+## Chat translations
+
+Player-facing plugin chat uses editable English phrase files. Start with these files when revising the wording:
+
+| Product | Phrase files |
+| --- | --- |
+| Standalone plugins | `plugins/<plugin>/translations/*.phrases.json` |
+| Jailbreak | `plugins/jb/plugins/<member>/translations/jailbreak-<member>.phrases.json` |
+| SurfTimer | `plugins/surftimer/plugins/<member>/translations/<member>.phrases.json` |
+| TTT | `plugins/ttt/translations/ttt.phrases.json` |
+
+Keys follow `owner.feature.function`, such as `extracommands.beacon.toggle_for_players`. The [translation style guide](docs/translations/STYLE.md) defines the semantic colors and TTT role colors. Keep phrase keys and positional placeholders (`{1}`, `{2}`, etc.) intact when revising wording. Names, player-written chat, map text, and operator-configured messages remain literal. Existing translation overrides must migrate their old keys to the dotted names.
+
+Rebuild after editing source JSON to update the embedded English defaults. Native `.s2sp` archives embed those defaults in the plugin code. To override them without rebuilding, put the corresponding phrase file in `addons/s2script/translations/`; put additional languages under `addons/s2script/translations/<language-code>/`. Missing locale keys fall back to English. CustomIO currently sends no player chat.
 
 ## Releases
 

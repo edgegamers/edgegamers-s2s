@@ -1,3 +1,6 @@
+import { phrase } from "./messages.ts";
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { replyChat } from "@edgegamers/jailbreak-shared";
 /**
  * `!lr [type] [guard]` (C# `LastRequestCommand`) and `!endrace` (C# `EndRaceCommand`).
  * With no arguments it opens the type menu, with a type the guard menu; menu picks re-run the
@@ -19,14 +22,14 @@ const TYPE_MENU_TITLE = "Last Request";
 const PLAYER_MENU_TITLE = (type: LRType): string => `${lrName(type)} — choose a guard`;
 
 /** Run the `!lr` flow for `slot`. `reply` goes to the player's chat. */
-export function lastRequest(slot: number, typeArg: string, targetArg: string, reply: (m: string) => void): void {
+export function lastRequest(slot: number, typeArg: string, targetArg: string, reply: (m: Text) => void): void {
   const me = Player.fromSlot(slot);
   if (!me) return;
   if (!isEnabled()) return reply(msg.notEnabled());
-  if (me.teamNum !== Team.Prisoner) return reply(msg.cannotLR("You are not a Prisoner"));
-  if (!isAlive(me)) return reply(msg.cannotLR("You are not alive"));
-  if (!wouldHavePlayers()) return reply(msg.cannotLR("No players available to LR"));
-  if (isBusy(slot) || isRebelling(slot)) return reply(msg.cannotLR("You are already in an LR"));
+  if (me.teamNum !== Team.Prisoner) return reply(msg.cannotLR(phrase("jailbreak.lastrequest.caller_not_prisoner")));
+  if (!isAlive(me)) return reply(msg.cannotLR(phrase("jailbreak.lastrequest.caller_not_alive")));
+  if (!wouldHavePlayers()) return reply(msg.cannotLR(phrase("jailbreak.lastrequest.no_opponents_available")));
+  if (isBusy(slot) || isRebelling(slot)) return reply(msg.cannotLR(phrase("jailbreak.lastrequest.caller_already_in_lr")));
 
   if (typeArg === "") {
     showTypeMenu(
@@ -56,16 +59,16 @@ export function lastRequest(slot: number, typeArg: string, targetArg: string, re
   if (targets.length > 1) return reply(msg.playerFoundMultiple(targetArg));
   const guard = targets[0];
   const name = guardName(guard.playerName ?? "?");
-  if (guard.teamNum !== Team.Guard) return reply(msg.cannotLRWith(name, "They are not a Guard"));
-  if (!isAlive(guard)) return reply(msg.cannotLRWith(name, "They are not alive"));
-  if (isBusy(guard.slot)) return reply(msg.cannotLRWith(name, "They are already in an LR"));
+  if (guard.teamNum !== Team.Guard) return reply(msg.cannotLRWith(name, phrase("jailbreak.lastrequest.target_not_guard")));
+  if (!isAlive(guard)) return reply(msg.cannotLRWith(name, phrase("jailbreak.lastrequest.target_not_alive")));
+  if (isBusy(guard.slot)) return reply(msg.cannotLRWith(name, phrase("jailbreak.lastrequest.target_already_in_lr")));
 
   if (!initiateLastRequest(me, guard, type)) reply(msg.initFailed());
 }
 
 export function lrCommand(cmd: CommandInvocation): void {
   if (cmd.callerSlot < 0) return;
-  lastRequest(cmd.callerSlot, cmd.arg(0), cmd.arg(1), (m) => cmd.replyToChat(m));
+  lastRequest(cmd.callerSlot, cmd.arg(0), cmd.arg(1), (m) => replyChat(cmd, m));
 }
 
 /** Open the `!lr` menu for a prisoner as LR turns on (no complaints if they can't). */
@@ -78,12 +81,12 @@ export function endRaceCommand(cmd: CommandInvocation): void {
   const slot = cmd.callerSlot;
   if (slot < 0) return;
   const lr = getActiveLR(slot);
-  if (!lr || lr.type !== "race") return cmd.replyToChat(msg.notInRace());
-  if (lr.state !== "pending") return cmd.replyToChat(msg.notPending());
+  if (!lr || lr.type !== "race") return replyChat(cmd, msg.notInRace());
+  if (lr.state !== "pending") return replyChat(cmd, msg.notPending());
   lr.execute();
 }
 
 /** Chat a player by slot (used for menu-driven flows outside a command). */
-export function chatTo(slot: number): (m: string) => void {
-  return (m) => Clients.fromSlot(slot)?.chat(m);
+export function chatTo(slot: number): (m: Text) => void {
+  return (m) => Clients.fromSlot(slot)?.chat(chatText(m, slot));
 }

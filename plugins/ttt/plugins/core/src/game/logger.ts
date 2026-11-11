@@ -308,9 +308,9 @@ function isLogAdmin(slot: number): boolean {
 
 /** Build the full log as lines (header + entries + footer). */
 export function makeLogs(): string[] {
-  const out: string[] = [msg("GAME_LOGS_HEADER")];
+  const out: string[] = [msg("ttt.logs.header")];
   for (let i = 0; i < entries.length; i++) out.push(render(entries[i]!));
-  out.push(msg("GAME_LOGS_FOOTER"));
+  out.push(msg("ttt.logs.footer"));
   return out;
 }
 

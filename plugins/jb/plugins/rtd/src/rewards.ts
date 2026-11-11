@@ -1,3 +1,6 @@
+import { joinText, type Text } from "@edgegamers/jailbreak-shared";
+import { rewardTitle, rewardDetails } from "./display.ts";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * What each reward does in game (the C# `Rewards/*.cs`). The pool itself — names, weights, team
  * restrictions — is data in pool.ts; here each spec gets `enabled` / `prepare` / `grant`.
@@ -5,7 +8,7 @@
  * Lifecycle (C# IRTDReward): `prepare` runs when the player rolls (credits are paid right then),
  * `grant` runs shortly after the player's next spawn, only while they are alive.
  */
-import { Chat, Entity, after } from "@s2script/sdk";
+import { Entity, after } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
 import { Colors, Team, isAlive, setWeaponAmmo } from "@edgegamers/jailbreak-shared";
@@ -22,9 +25,9 @@ export interface Reward {
   readonly poolIndex: number;
   readonly spec: RewardSpec;
   readonly weight: number;
-  readonly name: string;
+  readonly name: Text;
   /** Chat-ready second line. */
-  readonly description: string;
+  readonly description: Text;
   /** In the pool right now (optional provider present, …). */
   enabled(): boolean;
   /** May this player receive it (team restriction)? */
@@ -166,8 +169,8 @@ function build(spec: RewardSpec, weight: number, poolIndex: number): Reward {
     poolIndex,
     spec,
     weight,
-    name: rewardName(spec),
-    description: rewardDescription(spec, (t, c) => `${msg.colorCode[c]}${t}${msg.grey}`),
+    name: rewardTitle(spec),
+    description: rewardDetails(spec, (t, c) => joinText(msg.colorCode[c], t, msg.grey)),
     enabled: () => enabledFor(spec),
     canGrant: (p) => teamOk(spec, p),
     prepare: (p) => prepareFor(spec, p),

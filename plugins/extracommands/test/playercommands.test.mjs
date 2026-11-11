@@ -185,7 +185,7 @@ test("oneup reports next-frame admission failure without an unhandled rejection 
   const f = fixture(), p = f.player(1, 0); f.failFrame();
   assert.equal(f.call("sm_1up", ["#1"]), 2);
   await f.frame(); assert.equal(p.pawn.teleports.length, 0);
-  assert.deepEqual(f.replies.at(-1), ["Oneup Scheduling Failed"]);
+  assert.deepEqual(f.replies.at(-1), ["extracommands.oneup.scheduling_failed"]);
 });
 
 test("equip rolls back only the new item when VData cannot identify its gear slot", () => {

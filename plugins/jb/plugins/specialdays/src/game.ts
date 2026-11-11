@@ -1,12 +1,14 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * Thin engine helpers the days share (the C# PlayerExtensions / RoundUtil / PlayerUtil bits).
  * Every helper re-checks the pawn and degrades to a no-op on a stale player.
  */
-import { Chat, Clients, Entity, Server } from "@s2script/sdk";
+import { Clients, Entity, Server } from "@s2script/sdk";
 import type { EntityRef } from "@s2script/sdk";
 import { GameRules, MoveType_t, Player, RenderMode_t } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
-import { alivePlayers, Colors, isAlive, setPawnColor, Team, teamColored as teamColoredName } from "@edgegamers/jailbreak-shared";
+import { alivePlayers, Colors, isAlive, setPawnColor, Team } from "@edgegamers/jailbreak-shared";
 import type { Rgb } from "@edgegamers/jailbreak-shared";
 import type { Vec3 } from "./geometry.ts";
 import { pickupBypass } from "./pickup.ts";
@@ -121,13 +123,13 @@ export function teleportOnto(p: Player, target: Player): void {
 
 // ── chat ─────────────────────────────────────────────────────────────────────────────────────────
 
-export function toAll(lines: string | readonly string[]): void {
-  for (const l of typeof lines === "string" ? [lines] : lines) Chat.toAll(l);
+export function toAll(lines: Text | readonly Text[]): void {
+  for (const l of Array.isArray(lines) ? lines : [lines as Text]) Chat.toAll(l);
 }
-export function toSlot(slot: number, lines: string | readonly string[]): void {
-  for (const l of typeof lines === "string" ? [lines] : lines) Chat.toSlot(slot, l);
+export function toSlot(slot: number, lines: Text | readonly Text[]): void {
+  for (const l of Array.isArray(lines) ? lines : [lines as Text]) Chat.toSlot(slot, l);
 }
-export function toTeam(teamNum: number, lines: string | readonly string[]): void {
+export function toTeam(teamNum: number, lines: Text | readonly Text[]): void {
   for (const p of onTeam(teamNum)) toSlot(p.slot, lines);
 }
 
@@ -167,7 +169,7 @@ export const teleportDestinations = (): Vec3[] => originsOf("info_teleport_desti
 
 /** "Name" coloured by team, for chat. */
 export function nameOf(p: Player): string {
-  return teamColoredName(p.playerName ?? "?", p.teamNum);
+  return p.playerName ?? "?";
 }
 
 /** Bots have no client console and are skipped by the C# `IsReal()` checks. */

@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Coinflip (C# `Coinflip`): the guard calls heads or tails (10s, else a random call), the coin
  * spins (with a 1-in-4 chance of some flavour text and another spin), and the loser is slain.
@@ -6,7 +7,7 @@ import { Menu, MenuStyle } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import type { LRResult, LRType } from "../../api";
 import { COINFLIP_EVENTS, coinflipResult } from "../logic";
-import { msg } from "../messages";
+import { COIN_EVENTS, msg } from "../messages";
 import { closeMenu, showMenu } from "../menus";
 import { LastRequest } from "./base";
 
@@ -23,7 +24,7 @@ export class Coinflip extends LastRequest {
 
   execute(): void {
     this.state = "active";
-    const menu = new Menu(msg.coinflipTitle(this.prisoner.name, this.guard.name));
+    const menu = new Menu(consoleText(msg.coinflipTitle(this.prisoner.name, this.guard.name), this.guard.slot));
     menu.style = MenuStyle.Chat;
     menu.addItem("heads", "Heads");
     menu.addItem("tails", "Tails");
@@ -51,7 +52,7 @@ export class Coinflip extends LastRequest {
     }
     this.after(2000, () => {
       if (Math.random() < 0.25) {
-        this.tell(msg.coinEvent(pick(COINFLIP_EVENTS)));
+        this.tell(msg.coinEvent(pick(COIN_EVENTS)));
         this.after(2000, () => this.decide(heads, false));
         return;
       }

@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Shot for Shot / Mag for Mag (C# `BulletForBullet`). The prisoner picks a pistol; after 5s both
  * get it empty and a random player gets the first shot (one bullet, or a full magazine for mag
@@ -40,7 +41,7 @@ export class BulletForBullet extends TeleportingRequest {
   }
 
   configure(done: () => void, cancel: () => void): void {
-    const menu = new Menu(msg.choosePistol);
+    const menu = new Menu(consoleText(msg.choosePistol, this.prisoner.slot));
     menu.style = MenuStyle.Center;
     for (const p of B4B_PISTOLS) menu.addItem(p.weapon, p.name);
     menu.onSelect((e) => {

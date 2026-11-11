@@ -1,3 +1,5 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { reply as replyMessage } from "@edgegamers/jailbreak-shared";
 /**
  * Admin debug commands (C# `css_debug lr` / `css_debug lg`, Jailbreak.Debug). Core owns the other
  * debug subcommands; these two live here because they drive this plugin's state.
@@ -22,7 +24,7 @@ import { chatTo } from "./lr-command";
 
 const TITLE = "[Debug] Last Request";
 
-function target(pattern: string, caller: number, reply: (m: string) => void): Player | null {
+function target(pattern: string, caller: number, reply: (m: Text) => void): Player | null {
   const found = Player.target(pattern, caller, true);
   if (found.length === 0) {
     reply(msg.playerNotFound(pattern));
@@ -31,7 +33,7 @@ function target(pattern: string, caller: number, reply: (m: string) => void): Pl
   return found[0];
 }
 
-function run(caller: number, typeArg: string, fromArg: string, toArg: string, reply: (m: string) => void): void {
+function run(caller: number, typeArg: string, fromArg: string, toArg: string, reply: (m: Text) => void): void {
   const me = Player.fromSlot(caller);
   if (!me) return;
 
@@ -72,14 +74,14 @@ function run(caller: number, typeArg: string, fromArg: string, toArg: string, re
 }
 
 export function lrDebugCommand(cmd: CommandInvocation): void {
-  if (cmd.callerSlot < 0) return cmd.reply(msg.debugUsage);
-  run(cmd.callerSlot, cmd.arg(0), cmd.arg(1), cmd.arg(2), (m) => cmd.reply(m));
+  if (cmd.callerSlot < 0) return replyMessage(cmd, msg.debugUsage);
+  run(cmd.callerSlot, cmd.arg(0), cmd.arg(1), cmd.arg(2), (m) => replyMessage(cmd, m));
 }
 
 export function lgDebugCommand(cmd: CommandInvocation): void {
   let guard: Player | null = Player.all().find((p) => p.teamNum === Team.Guard && isAlive(p)) ?? null;
-  if (cmd.argCount >= 1) guard = target(cmd.arg(0), cmd.callerSlot, (m) => cmd.reply(m));
+  if (cmd.argCount >= 1) guard = target(cmd.arg(0), cmd.callerSlot, (m) => replyMessage(cmd, m));
   if (!guard) return;
   const name = guard.playerName ?? "?";
-  cmd.reply(startLastGuard(guard) ? msg.debugLastGuard(name) : msg.debugLastGuardRefused(name));
+  replyMessage(cmd, startLastGuard(guard) ? msg.debugLastGuard(name) : msg.debugLastGuardRefused(name));
 }

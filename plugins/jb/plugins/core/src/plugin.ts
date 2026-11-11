@@ -1,3 +1,4 @@
+import { loadPhrases } from "./messages";
 /**
  * @edgegamers/jailbreak-core — round state + mode arbitration, rebels, the jihad C4, the spawn knife, cell doors,
  * the round log and the admin debug commands. This file is wiring only: every feature lives in its own module.
@@ -25,6 +26,7 @@ import * as knife from "./knife";
 import { debugCommand } from "./admin";
 
 export function OnPluginStart(): void {
+  loadPhrases();
   const handle = publish("@edgegamers/jailbreak-core", {
     getRound: round.getRound,
     setMode: round.setMode,

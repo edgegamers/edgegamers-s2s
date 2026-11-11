@@ -8,7 +8,7 @@ import {Fade,wrapEntity,type BeamHandle} from '@s2script/cs2';
 import {Server} from '@s2script/sdk/server';
 import {createEntity,createBeam} from './lifecycle';
 import {nextPreFrame} from './preframe';
-import {GameState,MAX_SLOTS,RoleId,Priority,reg,game,inProgress,n,b,s,msg,msgFor,pawnOf,setHealth,tell,resolveSlot,killWithGadget,addBalance,suppressKarmaOnce,roleName,restrictToTraitors,tintBody} from './runtime';
+import {GameState,MAX_SLOTS,RoleId,Priority,reg,game,inProgress,n,b,s,msg,msgFor,pawnOf,setHealth,tell,resolveSlot,killWithGadget,addBalance,suppressKarmaOnce,roleName,roleNameFor,restrictToTraitors,tintBody, chatMsgFor } from './runtime';
 import {hudLine,HUD_FONT_BIG,HUD_FONT_SMALL,setCenterHud} from './hud';
 import {ROLE_COLORS,setEntityColor,setPawnColor,setPawnAlpha,type Rgb} from './color';
 import {give,removeByDef,resolveWeapon,TASER_DEF,weaponClass,KNIVES,PISTOLS,RIFLES,type HeldWeapon} from './inventory';
@@ -361,12 +361,12 @@ export function tripwiresHeld(slot: number): number {
 export function tryPlaceHeldTripwire(slot: number): boolean {
   if (tripwireCharges[slot]! <= 0) return false;
   if (!placeTripwire(slot)) {
-    tell(slot, msgFor(slot, "SHOP_ITEM_TRIPWIRE_TOOFAR"));
+    tell(slot, chatMsgFor(slot, "ttt.tripwire.too_far"));
     return true;
   }
   const left = tripwireCharges[slot]! - 1;
   tripwireCharges[slot] = left;
-  tell(slot, msgFor(slot, left > 0 ? "SHOP_ITEM_TRIPWIRE_PLACED" : "SHOP_ITEM_TRIPWIRE_PLACED_LAST", left));
+  tell(slot, chatMsgFor(slot, left > 0 ? "ttt.tripwire.placed" : "ttt.tripwire.placed_last", left));
   return true;
 }
 
@@ -388,11 +388,9 @@ export function spendGlove(slot: number, forBody: boolean): boolean {
   const max = n("sm_ttt_shop_gloves_max_uses");
   tell(
     slot,
-    forBody
-      ? msg("SHOP_ITEM_GLOVES_USED_BODY", left - 1, max)
-      : msg("SHOP_ITEM_GLOVES_USED_KILL", left - 1, max),
+    forBody ? chatMsgFor(slot, "ttt.gloves.body_moved", left - 1, max) : chatMsgFor(slot, "ttt.gloves.kill_protected", left - 1, max),
   );
-  if (left - 1 === 0) tell(slot, msgFor(slot, "SHOP_ITEM_GLOVES_WORN_OUT"));
+  if (left - 1 === 0) tell(slot, chatMsgFor(slot, "ttt.gloves.worn_out"));
   return true;
 }
 
@@ -417,7 +415,7 @@ export function spendBodyPaint(slot: number, body: Body): boolean {
   const color=resolvePaintColor();
   tintBody(body,color);
   // Core tintBody gateway preserves the pinned corpse then current owner-pawn tint sequence.
-  if (left - 1 === 0) tell(slot, msgFor(slot, "SHOP_ITEM_BODY_PAINT_OUT"));
+  if (left - 1 === 0) tell(slot, chatMsgFor(slot, "ttt.body_paint.depleted"));
   return true;
 }
 
@@ -754,7 +752,7 @@ function baseBulletDamage(cls: string): number {
 // ── tripwires ────────────────────────────────────────────────────────────────
 /**
  * Place a tripwire from where `slot` is aiming to the opposite wall. Returns false when the target
- * surface is out of range (the C# `SHOP_ITEM_TRIPWIRE_TOOFAR` case).
+ * surface is out of range (the C# `ttt.tripwire.too_far` case).
  */
 export function placeTripwire(slot: number): boolean {
   const pawn = pawnOf(slot);
@@ -1072,7 +1070,7 @@ export function tryDefuseTripwire(slot: number, dt: number): boolean {
     setCenterHud(
       slot,
       hudLine(
-        msg("SHOP_ITEM_TRIPWIRE_DEFUSING", reg.nameOf(slot), Math.ceil(total - tw.defuseProgress)),
+        msg("ttt.tripwire.defusing", reg.nameOf(slot), Math.ceil(total - tw.defuseProgress)),
         "#ffdd55",
       ),
     );
@@ -1462,10 +1460,10 @@ export function installEffects(eventBus: EventBus): void {
         const pawn = pawnOf(victim);
         const hp = pawn?.health ?? 0;
         if (hp <= 0) setHealth(victim, 1);
-        const role = roleName(reg.roleOf(victim));
-        tell(attacker, msgFor(attacker, "TASER_SCANNED", reg.nameOf(victim), role));
+        const role = roleNameFor(attacker, reg.roleOf(victim));
+        tell(attacker, chatMsgFor(attacker, "ttt.taser.scanned", reg.nameOf(victim), role));
         if (hasStickers[attacker] === 1) {
-          tell(victim, msgFor(victim, "SHOP_ITEM_STICKERS_HIT"));
+          tell(victim, chatMsgFor(victim, "ttt.stickers.role_revealed"));
           revealRole(victim);
         }
         return;
@@ -1484,13 +1482,13 @@ export function installEffects(eventBus: EventBus): void {
         if (sameTeam && !b("sm_ttt_shop_onedeagle_ff")) {
           hasRevolver[attacker] = 0;
           ev.canceled = true;
-          tell(attacker, msgFor(attacker, "SHOP_ITEM_DEAGLE_HIT_FF"));
+          tell(attacker, chatMsgFor(attacker, "ttt.revolver.teammate_hit"));
           if (b("sm_ttt_shop_onedeagle_kill_shooter_on_ff")) setHealth(attacker, 0);
           return;
         }
         hasRevolver[attacker] = 0; // one shot only, matching the C# RemoveItem on first hit
         ev.damage = 1000;
-        tell(victim, msgFor(victim, "SHOP_ITEM_DEAGLE_VICTIM"));
+        tell(victim, chatMsgFor(victim, "ttt.revolver.victim_hit"));
         return;
       }
 
@@ -1509,7 +1507,7 @@ export function installEffects(eventBus: EventBus): void {
       // flashes the victim's screen; Poison Smoke (in `weaponfx.ts`) is the silent one.
       if (poisonShotsLeft(attacker) > 0 && isPistol(ev.weapon)) {
         applyPoison(victim, attacker, false);
-        tell(attacker, msgFor(attacker, "SHOP_ITEM_POISON_HIT", reg.nameOf(victim)));
+        tell(attacker, chatMsgFor(attacker, "ttt.poison_shots.target_hit", reg.nameOf(victim)));
       }
     },
     { priority: Priority.HIGH },
@@ -1561,7 +1559,7 @@ function revealRole(slot: number): void {
   const active = reg.activeSlots();
   for (let i = 0; i < active.length; i++) {
     const to = active[i]!;
-    tell(to, msgFor(to, "BODY_IDENTIFIED", "Stickers", reg.nameOf(slot), roleName(role)));
+    tell(to, chatMsgFor(to, "ttt.body.identified", msgFor(to, "ttt.stickers.label"), reg.nameOf(slot), roleNameFor(to, role)));
   }
 }
 

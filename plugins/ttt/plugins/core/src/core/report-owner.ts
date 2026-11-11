@@ -6,23 +6,23 @@ import type {UiReportNotice} from '../../../../packages/contracts/ui-types.ts';
 import {captureUiActor,matchesUiActor} from './ui-actor';
 import {roundEpoch} from '../game/game';
 import {getReport,owedBy,reportsBinding} from './reports-provider';
-import {msgFor} from './msgs';
+import {chatMsgFor} from './msgs';
 import {didStrikeFirst} from '../karma/karma';
 import {pawnOf,tell} from '../cs2/pawn';
 import {getTttHud} from '../cs2/ttthud';
 import * as reg from './registry';
-const phrases:readonly ReportPhrase[]=['RDM_ASK_TITLE','RDM_ASK_YES','RDM_ASK_NO','RDM_ASK_DISMISSED','RDM_ASK_CONTEXT','RDM_ASK_EXPIRED','RDM_FILE_RATE_LIMITED','RDM_FILE_DUPLICATE','RDM_FILE_FAILED','RDM_FILE_OK','RDM_ADMIN_NEW'];
+const phrases:readonly ReportPhrase[]=['ttt.reports.prompt_title','ttt.reports.prompt_yes','ttt.reports.prompt_no','ttt.reports.prompt_dismissed','ttt.reports.prompt_context','ttt.reports.prompt_expired','ttt.reports.rate_limited','ttt.reports.duplicate','ttt.reports.file_failed','ttt.reports.filed_against','ttt.reports.admin_new'];
 /** The HUD wording for each chat phrase the player-side report flow can present. */
 function reportNotice(key:ReportPhrase,args:(string|number)[]):UiReportNotice|null{
  const name=String(args[0]??'');
  switch(key){
-  case 'RDM_ASK_CONTEXT':return {kind:'awaiting',title:`Reporting ${name}`,message:'Type what happened in chat. Your next message goes to the admins - type cancel to stop.',tone:'warn'};
-  case 'RDM_ASK_DISMISSED':return {kind:'result',title:'No report filed',message:'Nothing was sent',tone:'good'};
-  case 'RDM_ASK_EXPIRED':return {kind:'result',title:'Report timed out',message:'Nothing was sent',tone:'warn'};
-  case 'RDM_FILE_OK':return {kind:'result',title:'Report filed',message:`${name} - an admin will review it`,tone:'good'};
-  case 'RDM_FILE_DUPLICATE':return {kind:'result',title:'Already reported',message:`You already have a pending report against ${name}`,tone:'warn'};
-  case 'RDM_FILE_RATE_LIMITED':return {kind:'result',title:'Report limit reached',message:`${String(args[0]??'')} per round`,tone:'warn'};
-  case 'RDM_FILE_FAILED':return {kind:'result',title:'Report failed',message:'That report could not be filed',tone:'bad'};
+  case 'ttt.reports.prompt_context':return {kind:'awaiting',title:`Reporting ${name}`,message:'Type what happened in chat. Your next message goes to the admins - type cancel to stop.',tone:'warn'};
+  case 'ttt.reports.prompt_dismissed':return {kind:'result',title:'No report filed',message:'Nothing was sent',tone:'good'};
+  case 'ttt.reports.prompt_expired':return {kind:'result',title:'Report timed out',message:'Nothing was sent',tone:'warn'};
+  case 'ttt.reports.filed_against':return {kind:'result',title:'Report filed',message:`${name} - an admin will review it`,tone:'good'};
+  case 'ttt.reports.duplicate':return {kind:'result',title:'Already reported',message:`You already have a pending report against ${name}`,tone:'warn'};
+  case 'ttt.reports.rate_limited':return {kind:'result',title:'Report limit reached',message:`${String(args[0]??'')} per round`,tone:'warn'};
+  case 'ttt.reports.file_failed':return {kind:'result',title:'Report failed',message:'That report could not be filed',tone:'bad'};
   default:return null;
  }
 }
@@ -51,12 +51,12 @@ export const reportCoreMethods:CoreReportsMethods={
   const pawn=pawnOf(actor.slot);if(!pawn||!matchesUiActor(actor)||!reg.isAlive(actor.slot)||reportsBinding()!==binding)return false;
   pawn.slay();return true;
  },
- formatReportPhrase(actor,key,args){return matchesUiActor(actor)&&phrases.includes(key)?msgFor(actor.slot,key,...args):'';},
+ formatReportPhrase(actor,key,args){return matchesUiActor(actor)&&phrases.includes(key)?chatMsgFor(actor.slot,key,...args):'';},
  tellReportPlayer(actor,text){if(matchesUiActor(actor))tell(actor.slot,text);},
  presentReportPlayer(actor,key,args){
   // False sends Reports to its chat fallback, so only claim what the HUD actually accepted.
   const hud=getTttHud();if(!hud||!matchesUiActor(actor)||!Array.isArray(args))return false;
-  if(key==='RDM_ASK_TITLE')return hud.openReportPrompt(actor.slot,String(args[0]??''));
+  if(key==='ttt.reports.prompt_title')return hud.openReportPrompt(actor.slot,String(args[0]??''));
   const notice=reportNotice(key,args);
   return notice!==null&&matchesUiActor(actor)&&hud.reportNotice(actor.slot,notice);
  },
@@ -65,7 +65,7 @@ export const reportCoreMethods:CoreReportsMethods={
   let told=0;
   if(mode==='prompt')for(const slot of [...reg.activeSlots()]){
    const actor=captureUiActor(slot);if(!actor||!reportCoreMethods.authorizeReportAdmin(actor))continue;
-   const message=msgFor(slot,'RDM_ADMIN_NEW',report.reporterName,report.accusedName);
+   const message=chatMsgFor(slot,'ttt.reports.admin_new',report.reporterName,report.accusedName);
    if(matchesUiActor(actor)){tell(slot,message);told++;}
   }
   getTttHud()?.notifyAdmins(mode==='manual'?'RDM report':'New RDM report',`${report.reporterName} → ${report.accusedName}`);

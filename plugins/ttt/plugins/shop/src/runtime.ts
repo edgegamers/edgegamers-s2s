@@ -4,6 +4,7 @@ import type {CoreMethods} from '../../core/api';
 import type {ShopItemId,PurchaseResult} from '../api';
 import {getRoundSettings} from './settings';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
+export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
 export const enum RoleId {None=0,Innocent=1,Traitor=2,Detective=3,Spectator=4}
 export const enum GameState {Waiting=0,Countdown=1,InProgress=2,Finished=3}
 export const MAX_SLOTS=64;

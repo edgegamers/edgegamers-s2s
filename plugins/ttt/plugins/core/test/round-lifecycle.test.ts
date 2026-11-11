@@ -30,7 +30,7 @@ const boundaries: Record<string, string> = {
     roleWeapons: [[], ['weapon_glock'], ['weapon_deagle'], ['weapon_taser'], []]};
     export const roundDuration = () => 120;`,
   '../core/settings': 'export const refreshSettings = () => {};',
-  '../core/msgs': 'export const msg = key => key, msgFor = (slot, key) => key;',
+  '../core/msgs': "export const msg = key => key, msgFor = (slot, key) => key; export const chatMsgFor = msgFor;",
   '../core/reports-provider': 'export const owedBy = () => 0;',
   './logger': 'export const clearLog = () => {}, printLogs = () => {};',
   '../cs2/bodies': 'export const clearBodies = () => {}, bodyOfPlayer = () => null;',

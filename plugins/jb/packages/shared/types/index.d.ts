@@ -11,3 +11,4 @@ export * from "./time";
 export * from "./players";
 export * from "./steam";
 export * from "./weapons";
+export * from "./translations";

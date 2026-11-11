@@ -1,5 +1,6 @@
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /** The live guard queue: join/leave, notices, round-start fill, round-end trim (CTBans QueueService). */
-import { Chat } from "@s2script/sdk";
+
 import { Player } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";
 import { activeBan } from "./ctbans";

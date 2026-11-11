@@ -1,6 +1,8 @@
 import type { CommandInvocation, EntityRef, PhraseKey } from "@s2script/sdk";
+import { Activity, Clients } from "@s2script/sdk";
 import { CsItem, Player } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";
+import { plainPhraseFor } from "./phrases";
 
 export function sameRef(a: EntityRef, b: EntityRef): boolean {
   return a.index === b.index && a.id === b.id;
@@ -15,6 +17,22 @@ export function replyFor(cmd: CommandInvocation): (key: PhraseKey, ...args: (str
   const actor = cmd.callerSlot < 0 ? null : connectedPlayer(cmd.callerSlot);
   return (key, ...args) => {
     if (cmd.callerSlot < 0 || actor?.ref.isValid()) cmd.replyT(key, ...args);
+  };
+}
+
+// Capture the connection before native calls or queued work can replace the caller.
+// Activity supplies the caller's success copy and handles per-recipient language,
+// sm_show_activity visibility, identity masking, and chat/console routing.
+export function activityFor(cmd: CommandInvocation): (key: PhraseKey, count: number, ...args: (string | number)[]) => void {
+  const actor = cmd.callerSlot < 0 ? null : Clients.fromSlot(cmd.callerSlot);
+  const identity = Activity.describe(cmd);
+  const reply = replyFor(cmd);
+  return (key, count, ...args) => {
+    if (cmd.callerSlot >= 0 && !actor?.isValid()) return;
+    if (count === 0) { reply(key, count, ...args); return; }
+    const activityKey = `${key}_activity`;
+    Activity.showT(cmd, activityKey, count, ...args);
+    Activity.log(cmd, null, `"${identity}" ${plainPhraseFor(-1, activityKey, count, ...args)}`);
   };
 }
 

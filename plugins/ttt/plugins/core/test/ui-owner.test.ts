@@ -17,8 +17,8 @@ const mocks: Record<string, string> = {
   '../game/game': 'export const roundEpoch=()=>fixture.epoch, inProgress=()=>fixture.live,game={get state(){return fixture.live?2:0;}};',
   '../game/logger': 'export const logCount=()=>1, logRoundAt=()=>3, makeLogRows=()=>[{a:"private log"}];',
   '../cs2/pawn': 'export const tellAll=s=>fixture.announcements.push(s),tell=(s,t)=>fixture.announcements.push(t),pawnOf=()=>{fixture.onPawn?.();return fixture.pawn;};',
-  './msgs': 'export const msg=(k,...a)=>k, msgFor=(s,k,...a)=>k;',
-  '../shop/shop': 'export const PurchaseResult={Success:0,InsufficientFunds:1,NotFound:2,NotPurchasable:3,WrongRole:4}; const item={id:"armor",nameKey:"armor",descKey:"description",price:10,limit:1}; export const getShopView=()=>({balance:fixture.balance,rows:fixture.shopRows??[{...item,descriptionKey:item.descKey,gate:fixture.gate}]}),balanceOf=()=>fixture.balance,canPurchase=()=>fixture.gate,itemById=id=>id===item.id?item:undefined,resultMessage=r=>"refused "+r,tryPurchase=()=>{fixture.purchases++;return 0};',
+  './msgs': "export const msg=(k,...a)=>k, msgFor=(s,k,...a)=>fixture.phrases[k]??k; export const chatMsgFor = msgFor;",
+  '../shop/shop': 'export const PurchaseResult={Success:0,InsufficientFunds:1,NotFound:2,NotPurchasable:3,WrongRole:4}; const item={id:"armor",nameKey:"armor",descKey:"description",price:10,limit:1}; export const getShopView=()=>({balance:fixture.balance,rows:fixture.shopRows??[{...item,descriptionKey:item.descKey,gate:fixture.gate}]}),balanceOf=()=>fixture.balance,canPurchase=()=>fixture.gate,itemById=id=>id===item.id?item:undefined,resultMessage=r=>fixture.refusal??("refused "+r),tryPurchase=()=>{fixture.purchases++;return 0};',
 };
 const bundle = await build({
   stdin: { contents: `export { uiModels } from './core/ui-owner.ts'; export {openCoreActionAdmission} from './core/action-admission.ts'; export {OnPluginStart as startReports} from '../../reports/src/plugin.ts';export {reportCoreMethods} from './core/report-owner.ts';export {bindReportsProvider,reportsBinding} from './core/reports-provider.ts';export {pending} from '../../reports/src/reports.ts';export {owedBy,guiltyCount} from '../../reports/src/sanctions.ts'; export { bindTttHudProvider, getTttHud } from './cs2/ttthud.ts';`, resolveDir: sourceDir, loader: 'ts' },
@@ -40,6 +40,7 @@ interface OwnerExports {
 }
 function fixture() {
   const state = {
+    phrases: {} as Record<string,string>, refusal: undefined as string | undefined,
     connected: new Set([2, 3]), ids: new Map([[2, 'admin'], [3, 'accused']]), engineIds: new Map([[2, 'admin'], [3, 'accused']]), generations: new Map([[2, 4], [3, 1]]),
     userIds: new Map([[2, 12], [3, 13]]), epoch: 8, admin: true, live: true, alive: true, balance: 20, gate: 0, purchases: 0, banThrows: false,
     shopRows: undefined as undefined | {id:string;nameKey:string;descriptionKey:string;price:number;limit:number;gate:number}[],
@@ -175,7 +176,7 @@ test('when the HUD cannot present a report step Reports tells the player in chat
   const f = fixture(); reportHud(f, false);
   const target = f.api.uiModels.getUiReportTargets(f.actor)![0]!.target;
   assert.equal(f.api.uiModels.beginUiReport(f.actor, target), true);
-  assert.deepEqual([...f.state.announcements], ['RDM_ASK_CONTEXT']);
+  assert.deepEqual([...f.state.announcements], ['ttt.reports.prompt_context']);
 });
 test('a retired target or a missing Reports owner cannot start a report', () => {
   const f = fixture(); reportHud(f);
@@ -183,4 +184,18 @@ test('a retired target or a missing Reports owner cannot start a report', () => 
   f.state.generations.set(3, 2);
   assert.equal(f.api.uiModels.beginUiReport(f.actor, target), false);
   assert.equal(f.state.reports.captureSay(f.actor, 'ordinary chat').consumed, false);
+});
+
+test('Panorama catalog, purchase details and refusal messages discard chat controls', () => {
+  const f = fixture();
+  f.state.phrases.armor = '\x04Armor\x08';
+  f.state.phrases.description = '\x08Protects a \x0cDetective\x08';
+  const view = f.api.uiModels.getUiShop(f.actor)!;
+  assert.equal(view.rows[0]!.name, 'Armor');
+  assert.equal(view.rows[0]!.description, 'Protects a Detective');
+  assert.equal(f.api.uiModels.buyUiItem(f.actor, 'armor').message, 'Armor - Protects a Detective');
+  f.state.gate = 1;
+  f.state.refusal = '\x07You cannot afford this item\x08';
+  assert.equal(f.api.uiModels.getUiShop(f.actor)!.rows[0]!.refusal, 'You cannot afford this item');
+  assert.equal(f.api.uiModels.buyUiItem(f.actor, 'armor').message, 'You cannot afford this item');
 });

@@ -1,3 +1,6 @@
+import { phrase } from "./messages.ts";
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { replyChat, replyConsole } from "@edgegamers/jailbreak-shared";
 /**
  * Rolling and rewarding (C# RTDCommand + RTDRewarder + RewardGenerator.GenerateReward +
  * RTDStatsCommand + Debug/DebugRTD).
@@ -55,8 +58,8 @@ function generate(player: Player): Reward | null {
   return pickWeighted(pool, (r) => r.canGrant(player), Math.random());
 }
 
-function tell(slot: number, line: string): void {
-  Clients.fromSlot(slot)?.chat(line);
+function tell(slot: number, line: Text): void {
+  Clients.fromSlot(slot)?.chat(chatText(line, slot));
 }
 
 /**
@@ -105,13 +108,13 @@ export function cmdRtd(cmd: Command): HookResultValue {
   }
   const raw = cmd.arg(0);
   if (!/^-?\d+$/.test(raw)) {
-    cmd.replyToChat(msg.invalidParameter(raw, "integer"));
+    replyChat(cmd, msg.invalidParameter(raw, phrase("jailbreak.rtd.expected_integer")));
     return HookResult.Handled;
   }
   const index = parseInt(raw, 10);
   const count = enabledRewards().length;
   if (index !== -1 && (index < 0 || index >= count)) {
-    cmd.replyToChat(msg.invalidParameter(raw, `0-${count - 1}`));
+    replyChat(cmd, msg.invalidParameter(raw, phrase("jailbreak.rtd.expected_reward_range", count - 1)));
     return HookResult.Handled;
   }
   roll(player, index);
@@ -125,8 +128,8 @@ export function cmdRtdStats(cmd: Command): HookResultValue {
   const pct = percentages(rewards.map((r) => ({ reward: r, weight: r.weight })));
   rewards.forEach((r, i) => {
     const p = formatPercent(pct[i]);
-    cmd.replyToChat(msg.statsLine(i, r.name, p));
-    cmd.replyToConsole(msg.statsConsole(i, r.name, p));
+    replyChat(cmd, msg.statsLine(i, r.name, p));
+    replyConsole(cmd, msg.statsConsole(i, r.name, p));
   });
   return HookResult.Handled;
 }
@@ -135,9 +138,9 @@ export function cmdRtdStats(cmd: Command): HookResultValue {
 export function cmdDebugRtd(cmd: Command): HookResultValue {
   if (cmd.callerSlot < 0) return HookResult.Handled;
   const rewards = enabledRewards();
-  const menu = new Menu(msg.debugMenuTitle);
+  const menu = new Menu(consoleText(msg.debugMenuTitle, cmd.callerSlot));
   menu.style = MenuStyle.Center;
-  for (const r of rewards) menu.addItem(String(r.poolIndex), msg.debugMenuItem(r.name, r.weight));
+  for (const r of rewards) menu.addItem(String(r.poolIndex), consoleText(msg.debugMenuItem(r.name, r.weight), cmd.callerSlot));
   menu.onSelect((e) => {
     const reward = REWARDS[Number(e.info)];
     const p = Player.fromSlot(e.slot);
@@ -160,7 +163,7 @@ export function onSpawn(slot: number): void {
   after(40, () => {
     const p = Player.fromUserId(userId);
     if (!p || pending.get(userId) !== reward) return;
-    if (reward.spec.kind !== "nothing") log(`Granted ${reward.name} to ${describe(p.slot)}`);
+    if (reward.spec.kind !== "nothing") log(`Granted ${consoleText(reward.name)} to ${describe(p.slot)}`);
     if (isAlive(p)) reward.grant(p);
     pending.delete(userId);
   });

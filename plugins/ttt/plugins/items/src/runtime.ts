@@ -7,6 +7,7 @@ import type {ItemActor,ItemBodyTarget,ItemSettingKey,GadgetCause,ItemRgb} from '
 import type {BodyView} from '../../../packages/contracts/ordered-types.ts';
 import {assertOpen,checked,ownerEpoch,isOpen,withAdmission} from './lifecycle';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
+export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
 export const enum RoleId {None=0,Innocent=1,Traitor=2,Detective=3,Spectator=4}
 export const enum GameState {Waiting=0,Countdown=1,InProgress=2,Finished=3}
 export const MAX_SLOTS=64;
@@ -59,7 +60,7 @@ export const cfg={get dnaGlow():boolean{return b('sm_ttt_dna_glow');}};
 export const msg=(key:string,...args:(number|string)[]):string=>phraseFor(-1,key,...args);
 export const msgFor=(slot:number,key:string,...args:(number|string)[]):string=>phraseFor(slot,key,...args);
 export function tell(slot:number,text:string):void {const actor=actorOf(slot);if(actor&&matchesActor(actor))checked(()=>Chat.toSlot(slot,text));}
-export function roleName(role:RoleId):string {return role===1?msg('ROLE_INNOCENT'):role===2?msg('ROLE_TRAITOR'):role===3?msg('ROLE_DETECTIVE'):role===4?msg('ROLE_SPECTATOR'):'';}
+export function roleName(role:RoleId):string {return role===1?msg('ttt.role.innocent'):role===2?msg('ttt.role.traitor'):role===3?msg('ttt.role.detective'):role===4?msg('ttt.role.spectator'):'';}
 export function setHealth(slot:number,value:number):void {const actor=actorOf(slot);if(actor)call(c=>c.setItemHealth(actor,value));}
 export function teamOf(slot:number):number {const actor=actorOf(slot),player=actor?checked(()=>Player.fromSlot(slot)):null;return player&&actor&&matchesActor(actor)?player.teamNum??0:0;}
 export function killWithGadget(slot:number,killer:number,cause:GadgetCause,suppressBody=false):void {const actor=actorOf(slot);if(actor)call(c=>c.killItemWithGadget(actor,killer,cause,suppressBody));}
@@ -73,3 +74,5 @@ export function tintBody(_body:Body,color:ItemRgb):void {const target=frames[fra
 export function restrictToTraitors(ref:EntityRef):boolean{return call(c=>c.restrictItemToTraitors(ref));}
 export function roleModel(role:RoleId):string{return call(c=>c.getItemRoleModel(role));}
 export function scheduleItemPreFrame(ticket:number,actor:ItemActor|null):boolean{return call(c=>c.scheduleItemPreFrame(ticket,actor));}
+
+export function roleNameFor(slot:number,role:RoleId):string {return role===1?msgFor(slot,'ttt.role.innocent'):role===2?msgFor(slot,'ttt.role.traitor'):role===3?msgFor(slot,'ttt.role.detective'):role===4?msgFor(slot,'ttt.role.spectator'):'';}

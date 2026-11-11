@@ -16,14 +16,15 @@
 import { Server } from "@s2script/sdk/server";
 import { GameRules } from "@s2script/cs2";
 import type { DomainBus } from "../../../packages/contracts/ordered.ts";
-import { GameState, RoleId, Priority, n, msg, reg, tell, tellAll, game,
-  setRoundDeadline, addBalance, balanceOf, setSuppressPistols } from "./runtime";
+import { GameState, RoleId, Priority, n, msg, msgFor, reg, tell, tellAll, game,
+  setRoundDeadline, addBalance, balanceOf, setSuppressPistols, chatMsgFor } from "./runtime";
 import { clearSlot, GearSlot, RIFLES, heldWeapons, weaponClass } from "./inventory";
 
 /** A special round definition. */
 interface SpecialRound {
   id: string;
   name: string;
+  nameKey: string;
   descKey: string;
   /** Selection weight; 0 disables the round. */
   weight: number;
@@ -65,7 +66,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "bhop",
     name: "BHop",
-    descKey: "SPECIAL_ROUND_BHOP",
+    nameKey: "ttt.special.bhop_name",
+    descKey: "ttt.special.bhop_description",
     weight: 0.25,
     apply() {
       Server.command("sv_enablebunnyhopping 1");
@@ -79,7 +81,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "lowgrav",
     name: "Low Grav",
-    descKey: "SPECIAL_ROUND_LOWGRAV",
+    nameKey: "ttt.special.low_gravity_name",
+    descKey: "ttt.special.low_gravity_description",
     weight: 0.6,
     apply() {
       originalGravity = Server.getCvar("sv_gravity") || "800";
@@ -94,7 +97,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "pistol",
     name: "Pistol",
-    descKey: "SPECIAL_ROUND_PISTOL",
+    nameKey: "ttt.special.pistol_name",
+    descKey: "ttt.special.pistol_description",
     weight: 0.75,
     apply() {
       const active = reg.activeSlots();
@@ -104,7 +108,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "suppressed",
     name: "Suppressed",
-    descKey: "SPECIAL_ROUND_SUPPRESSED",
+    nameKey: "ttt.special.suppressed_name",
+    descKey: "ttt.special.suppressed_description",
     weight: 0.75,
     // Silencing runs through the single shared fire-sound interception in `weaponfx`, which the
     // Silent AWP also uses — the C# hooked user message 452 separately from each, and re-hooked
@@ -119,7 +124,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "vanilla",
     name: "Vanilla",
-    descKey: "SPECIAL_ROUND_VANILLA",
+    nameKey: "ttt.special.vanilla_name",
+    descKey: "ttt.special.vanilla_description",
     weight: 0.5,
     conflicts: ["rich"],
     apply() {
@@ -129,7 +135,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "rich",
     name: "Rich",
-    descKey: "SPECIAL_ROUND_RICH",
+    nameKey: "ttt.special.rich_name",
+    descKey: "ttt.special.rich_description",
     weight: 0.75,
     conflicts: ["vanilla"],
     apply() {
@@ -149,7 +156,8 @@ const ROUNDS: readonly SpecialRound[] = [
   {
     id: "speed",
     name: "Speed",
-    descKey: "SPECIAL_ROUND_SPEED",
+    nameKey: "ttt.special.speed_name",
+    descKey: "ttt.special.speed_description",
     weight: 1,
     apply() {
       setRoundDeadline(n("sm_ttt_special_speed_initial"));
@@ -224,11 +232,11 @@ export function startSpecialRounds(forced?: readonly string[]): string[] {
   }
   if (chosen.length === 0) return [];
 
-  tellAll(msg("SPECIAL_ROUND_STARTED", chosen.map((r) => r.name).join(", ")));
+  tellAll(recipient => chatMsgFor(recipient, "ttt.special.started", chosen.map((r) => msgFor(recipient, r.nameKey)).join(", ")));
   for (let i = 0; i < chosen.length; i++) {
     const r = chosen[i]!;
     activeRounds.push(r.id);
-    tellAll(msg(r.descKey));
+    tellAll(recipient => chatMsgFor(recipient, r.descKey));
     r.apply();
   }
   sinceSpecial = 0;
@@ -286,7 +294,7 @@ export function installSpecialRounds(bus: DomainBus): void {
   bus.on("purchase", (ev) => {
     if (!isActive("vanilla")) return;
     ev.canceled = true;
-    tell(ev.slot, msg("VANILLA_ROUND_REMINDER"));
+    tell(ev.slot, chatMsgFor(ev.slot, "ttt.special.vanilla_reminder"));
   }, { priority: Priority.HIGH });
 
   // Rich: multiply in-round gains.

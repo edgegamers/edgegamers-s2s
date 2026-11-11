@@ -6,7 +6,7 @@ import { Player } from "@s2script/cs2";
 import type { SpecialDay } from "../day.ts";
 import { baseSettings, withRespawns } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DAY_NAMES, DESCRIPTIONS, msg } from "../messages.ts";
 import { KNIVES, PISTOLS, UTILITY } from "../weapons.ts";
 import { nearestIndex } from "../geometry.ts";
 import type { Vec3 } from "../geometry.ts";
@@ -51,7 +51,7 @@ export function infectionDay(): SpecialDay {
     name,
     description: DESCRIPTIONS.infection,
     // AbstractArmoryRestrictedDay(restrictedTeam: CT)
-    restrict: { kind: "armory", teamNum: Team.Guard, reminder: msg.stayInArmory(name) },
+    restrict: { kind: "armory", teamNum: Team.Guard, reminder: msg.stayInArmory(DAY_NAMES.infection) },
     settings,
     setup(ctx) {
       ctx.at(15, () => {
