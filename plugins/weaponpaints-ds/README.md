@@ -19,9 +19,22 @@ read it.
 
 ## Policy
 
-`addons/s2script/configs/weaponpaints_ds_policy.json` is written on first start. It is read again
-at every map start and by `wp_ds_reload` (server console), which also re-applies everyone's items.
-If the file is malformed the error is logged and the last good policy stays in force.
+The policy comes from the CS portal when `policy_url` is set (for EdgeGamers,
+`https://<portal>/api/skins/policy`), where admins edit it at `/admin/skins`. It is fetched at
+every map start and by `wp_ds_reload` (server console). A good answer is saved to
+`addons/s2script/configs/weaponpaints_ds_policy.json` as the last good copy, and everyone's items
+are re-applied if it changed. If the portal cannot be reached or answers with something malformed,
+the error is logged and the current policy stays in force.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `policy_url` | empty | Portal policy endpoint. Empty = use only the file. |
+| `user_agent` | a browser string | User-Agent for the request; Cloudflare refuses unrecognised agents. |
+| `http_timeout_ms` | `8000` | Request timeout. |
+
+Without `policy_url`, the file is the policy. It is written on first start and read again at every
+map start and by `wp_ds_reload`, which also re-applies everyone's items. If the file is malformed
+the error is logged and the last good policy stays in force. The portal serves the same format:
 
 ```json
 {
@@ -43,5 +56,5 @@ If the file is malformed the error is logged and the last good policy stays in f
 - `defaultTier` covers anything no rule matches.
 
 The shipped default reads every open cell of the design review's tier matrix as locked: skins
-Silver, knives Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal. A later
-portal release will serve this policy over HTTP.
+Silver, knives Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal. The portal
+starts from the same values until an admin changes them.
