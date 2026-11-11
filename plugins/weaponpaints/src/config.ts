@@ -2,9 +2,11 @@
 //
 // Declared under `s2script.config` in package.json. Database credentials are not here: the
 // connection named "weaponpaints" in s2script's databases.json replaces Database* settings.
+// `storage` is not upstream: "plugin" hands loading and saving to another plugin (api.d.ts).
 import { config } from '@s2script/sdk';
 
 export interface Settings {
+  storage: 'database' | 'plugin';
   skinsLanguage: string;
   cooldownSeconds: number;
   website: string;
@@ -37,7 +39,9 @@ export function aliases(value: string): string[] {
 
 export function readSettings(): Settings {
   const language = config.getString('skins_language').trim().toLowerCase();
+  const storage = config.getString('storage').trim().toLowerCase();
   return {
+    storage: storage === 'plugin' ? 'plugin' : 'database',
     skinsLanguage: /^[a-z0-9_-]+$/.test(language) ? language : 'en',
     cooldownSeconds: Math.max(0, config.getInt('cmd_refresh_cooldown_seconds')),
     website: config.getString('website'),

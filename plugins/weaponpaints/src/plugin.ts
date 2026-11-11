@@ -22,7 +22,7 @@ import {
 import { mayApply, maySelect, setGateHandle } from './gate';
 import { loadPhrases, say } from './messages';
 import { asTeam, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
-import { loadPlayer, openStore, saveStatTrak, storeReady } from './store';
+import { cancelLoad, configureStore, loadPlayer, openStore, saveStatTrak, storeReady, supplyPlayer } from './store';
 
 let settings: Settings;
 const catalog: Catalog = {
@@ -75,7 +75,7 @@ function carryStatTrak(from: Loadout | undefined, to: Loadout): void {
 function loadClient(client: Client): Promise<boolean> {
   if (client.isBot || client.steamId === '0' || !client.isValid() || !storeReady()) return Promise.resolve(false);
   const { slot, userId, steamId } = client;
-  return loadPlayer(steamId, userId, settings).then(loadout => {
+  return loadPlayer(slot, steamId, userId, settings).then(loadout => {
     if (!client.isValid()) return false;
     carryStatTrak(getLoadout(slot), loadout);
     setLoadout(slot, loadout);
@@ -283,7 +283,7 @@ function refreshSlot(slot: number): boolean {
   return true;
 }
 
-/** The contract's reload(): read the database again, then re-apply (what `!wp` does). */
+/** The contract's reload(): read storage again, then re-apply (what `!wp` does). */
 function reloadSlot(slot: number): boolean {
   const client = Clients.fromSlot(slot);
   const player = Player.fromSlot(slot);
@@ -293,8 +293,10 @@ function reloadSlot(slot: number): boolean {
 }
 
 export function OnPluginStart(): void {
-  setGateHandle(publish('@edgegamers/s2s-weaponpaints', { refresh: refreshSlot, reload: reloadSlot }));
+  const handle = publish('@edgegamers/s2s-weaponpaints', { refresh: refreshSlot, reload: reloadSlot, supply: supplyPlayer });
+  setGateHandle(handle);
   settings = readSettings();
+  configureStore(settings.storage, handle);
   configureApply(settings, catalog);
   configureMenus(settings, catalog);
   loadPhrases();
@@ -323,6 +325,7 @@ export function OnClientPostAdminCheck(client: Client): void {
 }
 
 export function OnClientDisconnect(client: Client): void {
+  cancelLoad(client.slot);
   const loadout = dropLoadout(client.slot);
   if (loadout && loadout.userId === client.userId) saveStatTrak(loadout);
   cooldowns.delete(client.slot);
