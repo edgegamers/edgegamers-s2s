@@ -1,0 +1,10 @@
+{
+  "MAUL_CHAT_LEADERSHIP": "{blue}Leadership {grey}» {blue}{1}{grey}: ",
+  "MAUL_CHAT_TO_LEADERSHIP": "{blue}To leadership {grey}» {blue}{1}{grey}: ",
+  "MAUL_CHAT_LEADERSHIP_ALL": "{blue}Leadership to all {grey}» {blue}{1}{grey}: ",
+  "MAUL_CHAT_PRIVATE_TO": "{blue}Leadership {grey}» Private from {blue}{2}{grey} to {blue}{1}{grey}: ",
+  "MAUL_CHAT_PRIVATE_ECHO": "{blue}Leadership {grey}» Private to {blue}{1}{grey}: ",
+  "MAUL_CHAT_PRIVATE_USAGE": "{red}Leadership {grey}» Usage: {yellow}%%target message{grey}",
+  "MAUL_CHAT_NO_TARGET": "{red}Leadership {grey}» No matching players.",
+  "MAUL_CHAT_AMBIGUOUS_TARGET": "{red}Leadership {grey}» More than one player matched {yellow}{1}{grey}."
+}

@@ -4,13 +4,17 @@
 //   say_team "$msg"  from a DS     -> every DS on the server          "(DS) name: msg"
 //   say_team "%msg"  from a leader -> every leader on the server      "(LEADERSHIP) name: msg"
 //   say      "%msg"  from a leader -> everyone                        "(LEADERSHIP TO ALL) name: msg"
+//   say / say_team "%msg" from anyone else -> leaders and the sender
+//   say / say_team "%%target msg" from a leader -> target and sender only
 //
-// Same shape as basechat's "@" admin chat: the sender always sees their own line, and a trigger the
-// sender is not entitled to falls through as ordinary chat ("$5 says he rushes B" stays normal).
+// Same shape as basechat's "@" admin chat, with non-leadership contact allowed in both channels.
+// The sender always sees their own line. Unauthorized `$` / `%%` stays ordinary chat.
 
 import type { PlayerLookup } from "./backend.ts";
 
-export type StaffChannel = "ds" | "leadership" | "leadershipAll";
+export type StaffChannel = "ds" | "leadership" | "leadershipAll" | "leadershipTo";
+export type StaffRoute = { channel: StaffChannel; body: string }
+  | { channel: "leadershipPrivate"; target: string; body: string };
 
 export interface StaffChatConfig {
   dsChat: boolean;
@@ -44,15 +48,23 @@ export function routeStaffChat(
   teamonly: boolean,
   sender: PlayerLookup | null,
   cfg: StaffChatConfig,
-): { channel: StaffChannel; body: string } | null {
+): StaffRoute | null {
   const trigger = text[0];
   if (trigger === "$") {
     if (!teamonly || !cfg.dsChat || !isDs(sender)) return null;
     return { channel: "ds", body: text.slice(1).trim() };
   }
   if (trigger === "%") {
-    if (!cfg.leadershipChat || !isLeadership(sender, cfg.leadershipMinRank)) return null;
-    return { channel: teamonly ? "leadership" : "leadershipAll", body: text.slice(1).trim() };
+    if (!cfg.leadershipChat) return null;
+    const leader = isLeadership(sender, cfg.leadershipMinRank);
+    // As in basechat, the private alias must win over single-prefix routing in both channels.
+    if (text.startsWith("%%")) {
+      if (!leader) return null;
+      const rest = text.slice(2).trim(), separator = rest.search(/\s/);
+      return { channel: "leadershipPrivate", target: separator < 0 ? rest : rest.slice(0, separator),
+        body: separator < 0 ? "" : rest.slice(separator + 1).trim() };
+    }
+    return { channel: !leader ? "leadershipTo" : teamonly ? "leadership" : "leadershipAll", body: text.slice(1).trim() };
   }
   return null;
 }
@@ -73,10 +85,16 @@ export function receives(
 export function channelLabel(channel: StaffChannel): string {
   if (channel === "ds") return "(DS)";
   if (channel === "leadership") return "(LEADERSHIP)";
+  if (channel === "leadershipTo") return "(TO LEADERSHIP)";
   return "(LEADERSHIP TO ALL)";
 }
 
 /** Strip control bytes so player text cannot inject chat colors. */
 export function cleanChatText(text: string): string {
   return text.replace(/[\x00-\x1f\x7f]/g, "");
+}
+
+/** Keep player-authored braces visible without letting native chat expand them as color tags. */
+export function literalChatText(text: string): string {
+  return cleanChatText(text).replaceAll("{", "｛").replaceAll("}", "｝");
 }
