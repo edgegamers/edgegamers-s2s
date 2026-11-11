@@ -256,10 +256,17 @@ export interface TttPlayerRef { slot:number; steamId:string; name:string; }
 export type TttRoleName = 'none' | 'innocent' | 'traitor' | 'detective' | 'spectator';
 /** `round` is Core's round identity (`GameSnapshot.epoch`), shared with Core's own stats forwards. */
 export interface TttPurchaseEvent { round:number; player:TttPlayerRef; role:TttRoleName; itemId:ShopItemId; price:number; }
+/**
+ * A committed credit change (after any listener rescaled it). `reason` is the shown reason text,
+ * often empty. Round resets that zero every wallet are not sent.
+ */
+export interface TttBalanceChangedEvent { round:number; player:TttPlayerRef; oldBalance:number; balance:number; reason:string; }
 export interface Contract {
  methods:ShopMethods;
  forwards:{
   /** A purchase was charged and delivered. Refused, vetoed and refunded purchases are not sent. */
   OnPurchase:Notification<TttPurchaseEvent>;
+  /** A credit change committed (not vetoed, not zero). Sent for gains and spends alike. */
+  OnBalanceChanged:Notification<TttBalanceChangedEvent>;
  };
 }

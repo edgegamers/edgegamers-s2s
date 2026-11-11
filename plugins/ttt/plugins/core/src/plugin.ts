@@ -80,7 +80,7 @@ import {
   checkEndConditions, game, initGame, inWarmup, onEngineRoundEnd, onEngineRoundStart,
   reconcileRound, roundEpoch, setRoundDeadline, setRoundSanctions, startGame, syncRosterAndAnnounce, tickCountdown, tickWaiting,
 } from "./game/game";
-import { logPurchase, logRoleAssigned } from "./game/logger";
+import { logLines, logPurchase, logRoleAssigned } from "./game/logger";
 import { roleName } from "./game/roles";
 
 import {
@@ -264,7 +264,7 @@ export function OnPluginStart(): void {
   });
   bindForwards(handle, {
     round: roundEpoch, mapName: () => Server.mapName, steamIdOf: reg.steamIdOf, nameOf: reg.nameOf,
-    roleOf: reg.roleOf, isConnected: reg.isConnected, isAlive: reg.isAlive,
+    roleOf: reg.roleOf, isConnected: reg.isConnected, isAlive: reg.isAlive, roundLog: logLines,
   });
   watchOptional('@edgegamers/ttt-karma', (provider, scope) => {
     scope.own(bindKarmaProvider(provider));

@@ -2,9 +2,9 @@
 
 # Portal bridge
 
-Sends game events from an EdgeGamers server to the CS portal (`edgegamers/s2s-cs-web`). This first
-slice reports Jailbreak round start and round end, so the portal's server page shows when the
-server was last seen and how many events it has sent.
+Sends game events from an EdgeGamers server to the CS portal (`edgegamers/s2s-cs-web`): Jailbreak
+round start and end, and TTT rounds (roles, kills, bodies found, purchases, special rounds, credits
+earned, playtime and the round log), which the portal turns into its TTT round pages.
 
 Game plugins never import this one. It listens to their forwards as optional dependencies, so a
 server without it, or without a given game plugin, runs exactly as before.
@@ -59,6 +59,24 @@ game's tick clock, not the wall clock.
 
 A round end with no start seen (the plugin or core loaded mid-round, or a map change) is not sent.
 
+### TTT
+
+From `@edgegamers/ttt-core`, `ttt-shop` and `ttt-special` (all optional). A player is
+`{ steamId, name }`, with `steamId` the decimal SteamID64 (`""` for a bot). Roles are `innocent`,
+`traitor`, `detective` (or `none`). In-round events also carry `atMs`, ms since round start.
+
+| Type | When | `data` |
+| --- | --- | --- |
+| `ttt.round.start` | Core OnRoundStart (roles dealt, round live) | `number` (Core's round identity), `players: [{ steamId, name, role }]`, `special: [{ id, name }]` (special rounds that started with it) |
+| `ttt.kill` | Core OnPlayerKilled | `victim`, `victimRole`, `killer` (null for suicide or world), `killerRole`, `weapon`, `headshot`, `correct` (right for the killer's role) |
+| `ttt.body.found` | Core OnBodyFound | `finder`, `finderRole`, `owner`, `ownerRole` |
+| `ttt.purchase` | Shop OnPurchase (charged and delivered) | `player`, `role`, `itemId`, `price` |
+| `ttt.special` | Special OnSpecialRoundStarted after the round went live | `special: [{ id, name }]` |
+| `ttt.round.end` | Core OnRoundEnd | `number`, `winner` (`none` for a draw or other non-role end), `reason`, `players: [{ steamId, name, role, alive, creditsEarned, playtimeSeconds }]`, `log` (Core's round log lines), `durationMs`, `liveMs` |
+
+`creditsEarned` sums a player's credit gains in the round (Shop OnBalanceChanged), starting grant
+included. `playtimeSeconds` runs from round start to round end, or to when the player left.
+
 ## Commands (server console)
 
 | Command | What |
@@ -82,9 +100,10 @@ A round end with no start seen (the plugin or core loaded mid-round, or a map ch
 
 | File | What |
 | --- | --- |
-| `src/plugin.ts` | Wiring: config, outbox open, sender timer, Jailbreak watch, commands |
+| `src/plugin.ts` | Wiring: config, outbox open, sender timer, Jailbreak and TTT watches, commands |
 | `src/envelope.ts` | Event shape and the per-round builder (round id, seq, durations) — pure |
 | `src/jb.ts` | Jailbreak forward handlers — pure |
+| `src/ttt.ts` | TTT forward handlers: buffers pre-start roles, credits and specials — pure |
 | `src/outbox.ts` | SQLite outbox and the in-memory write buffer |
 | `src/sender.ts` | Batch sender: acks, holds, backoff, pause |
 | `src/token.ts` | API key to JWT exchange |
