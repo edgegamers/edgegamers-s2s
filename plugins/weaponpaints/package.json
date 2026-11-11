@@ -116,7 +116,7 @@
       },
       "command_stattrak": {
         "type": "string",
-        "default": "stattrak,st",
+        "default": "stattrak",
         "description": "StatTrak toggle aliases (CommandStattrak)."
       },
       "command_skin": {
