@@ -2,7 +2,7 @@
   "name": "@edgegamers/s2s-portal",
   "version": "0.0.0",
   "type": "module",
-  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak round start and end; TTT rounds, kills, bodies, purchases and special rounds), and holds a live WebSocket that applies skin changes made on the portal.",
+  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), and holds a live WebSocket that applies skin changes made on the portal.",
   "main": "src/plugin.ts",
   "repository": {
     "type": "git",
@@ -17,6 +17,9 @@
     "interfaceProtocol": 2,
     "optionalPluginDependencies": {
       "@edgegamers/jailbreak-core": "^1.1.0",
+      "@edgegamers/jailbreak-warden": "^1.1.0",
+      "@edgegamers/jailbreak-lastrequest": "^1.1.0",
+      "@edgegamers/jailbreak-specialdays": "^1.0.0",
       "@edgegamers/ttt-core": "^2.1.0",
       "@edgegamers/ttt-shop": "^2.0.0",
       "@edgegamers/ttt-special": "^2.0.0",

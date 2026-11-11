@@ -10,6 +10,7 @@ import { setPawnColor } from "@edgegamers/jailbreak-shared";
 import { markRebel, unmarkRebel } from "./rebels";
 import { openNearest, toPoint } from "./cells";
 import { log, describe } from "./logs";
+import { markAdminEnd } from "./round";
 import { msg } from "./messages";
 
 type Sub = (cmd: CommandInvocation) => void;
@@ -55,6 +56,7 @@ const subs: Record<string, Sub> = {
 
   // css_debug endround
   endround(cmd) {
+    markAdminEnd();
     Server.command("mp_ignore_round_win_conditions 0");
     const ok = GameRules.get()?.setTimeRemaining(0) ?? false;
     log(`An admin ended the round.`);

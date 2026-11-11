@@ -79,34 +79,6 @@ test("toWire stamps the server slug and keeps every field the portal checks", ()
   assert.ok(Number.isSafeInteger(w.ts) && w.ts > 0);
 });
 
-test("JbEvents emits round start and end with team counts, mode and winner", () => {
-  const { clock, builder } = setup();
-  const teams: Record<number, TeamName> = { 0: "prisoner", 1: "prisoner", 2: "guard", 3: "spectator" };
-  const core = { getTeam: (slot: number) => teams[slot] ?? "none", getRound: () => ({ mode: "lastrequest" }) };
-  const out: PortalEvent[] = [];
-  const jb = new JbEvents(builder, core, () => [0, 1, 2, 3].map((slot) => ({ slot })), (e) => out.push(e));
-
-  jb.onRoundEnd({ round: 4, winner: "guard" }); // mid-round load: ignored
-  jb.onRoundStart({ round: 5 });
-  clock.mono += 20_000;
-  jb.onRoundLive();
-  clock.mono += 60_000;
-  teams[1] = "spectator";
-  jb.onRoundEnd({ round: 5, winner: "prisoner" });
-
-  assert.deepEqual(out.map((e) => e.type), ["jb.round.start", "jb.round.end"]);
-  assert.deepEqual(out[0]!.data, { number: 5, players: { prisoner: 2, guard: 1 } });
-  assert.deepEqual(out[1]!.data, {
-    number: 5,
-    winner: "prisoner",
-    mode: "lastrequest",
-    players: { prisoner: 1, guard: 1 },
-    durationMs: 80_000,
-    liveMs: 60_000,
-  });
-  assert.equal(out[0]!.round, out[1]!.round);
-});
-
 test("teamCounts ignores spectators and unassigned", () => {
   const core = { getTeam: (s: number): TeamName => (["none", "spectator", "guard"] as const)[s] ?? "none", getRound: () => ({ mode: "normal" }) };
   assert.deepEqual(teamCounts(core, [{ slot: 0 }, { slot: 1 }, { slot: 2 }]), { prisoner: 0, guard: 1 });

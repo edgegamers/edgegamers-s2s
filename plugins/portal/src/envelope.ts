@@ -46,6 +46,7 @@ interface OpenRound {
   seq: number;
   startMono: number;
   liveMono: number | null;
+  ended: boolean;
 }
 
 /**
@@ -73,33 +74,40 @@ export class EventBuilder {
   /** Open a round (closing any unended one silently) and build its start event, `seq` 0. */
   startRound(type: string, data: Record<string, unknown>): PortalEvent {
     const now = this.clock.wallMs();
-    this.round = { id: this.ulid(now), map: this.currentMap(), seq: 0, startMono: this.clock.monoMs(), liveMono: null };
+    this.round = { id: this.ulid(now), map: this.currentMap(), seq: 0, startMono: this.clock.monoMs(), liveMono: null, ended: false };
     return this.build(type, data, now);
   }
 
-  /** Note when the round went live (freeze time ended). */
-  markLive(): void {
-    if (this.round && this.round.liveMono === null) this.round.liveMono = this.clock.monoMs();
+  /** Note when the round went live (freeze time ended). False when there is no open round. */
+  markLive(): boolean {
+    if (!this.round || this.round.ended || this.round.liveMono !== null) return false;
+    this.round.liveMono = this.clock.monoMs();
+    return true;
   }
 
-  /** An event inside the open round, or null when no round is open. */
+  /**
+   * An event inside the current round, or null when there is none. After the round's end event
+   * the round stays current until the next start, so what other plugins report while closing the
+   * round (warden removed, rebels cleared, an LR's result, post-round deaths) keeps its round id;
+   * those events have a higher `seq` and `atMs` than the end.
+   */
   inRound(type: string, data: Record<string, unknown>): PortalEvent | null {
     if (!this.round) return null;
     return this.build(type, { ...data, atMs: this.elapsed(this.round.startMono) }, this.clock.wallMs());
   }
 
   /**
-   * Close the open round and build its end event with `durationMs` (start to end) and `liveMs`
+   * End the open round and build its end event with `durationMs` (start to end) and `liveMs`
    * (live to end, null if it never went live). Null when no round is open, e.g. the plugin loaded
    * mid-round.
    */
   endRound(type: string, data: Record<string, unknown>): PortalEvent | null {
     const r = this.round;
-    if (!r) return null;
+    if (!r || r.ended) return null;
     const durationMs = this.elapsed(r.startMono);
     const liveMs = r.liveMono === null ? null : this.elapsed(r.liveMono);
     const event = this.build(type, { ...data, durationMs, liveMs }, this.clock.wallMs());
-    this.round = null;
+    r.ended = true;
     return event;
   }
 

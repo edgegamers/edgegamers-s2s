@@ -122,7 +122,7 @@ export function registerCommands(): void {
       }
     }
     const byWarden = isWarden(slot);
-    if (!openCells(byWarden ? "warden" : "admin")) {
+    if (!openCells(byWarden ? "warden" : "admin", slot)) {
       Chat.toAll(msg.openingFailed);
       return H;
     }

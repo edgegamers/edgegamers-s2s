@@ -51,3 +51,16 @@ test("mapStart resets the counter and mode", () => {
   assert.equal(s.mapStart(), "lastguard");
   assert.deepEqual(s.info(), { round: 0, phase: "waiting", mode: "normal", startedAt: 0 });
 });
+
+test("an admin end lasts until the next round start or map start", () => {
+  const s = new RoundState();
+  s.start(100, false);
+  s.adminEnded = true;
+  s.end();
+  assert.equal(s.adminEnded, true);
+  s.start(200, false);
+  assert.equal(s.adminEnded, false);
+  s.adminEnded = true;
+  s.mapStart();
+  assert.equal(s.adminEnded, false);
+});

@@ -10,6 +10,7 @@
 import { after, Clients, command, config, Database, every, fetch, Server, watchOptional } from "@s2script/sdk";
 import type { Client, Timer } from "@s2script/sdk";
 import { WebSocket } from "@s2script/sdk/ws";
+import { Events } from "@s2script/cs2";
 import { EventBuilder, type Clock, type PortalEvent } from "./envelope.ts";
 import type { Fetch } from "./http.ts";
 import { JbEvents } from "./jb.ts";
@@ -57,8 +58,10 @@ function emit(event: PortalEvent): void {
   writer.push(event);
 }
 
-function humans(): { slot: number }[] {
-  return Clients.all().filter((c) => c.isValid() && !c.isBot);
+function clients(): { slot: number; bot: boolean }[] {
+  return Clients.all()
+    .filter((c) => c.isValid())
+    .map((c) => ({ slot: c.slot, bot: c.isBot }));
 }
 
 function openOutbox(): void {
@@ -180,19 +183,74 @@ function applySettings(): void {
 }
 
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
+/** Set while `@edgegamers/jailbreak-core` is loaded. */
+let jbEvents: JbEvents | null = null;
 const ttt = new TttEvents(new EventBuilder("ttt", ulid, clock, () => Server.mapName), clock, emit);
 
 export function OnPluginStart(): void {
   applySettings();
   config.onChange(() => applySettings());
 
+  // Jailbreak: core is the anchor (round ids, teams, rebels); the other plugins add to its rounds.
   watchOptional("@edgegamers/jailbreak-core", (core, scope) => {
-    const jb = new JbEvents(jbBuilder, core, humans, emit);
+    const jb = new JbEvents(jbBuilder, core, clients, emit);
+    jbEvents = jb;
     scope.own(core.on("OnRoundStart", (ev) => guard("OnRoundStart", () => jb.onRoundStart(ev))));
     scope.own(core.on("OnRoundLive", () => guard("OnRoundLive", () => jb.onRoundLive())));
     scope.own(core.on("OnRoundEnd", (ev) => guard("OnRoundEnd", () => jb.onRoundEnd(ev))));
+    scope.own(core.on("OnModeChanged", (ev) => guard("OnModeChanged", () => jb.onModeChanged(ev))));
+    scope.own(core.on("OnCellsOpened", (ev) => guard("OnCellsOpened", () => jb.onCellsOpened(ev))));
+    scope.own(core.on("OnRebelChanged", (ev) => guard("OnRebelChanged", () => jb.onRebelChanged(ev))));
+    scope.own(core.on("OnBombDetonated", (ev) => guard("OnBombDetonated", () => jb.onBombDetonated(ev))));
+    scope.own(core.on("OnLog", (ev) => guard("OnLog", () => jb.onLog(ev))));
     // A core reload mid-round loses the round's start: drop it rather than send a broken end.
-    scope.own({ dispose: () => jbBuilder.reset() });
+    scope.own({
+      dispose: () => {
+        jbEvents = null;
+        jbBuilder.reset();
+      },
+    });
+  });
+
+  watchOptional("@edgegamers/jailbreak-warden", (warden, scope) => {
+    scope.own(warden.on("OnWardenAssigned", (ev) => guard("OnWardenAssigned", () => jbEvents?.onWardenAssigned(ev))));
+    scope.own(warden.on("OnWardenRemoved", (ev) => guard("OnWardenRemoved", () => jbEvents?.onWardenRemoved(ev))));
+  });
+
+  watchOptional("@edgegamers/jailbreak-lastrequest", (lr, scope) => {
+    scope.own(lr.on("OnLREnabled", (ev) => guard("OnLREnabled", () => jbEvents?.onLREnabled(ev))));
+    scope.own(lr.on("OnLRStart", (ev) => guard("OnLRStart", () => jbEvents?.onLRStart(ev))));
+    scope.own(lr.on("OnLREnd", (ev) => guard("OnLREnd", () => jbEvents?.onLREnd(ev))));
+    scope.own(lr.on("OnLastGuardStart", (ev) => guard("OnLastGuardStart", () => jbEvents?.onLastGuardStart(ev))));
+    scope.own(lr.on("OnLastGuardEnd", (ev) => guard("OnLastGuardEnd", () => jbEvents?.onLastGuardEnd(ev))));
+  });
+
+  watchOptional("@edgegamers/jailbreak-specialdays", (sd, scope) => {
+    scope.own(sd.on("OnSpecialDayStart", (ev) => guard("OnSpecialDayStart", () => jbEvents?.onSpecialDayStart(ev))));
+    scope.own(sd.on("OnSpecialDayEnd", (ev) => guard("OnSpecialDayEnd", () => jbEvents?.onSpecialDayEnd(ev))));
+  });
+
+  // Pre hook: core clears the victim's rebel mark in its post handler, and the death needs it.
+  Events.onPre("player_death", (ev) => {
+    guard("player_death", () =>
+      jbEvents?.onDeath({
+        victim: ev.getPlayerSlot("userid"),
+        attacker: ev.getPlayerSlot("attacker"),
+        assister: ev.getPlayerSlot("assister"),
+        weapon: ev.getString("weapon"),
+        headshot: ev.getBool("headshot"),
+      }),
+    );
+  });
+  Events.on("player_hurt", (ev) => {
+    guard("player_hurt", () =>
+      jbEvents?.onHurt({
+        victim: ev.getPlayerSlot("userid"),
+        attacker: ev.getPlayerSlot("attacker"),
+        damage: ev.getInt("dmg_health"),
+        weapon: ev.getString("weapon"),
+      }),
+    );
   });
 
   watchOptional("@edgegamers/ttt-core", (core, scope) => {
