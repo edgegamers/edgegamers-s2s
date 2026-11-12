@@ -128,11 +128,12 @@ EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter t
 - `!wp` waits for the reload before re-applying; in-session StatTrak kills survive it.
 - `storage = "plugin"` hands loading and saving to another plugin instead of a database.
 - Re-giving a knife skips upstream's temporary USP/knife swap; the player is switched to slot 3.
-- A stock knife is swapped for a newly given knife of the chosen model, not changed in place with
-  `ChangeSubclass`. Upstream changes it inside a GiveNamedItem hook, before the client has seen the
-  knife; s2script has no such hook, and changing a knife the client already holds leaves it
-  invisible or drawn backwards. For the same reason the `item_pickup` re-apply is dropped: a
-  picked-up knife keeps the skin of the player it was given to.
+- Upstream paints from a GiveNamedItem hook, which s2script does not have. Weapons are painted
+  from a post-simulation frame hook instead, before the frame's snapshot is sent, so the knife's
+  model (`ChangeSubclass`) and finish are set before the client sees it. A knife the client
+  already has keeps its model, because changing it then draws it invisible or backwards. For the
+  same reason the `item_pickup` re-apply is dropped: a picked-up knife keeps the skin of the
+  player it was given to.
 - `!st` is not a default StatTrak alias, because the JailBreak warden plugin uses it.
 - Weapons are removed through their owner's weapon services, not a delayed `Kill` input.
 - The database layer is portable SQL (no `ON DUPLICATE KEY`), so SQLite and Postgres also work.

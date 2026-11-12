@@ -45,75 +45,15 @@ function debug(message: string): void {
 export function resetMapState(): void {
   nextItemId = MINIMUM_CUSTOM_ITEM_ID;
   fadeSeed = 0;
-  ungivableKnives.clear();
   painted.clear();
   spawned = [];
 }
 
-// ---- knife replacement -----------------------------------------------------------------------
+// ---- painted-on-give bookkeeping -----------------------------------------------------------
 
-/** Knife classes the engine refused to give this map: those players keep the stock knife. */
-const ungivableKnives = new Set<string>();
-/** Slots whose knife is being replaced right now, so the nested apply cannot recurse. */
-const replacing = new Set<number>();
-/** Weapons already painted on creation, so their own next-frame spawn apply skips them. */
+/** Weapons already painted on creation, so their own spawn apply skips them. */
 const painted = new Set<string>();
 const refKey = (ref: EntityRef): string => `${ref.index}:${ref.id}`;
-
-/**
- * Swap a knife of the wrong model for a fresh one of the chosen class.
- *
- * Upstream changes the model in place (ChangeSubclass) from inside GiveNamedItem, before the knife
- * is ever networked. s2script has no GiveNamedItem hook, so here the knife has already been sent
- * to the client, and often deployed, when it is seen. Changing its subclass then leaves the view
- * model out of step with the world model: the knife is invisible, or the player's own inventory
- * knife is drawn held backwards while inspect plays the chosen one. A newly given knife is created
- * with the right model, so the client never sees a mismatch.
- */
-function replaceKnife(player: Player, weapon: Weapon, knife: string, def: number): void {
-  const pawn = player.pawn;
-  const slot = player.slot;
-  if (!pawn?.isValid || replacing.has(slot) || ungivableKnives.has(knife)) {
-    debug(`knife slot ${slot}: not replaced (pawn ${pawn?.isValid ? 'ok' : 'gone'}, ` +
-      `nested ${replacing.has(slot)}, ungivable ${ungivableKnives.has(knife)})`);
-    return;
-  }
-  const wasActive = pawn.activeWeapon?.ref.index === weapon.ref.index;
-  if (!pawn.removeWeapon(weapon)) {
-    debug(`knife slot ${slot}: removeWeapon failed, keeping defindex ${weaponDefindex(weapon)}`);
-    return;
-  }
-  replacing.add(slot);
-  try {
-    const fresh = pawn.giveNamedItem(knife);
-    debug(`knife slot ${slot}: gave ${knife} -> ${fresh?.isValid() ? `defindex ${weaponDefindex(fresh)}` : 'nothing'}`);
-    if (!fresh?.isValid()) {
-      ungivableKnives.add(knife);
-      console.log(`[WeaponPaints] could not give ${knife}; keeping the stock knife this map`);
-      pawn.giveNamedItem('weapon_knife');
-    } else {
-      // Same tick as its creation, before it is networked: safe to fix the subclass if the engine
-      // mapped the class name to another definition.
-      if (weaponDefindex(fresh) !== def) fresh.ref.acceptInput('ChangeSubclass', String(def));
-      applyWeaponSkin(player, fresh, knife);
-      painted.add(refKey(fresh.ref));
-    }
-  } finally {
-    replacing.delete(slot);
-  }
-  if (wasActive) Clients.fromSlot(slot)?.command('slot3');
-}
-
-/** The knife class to give the player: their chosen knife when it may be applied, else the stock one. */
-function knifeToGive(player: Player): string {
-  const loadout = getLoadout(player.slot);
-  const team = asTeam(player.teamNum);
-  const knife = settings.skinEnabled && loadout?.userId === player.userId ? changedKnife(loadout, team) : null;
-  if (!knife || ungivableKnives.has(knife)) return 'weapon_knife';
-  const def = defindexOf(knife);
-  if (def === 0 || !mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife })) return 'weapon_knife';
-  return knife;
-}
 
 // ---- offsets ---------------------------------------------------------------------------------
 
@@ -245,8 +185,15 @@ function applyKeyChain(weapon: Weapon, info: WeaponInfo): void {
   weapon.setAttribute('keychain slot 0 seed', bitsAsFloat(k.seed));
 }
 
-/** GivePlayerWeaponSkin: knife model, paint kit, wear, seed, name tag, StatTrak, stickers, keychain. */
-export function applyWeaponSkin(player: Player, weapon: Weapon, className: string | null): void {
+/**
+ * GivePlayerWeaponSkin: knife model, paint kit, wear, seed, name tag, StatTrak, stickers, keychain.
+ *
+ * `fresh` means the client has not seen this weapon yet: it was spawned or given this frame and
+ * the frame's snapshot has not gone out. Only then is a knife's model changed (ChangeSubclass), as
+ * upstream does from its GiveNamedItem hook. Changing the model of a knife the client already has
+ * draws it invisible or backwards, so a stale knife keeps its model and finish.
+ */
+export function applyWeaponSkin(player: Player, weapon: Weapon, className: string | null, fresh = true): void {
   if (!settings.skinEnabled || !weapon.isValid()) return;
   const loadout = getLoadout(player.slot);
   if (!loadout || loadout.userId !== player.userId) {
@@ -266,10 +213,13 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     if (!knife || def === 0) return;
     // Vetoed: the stock knife stays, unpainted (a knife paint is keyed to the knife's own defindex).
     if (!allowed) return;
-    if (weaponDefindex(weapon) !== def && !replacing.has(player.slot)) {
-      // A fresh knife of the chosen class is painted as it is given.
-      replaceKnife(player, weapon, knife, def);
-      return;
+    if (weaponDefindex(weapon) !== def) {
+      if (!fresh) {
+        debug(`knife slot ${player.slot}: already sent to the client, model left as is`);
+        return;
+      }
+      weapon.ref.acceptInput('ChangeSubclass', String(def));
+      debug(`knife slot ${player.slot}: model changed to ${knife}, now defindex ${weaponDefindex(weapon)}`);
     }
     item.itemDefinitionIndex = def;
     item.entityQuality = 3;
@@ -362,7 +312,7 @@ export function paintSpawnedWeapons(): void {
       debug(`knife spawned: ${entry.className} defindex ${weaponDefindex(weapon)}, original owner ` +
         `${weapon.originalOwnerXuidLow ?? 0}, player ${player ? `slot ${player.slot}` : 'not found'}`);
     }
-    if (player) applyWeaponSkin(player, weapon, entry.className);
+    if (player) applyWeaponSkin(player, weapon, entry.className, !entry.retried);
     // Not owned yet (spawned outside a give): look once more next frame, as upstream's fallback does.
     else if (!entry.retried) spawned.push({ ...entry, retried: true });
   }
@@ -422,7 +372,9 @@ export function refreshWeapons(player: Player): void {
     if (!commandsAllowed || !current || current.userId !== userId || !isAlive(current)) return;
     const body = current.pawn!;
     if (hadKnife && !body.weapons.some(w => w.isValid() && w.data?.gearSlot === GEAR_SLOT_KNIFE)) {
-      const knife = body.giveNamedItem(knifeToGive(current));
+      // The engine refuses knife subclasses by name: give the stock knife and change its model
+      // now, in the same call, before the client sees it.
+      const knife = body.giveNamedItem('weapon_knife');
       if (knife?.isValid()) {
         applyWeaponSkin(current, knife, null);
         painted.add(refKey(knife.ref));
