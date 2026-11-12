@@ -56,8 +56,22 @@ late. Contract: `docs/live.md` in `edgegamers/s2s-cs-web`.
 | --- | --- |
 | `skins.refresh` (a player saved skins on the website) | If that player is on this server, `@edgegamers/s2s-weaponpaints` `reload(slot)`: reads their rows again and applies them, as `!wp` does |
 | `skins.policy.changed` (an admin changed the tier policy) | `@edgegamers/s2s-weaponpaints-ds` `reloadPolicy()`: fetches the policy now instead of at map start |
+| `pug.match.changed` (this server's PUG is ready to play, or was cancelled) | Reads `GET /api/v1/pug/match` and hands it to `@edgegamers/s2s-pug` (see PUGs below) |
 
-Both plugins are optional dependencies; without them the messages are ignored.
+These plugins are optional dependencies; without them the messages are ignored.
+
+## PUGs
+
+With `@edgegamers/s2s-pug` loaded, the portal's PUG matches are played here (s2s-cs-web
+`docs/pug.md`). The plugin reads this server's match from `GET /api/v1/pug/match` when the PUG
+plugin loads, on every live-channel connect and on `pug.match.changed`, retrying failed reads
+(5s doubling to 2 minutes). A match is passed to the PUG plugin's `load`; no match while one is
+being played means it was cancelled on the portal, and the PUG plugin's `clear` stops it.
+
+The PUG plugin's forwards go back as mode `pug` events, `round` = the match id:
+`pug.match.state` (warmup, knife, live), `pug.round.end` (score per portal team and player
+stats) and `pug.match.end`. They are sent at once rather than on the next batch tick, so the
+match page's score is near-live. The server must be allowed the PUG mode in the portal.
 
 ## Skins storage
 
@@ -141,6 +155,7 @@ included. `playtimeSeconds` runs from round start to round end, or to when the p
 | --- | --- |
 | `portal_status` | Sending state, events sent this session, last success, outbox counts, and the live channel's state |
 | `portal_resume` | Clears a pause and puts held events back in the queue |
+| `portal_pug_sync` | Reads this server's PUG match from the portal now |
 
 ## Config
 

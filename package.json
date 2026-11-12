@@ -26,6 +26,7 @@
     "plugins/extracommands",
     "plugins/weaponpaints",
     "plugins/weaponpaints-ds",
+    "plugins/pug",
     "plugins/portal",
     "packages/*"
   ],
@@ -43,6 +44,7 @@
         "plugins/extracommands",
         "plugins/weaponpaints",
         "plugins/weaponpaints-ds",
+        "plugins/pug",
         "plugins/portal"
       ],
       "bundles": [

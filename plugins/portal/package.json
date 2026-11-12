@@ -2,7 +2,7 @@
   "name": "@edgegamers/s2s-portal",
   "version": "0.1.0",
   "type": "module",
-  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, and is WeaponPaints' storage over the portal API.",
+  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, is WeaponPaints' storage over the portal API, and hands PUG matches from the portal to the PUG plugin and their score back.",
   "main": "src/plugin.ts",
   "repository": {
     "type": "git",
@@ -24,7 +24,8 @@
       "@edgegamers/ttt-shop": "^2.0.0",
       "@edgegamers/ttt-special": "^2.0.0",
       "@edgegamers/s2s-weaponpaints": "^0.2.0",
-      "@edgegamers/s2s-weaponpaints-ds": "^0.0.0"
+      "@edgegamers/s2s-weaponpaints-ds": "^0.0.0",
+      "@edgegamers/s2s-pug": "^0.0.0"
     },
     "config": {
       "portal_url": {

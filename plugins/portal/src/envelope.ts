@@ -7,7 +7,7 @@
  */
 import type { UlidFactory } from "./ulid.ts";
 
-export type Mode = "jb" | "ttt" | "surf";
+export type Mode = "jb" | "ttt" | "surf" | "pug";
 
 /** One event as queued in the outbox. */
 export interface PortalEvent {
