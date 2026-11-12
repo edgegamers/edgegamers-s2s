@@ -82,6 +82,7 @@ between round end and the next round start, as upstream.
 | `give_random_skin` | `Additional.GiveRandomSkin` | `false` |
 | `show_skin_image` | `Additional.ShowSkinImage` | `true` |
 | `menu_type` | `MenuType` | `selectable` |
+| `debug` | not upstream | `false` (log each knife apply step) |
 
 The `Database*` settings are replaced by the `weaponpaints` connection above. `GiveRandomKnife`
 is not ported: upstream declares it but never reads it. `menu_type` `chat` or `console` uses the
@@ -94,7 +95,7 @@ plugin's files directory under `data/` and set `skins_language`. Chat text is in
 
 ## What is applied, and when
 
-- **Weapons**: when any `weapon_*` entity spawns, on the next frame, for its original owner (or its
+- **Weapons**: when any `weapon_*` entity spawns, at the end of that frame (before the client sees it), for its original owner (or its
   holder): knife model, paint kit, wear, seed (a fresh pattern per weapon for an
   unseeded Fade), name tag, StatTrak counter, up to five stickers and one keychain, and the legacy
   model body group. Kills with a StatTrak weapon count up and are written back on disconnect.
@@ -127,11 +128,12 @@ EdgeGamers' listener is `@edgegamers/s2s-weaponpaints-ds` (Dedicated Supporter t
 - `!wp` waits for the reload before re-applying; in-session StatTrak kills survive it.
 - `storage = "plugin"` hands loading and saving to another plugin instead of a database.
 - Re-giving a knife skips upstream's temporary USP/knife swap; the player is switched to slot 3.
-- A stock knife is swapped for a newly given knife of the chosen model, not changed in place with
-  `ChangeSubclass`. Upstream changes it inside a GiveNamedItem hook, before the client has seen the
-  knife; s2script has no such hook, and changing a knife the client already holds leaves it
-  invisible or drawn backwards. For the same reason the `item_pickup` re-apply is dropped: a
-  picked-up knife keeps the skin of the player it was given to.
+- Upstream paints from a GiveNamedItem hook, which s2script does not have. Weapons are painted
+  from a post-simulation frame hook instead, before the frame's snapshot is sent, so the knife's
+  model (`ChangeSubclass`) and finish are set before the client sees it. A knife the client
+  already has keeps its model, because changing it then draws it invisible or backwards. For the
+  same reason the `item_pickup` re-apply is dropped: a picked-up knife keeps the skin of the
+  player it was given to.
 - `!st` is not a default StatTrak alias, because the JailBreak warden plugin uses it.
 - Weapons are removed through their owner's weapon services, not a delayed `Kill` input.
 - The database layer is portable SQL (no `ON DUPLICATE KEY`), so SQLite and Postgres also work.

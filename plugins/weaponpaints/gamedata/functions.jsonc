@@ -15,7 +15,9 @@
       },
       "receiver": { "type": "none" },
       "parameters": [
-        { "name": "list", "type": "ptr" },
+        // The list's address as an integer: s2script's engine-call bridge rejects a raw `ptr`
+        // parameter ("unsupported native/projection pair"), and u64 is the same register.
+        { "name": "list", "type": "u64" },
         { "name": "name", "type": "string", "ownership": "callee-borrowed" },
         { "name": "value", "type": "f32" }
       ],
