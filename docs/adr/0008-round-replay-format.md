@@ -1,0 +1,9 @@
+# Record 3D round replays every tick in one shared binary format
+
+November 12, 2026. 3D round replays on the portal need every player's movement, view and weapon for the whole round, so the bridge records **every tick** (64 Hz), not a reduced rate: the replay is meant to be a faithful recreation of what happened. Positions are sampled by the plugin rather than parsed from GOTV demos.
+
+The format lives in one zero-dependency TypeScript package, `packages/round-replay` (`@edgegamers/round-replay`). The bridge plugin uses its `RoundRecorder`; the portal uses its streaming `ReplayDecoder` in a web worker. The portal copies the package's `src/` verbatim and records the source commit, so there is exactly one implementation of the layout. No protobuf or other schema runtime: like the surftimer replay format, it is fixed column order over typed arrays.
+
+Each file is one round: a header (round id, map, mode, tick timing, weapon names, players with SteamID64, name, crosshair share code and present-tick span) and then self-contained chunks of 256 ticks. Inside a chunk each player's columns (position, eye angles, velocity, flags, buttons, active weapon, alive/team, duck amount) are delta-coded (second-order for position) as zigzag varints, followed by that chunk's events (weapon_fire, bullet_impact, player_hurt, player_death). Weapon switches are read from the per-tick weapon column. The plugin gzips the file off-thread and uploads it at round end; the browser gunzips with DecompressionStream and plays chunks as they arrive.
+
+The game thread only quantises samples into preallocated rows and varint-encodes one chunk every 4 seconds. A synthetic 40-player, 3-minute round records at about 15 µs per tick and is about 0.45 MB gzipped; real movement is noisier, so expect somewhat more. Columns and event types are append-only: v1 decoders drop columns past the ones they know and skip unknown events by length.

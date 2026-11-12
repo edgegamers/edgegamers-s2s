@@ -1,0 +1,6 @@
+{
+  "extends": "../../plugins/surftimer/tsconfig.base.json",
+  "include": [
+    "src"
+  ]
+}
