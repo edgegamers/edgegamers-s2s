@@ -139,7 +139,7 @@ export function noteModeChanged(mode: string): void {
   if (mode === "specialday") specialDayThisRound = true;
 }
 
-/** Core OnRoundStart: bans, minimum priority, then fill CT from the queue. */
+/** Core OnRoundStart: bans, minimum priority, then trim CT or fill it from the queue. */
 export function roundStart(): void {
   specialDayThisRound = false;
   resetRoundRestarts();
@@ -157,6 +157,13 @@ export function roundStart(): void {
     if (prio >= s.minPriority) continue;
     p.changeTeam(Team.Prisoner);
     Chat.toSlot(p.slot, msg.guardInsufficient(prio, s.minPriority));
+  }
+  // Prisoners may have left since the last trim (after round end, or during a special day that
+  // skipped it), so enforce the limit both ways here too.
+  const remove = guardsToRemove(playingOn(Team.Prisoner), playingOn(Team.Guard), s.ratio);
+  if (remove > 0) {
+    trimGuards(remove);
+    return;
   }
   // Only queued volunteers are moved to CT; with an empty queue CT stays short.
   const add = guardsToAdd(playingOn(Team.Prisoner), playingOn(Team.Guard), s.ratio);

@@ -175,6 +175,30 @@ test("guards go back to T only after prisoners disconnect and break the ratio", 
   assert.equal(guards(f), 2); // 5 T, 3 CT breaks it -> 6 T, 2 CT
 });
 
+test("round start trims CT when prisoners left after the last round end", () => {
+  const f = fixture();
+  const prisoners = Array.from({ length: 4 }, () => f.add(2));
+  f.add(3); f.add(3);
+  f.roundEnd();
+  assert.equal(guards(f), 2); // 4 T, 2 CT holds
+  f.disconnect(prisoners[0]); f.disconnect(prisoners[1]);
+  f.roundStart();
+  assert.equal(guards(f), 1); // 2 T, 2 CT breaks it -> 3 T, 1 CT
+});
+
+test("round start trims CT after a special day skipped the round-end trim", () => {
+  const f = fixture();
+  const prisoners = Array.from({ length: 4 }, () => f.add(2));
+  f.add(3); f.add(3);
+  f.mode("specialday");
+  f.disconnect(prisoners[0]); f.disconnect(prisoners[1]);
+  f.roundEnd();
+  assert.equal(guards(f), 2);
+  f.mode("normal");
+  f.roundStart();
+  assert.equal(guards(f), 1);
+});
+
 test("the engine's own team balancer is turned off", () => {
   const f = fixture();
   assert.ok(f.serverCommands.includes("mp_autoteambalance 0"));
