@@ -21,6 +21,7 @@ export interface Settings {
   giveRandomSkin: boolean;
   showSkinImage: boolean;
   menuType: string;
+  debug: boolean;
   commands: {
     knife: string[]; music: string[]; pin: string[]; glove: string[]; agent: string[];
     statTrak: string[]; skin: string[]; skinSelection: string[]; refresh: string[]; kill: string[];
@@ -56,6 +57,7 @@ export function readSettings(): Settings {
     giveRandomSkin: config.getBool('give_random_skin'),
     showSkinImage: config.getBool('show_skin_image'),
     menuType: config.getString('menu_type').trim().toLowerCase(),
+    debug: config.getBool('debug'),
     commands: {
       knife: aliases(config.getString('command_knife')),
       music: aliases(config.getString('command_music')),

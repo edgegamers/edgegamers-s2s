@@ -82,6 +82,7 @@ between round end and the next round start, as upstream.
 | `give_random_skin` | `Additional.GiveRandomSkin` | `false` |
 | `show_skin_image` | `Additional.ShowSkinImage` | `true` |
 | `menu_type` | `MenuType` | `selectable` |
+| `debug` | not upstream | `false` (log each knife apply step) |
 
 The `Database*` settings are replaced by the `weaponpaints` connection above. `GiveRandomKnife`
 is not ported: upstream declares it but never reads it. `menu_type` `chat` or `console` uses the

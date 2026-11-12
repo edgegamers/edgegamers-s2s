@@ -79,6 +79,10 @@ function loadClient(client: Client): Promise<boolean> {
     if (!client.isValid()) return false;
     carryStatTrak(getLoadout(slot), loadout);
     setLoadout(slot, loadout);
+    if (settings.debug) {
+      const knives = [...loadout.knife].map(([team, cls]) => `${team}=${cls}`).join(' ') || 'none';
+      log(`loaded ${steamId} (slot ${slot}): knives ${knives}`);
+    }
     return true;
   }, (e: unknown) => {
     log(`could not load ${steamId}: ${String(e)}`);

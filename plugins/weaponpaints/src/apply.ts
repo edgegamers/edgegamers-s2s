@@ -38,6 +38,10 @@ export function setCommandsAllowed(value: boolean): void {
   commandsAllowed = value;
 }
 
+function debug(message: string): void {
+  if (settings.debug) console.log(`[WeaponPaints] ${message}`);
+}
+
 export function resetMapState(): void {
   nextItemId = MINIMUM_CUSTOM_ITEM_ID;
   fadeSeed = 0;
@@ -69,12 +73,20 @@ const refKey = (ref: EntityRef): string => `${ref.index}:${ref.id}`;
 function replaceKnife(player: Player, weapon: Weapon, knife: string, def: number): void {
   const pawn = player.pawn;
   const slot = player.slot;
-  if (!pawn?.isValid || replacing.has(slot) || ungivableKnives.has(knife)) return;
+  if (!pawn?.isValid || replacing.has(slot) || ungivableKnives.has(knife)) {
+    debug(`knife slot ${slot}: not replaced (pawn ${pawn?.isValid ? 'ok' : 'gone'}, ` +
+      `nested ${replacing.has(slot)}, ungivable ${ungivableKnives.has(knife)})`);
+    return;
+  }
   const wasActive = pawn.activeWeapon?.ref.index === weapon.ref.index;
-  if (!pawn.removeWeapon(weapon)) return;
+  if (!pawn.removeWeapon(weapon)) {
+    debug(`knife slot ${slot}: removeWeapon failed, keeping defindex ${weaponDefindex(weapon)}`);
+    return;
+  }
   replacing.add(slot);
   try {
     const fresh = pawn.giveNamedItem(knife);
+    debug(`knife slot ${slot}: gave ${knife} -> ${fresh?.isValid() ? `defindex ${weaponDefindex(fresh)}` : 'nothing'}`);
     if (!fresh?.isValid()) {
       ungivableKnives.add(knife);
       console.log(`[WeaponPaints] could not give ${knife}; keeping the stock knife this map`);
@@ -138,7 +150,7 @@ function listAttribute(ref: EntityRef, listOffset: number, name: string, value: 
   }
   const base = Ptr.from(ref);
   if (!base) return false;
-  setAttributeOnList.call(base.add(listOffset), name, value);
+  setAttributeOnList.call(BigInt(base.add(listOffset).address), name, value);
   return true;
 }
 
@@ -244,11 +256,13 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
 
   if (weaponIsKnife(weapon, className)) {
     const knife = changedKnife(loadout, team);
-    if (!knife) return;
-    const def = defindexOf(knife);
-    if (def === 0) return;
+    const def = knife ? defindexOf(knife) : 0;
+    const allowed = def !== 0 && mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife });
+    debug(`knife slot ${player.slot} team ${team ?? 'none'}: held ${className ?? '?'} defindex ` +
+      `${weaponDefindex(weapon)}, chosen ${knife ?? 'none'} (${def}), ${allowed ? 'allowed' : 'not applied'}`);
+    if (!knife || def === 0) return;
     // Vetoed: the stock knife stays, unpainted (a knife paint is keyed to the knife's own defindex).
-    if (!mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife })) return;
+    if (!allowed) return;
     if (weaponDefindex(weapon) !== def && !replacing.has(player.slot)) {
       // A fresh knife of the chosen class is painted as it is given.
       replaceKnife(player, weapon, knife, def);
