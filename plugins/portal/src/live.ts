@@ -1,7 +1,7 @@
 /**
  * The live channel: one outbound WebSocket to the portal's gateway (`/api/v1/live`), for messages
- * that are useless when late. Today: "this player saved skins on the web" and "the skins policy
- * changed". Contract: s2s-cs-web `docs/live.md`.
+ * that are useless when late. Today: "this player saved skins on the web", "the skins policy
+ * changed" and "this server's PUG match changed". Contract: s2s-cs-web `docs/live.md`.
  *
  * Nothing here is needed for the game to work. With the socket down, players use `!wp` and the
  * policy is fetched at map start, so every failure is logged and retried, never thrown.
@@ -49,6 +49,8 @@ export interface LiveDeps {
   onRefresh: (steamId: string) => void;
   /** The skins policy changed, or may have while disconnected. */
   onPolicyChanged: () => void;
+  /** This server's PUG match changed, or may have while disconnected (every hello). */
+  onPugChanged?: () => void;
 }
 
 export type LiveState = "stopped" | "connecting" | "connected" | "waiting";
@@ -199,6 +201,11 @@ export class LiveClient {
         this.deps.debug?.("live: skins.policy.changed");
         this.safely("skins.policy.changed", () => this.deps.onPolicyChanged());
         return;
+      case "pug.match.changed":
+        this.received++;
+        this.deps.debug?.(`live: pug.match.changed ${String(frame.matchId)}`);
+        this.safely("pug.match.changed", () => this.deps.onPugChanged?.());
+        return;
       default:
         // Newer portals may send more; unknown frames are ignored, never an error.
         return;
@@ -221,6 +228,9 @@ export class LiveClient {
     this.lastError = null;
     // A policy change sent while we were away was lost: catch up once.
     if (reconnected) this.safely("policy catch-up", () => this.deps.onPolicyChanged());
+    // The PUG match is read on every connect: a change sent while we were away was lost.
+    const onPug = this.deps.onPugChanged;
+    if (onPug) this.safely("pug catch-up", onPug);
   }
 
   private armWatchdog(gen: number): void {

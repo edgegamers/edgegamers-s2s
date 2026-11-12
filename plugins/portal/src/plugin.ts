@@ -15,6 +15,7 @@ import { EventBuilder, type Clock, type PortalEvent } from "./envelope.ts";
 import type { Fetch } from "./http.ts";
 import { JbEvents } from "./jb.ts";
 import { LiveClient } from "./live.ts";
+import { PugEvents, PugSync, type PugApi } from "./pug.ts";
 import { Outbox, OutboxWriter } from "./outbox.ts";
 import { Sender } from "./sender.ts";
 import { TttEvents } from "./ttt.ts";
@@ -50,6 +51,10 @@ let weaponPaints: WeaponPaintsApi | null = null;
 let skins: SkinsClient | null = null;
 let skinsKey = "";
 let weaponPaintsDs: { reloadPolicy(): void } | null = null;
+/** The PUG plugin, while loaded; the sync reads the portal's match for it. */
+let pugPlugin: PugApi | null = null;
+let pugSync: PugSync | null = null;
+let pugKey = "";
 
 const writer = new OutboxWriter(Date.now, log);
 const ulid = ulidFactory();
@@ -135,6 +140,7 @@ function rebuildLive(): void {
     debug: s.debug ? log : undefined,
     onRefresh: refreshPlayer,
     onPolicyChanged: () => weaponPaintsDs?.reloadPolicy(),
+    onPugChanged: () => pugSync?.sync(),
   });
   live.start();
 }
@@ -158,6 +164,33 @@ function rebuildSkins(): void {
           timeoutMs: s.httpTimeoutMs,
         });
   if (skins) reloadAllSkins();
+}
+
+/** (Re)create the PUG sync when the portal or key changed. */
+function rebuildPug(): void {
+  const s = settings;
+  const key = s.baseUrl === null ? "" : `${s.baseUrl}|${s.apiKey}|${String(s.httpTimeoutMs)}|${String(s.debug)}`;
+  if (key === pugKey) return;
+  pugKey = key;
+  pugSync =
+    s.baseUrl === null
+      ? null
+      : new PugSync({
+          baseUrl: s.baseUrl,
+          tokens: new TokenClient(s.baseUrl, s.apiKey, sdkFetch, Date.now, s.httpTimeoutMs),
+          fetch: sdkFetch,
+          schedule: (ms, fn) => void after(ms, fn),
+          log,
+          debug: s.debug ? log : undefined,
+          timeoutMs: s.httpTimeoutMs,
+        });
+  pugSync?.attach(pugPlugin);
+}
+
+/** A PUG event: queued, and sent right away so the portal's score is near-live. */
+function emitPug(event: PortalEvent): void {
+  emit(event);
+  void writer.drain().then(() => sender?.pump());
 }
 
 /** Ask WeaponPaints to load everyone again, so loads asked for before we could answer get answered. */
@@ -218,6 +251,7 @@ function applySettings(): void {
     rebuildSender();
     rebuildLive();
     rebuildSkins();
+    rebuildPug();
     return;
   }
   idleLogged = null;
@@ -232,11 +266,13 @@ function applySettings(): void {
   if (changed || !sender) rebuildSender();
   rebuildLive();
   rebuildSkins();
+  rebuildPug();
 }
 
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
 /** Set while `@edgegamers/jailbreak-core` is loaded. */
 let jbEvents: JbEvents | null = null;
+const pugEvents = new PugEvents(ulid, clock, () => Server.mapName);
 const ttt = new TttEvents(new EventBuilder("ttt", ulid, clock, () => Server.mapName), clock, emit);
 
 export function OnPluginStart(): void {
@@ -343,6 +379,27 @@ export function OnPluginStart(): void {
   watchOptional("@edgegamers/s2s-weaponpaints-ds", (ds, scope) => {
     weaponPaintsDs = ds;
     scope.own({ dispose: () => (weaponPaintsDs = null) });
+  });
+
+  watchOptional("@edgegamers/s2s-pug", (pug, scope) => {
+    pugPlugin = pug;
+    pugSync?.attach(pug);
+    scope.own({
+      dispose: () => {
+        pugPlugin = null;
+        pugSync?.attach(null);
+      },
+    });
+    scope.own(pug.on("OnStateChanged", (ev) => guard("pug OnStateChanged", () => emitPug(pugEvents.build("pug.match.state", { ...ev })))));
+    scope.own(pug.on("OnRoundEnd", (ev) => guard("pug OnRoundEnd", () => emitPug(pugEvents.build("pug.round.end", { ...ev })))));
+    scope.own(pug.on("OnMatchEnd", (ev) => guard("pug OnMatchEnd", () => emitPug(pugEvents.build("pug.match.end", { ...ev })))));
+  });
+
+  command.server("portal_pug_sync", (cmd) => {
+    if (!pugSync) return cmd.reply("[portal] idle");
+    if (!pugPlugin) return cmd.reply("[portal] @edgegamers/s2s-pug is not loaded");
+    pugSync.sync();
+    cmd.reply("[portal] reading this server's PUG match from the portal");
   });
 
   command.server("portal_status", (cmd) => {

@@ -78,6 +78,7 @@ function setup(opts: { token?: () => TokenResult; connectFails?: () => boolean }
   const headers: Record<string, string>[] = [];
   const refreshed: string[] = [];
   let policyChanges = 0;
+  let pugChanges = 0;
   let invalidations = 0;
   let mints = 0;
   const logs: string[] = [];
@@ -102,6 +103,7 @@ function setup(opts: { token?: () => TokenResult; connectFails?: () => boolean }
     random: () => 0.5,
     onRefresh: (id) => refreshed.push(id),
     onPolicyChanged: () => void policyChanges++,
+    onPugChanged: () => void pugChanges++,
   });
   return {
     clock,
@@ -112,6 +114,9 @@ function setup(opts: { token?: () => TokenResult; connectFails?: () => boolean }
     logs,
     get policyChanges() {
       return policyChanges;
+    },
+    get pugChanges() {
+      return pugChanges;
     },
     get invalidations() {
       return invalidations;
@@ -139,6 +144,14 @@ test("connects with the token and routes refresh and policy messages", async () 
   assert.deepEqual(t.refreshed, [STEAM]);
   assert.equal(t.policyChanges, 1);
   assert.equal(t.client.status().received, 2);
+});
+
+test("reads the PUG match on hello and on pug.match.changed", async () => {
+  const t = setup();
+  const s = await connected(t);
+  assert.equal(t.pugChanges, 1);
+  s.frame({ type: "pug.match.changed", matchId: 42 });
+  assert.equal(t.pugChanges, 2);
 });
 
 test("answers pings, ignores junk and unknown frames", async () => {
