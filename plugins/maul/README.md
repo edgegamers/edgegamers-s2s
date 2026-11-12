@@ -98,6 +98,12 @@ Staff-chat wrappers, DS join wrappers and command feedback use the startup-loade
 plugin. Operator overrides belong at `addons/s2script/translations/maul.phrases.json`, or under a
 language-code subdirectory for another locale. Reload the plugin after changing a phrase file.
 
+Leadership messages use the legacy dark-blue parenthesized formats. `maul.leadership.label`
+controls the displayed `LEADERSHIP` label. Incoming player messages show `#userid` to leadership;
+broadcasts show the sender to leaders and `(LEADERSHIP TO ALL)` to other players. Private messages
+use `(Private to name)` and `(From LEADERSHIP)` views. Message bodies are appended literally after
+the translated wrapper, so their braces cannot become chat color tags.
+
 ### Ranks table
 
 `configs/maul_authentication.json` maps a MAUL rank to an admin group and a name tag. It is written

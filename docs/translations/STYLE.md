@@ -23,6 +23,8 @@ Existing system prefixes use `Name » message` **in chat only**, with a blue/red
 
 TTT role mentions take precedence over the generic string color: innocent is green, traitor is red and detective is dark blue. This applies to descriptions and nested role names too. Keep stable role/item/command IDs separate from displayed translations.
 
+MAUL leadership messages retain their legacy dark-blue parenthesized wrappers, such as `(TO LEADERSHIP)`, `(Private to name)` and `(TO ALL)`, instead of the system-message arrow prefix. Their label is editable through `maul.leadership.label`.
+
 For example:
 
 ```json

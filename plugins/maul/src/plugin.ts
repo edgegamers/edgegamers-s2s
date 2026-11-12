@@ -34,7 +34,7 @@ import { loadRankTable, readConfig } from "./config.ts";
 import { dsTierOf } from "./ds-tier.ts";
 import { createLogger } from "./log.ts";
 import { NameManager } from "./names.ts";
-import { cleanChatText, literalChatText, receives, routeStaffChat } from "./staff-chat.ts";
+import { cleanChatText, isLeadership, literalChatText, receives, routeStaffChat } from "./staff-chat.ts";
 import { loadStaffChatPhrases, staffChatPhraseFor } from "./staff-chat-phrases.ts";
 import type { MaulConfig } from "./config.ts";
 import type { RankTable } from "./types.ts";
@@ -301,7 +301,7 @@ export function OnClientSayCommand(slot: number, text: string, teamonly: boolean
   const client = Clients.fromSlot(slot);
   if (client === null || client.steamId === "0") return;
   maul.presence?.playerChat(client, text, teamonly);
-  return staffChat(maul.auth, slot, client.steamId, text, teamonly);
+  return staffChat(maul.auth, slot, client.steamId, client.userId, text, teamonly);
 }
 
 /** `$` Dedicated Supporter chat and `%` leadership chat, routed off the cached MAUL profiles. */
@@ -309,6 +309,7 @@ function staffChat(
   auth: Authenticator,
   slot: number,
   steamId: string,
+  userId: number,
   text: string,
   teamonly: boolean,
 ): HookResultValue | void {
@@ -328,8 +329,9 @@ function staffChat(
     const name = cleanChatText(Player.fromSlot(slot)?.playerName ?? "");
     const targetName = cleanChatText(target.playerName ?? "");
     const body = literalChatText(route.body);
-    Chat.toSlot(target.slot, staffChatPhraseFor(target.slot, "maul.leadership.private_received", targetName, name) + body);
-    if (slot !== target.slot) Chat.toSlot(slot, staffChatPhraseFor(slot, "maul.leadership.private_sent", targetName) + body);
+    const label = staffChatPhraseFor(target.slot, "maul.leadership.label");
+    Chat.toSlot(target.slot, staffChatPhraseFor(target.slot, "maul.leadership.private_received", label, name) + body);
+    if (slot !== target.slot) Chat.toSlot(slot, staffChatPhraseFor(slot, "maul.leadership.private_sent", targetName, name) + body);
     return HookResult.Handled;
   }
   if (route.body.length === 0) return HookResult.Handled; // a bare trigger: consume, send nothing
@@ -340,13 +342,27 @@ function staffChat(
 
   for (const p of Player.allConnected()) {
     if (p.steamId === "0") continue;
-    if (!receives(route.channel, auth.profileOf(p.steamId), p.slot === slot, cfg)) continue;
-    const key = route.channel === "leadershipAll" ? "maul.leadership.to_all"
-      : route.channel === "leadershipTo" ? "maul.leadership.to_leadership" : "maul.leadership.chat";
-    const line = route.channel === "ds"
-      ? staffChatPhraseFor(p.slot, "maul.supporter.chat", name) + body
-      : staffChatPhraseFor(p.slot, key, name) + body;
-    Chat.toSlot(p.slot, line);
+    const recipient = auth.profileOf(p.steamId);
+    const isSender = p.slot === slot;
+    if (!receives(route.channel, recipient, isSender, cfg)) continue;
+    let header: string;
+    if (route.channel === "ds") {
+      header = staffChatPhraseFor(p.slot, "maul.supporter.chat", name);
+    } else {
+      const label = staffChatPhraseFor(p.slot, "maul.leadership.label");
+      if (route.channel === "leadershipAll") {
+        header = isSender || isLeadership(recipient, cfg.leadershipMinRank)
+          ? staffChatPhraseFor(p.slot, "maul.leadership.to_all", name)
+          : staffChatPhraseFor(p.slot, "maul.leadership.to_all_received", label);
+      } else if (route.channel === "leadershipTo") {
+        header = isSender
+          ? staffChatPhraseFor(p.slot, "maul.leadership.to_leadership", label, name)
+          : staffChatPhraseFor(p.slot, "maul.leadership.to_leadership_received", label, name, String(userId));
+      } else {
+        header = staffChatPhraseFor(p.slot, "maul.leadership.chat", label, name);
+      }
+    }
+    Chat.toSlot(p.slot, header + body);
   }
   log.info(`${route.channel} chat from ${steamId}: ${route.body}`);
   return HookResult.Handled;
