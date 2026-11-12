@@ -26,7 +26,8 @@
     "plugins/extracommands",
     "plugins/weaponpaints",
     "plugins/weaponpaints-ds",
-    "plugins/portal"
+    "plugins/portal",
+    "packages/*"
   ],
   "s2script": {
     "workspace": {
