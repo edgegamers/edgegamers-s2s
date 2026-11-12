@@ -302,6 +302,7 @@ export function OnPluginStart(): void {
   settings = readSettings();
   configureStore(settings.storage, handle);
   configureApply(settings, catalog);
+  if (settings.debug) log('debug logging on');
   configureMenus(settings, catalog);
   loadPhrases();
   registerCommands();

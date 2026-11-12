@@ -249,7 +249,10 @@ function applyKeyChain(weapon: Weapon, info: WeaponInfo): void {
 export function applyWeaponSkin(player: Player, weapon: Weapon, className: string | null): void {
   if (!settings.skinEnabled || !weapon.isValid()) return;
   const loadout = getLoadout(player.slot);
-  if (!loadout || loadout.userId !== player.userId) return;
+  if (!loadout || loadout.userId !== player.userId) {
+    debug(`slot ${player.slot}: no loaded selections, ${className ?? 'weapon'} left as is`);
+    return;
+  }
   const team = asTeam(player.teamNum);
   const item = weapon.attributeManager.item;
   const itemBase = weaponItemBase();
@@ -355,6 +358,10 @@ export function paintSpawnedWeapons(): void {
     const weapon = Weapon.fromEntity(entry.ref);
     if (!weapon?.isValid()) continue;
     const player = weaponPlayer(weapon);
+    if (weaponIsKnife(weapon, entry.className)) {
+      debug(`knife spawned: ${entry.className} defindex ${weaponDefindex(weapon)}, original owner ` +
+        `${weapon.originalOwnerXuidLow ?? 0}, player ${player ? `slot ${player.slot}` : 'not found'}`);
+    }
     if (player) applyWeaponSkin(player, weapon, entry.className);
     // Not owned yet (spawned outside a give): look once more next frame, as upstream's fallback does.
     else if (!entry.retried) spawned.push({ ...entry, retried: true });
