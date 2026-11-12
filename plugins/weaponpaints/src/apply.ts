@@ -43,6 +43,7 @@ export function resetMapState(): void {
   fadeSeed = 0;
   ungivableKnives.clear();
   painted.clear();
+  spawned = [];
 }
 
 // ---- knife replacement -----------------------------------------------------------------------
@@ -177,7 +178,9 @@ function freshItemId(ref: EntityRef, itemBase: number): void {
   const id = nextItemId++;
   const low = id >>> 0, high = Math.floor(id / 0x1_0000_0000) >>> 0;
   const idOff = sum(itemBase, off('CEconItemView', 'm_iItemID'));
-  if (idOff >= 0 && ref.writeUInt32(idOff, low) && ref.writeUInt32(idOff + 4, high)) ref.notifyStateChanged(idOff);
+  // m_iItemID is not networked (its Low/High halves are), so it is written but not notified: the
+  // engine cannot resolve a change on it and logs "Couldn't resolve offset".
+  if (idOff >= 0) ref.writeUInt32(idOff, low) && ref.writeUInt32(idOff + 4, high);
   for (const [field, value] of [['m_iItemIDLow', low], ['m_iItemIDHigh', high]] as const) {
     const o = sum(itemBase, off('CEconItemView', field));
     if (o >= 0 && ref.writeUInt32(o, value)) ref.notifyStateChanged(o);
@@ -310,16 +313,38 @@ function weaponPlayer(weapon: Weapon): Player | null {
   return weapon.owner?.controller ?? null;
 }
 
-/** OnEntitySpawned for weapon_* classes: apply on the next frame, once the owner is set. */
+/** Weapons spawned this frame, painted in the post-simulation frame hook. */
+let spawned: { ref: EntityRef; className: string; retried: boolean }[] = [];
+
+/**
+ * OnEntitySpawned for weapon_* classes. The owner is not set yet at spawn, so the weapon is queued
+ * and painted by {@link paintSpawnedWeapons} at the end of this frame.
+ */
 export function onWeaponSpawned(ref: EntityRef, className: string): void {
   if (!settings.skinEnabled) return;
-  nextFrame().then(() => {
-    if (painted.delete(refKey(ref))) return;
-    const weapon = Weapon.fromEntity(ref);
-    if (!weapon?.isValid()) return;
+  spawned.push({ ref, className, retried: false });
+}
+
+/**
+ * Post-simulation game frame: paint the weapons spawned this frame. This runs before the frame's
+ * snapshot goes out, so the client's first sight of the weapon already has its paint, name and
+ * model. Upstream does the same from a GiveNamedItem post hook. Painting a frame later is too late:
+ * the client has built the weapon's look by then and keeps the old finish (a new name tag still
+ * shows), and a knife changed then is drawn backwards or not at all.
+ */
+export function paintSpawnedWeapons(): void {
+  if (spawned.length === 0) return;
+  const batch = spawned;
+  spawned = [];
+  for (const entry of batch) {
+    if (painted.delete(refKey(entry.ref))) continue;
+    const weapon = Weapon.fromEntity(entry.ref);
+    if (!weapon?.isValid()) continue;
     const player = weaponPlayer(weapon);
-    if (player) applyWeaponSkin(player, weapon, className);
-  }).catch(() => undefined);
+    if (player) applyWeaponSkin(player, weapon, entry.className);
+    // Not owned yet (spawned outside a give): look once more next frame, as upstream's fallback does.
+    else if (!entry.retried) spawned.push({ ...entry, retried: true });
+  }
 }
 
 function isAlive(player: Player): boolean {
@@ -386,6 +411,11 @@ export function refreshWeapons(player: Player): void {
     for (const gun of guns) {
       const weapon = body.giveNamedItem(gun.className);
       if (!weapon) continue;
+      // Painted now, in the same call as the give, before the client sees it.
+      if (weapon.isValid()) {
+        applyWeaponSkin(current, weapon, null);
+        painted.add(refKey(weapon.ref));
+      }
       nextFrame().then(() => {
         if (!weapon.isValid()) return;
         weapon.clip1 = gun.clip;

@@ -94,7 +94,7 @@ plugin's files directory under `data/` and set `skins_language`. Chat text is in
 
 ## What is applied, and when
 
-- **Weapons**: when any `weapon_*` entity spawns, on the next frame, for its original owner (or its
+- **Weapons**: when any `weapon_*` entity spawns, at the end of that frame (before the client sees it), for its original owner (or its
   holder): knife model, paint kit, wear, seed (a fresh pattern per weapon for an
   unseeded Fade), name tag, StatTrak counter, up to five stickers and one keychain, and the legacy
   model body group. Kills with a StatTrak weapon count up and are written back on disconnect.

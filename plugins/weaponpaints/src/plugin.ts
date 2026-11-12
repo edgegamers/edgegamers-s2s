@@ -1,6 +1,6 @@
 // WeaponPaints 3.3a by Nereziel & daffyy, ported to s2script 2026-11-09.
 // GPL-3.0-only. See LICENSE and NOTICE for upstream attribution.
-import { after, Clients, command, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
+import { after, Clients, command, createScope, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
 import type { Client, CommandInvocation, EntityRef, HookResultValue } from '@s2script/sdk';
 import { Events, Player } from '@s2script/cs2';
 import skinsEn from '../data/skins_en.json';
@@ -13,7 +13,7 @@ import {
 } from './catalog';
 import { readSettings, type Settings } from './config';
 import {
-  configureApply, countStatTrakKill, giveAgent, giveGloves, giveMusicKit, givePin, onWeaponSpawned,
+  configureApply, countStatTrakKill, giveAgent, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
   refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
 } from './apply';
 import {
@@ -302,6 +302,8 @@ export function OnPluginStart(): void {
   loadPhrases();
   registerCommands();
   registerEvents();
+  // After simulation, before the snapshot: new weapons reach the client already painted.
+  createScope().server.onGameFrame(paintSpawnedWeapons, { phase: 'post' });
   void loadLanguage(settings.skinsLanguage);
   openStore(loadConnected);
 }
