@@ -17,9 +17,9 @@ Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `m
 | `{blue}` | Command, hint or tip |
 | `{orange}` | Action |
 
-Prefixes remain blue or red. Expected denials and invalid arguments use red warning text with white emphasis. True internal errors may use `{darkred}Error:` followed by white emphasis and actionable instructions. Reset to the surrounding sentence's color after a highlighted value.
+Prefixes remain blue or red, except TTT's per-letter `{darkred}T{red}T{lightred}T` header. Expected denials and invalid arguments use red warning text with white emphasis. True internal errors may use `{darkred}Error:` followed by white emphasis and actionable instructions. Reset to the surrounding sentence's color after a highlighted value.
 
-Existing system prefixes use `Name » message` **in chat only**, with a blue/red name and grey separator. TTT's chat templates declare the arrow directly, for example `{blue}TTT {grey}» ` or the red variant. Its plain-text renderer retains the console, HUD and menu separator before inserting arguments. Console, HUD, Panorama, menu and log output retain their own formatting. Do not globally replace brackets, pipes or `>` inside a phrase or a player's text. Decluttr's `☠` and `[T]`/`[CT]`/`[S]` player markers keep their established layout.
+Existing system prefixes use `Name » message` **in chat only**, with a blue/red name and grey separator. TTT's chat templates use `{darkred}T{red}T{lightred}T {grey}» `. Its plain-text renderer retains the console, HUD and menu separator before inserting arguments. Console, HUD, Panorama, menu and log output retain their own formatting. Do not globally replace brackets, pipes or `>` inside a phrase or a player's text. Decluttr's `☠` and `[T]`/`[CT]`/`[S]` player markers keep their established layout.
 
 TTT role mentions take precedence over the generic string color: innocent is green, traitor is red and detective is dark blue. This applies to descriptions and nested role names too. Keep stable role/item/command IDs separate from displayed translations.
 

@@ -63,6 +63,7 @@ test('the phrase file is plain SDK syntax: no splices or grammar markers, only c
 
 test('phrases render through the SDK with semantic colours, arguments and number formatting', () => {
   const p = load();
+  assert.equal(p.chatPhraseFor(3, 'ttt.chat.prefix'), '\x02T\x07T\x0fT \x08» \x08');
   assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
   assert.equal(p.phraseFor(-1, 'ttt.round.starting', 2.5), 'TTT | The game starts in 2.5 second(s).');
   assert.equal(p.phraseFor(-1, 'ttt.tripwire.defusing', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
@@ -127,12 +128,15 @@ test('one shared phrase uses arrows only for chat, retaining console, HUD and me
   assert.equal(p.chatPhraseFor(-1, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).', 'forced chat degrades to the server console');
 });
 
-test('blue and red TTT arrow templates preserve console layout and literal arguments', () => {
+test('TTT prefix colors preserve console layout and literal arguments', () => {
   const body = 'TTT » Alice [T] | literal';
-  for (const [color, byte] of [['blue', '\x0b'], ['red', '\x07']]) {
-    const p = load({ttt: {'ttt.role.assigned': `{${color}}TTT {grey}» {1}`}});
-    assert.equal(p.phraseFor(3, 'ttt.role.assigned', body), `${byte}TTT \x08» ${body}`);
-    assert.equal(p.chatPhraseFor(3, 'ttt.role.assigned', body), `${byte}TTT \x08» ${body}`);
+  for (const [prefix, rendered] of [
+    ['{blue}TTT', '\x0bTTT'], ['{red}TTT', '\x07TTT'],
+    ['{darkred}T{red}T{lightred}T', '\x02T\x07T\x0fT'],
+  ]) {
+    const p = load({ttt: {'ttt.role.assigned': `${prefix} {grey}» {1}`}});
+    assert.equal(p.phraseFor(3, 'ttt.role.assigned', body), `${rendered} \x08» ${body}`);
+    assert.equal(p.chatPhraseFor(3, 'ttt.role.assigned', body), `${rendered} \x08» ${body}`);
     assert.equal(p.plainPhraseFor(3, 'ttt.role.assigned', body), `TTT | ${body}`);
     assert.equal(p.phraseFor(-1, 'ttt.role.assigned', body), `TTT | ${body}`);
   }

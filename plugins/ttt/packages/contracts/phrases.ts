@@ -82,11 +82,11 @@ export function phraseFor(slot: number, key: string, ...args: (string | number)[
 
 // These are system-prefix templates owned by TTT, rather than player/channel markers or data.
 // Use the bundled phrase to declare ownership; a translator can still rename or omit its prefix.
-const systemPrefix = /^\{(?:red|blue)\}(?:TTT|SHOP|DNA) \{grey\}(?:»|\|) /;
+const systemPrefix = /^(?:\{darkred\}T\{red\}T\{lightred\}T|\{(?:red|blue)\}(?:TTT|SHOP|DNA)) \{grey\}(?:»|\|) /;
 const prefixedChatKeys = new Set(Object.entries(PHRASES).filter(([, value]) =>
   systemPrefix.test(value),
 ).map(([key]) => key));
-const localizedPrefix = /^((?:\{[a-z]+\})*[^{}\uFFF0|»]+ )(\{(?:grey|gray)\})[|»] /i;
+const localizedPrefix = /^((?:(?:\{[a-z]+\})|[^{}\uFFF0|»])+? )(\{(?:grey|gray)\})[|»] /i;
 
 /** Console, menu and HUD layouts are independent of the arrow written in the chat phrase. */
 function plainTemplate(key: string, text: string): string {
