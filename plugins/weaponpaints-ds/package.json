@@ -18,7 +18,7 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "pluginDependencies": {
-      "@edgegamers/s2s-weaponpaints": "^0.3.0",
+      "@edgegamers/s2s-weaponpaints": "^0.3.1",
       "@edgegamers/s2s-maul": "^0.3.0"
     },
     "config": {
