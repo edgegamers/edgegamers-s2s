@@ -1,5 +1,11 @@
 # @edgegamers/s2s-portal
 
+## 0.2.0
+
+### Minor Changes
+
+- 663371c: Hands this server's PUG match from the portal to `@edgegamers/s2s-pug` (on connect, on `pug.match.changed`, and `portal_pug_sync`), and sends its state, every round's score and the final result back as `pug.*` events right away.
+
 ## 0.1.0
 
 ### Minor Changes
