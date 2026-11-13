@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import {
   RoundRecorder, ReplayDecoder, ReplayFormatError, decodeReplay, decodeReplayStream, emptyFrame, readReplayHeader,
   DEATH_HEADSHOT, TEAM_CT, TEAM_T, type PlayerFrame, type RoundInfo,
@@ -195,4 +195,34 @@ test("per-command sampling: several commands in a tick keep the last state and e
   }
   assert.equal(tr.commandRan(4), true);
   assert.equal(tr.commandRan(8), true);
+});
+
+test("segments: header first, then takeChunks() pieces, equal finish() and gunzip as concatenated gzip members", () => {
+  const record = (segmented: boolean): Uint8Array[] => {
+    const rec = new RoundRecorder(ROUND, { chunkTicks: 16 });
+    const ak = rec.weapon("weapon_ak47");
+    const ids = [0, 1, 2].map((p) => rec.addPlayer({ steamId: String(p), name: `p${p}`, slot: p }));
+    const f = emptyFrame();
+    const segs: Uint8Array[] = [];
+    for (let t = 0; t < 200; t++) {
+      rec.tick();
+      for (const p of ids) rec.sample(p, frameAt(f, p, t, ak));
+      if (t % 37 === 0) rec.fire(0, ak);
+      if (segmented && t % 50 === 49) segs.push(rec.takeChunks());
+    }
+    if (!segmented) return [rec.finish()];
+    assert.throws(() => rec.finish());
+    const head = rec.finishHeader();
+    return [head, ...segs, rec.takeChunks()];
+  };
+  const [whole] = record(false);
+  const parts = record(true);
+  assert.ok(parts.length > 3);
+  const joined = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of parts) { joined.set(p, o); o += p.length; }
+  assert.deepEqual(joined, whole);
+  const members = Buffer.concat(parts.map((p) => gzipSync(p)));
+  assert.deepEqual(new Uint8Array(gunzipSync(members)), whole);
+  assert.equal(decodeReplay(joined).header.tickCount, 200);
 });

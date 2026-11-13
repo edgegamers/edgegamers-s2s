@@ -14,6 +14,12 @@ export interface Settings {
   httpTimeoutMs: number;
   /** The live channel's URL, or null when it is off (or the plugin is idle). */
   liveUrl: string | null;
+  /** Record a 3D replay of every JB / TTT round and upload it. */
+  replays: boolean;
+  /** Rounds kept on disk waiting for upload; 0 = no limit. */
+  replayMaxBacklog: number;
+  /** Ask clients for their crosshair cvars so replays can draw their crosshair. */
+  replayCrosshair: boolean;
   debug: boolean;
 }
 
@@ -41,6 +47,9 @@ export function readSettings(c: ConfigReader): Settings {
     maxOutboxEvents: Math.max(0, c.getInt("max_outbox_events")),
     httpTimeoutMs: clamp(c.getInt("http_timeout_ms") || 10_000, 1000, 120_000),
     liveUrl: idleReason === null && c.getBool("live") ? liveUrlFor(baseUrl!, c.getString("live_url")) : null,
+    replays: idleReason === null && c.getBool("replays"),
+    replayMaxBacklog: Math.max(0, c.getInt("replay_max_backlog")),
+    replayCrosshair: c.getBool("replay_crosshair"),
     debug: c.getBool("debug"),
   };
 }
