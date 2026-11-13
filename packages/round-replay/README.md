@@ -16,10 +16,15 @@ const rec = new RoundRecorder({ roundId, map, mode: "ttt", tickInterval: 1 / 64,
 const id = rec.addPlayer({ steamId, name, crosshair, slot });   // a new id for each new occupant of a slot
 const frame = emptyFrame();                                     // reuse one object for every sample
 
-// every game tick:
+// onGameFrame "pre": open the tick
 rec.tick();
+
+// OnPlayerRunCmdPost (s2script >= 0.39), once per command the server ran:
 frame.x = ...; frame.weapon = rec.weapon("weapon_ak47"); /* ... */
-rec.sample(id, frame);
+rec.sample(id, frame);   // several commands in one tick: last state wins, buttons are OR-ed
+
+// onGameFrame "post": players whose packets were lost this tick
+if (!rec.sampledThisTick(id)) rec.hold(id);   // repeats their last state, flagged STATE_NO_CMD
 
 // from game events:
 rec.fire(id, weapon); rec.impact(id, x, y, z);

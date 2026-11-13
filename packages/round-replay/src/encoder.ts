@@ -6,7 +6,7 @@ import { ByteWriter } from "./bytes.ts";
 import {
   COLUMNS, COL_COUNT, C_BUTTONS, C_DUCK, C_FLAGS, C_PITCH, C_STATE, C_VX, C_VY, C_VZ, C_WEAPON,
   C_X, C_Y, C_YAW, C_Z, DEFAULT_CHUNK_TICKS, EV_DEATH, EV_FIRE, EV_HURT, EV_IMPACT, FLAG_TRUNCATED,
-  PLAYER_FLAG_BOT, POS_SCALE, PREAMBLE_BYTES, REPLAY_MAGIC, REPLAY_VERSION, STATE_PRESENT, VEL_SCALE,
+  PLAYER_FLAG_BOT, POS_SCALE, PREAMBLE_BYTES, REPLAY_MAGIC, REPLAY_VERSION, STATE_NO_CMD, STATE_PRESENT, VEL_SCALE,
   packState, quantizeAngle, wrapSigned,
 } from "./format.ts";
 
@@ -158,7 +158,10 @@ export class RoundRecorder {
     return id;
   }
 
-  /** Begin the next round tick. Call once per game tick, then `sample` each player. */
+  /**
+   * Begin the next round tick. Call once per game tick (in onGameFrame "pre", so the tick's
+   * OnPlayerRunCmdPost samples land in it), then `sample` each player.
+   */
   tick(): boolean {
     if (this.finished || this.truncated) return false;
     if (this.ticks >= this.maxTicks) { this.closeTick(); this.truncated = true; return false; }
@@ -168,13 +171,18 @@ export class RoundRecorder {
     return true;
   }
 
-  /** Record one player's state for the open tick. */
+  /**
+   * Record one player's state for the open tick. Built for OnPlayerRunCmdPost, which fires once per
+   * command: when several commands run in one tick the last one's state is kept and the buttons of
+   * all of them are OR-ed, so a press shorter than a tick still shows.
+   */
   sample(id: number, f: PlayerFrame): void {
     if (this.ticks === 0 || this.finished || this.truncated) return;
     const t = this.tracks[id];
     if (!t) return;
     const tick = this.ticks - 1;
     const r = t.rows, o = (tick - this.chunkStart) * COL_COUNT;
+    const earlier = t.sampledAt === tick ? r[o + C_BUTTONS] : 0;
     r[o + C_X] = Math.round(f.x * POS_SCALE);
     r[o + C_Y] = Math.round(f.y * POS_SCALE);
     r[o + C_Z] = Math.round(f.z * POS_SCALE);
@@ -184,7 +192,7 @@ export class RoundRecorder {
     r[o + C_VY] = Math.round(f.vy * VEL_SCALE);
     r[o + C_VZ] = Math.round(f.vz * VEL_SCALE);
     r[o + C_FLAGS] = f.flags | 0;
-    r[o + C_BUTTONS] = f.buttons | 0;
+    r[o + C_BUTTONS] = (f.buttons | earlier) | 0;
     r[o + C_WEAPON] = f.weapon & 0xffff;
     r[o + C_STATE] = packState(f.alive, f.team);
     r[o + C_DUCK] = Math.max(0, Math.min(255, Math.round(f.duck * 255)));
@@ -192,6 +200,30 @@ export class RoundRecorder {
     t.inChunk = true;
     if (t.first < 0) t.first = tick;
     t.lastSeen = tick;
+  }
+
+  /**
+   * The player is connected but ran no command this tick: repeat their last sampled state, marked
+   * present with STATE_NO_CMD. Call it at the end of the tick (onGameFrame "post") for every player
+   * `sample` did not reach. Does nothing before the player's first sample or after a sample this tick.
+   */
+  hold(id: number): void {
+    if (this.ticks === 0 || this.finished || this.truncated) return;
+    const t = this.tracks[id];
+    const tick = this.ticks - 1;
+    if (!t || t.first < 0 || t.sampledAt === tick) return;
+    const o = (tick - this.chunkStart) * COL_COUNT;
+    t.rows.set(t.last, o);
+    t.rows[o + C_STATE] = (t.last[C_STATE] | STATE_PRESENT | STATE_NO_CMD) & 0xff;
+    t.sampledAt = tick;
+    t.inChunk = true;
+    t.lastSeen = tick;
+  }
+
+  /** Whether `sample` or `hold` already recorded this player in the open tick. */
+  sampledThisTick(id: number): boolean {
+    const t = this.tracks[id];
+    return !!t && this.ticks > 0 && t.sampledAt === this.ticks - 1;
   }
 
   fire(player: number, weapon: number): void {
@@ -274,7 +306,7 @@ export class RoundRecorder {
       if (t.sampledAt === tick) {
         t.last.set(t.rows.subarray(o, o + COL_COUNT));
       } else {
-        t.last[C_STATE] = t.last[C_STATE] & ~STATE_PRESENT & 0xff;
+        t.last[C_STATE] = t.last[C_STATE] & ~(STATE_PRESENT | STATE_NO_CMD) & 0xff;
         t.rows.set(t.last, o);
       }
     }

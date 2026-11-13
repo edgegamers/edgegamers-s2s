@@ -168,3 +168,31 @@ test("a full 40-player, 3-minute round at 64 tick stays small and cheap to recor
   const r = decodeReplay(bytes);
   assert.equal(r.tracks[39]!.length, ticks);
 });
+
+test("per-command sampling: several commands in a tick keep the last state and every button; none is a hold", () => {
+  const rec = new RoundRecorder(ROUND, { chunkTicks: 8 });
+  const id = rec.addPlayer({ steamId: "1", name: "lagger", slot: 0 });
+  const f = emptyFrame();
+  f.alive = true; f.team = TEAM_T;
+  for (let t = 0; t < 20; t++) {
+    rec.tick();
+    if (t === 5 || t === 6) { assert.equal(rec.sampledThisTick(id), false); rec.hold(id); continue; } // lost packets
+    if (t === 7) {                       // catch-up: three commands in one tick
+      for (const [x, b] of [[100, 1], [104, 2], [108, 0]] as const) { f.x = x; f.buttons = b; rec.sample(id, f); }
+    } else {
+      f.x = t * 10; f.buttons = 8; rec.sample(id, f);
+    }
+    rec.hold(id);                         // no-op after a sample
+  }
+  const tr = decodeReplay(rec.finish()).tracks[id]!;
+  assert.equal(tr.x[7], 108);
+  assert.equal(tr.buttons[7], 3);
+  for (const t of [5, 6]) {
+    assert.equal(tr.present(t), true);
+    assert.equal(tr.commandRan(t), false);
+    assert.equal(tr.alive(t), true);
+    assert.equal(tr.x[t], 40);
+  }
+  assert.equal(tr.commandRan(4), true);
+  assert.equal(tr.commandRan(8), true);
+});

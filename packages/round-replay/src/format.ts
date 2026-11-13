@@ -71,6 +71,11 @@ export const STATE_PRESENT = 1;        // the player was sampled this tick (conn
 export const STATE_ALIVE = 2;
 export const STATE_TEAM_SHIFT = 2;     // bits 2-3: 0 none, 1 spectator, 2 T, 3 CT
 export const STATE_TEAM_MASK = 3 << STATE_TEAM_SHIFT;
+/**
+ * Bit 4: the player was connected but the server ran none of their commands this tick (a lost
+ * packet), so the row repeats their last state. Recorded with `RoundRecorder.hold`.
+ */
+export const STATE_NO_CMD = 16;
 export const TEAM_NONE = 0, TEAM_SPECTATOR = 1, TEAM_T = 2, TEAM_CT = 3;
 
 export function packState(alive: boolean, team: number): number {
