@@ -1,5 +1,17 @@
 # @edgegamers/s2s-portal
 
+## 0.2.1
+
+### Patch Changes
+
+- 798bf6c: Each PUG match gets its own server password (`set_password`, on by default). It is reported to the portal in `pug.match.state` so the match page can show the join command; the server's previous password comes back when the match is cleared. Players already on the server when a match arrives who are not in it are now kicked too (admins excepted), not only those who join later.
+
+## 0.2.0
+
+### Minor Changes
+
+- 663371c: Hands this server's PUG match from the portal to `@edgegamers/s2s-pug` (on connect, on `pug.match.changed`, and `portal_pug_sync`), and sends its state, every round's score and the final result back as `pug.*` events right away.
+
 ## 0.1.0
 
 ### Minor Changes

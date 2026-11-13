@@ -2,7 +2,7 @@
 
 [![Checks](https://shieldcn.dev/github/ci/edgegamers/edgegamers-s2s.svg?variant=outline)](https://github.com/edgegamers/edgegamers-s2s/actions)
 [![Node 24](https://shieldcn.dev/badge/Node-24-green.svg?variant=outline&logo=nodedotjs)](https://nodejs.org/)
-[![s2script SDK](https://shieldcn.dev/badge/s2script-0.37.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
+[![s2script SDK](https://shieldcn.dev/badge/s2script-0.39.0-blue.svg?variant=outline)](https://github.com/s2script/s2script)
 
 CS2 server plugins maintained by edgegamers. One install, native s2s tooling, independent releases.
 
@@ -19,10 +19,12 @@ CS2 server plugins maintained by edgegamers. One install, native s2s tooling, in
 | [Hide](plugins/hide/) | `@edgegamers/s2s-hide` | Public plugin |
 | [CustomIO](plugins/customio/) | `@edgegamers/s2s-customio` | Public plugin |
 | [WeaponPaints](plugins/weaponpaints/) | `@edgegamers/s2s-weaponpaints` | Public plugin · skins, knives, gloves, agents, music kits, pins |
+| [WeaponPaints DS](plugins/weaponpaints-ds/) | `@edgegamers/s2s-weaponpaints-ds` | Restricted plugin · supporter tier gates |
 | [MAUL](plugins/maul/) | `@edgegamers/s2s-maul` | Restricted plugin |
+| [PUG](plugins/pug/) | `@edgegamers/s2s-pug` | Restricted plugin · portal match play |
 | [Portal bridge](plugins/portal/) | `@edgegamers/s2s-portal` | Restricted plugin · sends game events to the CS portal |
 
-All source is public. Registry downloads of the restricted plugins (MAUL, Portal bridge) are restricted to authorized members of the edgegamers organization.
+All source is public. Registry downloads of the restricted plugins (MAUL, WeaponPaints DS, PUG and Portal bridge) are restricted to authorized members of the edgegamers organization.
 
 ## Develop
 
@@ -42,7 +44,7 @@ npm test                         # after a build; some tests exercise archives
 npm run changeset                # record release intent
 ```
 
-The root owns the only npm workspace, lockfile and Changesets configuration. Bundle containers hold descriptors; their runtime plugins and shared libraries are workspace packages. Keep additions inside `plugins/` and update the root's discovery lists when adding a product.
+The root owns the only npm workspace, lockfile and Changesets configuration. Bundle containers hold descriptors; their runtime plugins and shared libraries are workspace packages. Keep runtime plugins inside `plugins/` and shared libraries in a bundle's `packages/` or the root `packages/`; update the root's discovery lists when adding a product.
 
 ## Chat translations
 

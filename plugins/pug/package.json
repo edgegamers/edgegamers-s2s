@@ -1,0 +1,73 @@
+{
+  "name": "@edgegamers/s2s-pug",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Plays a PUG match: rostered teams, !ready, a knife round for sides, then the standard competitive config, with the score reported per team. The portal bridge feeds it matches from the EdgeGamers CS portal.",
+  "main": "src/plugin.ts",
+  "types": "api.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edgegamers/edgegamers-s2s.git",
+    "directory": "plugins/pug"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "s2script": {
+    "game": "cs2",
+    "interfaceProtocol": 2,
+    "publishes": "self",
+    "config": {
+      "keep_awake": {
+        "type": "bool",
+        "default": true,
+        "description": "Turn off sv_hibernate_when_empty while a match is loaded. An empty server otherwise sleeps and never changes to the match map or starts warmup until someone joins. Set back when the match is cleared."
+      },
+      "set_password": {
+        "type": "bool",
+        "default": true,
+        "description": "Give each match its own server password (sv_password) and report it to the portal, which shows it to the match's players in the join command. The previous password comes back when the match is cleared."
+      },
+      "use_portal_names": {
+        "type": "bool",
+        "default": true,
+        "description": "Show rostered players under the name the match lists for them (their MAUL name from the portal), and give their own name back when the match is cleared."
+      },
+      "kick_unrostered": {
+        "type": "bool",
+        "default": true,
+        "description": "During a match, kick players who are not in it (admins may stay and spectate). Off = they are kept on spectator."
+      },
+      "side_choice_seconds": {
+        "type": "int",
+        "default": 60,
+        "description": "Seconds the knife round's winners have to type !stay or !switch before they stay."
+      },
+      "map_change_delay_ms": {
+        "type": "int",
+        "default": 5000,
+        "description": "Wait this long after a match arrives before changing map, so players read the message."
+      },
+      "warmup_cfg": {
+        "type": "string",
+        "default": "",
+        "description": "A cfg to exec when warmup starts (after the plugin's own warmup settings). Empty = none."
+      },
+      "knife_cfg": {
+        "type": "string",
+        "default": "",
+        "description": "A cfg to exec for the knife round (after the plugin's knife-only settings). Empty = none."
+      },
+      "live_cfg": {
+        "type": "string",
+        "default": "",
+        "description": "A cfg to exec after gamemode_competitive when the match goes live, for this server's overrides (e.g. overtime). Empty = none."
+      }
+    }
+  },
+  "scripts": {
+    "build": "s2s build .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  }
+}

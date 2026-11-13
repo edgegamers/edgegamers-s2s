@@ -1,9 +1,12 @@
 {
   "name": "@edgegamers/s2s-portal",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "type": "module",
-  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, and is WeaponPaints' storage over the portal API.",
+  "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, is WeaponPaints' storage over the portal API, and hands PUG matches from the portal to the PUG plugin and their score back.",
   "main": "src/plugin.ts",
+  "dependencies": {
+    "@edgegamers/round-replay": "0.1.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/edgegamers/edgegamers-s2s.git",
@@ -24,7 +27,8 @@
       "@edgegamers/ttt-shop": "^2.0.0",
       "@edgegamers/ttt-special": "^2.0.0",
       "@edgegamers/s2s-weaponpaints": "^0.2.0",
-      "@edgegamers/s2s-weaponpaints-ds": "^0.0.0"
+      "@edgegamers/s2s-weaponpaints-ds": "^0.0.0",
+      "@edgegamers/s2s-pug": "^0.0.0"
     },
     "config": {
       "portal_url": {
@@ -66,6 +70,21 @@
         "type": "string",
         "default": "",
         "description": "Live channel URL. Empty = portal_url's /api/v1/live as ws(s)://. Set only if the gateway is on another host."
+      },
+      "replays": {
+        "type": "bool",
+        "default": true,
+        "description": "Record every player every tick of each Jailbreak / TTT round and upload it at round end as a 3D replay ({root}/api/v1/replays). Rounds wait on disk under the plugin's files/replays/ until the portal has them."
+      },
+      "replay_max_backlog": {
+        "type": "int",
+        "default": 500,
+        "description": "Most finished rounds kept on disk waiting for upload (a 40-player JB round is about 0.5-3 MB). Past this the oldest are dropped and logged. 0 = no limit."
+      },
+      "replay_crosshair": {
+        "type": "bool",
+        "default": true,
+        "description": "Ask each player's client for its crosshair cvars once per connect, so replays can draw their crosshair."
       },
       "debug": {
         "type": "bool",

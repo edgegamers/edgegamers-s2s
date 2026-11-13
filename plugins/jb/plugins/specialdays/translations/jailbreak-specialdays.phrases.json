@@ -11,7 +11,7 @@
   "jailbreak.specialdays.mode_refused": "{red}A special day cannot start right now (another mode owns this round).",
   "jailbreak.specialdays.usage": "{blue}sm_sd [day]",
   "jailbreak.specialdays.menu_title": "Special Days",
-  "jailbreak.specialdays.error": "{darkred}Error: {white}{1}",
+  "jailbreak.specialdays.error": "{darkred}Error: {white}{1}{grey} Please contact {white}Tech LE{grey}.",
   "jailbreak.specialdays.head": "{grey}Today is {1} {green}{2}{grey} day!",
   "jailbreak.specialdays.day_start": "{1} {2}",
   "jailbreak.specialdays.day_end": "{green}{1}{grey} {orange}ended{grey}.",

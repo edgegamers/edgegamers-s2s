@@ -46,6 +46,49 @@ is back, the backlog drains in order. A restart in between loses nothing.
 
 A pause or a held event is logged. Fix the cause, then run `portal_resume`.
 
+## 3D round replays
+
+With `replays` on (the default), every Jailbreak and TTT round is recorded for the portal's 3D
+replay viewer: every player, **every tick**, in the `@edgegamers/round-replay` format
+(`packages/round-replay`, ADR 0008), tied to the same round id as the round's events.
+
+- **Per tick** (s2script 0.39): `onGameFrame` "pre" opens the tick; `OnPlayerRunCmdPost` reads the
+  pawn after each command ran (`readKinematics`: origin, eye angles, velocity, flags, duck amount,
+  held buttons); `onGameFrame` "post" marks players who ran no command (lost packets) as holds.
+- **Weapon in hand** from `item_equip`, `item_remove` and `weapon_fire`, re-read from the pawn
+  every 64 ticks. **Alive / team** from `player_spawn`, `player_death`, `player_team`, also re-read
+  every 64 ticks.
+- **Events**: `weapon_fire`, `bullet_impact`, `player_hurt`, `player_death`.
+- **Crosshair**: s2script has no `m_szCrosshairCodes`, so the plugin asks each client for its
+  crosshair cvars once per connect (`queryConVar`) and encodes the CS2 share code itself
+  (`src/crosshair.ts`). A client that does not answer gets no crosshair (`replay_crosshair` off
+  skips the queries).
+- **Spool**: one s2script async payload is capped at 8 MiB uncompressed, so finished chunks are
+  gzipped off-thread in ~1 MiB segments while the round runs, under the plugin's
+  `files/replays/<round id>/` (`000.gz` header, `001.gz`... chunks, `meta.json` last). Rounds wait
+  there until the portal has them, across restarts.
+- **Upload**: after the round, oldest first, one at a time, to `PUT /api/v1/replays/{round}`.
+  s2script's `fetch` only sends string bodies, so the file goes as base64
+  (`Content-Type: application/vnd.egrr+base64`): the segments' gzip members concatenated, which the
+  portal gunzips as one file. The base64 is built a 32 KiB slice per frame.
+
+| Portal answer | What the plugin does |
+| --- | --- |
+| 200, 201 | Deletes the round from the spool |
+| 401 | Mints a new token once and resends; a refused key pauses uploads |
+| 400 `invalid_replay`, 403, 409 `round_conflict`, 413 | Holds the round on disk (`held.txt`), not resent until `portal_resume` |
+| 429, 5xx, network error | Backs off (Retry-After, else 2s doubling to 5 min) |
+
+A round over ~6 MiB gzip cannot go in one s2script request and is held (a 20-minute, 40-player
+round is about 3 MB). `portal_status` shows the recorder's cost per tick and the upload queue.
+
+**Cost** (`test/replay.test.ts`, Node 24): 40 players, one command each per tick, 64 tick: about
+12-19 µs per tick in the recorder on average. Every 256 ticks (4 s) the recorder varint-encodes
+the finished chunk, about 0.75 ms in that one tick, and each ~1 MiB segment hand-off adds about as
+much again (one copy). A 3-minute round is ~6.8 MB raw, ~0.45 MB gzip on synthetic movement.
+Host reads (`Pawn.forSlot` + `readKinematics` per command) are on top and only measurable on a
+server.
+
 ## Live channel
 
 Besides the outbox, the plugin holds one WebSocket to the portal's gateway
@@ -56,8 +99,22 @@ late. Contract: `docs/live.md` in `edgegamers/s2s-cs-web`.
 | --- | --- |
 | `skins.refresh` (a player saved skins on the website) | If that player is on this server, `@edgegamers/s2s-weaponpaints` `reload(slot)`: reads their rows again and applies them, as `!wp` does |
 | `skins.policy.changed` (an admin changed the tier policy) | `@edgegamers/s2s-weaponpaints-ds` `reloadPolicy()`: fetches the policy now instead of at map start |
+| `pug.match.changed` (this server's PUG is ready to play, or was cancelled) | Reads `GET /api/v1/pug/match` and hands it to `@edgegamers/s2s-pug` (see PUGs below) |
 
-Both plugins are optional dependencies; without them the messages are ignored.
+These plugins are optional dependencies; without them the messages are ignored.
+
+## PUGs
+
+With `@edgegamers/s2s-pug` loaded, the portal's PUG matches are played here (s2s-cs-web
+`docs/pug.md`). The plugin reads this server's match from `GET /api/v1/pug/match` when the PUG
+plugin loads, on every live-channel connect and on `pug.match.changed`, retrying failed reads
+(5s doubling to 2 minutes). A match is passed to the PUG plugin's `load`; no match while one is
+being played means it was cancelled on the portal, and the PUG plugin's `clear` stops it.
+
+The PUG plugin's forwards go back as mode `pug` events, `round` = the match id:
+`pug.match.state` (warmup, knife, live, and the match's server password), `pug.round.end` (score per portal team and player
+stats) and `pug.match.end`. They are sent at once rather than on the next batch tick, so the
+match page's score is near-live. The server must be allowed the PUG mode in the portal.
 
 ## Skins storage
 
@@ -139,8 +196,9 @@ included. `playtimeSeconds` runs from round start to round end, or to when the p
 
 | Command | What |
 | --- | --- |
-| `portal_status` | Sending state, events sent this session, last success, outbox counts, and the live channel's state |
-| `portal_resume` | Clears a pause and puts held events back in the queue |
+| `portal_status` | Sending state, events sent this session, last success, outbox counts, the live channel's state, and replays (recording, µs/tick, upload queue) |
+| `portal_resume` | Clears a pause and puts held events and held replays back in the queue |
+| `portal_pug_sync` | Reads this server's PUG match from the portal now |
 
 ## Config
 
@@ -154,6 +212,9 @@ included. `playtimeSeconds` runs from round start to round end, or to when the p
 | `http_timeout_ms` | `10000` | Per-request timeout |
 | `live` | `true` | Hold the live WebSocket (skin changes from the website apply at once) |
 | `live_url` | `""` | Live channel URL; empty = `portal_url` as `ws(s)://…/api/v1/live` |
+| `replays` | `true` | Record and upload a 3D replay of every Jailbreak / TTT round |
+| `replay_max_backlog` | `500` | Finished rounds kept on disk waiting for upload; past this the oldest are dropped and logged. 0 = no limit |
+| `replay_crosshair` | `true` | Ask clients for their crosshair cvars once per connect |
 | `debug` | `false` | Log every event queued and batch sent, and every live message |
 
 ## Files
@@ -167,6 +228,10 @@ included. `playtimeSeconds` runs from round start to round end, or to when the p
 | `src/outbox.ts` | SQLite outbox and the in-memory write buffer |
 | `src/sender.ts` | Batch sender: acks, holds, backoff, pause |
 | `src/token.ts` | API key to JWT exchange |
+| `src/replay.ts` | Round replay recorder: per-tick samples, holds, events, segmented spool — pure |
+| `src/replay-upload.ts` | Replay spool uploader: base64 a slice per frame, holds, backoff |
+| `src/crosshair.ts` | Crosshair cvars to a CS2 share code (port of csgo-sharecode, MIT) |
+| `src/weapons.ts` | Item definition index to weapon class |
 | `src/live.ts` | Live WebSocket client: reconnect backoff, heartbeat watchdog, message routing — pure |
 | `src/ulid.ts`, `src/http.ts`, `src/settings.ts` | Helpers |
 

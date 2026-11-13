@@ -116,7 +116,7 @@ test('member phrases color executors, targets, failed targets, numbers and comma
   assert.match(text(f.api.guards.ctbanAdmin('Target', 20, 'Admin', 'reason')), /\x0fTarget\x08.*\x0920\x08.*\x02Admin\x08.*\x04reason\x08/);
   assert.match(text(f.api.days.ggPromoted('AK-47', 3)), /\x04AK-47\x08.*\x093\x08/);
   assert.match(text(f.api.gangs.creditsEarned(15, 'LR Win')), /\x0915\x08.*\x04LR Win\x08/);
-  assert.equal(f.api.consoleText(f.api.days.error(f.api.dayPhrase('jailbreak.specialdays.internal_panic', 'start is null'))), '[Game] Error: PANIC: start is null');
+  assert.ok(f.api.consoleText(f.api.days.error(f.api.dayPhrase('jailbreak.specialdays.internal_panic', 'start is null'))).startsWith('[Game] Error: PANIC: start is null'));
 });
 
 test('plain center and menu output strips colors introduced by nested chat phrases', () => {
@@ -134,13 +134,18 @@ test('the same nested descriptor uses translated arrows only when delivered to c
   const line = f.api.days.error(f.api.rtd.invalidParameter('[T] Alice | [Guard] > »', 'number'));
   f.api.localizedChat.toAll(line);
   const plain = (text: string) => text.replace(/[\x01-\x10]/g, '');
-  assert.deepEqual(f.sent.map(([slot, text]) => [slot, plain(text)]), [
-    [1, 'Game » Error: RTD » Invalid parameter [T] Alice | [Guard] > », expected number.'],
-    [2, 'Juego » Error: Dados » Invalid parameter [T] Alice | [Guard] > », expected number.'],
-  ]);
+  assert.deepEqual(f.sent.map(([slot]) => slot), [1, 2]);
+  const bodies = [
+    'Game » Error: RTD » Invalid parameter [T] Alice | [Guard] > », expected number.',
+    'Juego » Error: Dados » Invalid parameter [T] Alice | [Guard] > », expected number.',
+  ];
+  for (const [index, [, text]] of f.sent.entries()) assert.ok(plain(text).startsWith(bodies[index]!));
   assert.match(f.sent[0]![1], /^\x0bGame\x08 » /);
-  assert.equal(f.api.consoleText(line, 2), '[Juego] Error: [Dados] Invalid parameter [T] Alice | [Guard] > », expected number.');
-  assert.equal(f.api.consoleText(f.api.rtd.debugMenuItem(line, 2), 2), '[Juego] Error: [Dados] Invalid parameter [T] Alice | [Guard] > », expected number. - Prob: 2');
+  const consoleBody = '[Juego] Error: [Dados] Invalid parameter [T] Alice | [Guard] > », expected number.';
+  assert.ok(f.api.consoleText(line, 2).startsWith(consoleBody));
+  const menu = f.api.consoleText(f.api.rtd.debugMenuItem(line, 2), 2);
+  assert.ok(menu.startsWith(consoleBody));
+  assert.ok(menu.endsWith(' - Prob: 2'));
   assert.match(f.api.renderText(line, 2), /^\x0b\[Juego\]\x08 /);
 });
 

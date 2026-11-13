@@ -1,5 +1,11 @@
 # @edgegamers/jailbreak-specialdays
 
+## 1.0.9
+
+### Patch Changes
+
+- 6ea6d76: Rebuild against jailbreak-core 1.2.0. The last release moved their core dependency to `^1.2.0` without a version bump, so the server kept builds compiled against the old core types and refused to load them.
+
 ## 1.0.8
 
 ### Patch Changes

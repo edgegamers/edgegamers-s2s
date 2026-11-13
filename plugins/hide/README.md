@@ -10,7 +10,7 @@ s2script's bundled **clientprefs** module.
 
 Requires a Linux CS2 server with a current [s2script](https://www.s2script.com/)
 runtime supporting host API **3**, the `Transmit` API, post-frame callbacks, and
-the boolean-returning `Cookies.set` API. Built against the shared SDK **0.34.0** and CS2 types **0.22.0**.
+the boolean-returning `Cookies.set` API. Built with the shared SDK/CS2 versions pinned in the root `package.json`.
 Keep the framework and its bundled clientprefs at matching
 versions; this port does not need CounterStrikeSharp or Cruze03's Clientprefs.
 

@@ -9,7 +9,7 @@
   "extracommands.teleport.invalid_destination": "{red}Admin {grey}» {red}Destination must match {white}exactly one living player{red} with an available position.",
   "extracommands.saveloc.saved": "{blue}Admin {grey}» {orange}Saved{grey} your current position and view angles.",
   "extracommands.teleport.no_saved_location": "{red}Admin {grey}» {red}Save a location on this map first with {blue}sm_saveloc{red} (players only).",
-  "extracommands.oneup.scheduling_failed": "{red}Admin {grey}» {darkred}Error: {white}Respawn succeeded{grey}, but the death-location teleport could not be queued.",
+  "extracommands.oneup.scheduling_failed": "{red}Admin {grey}» {darkred}Error: {white}Respawn succeeded{grey}, but the death-location teleport could not be queued. Check the {blue}server console{grey} and {orange}teleport{grey} the player if needed.",
   "extracommands.oneup.respawn_at_death_location": "{blue}Admin {grey}» {orange}Respawned{grey} {yellow}{1}{grey} player(s) at their death location.",
   "extracommands.respawn.respawn_players": "{blue}Admin {grey}» {orange}Respawned{grey} {yellow}{1}{grey} player(s).",
   "extracommands.saveloc.player_only": "{red}Admin {grey}» {red}Only a {white}player{red} can save a location.",

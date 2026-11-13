@@ -31,7 +31,7 @@ npm run build -- --filter @edgegamers/s2s-maul
 
 Drop the built `.s2sp` into the server's plugin directory and set at minimum `maul_key`.
 
-Builds against the shared `@s2script/sdk` 0.34.0 / `@s2script/cs2` 0.22.0 and needs an s2script runtime with host
+Builds against the SDK/CS2 versions pinned in the root `package.json` and needs an s2script runtime with host
 API 3 (protocol-2 plugin interop). Ban routing uses `@s2script/basebans` 1.x, whose contract is
 vendored at `.s2script/types/@s2script/basebans/index.d.ts` — an exact copy of s2script's
 `plugins/basebans/api.d.ts`; refresh it with `s2s add @s2script/basebans` once the registry

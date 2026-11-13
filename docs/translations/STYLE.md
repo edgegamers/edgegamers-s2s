@@ -2,7 +2,11 @@
 
 Use exactly three lowercase dotted segments: `owner.feature.function`. Use `snake_case` within a segment and names that describe the message's purpose, such as `extracommands.beacon.toggle_for_players`, `ttt.role.innocent` or `jailbreak.warden.new_warden`.
 
-Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `maul`, `surftimer`, `ttt`, `weaponpaints` and `weaponpaints_ds`. Jailbreak uses its member name as the feature. Other products group messages by features such as `chat`, `shop`, `role`, `records` or `beacon`. Avoid extraction names such as `text_1` and `refusal_0`.
+Store plugin-owned chat text, announcements and player-facing command feedback in editable English phrase JSON, registered as the plugin's embedded fallback. Load server and language overrides through the native translation service. Resolve broadcasts separately for each recipient's language and keep placeholders aligned with the arguments supplied by each caller.
+
+Review every added or changed message when merging upstream work. Follow the rendering call site to distinguish translation keys from stable protocol identifiers: an event name such as `pug.match.state` is wire data, not a phrase to rename. Player names, messages and map/config-authored strings remain literal data passed into the translated wrapper.
+
+Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `maul`, `pug`, `surftimer`, `ttt`, `weaponpaints` and `weaponpaints_ds`. Jailbreak uses its member name as the feature. Other products group messages by features such as `chat`, `shop`, `role`, `records` or `beacon`. Avoid extraction names such as `text_1` and `refusal_0`.
 
 | Tag | Meaning |
 | --- | --- |
@@ -17,7 +21,7 @@ Owners are `arcadescripts`, `decluttr`, `extracommands`, `hide`, `jailbreak`, `m
 | `{blue}` | Command, hint or tip |
 | `{orange}` | Action |
 
-Prefixes remain blue or red, except TTT's per-letter `{darkred}T{red}T{lightred}T` header. Expected denials and invalid arguments use red warning text with white emphasis. True internal errors may use `{darkred}Error:` followed by white emphasis and actionable instructions. Reset to the surrounding sentence's color after a highlighted value.
+Prefixes remain blue or red, except TTT's per-letter `{darkred}T{red}T{lightred}T` header. Expected denials and invalid arguments use red warning text with white emphasis. True internal errors use `{darkred}Error:` followed by white emphasis and actionable instructions. Reset to the surrounding sentence's color after a highlighted value.
 
 Existing system prefixes use `Name » message` **in chat only**, with a blue/red name and grey separator. TTT's chat templates use `{darkred}T{red}T{lightred}T {grey}» `. Its plain-text renderer retains the console, HUD and menu separator before inserting arguments. Console, HUD, Panorama, menu and log output retain their own formatting. Do not globally replace brackets, pipes or `>` inside a phrase or a player's text. Decluttr's `☠` and `[T]`/`[CT]`/`[S]` player markers keep their established layout.
 

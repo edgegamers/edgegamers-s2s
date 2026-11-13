@@ -6,7 +6,7 @@ Extracted from [s2script/s2script#327](https://github.com/s2script/s2script/pull
 
 ## Build and install
 
-Use the root workspace's Node 24/npm 11 dependencies and published SDK 0.37.0/CS2 types 0.22.0. The server runtime must support the SDK 0.37 admin activity API:
+Use the root workspace's Node 24/npm 11 dependencies and the SDK/CS2 versions pinned in the root `package.json`. The server runtime must support the admin activity API introduced with SDK 0.37:
 
 ```bash
 npm ci

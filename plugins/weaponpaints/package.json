@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-weaponpaints",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "An s2script port of Nereziel/cs2-WeaponPaints: weapon skins, knives, gloves, agents, music kits and pins stored in the WeaponPaints MySQL tables, or by another plugin.",
   "license": "GPL-3.0-only",
   "type": "module",
@@ -148,6 +148,11 @@
         "type": "bool",
         "default": false,
         "description": "Give a random paint to weapons the player has not customised (GiveRandomSkin)."
+      },
+      "debug": {
+        "type": "bool",
+        "default": false,
+        "description": "Log each knife apply step to the server console (not upstream)."
       },
       "show_skin_image": {
         "type": "bool",

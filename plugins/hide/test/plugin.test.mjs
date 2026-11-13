@@ -123,7 +123,7 @@ test('bad config reload retains working settings and reports the error', () => {
   for (const bad of ['{', { who_hidden: 42 }, []]) {
     f.setConfig(bad); f.invoke('css_hide_reload', -1); f.frame();
     assert.equal(f.hidden(pawn(f, 1), 0), true);
-    assert.match(f.messages.at(-1).text, /error occurred/);
+    assert.match(f.messages.at(-1).text, /Error:/);
     assert.doesNotMatch(f.messages.at(-1).text, /\{[a-z]+\}|[\x01-\x10]/);
   }
 });

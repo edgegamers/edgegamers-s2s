@@ -26,7 +26,9 @@
     "plugins/extracommands",
     "plugins/weaponpaints",
     "plugins/weaponpaints-ds",
-    "plugins/portal"
+    "plugins/pug",
+    "plugins/portal",
+    "packages/*"
   ],
   "s2script": {
     "workspace": {
@@ -42,6 +44,7 @@
         "plugins/extracommands",
         "plugins/weaponpaints",
         "plugins/weaponpaints-ds",
+        "plugins/pug",
         "plugins/portal"
       ],
       "bundles": [
@@ -63,8 +66,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.1",
-    "@s2script/sdk": "0.37.0",
-    "@s2script/cs2": "0.22.0",
+    "@s2script/sdk": "0.39.0",
+    "@s2script/cs2": "0.26.2",
     "typescript": "5.9.3",
     "esbuild": "0.25.12",
     "fflate": "0.8.3",
