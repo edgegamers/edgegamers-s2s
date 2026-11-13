@@ -1,5 +1,19 @@
 # @edgegamers/ttt-items
 
+## 2.1.0
+
+### Minor Changes
+
+- 0ae6976: Rename TTT phrases to descriptive `ttt.feature.function` keys and apply semantic chat colors, including consistent role colors. Keep nested localized phrases colored while stripping chat controls from console, Panorama and HUD text. Existing translation overrides must migrate their keys to the new names.
+
+### Patch Changes
+
+- 0ae6976: Make SurfTimer and remaining TTT chat messages editable through translation phrases. Resolve broadcasts, nested role and track names, shop reasons and command replies for their recipients while retaining the existing English text and colors.
+- 0ae6976: Declare grey arrow separators directly in TTT, SHOP and DNA chat phrase templates, and use arrows for private fallback channel prefixes in chat. Color the TTT header's letters dark red, red and light red. Select presentation at each output destination, preserving shared console, HUD, menu, Panorama and log formats, translated prefix names and literal player text. Existing locale overrides using the former pipe separator still render with arrows in chat.
+- Updated dependencies [0ae6976]
+- Updated dependencies [0ae6976]
+  - @edgegamers/ttt-contracts@1.1.0
+
 ## 2.0.10
 
 ### Patch Changes

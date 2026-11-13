@@ -1,5 +1,13 @@
 # @edgegamers/ttt-ui
 
+## 2.0.9
+
+### Patch Changes
+
+- Updated dependencies [0ae6976]
+- Updated dependencies [0ae6976]
+  - @edgegamers/ttt-contracts@1.1.0
+
 ## 2.0.8
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-pug",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Plays a PUG match: rostered teams, !ready, a knife round for sides, then the standard competitive config, with the score reported per team. The portal bridge feeds it matches from the EdgeGamers CS portal.",
   "main": "src/plugin.ts",

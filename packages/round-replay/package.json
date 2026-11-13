@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/round-replay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "The 3D round replay file format: every player every tick plus shots, impacts, damage and deaths. Encoder for the portal bridge plugin, streaming decoder for the portal viewer.",

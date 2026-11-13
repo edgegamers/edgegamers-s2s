@@ -1,5 +1,15 @@
 # @edgegamers/s2s-pug
 
+## 0.2.1
+
+### Patch Changes
+
+- Localize PUG announcements and command replies per recipient with editable embedded English
+  phrases, semantic chat colors and the PUG arrow prefix. Keep console replies plain and protect
+  literal player/portal values from color injection. Distinguish internal load/read failures from
+  invalid inputs with actionable error messages.
+- 8c01ff7: Loading a PUG match no longer fails silently: the PUG plugin logs when it gets a match and any error while loading it, and the bridge awaits the call and logs a refusal or an error. The PUG plugin also keeps an empty server awake during a match (`keep_awake`, on by default; `sv_hibernate_when_empty 0`, set back afterwards), so the map change and warmup happen without anyone connected, and falls back to `Math.random` when Web Crypto is unusable.
+
 ## 0.2.0
 
 ### Minor Changes

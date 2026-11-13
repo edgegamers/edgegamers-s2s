@@ -1,11 +1,11 @@
 {
   "name": "@edgegamers/s2s-portal",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Sends game events to the EdgeGamers CS portal through a local SQLite outbox (Jailbreak rounds in full; TTT rounds, kills, bodies, purchases and special rounds), holds a live WebSocket that applies skin changes made on the portal, is WeaponPaints' storage over the portal API, and hands PUG matches from the portal to the PUG plugin and their score back.",
   "main": "src/plugin.ts",
   "dependencies": {
-    "@edgegamers/round-replay": "0.1.0"
+    "@edgegamers/round-replay": "0.2.0"
   },
   "repository": {
     "type": "git",
