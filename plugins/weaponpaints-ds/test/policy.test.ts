@@ -27,8 +27,8 @@ test("tiers are thresholds: at or above the minimum unlocks", () => {
 test("the default policy follows the design matrix, every ? read as locked", () => {
   const need = (kind: ItemKind): number => requiredTier(DEFAULT_POLICY, item(kind));
   assert.deepEqual(
-    (["skin", "knife", "gloves", "agent", "music", "pin", "stattrak"] as const).map(need),
-    [1, 2, 3, 4, 4, 4, 4],
+    (["skin", "knife", "gloves", "agent", "music", "pin", "stattrak", "sticker"] as const).map(need),
+    [1, 2, 3, 4, 4, 4, 4, 2],
   );
   // The default file round-trips through the parser unchanged.
   assert.deepEqual(parsed(JSON.stringify(DEFAULT_POLICY)), DEFAULT_POLICY);
@@ -64,7 +64,7 @@ test("malformed policy files are rejected whole", () => {
     ["[]", "object"],
     ['{"rules": {}}', "rules must be an array"],
     ['{"defaultTier": "Diamond", "rules": []}', "defaultTier"],
-    ['{"rules": [{"kind": "sticker", "minTier": 1}]}', "kind"],
+    ['{"rules": [{"kind": "keychain", "minTier": 1}]}', "kind"],
     ['{"rules": [{"kind": "skin", "minTier": 5}]}', "minTier"],
     ['{"rules": [{"kind": "skin"}]}', "minTier"],
     ['{"rules": [{"kind": "skin", "minTier": 1, "defindex": "7"}]}', "defindex"],

@@ -161,9 +161,11 @@ function setLegacyModel(weapon: Weapon, legacy: boolean): void {
   weapon.ref.acceptInput('SetBodygroup', `body,${legacy ? 1 : 0}`);
 }
 
-function applyStickers(weapon: Weapon, info: WeaponInfo, loadout: Loadout, defindex: number): void {
+function applyStickers(player: Player, team: number, weapon: Weapon, info: WeaponInfo, loadout: Loadout, defindex: number): void {
   info.stickers.forEach((sticker, slot) => {
-    weapon.setAttribute(`sticker slot ${slot} id`, bitsAsFloat(sticker.id));
+    // Vetoed: the slot stays empty this time; the saved sticker is kept.
+    const id = sticker.id !== 0 && !mayApply(player, team, 'sticker', { defindex: sticker.id }) ? 0 : sticker.id;
+    weapon.setAttribute(`sticker slot ${slot} id`, bitsAsFloat(id));
     if (sticker.offsetX !== 0 || sticker.offsetY !== 0) weapon.setAttribute(`sticker slot ${slot} schema`, 0);
     weapon.setAttribute(`sticker slot ${slot} offset x`, sticker.offsetX);
     weapon.setAttribute(`sticker slot ${slot} offset y`, sticker.offsetY);
@@ -262,7 +264,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     weaponAttribute(weapon, 'kill eater score type', 0);
   }
   applyKeyChain(weapon, info);
-  if (info.stickers.length > 0) applyStickers(weapon, info, loadout, defindex);
+  if (info.stickers.length > 0) applyStickers(player, team ?? 0, weapon, info, loadout, defindex);
   setLegacyModel(weapon, isLegacyModel(catalog, defindex, info.paint));
 }
 
