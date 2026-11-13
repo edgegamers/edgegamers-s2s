@@ -55,7 +55,8 @@ the error is logged and the last good policy stays in force. The portal serves t
 }
 ```
 
-- `kind`: `skin`, `knife`, `gloves`, `agent`, `music`, `pin` or `stattrak`.
+- `kind`: `skin`, `knife`, `gloves`, `agent`, `music`, `pin`, `stattrak` or `sticker` (`defindex`
+  is the sticker kit id; a locked sticker is left off the gun, the saved one is kept).
 - `minTier`: `0`-`4` or `None`, `Silver`, `Gold`, `Platinum`, `Royal`.
 - Optional `defindex`, `paint` and `model` narrow a rule to one weapon, finish, knife class or
   agent model (as described in WeaponPaints' `api.d.ts`). The most specific matching rule wins;

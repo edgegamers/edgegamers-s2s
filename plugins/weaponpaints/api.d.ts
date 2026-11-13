@@ -17,7 +17,7 @@
 import type { Hook, Notification } from "@s2script/sdk/interfaces";
 
 /** What kind of item is being chosen or applied. */
-export type ItemKind = "skin" | "knife" | "gloves" | "agent" | "music" | "pin" | "stattrak";
+export type ItemKind = "skin" | "knife" | "gloves" | "agent" | "music" | "pin" | "stattrak" | "sticker";
 
 /** A player reference copied onto the wire. */
 export interface PlayerRef {
@@ -33,6 +33,7 @@ export interface ItemRef {
   /**
    * skin / stattrak: the weapon's item definition index. knife: the knife's definition index.
    * gloves: the glove definition index. music: the music kit id. pin: the pin (collectible) id.
+   * sticker: the sticker kit id (asked at apply time only, once per applied sticker).
    * agent: 0.
    */
   defindex: number;
