@@ -33,6 +33,11 @@ rec.death({ victim, attacker, assister, weapon, flags });
 
 // at round end:
 await Files.write(path, rec.finish(), { gzip: true });
+
+// or, for rounds past s2script's 8 MiB async payload cap: gzip segments as the round runs
+if (rec.pendingBytes >= 1 << 20) segments.push(Files.write(`${dir}/${n++}.gz`, rec.takeChunks(), { gzip: true }));
+// ...and at round end write the header first, then the segments in order, then the last chunks:
+// finishHeader() + takeChunks() pieces concatenated === finish(); gzip members concatenate likewise.
 ```
 
 ## Playback

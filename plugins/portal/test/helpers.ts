@@ -1,5 +1,7 @@
 // Test helpers: an in-memory SQLite (node:sqlite) behind the outbox's SqlDb shape, and a fake portal.
 import { DatabaseSync } from "node:sqlite";
+import { gunzipSync } from "node:zlib";
+import { readReplayHeader } from "@edgegamers/round-replay";
 import type { HttpRequest, HttpResponse } from "../src/http.ts";
 import type { SqlDb, SqlValue } from "../src/outbox.ts";
 import type { PortalEvent } from "../src/envelope.ts";
@@ -66,12 +68,18 @@ export class FakePortal {
   scripted: HttpResponse[] = [];
   /** Answers for the next token requests. */
   scriptedTokens: HttpResponse[] = [];
+  /** Replays stored by round id: the gunzipped file. */
+  replays = new Map<string, Uint8Array>();
+  /** Answers for the next replay uploads. */
+  scriptedReplays: HttpResponse[] = [];
 
   fetch = async (url: string, init: HttpRequest): Promise<HttpResponse> => {
     this.calls.push({ url, init });
     if (!this.up) throw Object.assign(new Error("connection refused"), { name: "NetworkError" });
     if (url.endsWith("/api/v1/auth/token")) return this.token(init);
     if (url.endsWith("/api/v1/events")) return this.events(init);
+    const replay = /\/api\/v1\/replays\/([^/]+)$/.exec(url);
+    if (replay) return this.replay(decodeURIComponent(replay[1]!), init);
     return response(404, { error: "not_found" });
   };
 
@@ -88,6 +96,25 @@ export class FakePortal {
     const t = jwt("jb-1") + this.tokensMinted;
     this.validTokens.add(t);
     return response(200, { access_token: t, token_type: "Bearer", expires_in: 900, scope: "ingest" });
+  }
+
+  /** Like s2s-cs-web #44: base64 body, multi-member gzip, header round id must match the path. */
+  private replay(round: string, init: HttpRequest): HttpResponse {
+    const scripted = this.scriptedReplays.shift();
+    if (scripted) return scripted;
+    const token = init.headers.authorization?.replace(/^Bearer /, "") ?? "";
+    if (!this.validTokens.has(token)) return response(401, { error: "invalid_token", message: "expired" });
+    if (init.method !== "PUT" || init.headers["content-type"] !== "application/vnd.egrr+base64") return response(415, { error: "unsupported_media_type" });
+    let file: Uint8Array;
+    try {
+      file = new Uint8Array(gunzipSync(Buffer.from(init.body, "base64")));
+      if (readReplayHeader(file)?.roundId !== round) return response(400, { error: "invalid_replay", message: "round id mismatch" });
+    } catch (e) {
+      return response(400, { error: "invalid_replay", message: String(e) });
+    }
+    const replaced = this.replays.has(round);
+    this.replays.set(round, file);
+    return response(replaced ? 200 : 201, { round, bytes: init.body.length, replaced });
   }
 
   private events(init: HttpRequest): HttpResponse {

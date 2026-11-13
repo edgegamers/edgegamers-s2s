@@ -108,6 +108,8 @@ export class RoundRecorder {
   private readonly payload = new ByteWriter(64);
   private eventCount = 0;
   private chunkCount = 0;
+  /** Encoded chunk bytes already handed out by `takeChunks`. */
+  private taken = 0;
   private chunkStart = 0;
   /** Round ticks begun so far; the open tick is `ticks - 1`. */
   private ticks = 0;
@@ -124,8 +126,10 @@ export class RoundRecorder {
 
   /** Ticks recorded so far. */
   get tickCount(): number { return this.ticks; }
-  /** Encoded bytes so far, before the header (for size caps and metrics). */
-  get encodedBytes(): number { return this.out.len; }
+  /** Encoded chunk bytes so far, before the header, including any `takeChunks` handed out. */
+  get encodedBytes(): number { return this.taken + this.out.len; }
+  /** Encoded chunk bytes waiting for the next `takeChunks` / `finish`. */
+  get pendingBytes(): number { return this.out.len; }
   get isTruncated(): boolean { return this.truncated; }
 
   /** Register a player (a new occupant of a slot gets a new id). Returns the player id. */
@@ -258,8 +262,34 @@ export class RoundRecorder {
     this.endEvent(EV_DEATH);
   }
 
+  /**
+   * Move out the chunks encoded so far (whole chunks only; the open one stays). For long rounds:
+   * hand each segment to an off-thread gzip as it grows, then at the end write `finishHeader()`
+   * first and the segments after it, in order, plus a last `takeChunks()`. The concatenation is
+   * byte for byte what `finish()` would have returned, and gzip members concatenate the same way.
+   */
+  takeChunks(): Uint8Array {
+    const b = this.out.bytes().slice();
+    this.taken += b.length;
+    this.out.reset();
+    return b;
+  }
+
   /** Close the recording and return the whole (uncompressed) file. The recorder is spent after this. */
   finish(): Uint8Array {
+    if (this.taken > 0) throw new Error("finish() after takeChunks(): use finishHeader() and takeChunks()");
+    const head = this.finishHeader();
+    const file = new Uint8Array(head.length + this.out.len);
+    file.set(head, 0);
+    file.set(this.out.bytes(), head.length);
+    return file;
+  }
+
+  /**
+   * Close the recording and return the preamble and header only (the start of the file). The
+   * chunks still pending come from one more `takeChunks()`. The recorder is spent after this.
+   */
+  finishHeader(): Uint8Array {
     if (!this.finished) {
       if (this.ticks > 0 && !this.truncated) this.closeTick();
       if (this.ticks > this.chunkStart || this.eventCount > 0) this.flushChunk();
@@ -285,14 +315,13 @@ export class RoundRecorder {
       h.uvar(t.first + 1); h.uvar(t.lastSeen + 1);
     }
     const head = h.bytes();
-    const file = new Uint8Array(PREAMBLE_BYTES + head.length + this.out.len);
+    const file = new Uint8Array(PREAMBLE_BYTES + head.length);
     const dv = new DataView(file.buffer);
     dv.setUint32(0, REPLAY_MAGIC, true);
     dv.setUint16(4, REPLAY_VERSION, true);
     dv.setUint16(6, this.truncated ? FLAG_TRUNCATED : 0, true);
     dv.setUint32(8, head.length, true);
     file.set(head, PREAMBLE_BYTES);
-    file.set(this.out.bytes(), PREAMBLE_BYTES + head.length);
     return file;
   }
 
