@@ -18,6 +18,11 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "config": {
+      "keep_awake": {
+        "type": "bool",
+        "default": true,
+        "description": "Turn off sv_hibernate_when_empty while a match is loaded. An empty server otherwise sleeps and never changes to the match map or starts warmup until someone joins. Set back when the match is cleared."
+      },
       "set_password": {
         "type": "bool",
         "default": true,
