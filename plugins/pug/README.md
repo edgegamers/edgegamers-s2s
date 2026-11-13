@@ -18,7 +18,7 @@ score back. This plugin never talks to the portal itself, and works without it f
    the match page can show its players `connect <address>; password <password>`. A plugin reload
    keeps the same password; the server's previous password comes back when the match is cleared.
 2. **Warmup**: endless warmup. Team 1 (the captain who picked first) is put on CT, team 2 on T;
-   rostered players cannot change team. Players not in the match are kicked (admins with the
+   rostered players cannot change team. Players not in the match are kicked, both those already on the server when it arrives and anyone who joins later (admins with the
    generic flag may stay and spectate; `kick_unrostered = false` keeps everyone on spectator).
    Everyone types `!ready`; a reminder goes out every 30 s.
 3. **Knife round**: when every rostered player is connected and ready (or an admin runs

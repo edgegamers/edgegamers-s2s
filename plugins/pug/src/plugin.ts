@@ -126,7 +126,18 @@ function place(slot: number, steamId: string, player: Player): void {
   else player.changeTeam(want);
 }
 
+/** Kick someone not in the match (admins with the generic flag may stay and spectate). True when kicked. */
+function kickIfUnrostered(client: Client): boolean {
+  const m = match;
+  if (!m || m.phase === "finished" || client.isBot) return false;
+  if (m.team(client.steamId) !== null || isAdmin(client.slot) || !config.getBool("kick_unrostered")) return false;
+  client.kickWithReason(`This server is playing PUG match #${m.id}. You are not in it.`, 5);
+  return true;
+}
+
 function placeAll(): void {
+  // Players already here when the match arrives who are not in it are kicked too.
+  for (const c of Clients.all()) if (c.isValid()) kickIfUnrostered(c);
   for (const h of humans()) place(h.slot, h.steamId, h.player);
 }
 
@@ -508,10 +519,7 @@ export function OnClientPostAdminCheck(client: Client): void {
   const m = match;
   if (!m || client.isBot || m.phase === "finished") return;
   const steamId = client.steamId;
-  if (m.team(steamId) === null && !isAdmin(client.slot) && config.getBool("kick_unrostered")) {
-    client.kickWithReason(`This server is playing PUG match #${m.id}. You are not in it.`, 5);
-    return;
-  }
+  if (kickIfUnrostered(client)) return;
   after(1000, () => {
     const p = Player.fromSlot(client.slot);
     if (p && p.steamId === steamId) place(p.slot, steamId, p);
