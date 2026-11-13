@@ -80,3 +80,26 @@ test("pug events carry the match id as their round", () => {
   assert.equal(a.map, "de_mirage");
   assert.equal(b.seq, a.seq + 1);
 });
+
+test("a PUG plugin that throws, refuses, or answers with a promise is logged, not lost", async () => {
+  for (const [load, want] of [
+    [() => { throw new Error("boom"); }, /handing the match to the PUG plugin failed: .*boom/],
+    [() => false, /did not take match 42 \(it answered false\)/],
+    [async () => true, null],
+  ] as const) {
+    const logs: string[] = [];
+    const sync = new PugSync({
+      baseUrl: "https://portal.test",
+      tokens: { get: async () => ({ ok: true, token: "t", server: "pug-1" }), invalidate: () => {} },
+      fetch: async () => response(200, { match: MATCH }),
+      schedule: () => {},
+      log: (m) => logs.push(m),
+      timeoutMs: 1000,
+    });
+    sync.attach({ load: load as PugApi["load"], clear: () => {}, status: () => ({ matchId: null, phase: "idle" }) });
+    await settle();
+    await settle();
+    if (want === null) assert.deepEqual(logs, []);
+    else assert.match(logs.join("\n"), want);
+  }
+});

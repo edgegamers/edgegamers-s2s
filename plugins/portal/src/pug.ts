@@ -10,11 +10,14 @@ import type { UlidFactory } from "./ulid.ts";
 import type { TokenResult } from "./token.ts";
 import { errText } from "./token.ts";
 
-/** The part of the PUG plugin's contract this needs (its api.d.ts). */
+/**
+ * The part of the PUG plugin's contract this needs (its api.d.ts). Calls are awaited, so an answer
+ * that crosses the plugin boundary as a promise is handled too.
+ */
 export interface PugApi {
-  load(spec: never): boolean;
-  clear(reason: string): void;
-  status(): { matchId: number | null; phase: string };
+  load(spec: never): boolean | Promise<boolean>;
+  clear(reason: string): void | Promise<void>;
+  status(): { matchId: number | null; phase: string } | Promise<{ matchId: number | null; phase: string }>;
 }
 
 export interface PugSyncDeps {
@@ -86,13 +89,20 @@ export class PugSync {
     }
     this.retryMs = RETRY_BASE_MS;
     const match = result.match;
-    if (match === null) {
-      if (pug.status().matchId !== null) pug.clear("cancelled on the portal");
-      else this.deps.debug?.("pug: no match for this server");
-      return;
+    try {
+      if (match === null) {
+        if ((await pug.status()).matchId !== null) await pug.clear("cancelled on the portal");
+        else this.deps.debug?.("pug: no match for this server");
+        return;
+      }
+      const id = String((match as { id?: unknown }).id);
+      this.deps.debug?.(`pug: match ${id}`);
+      const loaded: unknown = await pug.load(match as never);
+      if (loaded === true) this.deps.debug?.(`pug: the PUG plugin took match ${id}`);
+      else this.deps.log(`pug: the PUG plugin did not take match ${id} (it answered ${JSON.stringify(loaded) ?? "nothing"}); see its log`);
+    } catch (e) {
+      this.deps.log(`pug: handing the match to the PUG plugin failed: ${errText(e)}`);
     }
-    this.deps.debug?.(`pug: match ${String((match as { id?: unknown }).id)}`);
-    if (!pug.load(match as never)) this.deps.log("pug: the PUG plugin refused the portal's match");
   }
 
   private async get(reminted = false): Promise<{ ok: true; match: unknown } | { ok: false; message: string }> {

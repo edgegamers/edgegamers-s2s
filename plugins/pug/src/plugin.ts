@@ -59,8 +59,12 @@ const PW_CVAR = "pug_match_password";
 const PREV_CVAR = "pug_previous_password";
 
 function random(): number {
-  const c = (globalThis as { crypto?: { getRandomValues?(a: Uint32Array): Uint32Array } }).crypto;
-  if (c?.getRandomValues) return c.getRandomValues(new Uint32Array(1))[0]! / 2 ** 32;
+  try {
+    const c = (globalThis as { crypto?: { getRandomValues?(a: Uint32Array): Uint32Array } }).crypto;
+    if (c?.getRandomValues) return c.getRandomValues(new Uint32Array(1))[0]! / 2 ** 32;
+  } catch {
+    // No usable Web Crypto in this runtime.
+  }
   return Math.random();
 }
 
@@ -74,7 +78,30 @@ function setPassword(m: Match): void {
   if (saved === null && Server.getCvar(PW_CVAR) === "") Server.setCvar(PREV_CVAR, Server.getCvar("sv_password"));
   password = saved ?? makePassword(random);
   Server.setCvar(PW_CVAR, `${m.id}:${password}`);
-  Server.setCvar("sv_password", password);
+  if (Server.setCvar("sv_password", password)) log(`match #${m.id}: server password set`);
+  else log(`match #${m.id}: could not set sv_password`);
+}
+
+/**
+ * An empty CS2 server hibernates and stops running frames, so the plugin's timers (the map change,
+ * warmup) would wait for the first player. Keep it awake for the match; `""` = not changed by us.
+ */
+const HIBERNATE_CVAR = "pug_previous_hibernate";
+
+function keepAwake(): void {
+  if (!config.getBool("keep_awake")) return;
+  const now = Server.getCvar("sv_hibernate_when_empty");
+  if (now === "" || now === "0" || now === "false") return;
+  if (Server.getCvar(HIBERNATE_CVAR) === "") Server.setCvar(HIBERNATE_CVAR, now);
+  Server.setCvar("sv_hibernate_when_empty", "0");
+  log("keeping the server awake for the match (sv_hibernate_when_empty 0)");
+}
+
+function allowSleep(): void {
+  const prev = Server.getCvar(HIBERNATE_CVAR);
+  if (prev === "") return;
+  Server.setCvar("sv_hibernate_when_empty", prev);
+  Server.setCvar(HIBERNATE_CVAR, "");
 }
 
 /** Put back the password the server had before the match. */
@@ -175,7 +202,18 @@ function stopTimers(): void {
 // ---------------------------------------------------------------------------------------------
 // Phases
 
+/** `load`, logging anything that goes wrong instead of failing silently across the plugin boundary. */
 function load(spec: PugMatchSpec): boolean {
+  try {
+    return loadMatch(spec);
+  } catch (e) {
+    log(`loading a match failed: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+    return false;
+  }
+}
+
+function loadMatch(spec: PugMatchSpec): boolean {
+  log(`got match #${String((spec as { id?: unknown } | null)?.id)}`);
   const problem = specProblem(spec);
   if (problem !== null) {
     log(`refused a match: ${problem}`);
@@ -184,6 +222,7 @@ function load(spec: PugMatchSpec): boolean {
   if (match && match.id === spec.id && match.phase !== "finished") return true;
   if (match) clear(`replaced by match #${spec.id}`);
   match = new Match(spec);
+  keepAwake();
   setPassword(match);
   log(`match #${spec.id} on ${spec.map}: ${spec.teams.map((t) => `${t.name} (${t.players.length})`).join(" vs ")}`);
   if (Server.mapName === spec.map) {
@@ -193,6 +232,7 @@ function load(spec: PugMatchSpec): boolean {
   say(`Match #${spec.id} is ready. Changing to ${spec.map}…`);
   after(config.getInt("map_change_delay_ms"), () => {
     if (!match || match.id !== spec.id) return;
+    log(`match #${spec.id}: changing map to ${spec.map}${spec.workshopId ? ` (workshop ${spec.workshopId})` : ""}`);
     if (spec.workshopId) Server.command(`host_workshop_map ${spec.workshopId}`);
     else if (Server.isMapValid(spec.map)) Server.command(`changelevel ${spec.map}`);
     else {
@@ -216,6 +256,7 @@ function enterWarmup(): void {
   say(`Match #${m.id}: ${m.name(1)} vs ${m.name(2)}. Type ${ChatColors.Green}!ready${ChatColors.Default} when you are set.`);
   reminder?.kill();
   reminder = every(30_000, remind);
+  log(`match #${m.id}: warmup on ${Server.mapName}`);
   emitState("warmup");
 }
 
@@ -346,6 +387,7 @@ function clear(reason: string): void {
   stopTimers();
   restoreNames();
   restorePassword();
+  allowSleep();
   match = null;
   restarting = false;
   log(`match #${m.id} stopped: ${reason}`);
@@ -431,6 +473,7 @@ function unpause(slot: number): void {
 
 export function OnPluginStart(): void {
   Server.registerCvar(PW_CVAR, { type: "string", default: "", help: "Set by s2s-pug: <match id>:<password> of the current match." });
+  Server.registerCvar(HIBERNATE_CVAR, { type: "string", default: "", help: "Set by s2s-pug: sv_hibernate_when_empty from before the match." });
   Server.registerCvar(PREV_CVAR, { type: "string", default: "", help: "Set by s2s-pug: sv_password from before the match." });
   handle = publish("@edgegamers/s2s-pug", { load, clear, status });
 
@@ -507,6 +550,7 @@ export function OnMapStart(): void {
   if (m.phase === "finished") {
     restoreNames();
     restorePassword();
+    allowSleep();
     match = null;
     return;
   }
