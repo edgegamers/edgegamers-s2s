@@ -6,7 +6,7 @@ import { ByteReader, ReplayFormatError, peekUvar } from "./bytes.ts";
 import {
   ANGLE_UNITS, COLUMNS, COL_COUNT, C_BUTTONS, C_DUCK, C_FLAGS, C_PITCH, C_STATE, C_VX, C_VY, C_VZ,
   C_WEAPON, C_X, C_Y, C_YAW, C_Z, EV_DEATH, EV_FIRE, EV_HURT, EV_IMPACT, FLAG_TRUNCATED, PLAYER_FLAG_BOT,
-  POS_SCALE, PREAMBLE_BYTES, REPLAY_MAGIC, REPLAY_VERSION, STATE_ALIVE, STATE_PRESENT, STATE_TEAM_SHIFT,
+  POS_SCALE, PREAMBLE_BYTES, REPLAY_MAGIC, REPLAY_VERSION, STATE_ALIVE, STATE_NO_CMD, STATE_PRESENT, STATE_TEAM_SHIFT,
   VEL_SCALE, wrapSigned,
 } from "./format.ts";
 
@@ -71,6 +71,8 @@ export class PlayerTrack {
 
   present(i: number): boolean { return (this.state[i] & STATE_PRESENT) !== 0; }
   alive(i: number): boolean { return (this.state[i] & STATE_ALIVE) !== 0; }
+  /** False on a tick where the player was connected but the server ran none of their commands. */
+  commandRan(i: number): boolean { return (this.state[i] & (STATE_PRESENT | STATE_NO_CMD)) === STATE_PRESENT; }
   team(i: number): number { return (this.state[i] >> STATE_TEAM_SHIFT) & 3; }
 
   /** Index into the arrays for a round tick, or -1 outside this track. */
