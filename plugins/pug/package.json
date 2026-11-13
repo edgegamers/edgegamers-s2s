@@ -18,6 +18,11 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "config": {
+      "use_portal_names": {
+        "type": "bool",
+        "default": true,
+        "description": "Show rostered players under the name the match lists for them (their MAUL name from the portal), and give their own name back when the match is cleared."
+      },
       "kick_unrostered": {
         "type": "bool",
         "default": true,

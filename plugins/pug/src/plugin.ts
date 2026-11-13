@@ -51,10 +51,35 @@ function execCfg(key: string): void {
 
 const isAdmin = (slot: number): boolean => Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) ?? false;
 
+/** In-game names players had before a match renamed them, to give back when it is cleared. */
+const originalNames = new Map<string, string>();
+
+/** Show a rostered player under the name the portal has for them (their MAUL name). */
+function applyName(steamId: string, player: Player): void {
+  const m = match;
+  if (!m || !config.getBool("use_portal_names")) return;
+  const name = m.nameOf(steamId);
+  if (name === null) return;
+  const current = player.playerName ?? "";
+  if (current === name) return;
+  if (!originalNames.has(steamId)) originalNames.set(steamId, current);
+  player.setName(name);
+}
+
+/** Give everyone still here the name they had before the match. */
+function restoreNames(): void {
+  for (const h of humans()) {
+    const original = originalNames.get(h.steamId);
+    if (original !== undefined && original !== "") h.player.setName(original);
+  }
+  originalNames.clear();
+}
+
 /** Put a rostered player on their team's side; move anyone else to spectator. */
 function place(slot: number, steamId: string, player: Player): void {
   const m = match;
   if (!m || m.phase === "finished") return;
+  applyName(steamId, player);
   const want = m.teamNumFor(steamId);
   if (want === null) {
     if (player.teamNum !== SPECTATOR) player.changeTeam(SPECTATOR);
@@ -272,6 +297,7 @@ function clear(reason: string): void {
   const m = match;
   if (!m) return;
   stopTimers();
+  restoreNames();
   match = null;
   restarting = false;
   log(`match #${m.id} stopped: ${reason}`);
@@ -416,6 +442,8 @@ export function OnPluginStart(): void {
   Events.on("round_start", () => {
     restarting = false;
     const m = match;
+    // A Steam name change resets the shown name: put the portal's back each round.
+    if (m && m.phase !== "finished") for (const h of humans()) applyName(h.steamId, h.player);
     // Halftime and overtime swap sides: learn where team 1 is now.
     if (m && m.phase === "live") m.observeSides(humans().map((h) => ({ steamId: h.steamId, teamNum: h.player.teamNum ?? 0 })));
   });
@@ -427,6 +455,7 @@ export function OnMapStart(): void {
   const m = match;
   if (!m) return;
   if (m.phase === "finished") {
+    restoreNames();
     match = null;
     return;
   }
@@ -450,9 +479,21 @@ export function OnClientPostAdminCheck(client: Client): void {
   });
 }
 
+export function OnClientSettingsChanged(client: Client): void {
+  if (!match || client.isBot || !client.isValid()) return;
+  const steamId = client.steamId;
+  // The engine applies the client's own name after this; put the portal's back right after.
+  after(100, () => {
+    const p = Player.fromSlot(client.slot);
+    if (p && p.steamId === steamId) applyName(steamId, p);
+  });
+}
+
 export function OnClientDisconnect(client: Client): void {
+  if (client.isBot) return;
+  originalNames.delete(client.steamId);
   const m = match;
-  if (!m || client.isBot) return;
+  if (!m) return;
   m.ready.delete(client.steamId);
 }
 
