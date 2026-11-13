@@ -5,6 +5,7 @@ import type { CoreMethods } from '../../core/api';
 import type { Contract } from '../api';
 import {roundNumber,settingsNumber} from './settings';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
+export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
 
 // Wire identity values from the existing port; no registry state is copied here.
 export const enum RoleId { None=0, Innocent=1, Traitor=2, Detective=3, Spectator=4 }
@@ -48,7 +49,7 @@ export const cfg = {
   get karmaPerRoundWin() { return roundNumber('perRoundWin'); },
 };
 export function n(name: string): number { return settingsNumber(name); }
-export function msg(key: 'KARMA_WARNING', remaining: number): string {
+export function msg(key: 'ttt.karma.warning', remaining: number): string {
   return phraseFor(-1, key, remaining);
 }
 export function setScore(slot: number, value: number): void {
@@ -56,3 +57,5 @@ export function setScore(slot: number, value: number): void {
   if (player !== null) player.score = value;
 }
 export function tell(slot: number, message: string): void { Chat.toSlot(slot, message); }
+
+export const msgFor = phraseFor;

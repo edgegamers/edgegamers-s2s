@@ -53,10 +53,10 @@ export const DEFAULT_CONFIG: DecluttrConfig = {
     format: {
       enabled: false,
       templates: {
-        public: '{prefix}{blue}{name}{grey}: {message}',
-        team: '{grey}(TEAM) {prefix}{blue}{name}{grey}: {message}',
-        dead: '{grey}*DEAD* {prefix}{blue}{name}{grey}: {message}',
-        spectator: '{grey}*SPEC* {prefix}{blue}{name}{grey}: {message}',
+        public: ' {dead}{team_chat} {prefix}{default}{name}:{grey} {message}',
+        team: ' {dead}{team_chat} {prefix}{default}{name}:{grey} {message}',
+        dead: ' {dead}{team_chat} {prefix}{default}{name}:{grey} {message}',
+        spectator: ' {dead}{team_chat} {prefix}{default}{name}:{grey} {message}',
         traitor: '{grey}(TRAITOR) {prefix}{blue}{name}{grey}: {message}',
       },
       prefixes: [],
@@ -64,6 +64,14 @@ export const DEFAULT_CONFIG: DecluttrConfig = {
       grenade: { enabled: false, includeBots: false, template: '{blue}{name}{grey} » {yellow}{grenade}{grey} at {yellow}{location}{grey}.' },
     },
   },
+};
+
+// Stock templates from older generated configs still follow the translated defaults.
+const previousChatTemplates = {
+  public: '{prefix}{blue}{name}{grey}: {message}',
+  team: '{grey}(TEAM) {prefix}{blue}{name}{grey}: {message}',
+  dead: '{grey}*DEAD* {prefix}{blue}{name}{grey}: {message}',
+  spectator: '{grey}*SPEC* {prefix}{blue}{name}{grey}: {message}',
 };
 
 export function flagMask(flags: string): number {
@@ -100,7 +108,7 @@ function strings(value: unknown): asserts value is string[] {
 function oneOf(value: string, choices: string[]): void {
   if (!choices.includes(value)) throw new Error(`Invalid mode ${value}`);
 }
-const placeholders = new Set(['name', 'message', 'prefix', 'team', 'channel', 'location', 'grenade',
+const placeholders = new Set(['name', 'message', 'prefix', 'team', 'channel', 'location', 'grenade', 'dead', 'team_chat',
   'default', 'white', 'darkred', 'green', 'lightyellow', 'lightblue', 'olive', 'lime', 'red',
   'lightpurple', 'purple', 'grey', 'gray', 'yellow', 'gold', 'silver', 'blue', 'darkblue', 'bluegrey', 'magenta', 'lightred', 'orange']);
 function template(value: string): void {
@@ -110,6 +118,10 @@ function template(value: string): void {
 
 export function parseConfig(input: unknown): DecluttrConfig {
   const c = merge(DEFAULT_CONFIG, input, 'Decluttr') as DecluttrConfig;
+  for (const kind of Object.keys(previousChatTemplates) as (keyof typeof previousChatTemplates)[]) {
+    if (c.chat.format.templates[kind] === previousChatTemplates[kind])
+      c.chat.format.templates[kind] = DEFAULT_CONFIG.chat.format.templates[kind];
+  }
   if (c.version !== 1) throw new Error('Unsupported Decluttr config version');
   for (const flags of [c.reloadFlags, c.chat.advertising.notifyFlags, c.chat.dead.readFlags]) flagMask(flags);
   oneOf(c.radio.pings, ['off', 'all', 'sound']);

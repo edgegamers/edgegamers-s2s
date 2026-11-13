@@ -76,10 +76,10 @@
     "format": {
       "enabled": false,
       "templates": {
-        "public": "{prefix}{blue}{name}{grey}: {message}",
-        "team": "{grey}(TEAM) {prefix}{blue}{name}{grey}: {message}",
-        "dead": "{grey}*DEAD* {prefix}{blue}{name}{grey}: {message}",
-        "spectator": "{grey}*SPEC* {prefix}{blue}{name}{grey}: {message}",
+        "public": " {dead}{team_chat} {prefix}{default}{name}:{grey} {message}",
+        "team": " {dead}{team_chat} {prefix}{default}{name}:{grey} {message}",
+        "dead": " {dead}{team_chat} {prefix}{default}{name}:{grey} {message}",
+        "spectator": " {dead}{team_chat} {prefix}{default}{name}:{grey} {message}",
         "traitor": "{grey}(TRAITOR) {prefix}{blue}{name}{grey}: {message}"
       },
       "prefixes": [],

@@ -5,7 +5,8 @@
 
 import { ADMFLAG } from "@s2script/sdk/admin";
 import { Player } from "@s2script/cs2";
-import { command } from "@s2script/sdk/commands";
+import { staffChatPhraseFor, plainStaffChatPhrase } from "./staff-chat-phrases.ts";
+import { command, type CommandInvocation } from "@s2script/sdk/commands";
 import { HookResult } from "@s2script/sdk/events";
 import type { HookResultValue } from "@s2script/sdk/events";
 import type { Authenticator } from "./auth.ts";
@@ -55,7 +56,7 @@ export function registerCommands(deps: CommandDeps): void {
   // sm_maul_info [target] — the cached MAUL profile and the grant derived from it.
   command.admin("sm_maul_info", ADMFLAG.GENERIC, (cmd): HookResultValue => {
     const targets = resolve(cmd.arg(0), cmd.callerSlot);
-    if (targets.length === 0) { cmd.reply("[MAUL] No matching client was found."); return HookResult.Handled; }
+    if (targets.length === 0) { cmd.reply(commandPhrase(cmd, "maul.commands.client_not_found")); return HookResult.Handled; }
 
     cmd.replyToConsole(
       "    " + pad("Name", 24, 23) + " " + pad("MAUL name", 18, 17) + " " +
@@ -105,14 +106,14 @@ export function registerCommands(deps: CommandDeps): void {
       }
     }
 
-    if (cmd.replySource === "chat") cmd.reply("[MAUL] See console for output.");
+    if (cmd.replySource === "chat") cmd.reply(commandPhrase(cmd, "maul.commands.see_console"));
     return HookResult.Handled;
   });
 
   // sm_maul_refresh [target] — force a fresh lookup and re-apply.
   command.admin("sm_maul_refresh", ADMFLAG.BAN, (cmd): HookResultValue => {
     const targets = resolve(cmd.arg(0), cmd.callerSlot);
-    if (targets.length === 0) { cmd.reply("[MAUL] No matching client was found."); return HookResult.Handled; }
+    if (targets.length === 0) { cmd.reply(commandPhrase(cmd, "maul.commands.client_not_found")); return HookResult.Handled; }
 
     for (const p of targets) {
       auth.invalidate(p.steamId);
@@ -120,7 +121,7 @@ export function registerCommands(deps: CommandDeps): void {
     }
 
     log.info(`sm_maul_refresh by slot ${String(cmd.callerSlot)} for ${String(targets.length)} player(s)`);
-    cmd.reply(`[MAUL] Re-verifying ${String(targets.length)} player(s).`);
+    cmd.reply(commandPhrase(cmd, "maul.commands.refresh", String(targets.length)));
     return HookResult.Handled;
   });
 
@@ -136,7 +137,7 @@ export function registerCommands(deps: CommandDeps): void {
 
     const ranks = String(Object.keys(getRankTable().ranks).length);
     log.info(`sm_maul_reload by slot ${String(cmd.callerSlot)}`);
-    cmd.reply(`[MAUL] Reloaded (${ranks} ranks); re-verifying ${String(players.length)} player(s).`);
+    cmd.reply(commandPhrase(cmd, "maul.commands.reload", ranks, String(players.length)));
     return HookResult.Handled;
   });
 
@@ -155,7 +156,16 @@ export function registerCommands(deps: CommandDeps): void {
     const verified = players.filter((p) => auth.isVerified(p.steamId)).length;
     cmd.replyToConsole(`  Players    : ${String(verified)}/${String(players.length)} verified`);
 
-    if (cmd.replySource === "chat") cmd.reply("[MAUL] See console for output.");
+    if (cmd.replySource === "chat") cmd.reply(commandPhrase(cmd, "maul.commands.see_console"));
     return HookResult.Handled;
   });
+}
+
+function commandPhrase(cmd: CommandInvocation, key: string, ...args: string[]): string {
+  const text = staffChatPhraseFor(cmd.callerSlot, key, ...args);
+  // The translated command wrapper is shared with console output; normalize only its chat header.
+  return cmd.replySource === "chat" && cmd.callerSlot >= 0 ? text.replace(
+    /^([\x01-\x10])\[([^\]\r\n]+)\] ?(?:\x08 ?)?/,
+    (_prefix, color: string, label: string) => `${color}${label} \x08» `,
+  ) : plainStaffChatPhrase(text);
 }

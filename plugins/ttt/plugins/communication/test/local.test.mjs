@@ -38,6 +38,13 @@ test('Decluttr cannot widen private traitor audiences; formatter receives the st
  f.attachDecluttr({on(){},canReadChat(){throw Error('private role policy must stay with owner');},formatChat(slot,body,teamOnly,recipient,channel){assert.equal(body,'secret');assert.equal(channel,'traitor');return `${recipient}:${body}`;}});
  f.methods.handleChat(2,'@secret');assert.deepEqual(f.chat,[[1,'1:secret'],[2,'2:secret']]);
 });
+test('Decluttr player markers and literal system-looking body text reach private chat unchanged',()=>{
+ const f=make(),body='TTT | [T] [CT] [S] ☠ body » literal';
+ const line=`☠ [T] Player: ${body}`;
+ f.attachDecluttr({on(){},canReadChat(){return true;},formatChat(slot,text){assert.equal(text,body);return line;}});
+ f.methods.handleChat(2,body);
+ assert.ok(f.chat.length>0);assert.ok(f.chat.every(([,text])=>text===line));
+});
 test('Decluttr formatting reentry cannot disclose to recycled recipients and expired service preserves old policy',()=>{
  const f=make();f.attachDecluttr({on(){},canReadChat(){throw Error('retired');},formatChat(slot,body,teamOnly,recipient){if(recipient===1)f.connect(1,1,true);return 'private';}});
  f.methods.handleChat(2,'@secret');assert.deepEqual(f.chat,[[2,'private']]);

@@ -122,7 +122,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
       if (name === '@s2script/sdk/config') return { config: cf.config };
       if (name === '@s2script/sdk/server') return { Server: server };
       if (name === '@s2script/sdk/commands') return { command };
-      if (name === '@s2script/sdk/clients') return { Clients: { fromSlot: (slot: number) => {nativeLookups++;return clients.get(slot) ?? null;} } };
+      if (name === '@s2script/sdk/clients') return { Clients: { all: () => [...clients.values()], fromSlot: (slot: number) => {nativeLookups++;return clients.get(slot) ?? null;} } };
       if (name === '@s2script/sdk/entity') return { Entity: { findByClass: () => [] } };
       if (name === '@s2script/sdk/usermessages') return { UserMessages: { onPre: noRegistration } };
       if (name === '@s2script/sdk/translations') return { Translations: { load(_name: string, seed: Record<string, string>) { phrases = seed; }, translate(slot: number, key: string) { translation.onRead?.(slot,key); return phrases[key] ?? key; } } };

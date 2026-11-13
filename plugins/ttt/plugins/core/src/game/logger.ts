@@ -315,7 +315,7 @@ export function logLines(): string[] {
 
 /** Build the full log as lines (header + entries + footer). */
 export function makeLogs(): string[] {
-  return [msg("GAME_LOGS_HEADER"), ...logLines(), msg("GAME_LOGS_FOOTER")];
+  return [msg("ttt.logs.header"), ...logLines(), msg("ttt.logs.footer")];
 }
 
 /**

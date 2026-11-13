@@ -26,8 +26,10 @@ function live(): boolean { const rules = GameRules.get(); return !!rules && !rul
 function actor(slot: number): ChatPlayer | null {
   const client = Clients.fromSlot(slot), player = Player.fromSlot(slot);
   if (!client?.isValid() || !player?.ref.isValid()) return null;
+  const pawn = player.pawn, health = pawn?.health;
   return { slot, steamId: client.steamId, name: player.playerName ?? client.name, team: player.teamNum ?? 0,
-    alive: player.pawnIsAlive === true, bot: client.isBot, location: player.pawn?.lastPlaceName ?? '',
+    alive: player.pawnIsAlive === true, dead: health != null && health <= 0,
+    bot: client.isBot, location: pawn?.lastPlaceName ?? '',
     valid: () => client.isValid() && player.ref.isValid(), send: text => client.chat(text) };
 }
 const policy = createChatPolicy(() => settings, {
@@ -73,21 +75,21 @@ function updateNames(): void {
 }
 function reload(cmd: CommandInvocation) {
   if (cmd.callerSlot >= 0 && !Admin.forSlot(cmd.callerSlot)?.hasFlags(flagMask(settings.reloadFlags))) {
-    reply(cmd, 'no_permission'); return HookResult.Handled;
+    reply(cmd, 'decluttr.config.no_permission'); return HookResult.Handled;
   }
   try {
     const next = readConfig(); // Validate every field before changing the working configuration.
     settings = next; effects.apply(); legs.update(); reconcileNames();
-    published.emit('OnConfigChanged', { revision: ++revision }); reply(cmd, 'reload_ok');
-  } catch (error) { console.log(`[Decluttr] Config reload failed: ${String(error)}`); reply(cmd, 'reload_failed'); }
+    published.emit('OnConfigChanged', { revision: ++revision }); reply(cmd, 'decluttr.config.reloaded');
+  } catch (error) { console.log(`[Decluttr] Config reload failed: ${String(error)}`); reply(cmd, 'decluttr.config.invalid'); }
   return HookResult.Handled;
 }
 export function OnPluginStart(): void {
   settings = readConfig(); loadPhrases(); scope = createScope(); legs.start(); effects.register(); effects.apply();
   command('sm_legs', cmd => {
     const client = Clients.fromSlot(cmd.callerSlot); if (!client?.isValid()) return HookResult.Handled;
-    if (!settings.hud.legs) reply(cmd, 'legs_disabled');
-    else { reply(cmd, legs.toggle(client) ? 'legs_hidden' : 'legs_visible'); if (legs.pending(client.slot)) reply(cmd, 'save_pending'); }
+    if (!settings.hud.legs) reply(cmd, 'decluttr.legs.disabled');
+    else { reply(cmd, legs.toggle(client) ? 'decluttr.legs.hidden' : 'decluttr.legs.visible'); if (legs.pending(client.slot)) reply(cmd, 'decluttr.legs.save_pending'); }
     return HookResult.Handled;
   });
   command('sm_decluttr_reload', reload);

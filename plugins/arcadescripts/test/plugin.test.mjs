@@ -111,3 +111,19 @@ test('every map script builds and idles without errors when its entities are mis
   assert.deepEqual(f.logs, []);
   assert.equal(Object.keys(f.api.SCRIPTS).length, 29);
 });
+
+test('math answer broadcasts resolve each recipient language without changing the solution', () => {
+  const f = fixture({ translations: { 1: { "arcadescripts.bee.correct_solution": '{default}Solution : {olive}{1}{default} ' } } });
+  f.start(); f.addPlayer(0); f.addPlayer(1);
+  const bee = f.script('bee_script', 'bee.nut');
+  for (let i = 1; i <= 16; i++) f.spawn('point_worldtext', `bee_input${i}`);
+  for (let i = 1; i <= 5; i++) f.spawn('point_worldtext', `bee_currentdefinition${i}`);
+  f.round(); f.run(bee, 'SetGame(GAME_MATH)'); f.run(bee, 'ChooseNewWordOrProblem(0)');
+  f.run(bee, 'StartTimer()'); f.advance(16000);
+  assert.deepEqual(f.logs, []);
+  assert.equal(f.chat.length, 2);
+  assert.match(f.chat.find(m => m.slot === 0).text, /Correct solution:/);
+  assert.match(f.chat.find(m => m.slot === 1).text, /Solution :/);
+  const solution = text => text.replace(/\{[a-z]+\}|[\x01-\x10]/gi, '').split(':')[1].trim();
+  assert.equal(solution(f.chat[0].text), solution(f.chat[1].text));
+});

@@ -20,7 +20,7 @@ import { ADMFLAG, Admin } from "@s2script/sdk/admin";
 import { ChatColors } from "@s2script/cs2";
 import { GameState, MAX_SLOTS, RoleId } from "./core/enums";
 import { cfg } from "./core/cvars";
-import { msg, msgFor } from "./core/msgs";
+import { msg, msgFor, chatMsgFor, replyPhraseFor } from "./core/msgs";
 import * as reg from "./core/registry";
 import { getHealth, setHealth, teamOf, tell, tellAll } from "./cs2/pawn";
 import { game, inWarmup, startGame, endGame } from "./game/game";
@@ -92,7 +92,7 @@ export function openShopFor(slot: number): void {
   if (slot < 0) return;
   if (closeShopIfOpen(slot)) return;          // a second press means "put it away"
   if (game.state !== GameState.InProgress) {
-    tell(slot, msgFor(slot, "SHOP_INACTIVE"));
+    tell(slot, chatMsgFor(slot, "ttt.shop.inactive"));
     return;
   }
   if (!openShopHud(slot)) openShopMenu(slot);
@@ -102,7 +102,7 @@ export function openShopFor(slot: number): void {
 function openShopMenu(slot: number): void {
   if (slot < 0) return;
   if (game.state !== GameState.InProgress) {
-    tell(slot, msgFor(slot, "SHOP_INACTIVE"));
+    tell(slot, chatMsgFor(slot, "ttt.shop.inactive"));
     return;
   }
   const role = reg.roleOf(slot);
@@ -110,10 +110,10 @@ function openShopMenu(slot: number): void {
 
   const items = sortedFor(slot, listBuffer);
   const bal = balanceOf(slot);
-  tell(slot, msgFor(slot, "SHOP_LIST_FOOTER", roleName(role), bal));
+  tell(slot, chatMsgFor(slot, "ttt.shop.list_footer", roleNameFor(slot, role), bal));
   if (items.length === 0) return;
 
-  const m = new Menu(msgFor(slot, "SHOP_MENU_TITLE"));
+  const m = new Menu(msgFor(slot, "ttt.shop.menu_title"));
   m.style = MenuStyle.Chat; // non-freezing: the player is mid-round and being hunted
   for (let i = 0; i < items.length; i++) {
     const item = items[i]!;
@@ -130,7 +130,7 @@ function openShopMenu(slot: number): void {
       item.id,
       ok
         ? `${price} ${ChatColors.Green}${name}`
-        : `${ChatColors.Grey}[${ChatColors.DarkRed}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name} - (cannot afford)`,
+        : msgFor(slot, "ttt.shop.unaffordable_label", `${ChatColors.Grey}[${ChatColors.Yellow}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name}`),
       { disabled: !ok },
     );
   }
@@ -148,8 +148,8 @@ function openShopMenu(slot: number): void {
     // Only the two closes the PLAYER caused are worth a word. `NewMenu` means they opened something
     // else and are looking at it — telling them the shop closed would be noise about a thing they
     // just did on purpose — and `Disconnect` has nobody left to tell.
-    if (e.reason === MenuCancelReason.Exit) tell(e.slot, msgFor(e.slot, "SHOP_MENU_CLOSED"));
-    else if (e.reason === MenuCancelReason.Timeout) tell(e.slot, msgFor(e.slot, "SHOP_MENU_EXPIRED"));
+    if (e.reason === MenuCancelReason.Exit) tell(e.slot, chatMsgFor(e.slot, "ttt.shop.menu_closed"));
+    else if (e.reason === MenuCancelReason.Timeout) tell(e.slot, chatMsgFor(e.slot, "ttt.shop.menu_expired"));
   });
 
   m.display(slot, MENU_SECONDS);
@@ -165,34 +165,34 @@ function openShopMenu(slot: number): void {
  */
 function confirmPurchase(slot: number, item: ShopItem): void {
   if (game.state !== GameState.InProgress || !reg.isAlive(slot)) {
-    tell(slot, msgFor(slot, "SHOP_INACTIVE"));
+    tell(slot, chatMsgFor(slot, "ttt.shop.inactive"));
     return;
   }
 
-  const m = new Menu(msgFor(slot, "SHOP_CONFIRM_TITLE", msgFor(slot, item.nameKey), item.price));
+  const m = new Menu(msgFor(slot, "ttt.shop.confirm_title", msgFor(slot, item.nameKey), item.price));
   m.style = MenuStyle.Chat;   // non-freezing, same as the shop it came from
-  m.addItem("yes", `${ChatColors.Green}${msgFor(slot, "SHOP_CONFIRM_YES")}`);
-  m.addItem("no", `${ChatColors.Grey}${msgFor(slot, "SHOP_CONFIRM_NO")}`);
+  m.addItem("yes", `${ChatColors.Green}${msgFor(slot, "ttt.shop.confirm_yes")}`);
+  m.addItem("no", `${ChatColors.Grey}${msgFor(slot, "ttt.shop.confirm_no")}`);
 
   m.onSelect((e) => {
     if (e.info !== "yes") { openShopMenu(e.slot); return; }
     // Re-checked a second time: this menu was itself open for a keypress.
     if (game.state !== GameState.InProgress || !reg.isAlive(e.slot)) {
-      tell(e.slot, msgFor(e.slot, "SHOP_INACTIVE"));
+      tell(e.slot, chatMsgFor(e.slot, "ttt.shop.inactive"));
       return;
     }
     if (tryPurchase(e.slot, item) !== PurchaseResult.Success) return; // prints its own refusal
-    tell(e.slot, msgFor(e.slot, "SHOP_PURCHASED", msgFor(e.slot, item.nameKey)));
-    const desc = msg(item.descKey);
+    tell(e.slot, chatMsgFor(e.slot, "ttt.shop.purchased", msgFor(e.slot, item.nameKey)));
+    const desc = msgFor(e.slot, item.descKey);
     if (desc !== "" && desc !== item.descKey) {
-      tell(e.slot, msgFor(e.slot, "SHOP_PURCHASED_DETAIL", desc));
+      tell(e.slot, chatMsgFor(e.slot, "ttt.shop.purchased_detail", desc));
     }
   });
 
   // Only Exit is worth a word: a timeout on the CONFIRM step means they walked away from a
   // purchase they never made, and Disconnect has nobody left to tell.
   m.onCancel((e) => {
-    if (e.reason === MenuCancelReason.Exit) tell(e.slot, msgFor(e.slot, "SHOP_MENU_CLOSED"));
+    if (e.reason === MenuCancelReason.Exit) tell(e.slot, chatMsgFor(e.slot, "ttt.shop.menu_closed"));
   });
 
   m.display(slot, MENU_SECONDS);
@@ -243,13 +243,13 @@ const VERSION = "0.1.0";
 export function registerCommands(): void {
   command("sm_ttt", (cmd) => {
     if (cmd.arg(0).toLowerCase() !== "status") {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_TTT", VERSION));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.version", VERSION));
       return;
     }
     // `ttt` is a public command, but `ttt status` lists every player's ROLE — handing that to any
     // player would give away the whole game. Admins and the server console only.
     if (!isAdmin(cmd.callerSlot)) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_NO_PERMISSION"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.no_permission"));
       return;
     }
 
@@ -258,24 +258,20 @@ export function registerCommands(): void {
     const states = ["WAITING", "COUNTDOWN", "IN_PROGRESS", "FINISHED"];
     const active = reg.activeSlots();
     cmd.reply(
-      `[ttt] state=${states[game.state] ?? game.state} players=${active.length}/${cfg.minPlayers} ` +
-        `warmup=${inWarmup()} participants=${game.participants} roundsThisMap=${game.roundsThisMap}`,
+      (replyPhraseFor(cmd, "ttt.diagnostics.game_state", states[game.state] ?? game.state, active.length, cfg.minPlayers) + replyPhraseFor(cmd, "ttt.diagnostics.round_counts", String(inWarmup()), game.participants, game.roundsThisMap)),
     );
     cmd.reply(
-      `[ttt] alive: innocent=${reg.aliveCount(RoleId.Innocent)} ` +
-        `traitor=${reg.aliveCount(RoleId.Traitor)} detective=${reg.aliveCount(RoleId.Detective)}`,
+      (replyPhraseFor(cmd, "ttt.diagnostics.innocent_count", reg.aliveCount(RoleId.Innocent)) + replyPhraseFor(cmd, "ttt.diagnostics.role_counts", reg.aliveCount(RoleId.Traitor), reg.aliveCount(RoleId.Detective))),
     );
     const bodies = allBodies();
     let live = 0;
     for (let i = 0; i < bodies.length; i++) if (bodies[i]!.ref.isValid()) live++;
     cmd.reply(
-      `[ttt] bodies=${bodies.length} (live entities: ${live}, ` +
-        `identified: ${bodies.filter((b) => b.identified).length})`,
+      (replyPhraseFor(cmd, "ttt.diagnostics.body_counts", bodies.length, live) + replyPhraseFor(cmd, "ttt.diagnostics.identified_count", bodies.filter((b) => b.identified).length)),
     );
     cmd.reply(
-      msgFor(
-        cmd.callerSlot,
-        "CMD_WORLD_ENTITIES",
+      replyPhraseFor(cmd,
+        "ttt.diagnostics.world_entities",
         Entity.findByClass("point_worldtext").length,
         Entity.findByClass("prop_ragdoll").length,
         Entity.findByClass("prop_dynamic").length,
@@ -283,22 +279,17 @@ export function registerCommands(): void {
     );
     const d = damageDiag;
     cmd.reply(
-      `[ttt] damage: preHook=${d.hits} fallback=${d.fallbackHits} ` +
-        `canceled=${d.canceled} applied=${d.applied}`,
+      (replyPhraseFor(cmd, "ttt.diagnostics.damage_hooks", d.hits, d.fallbackHits) + replyPhraseFor(cmd, "ttt.diagnostics.damage_results", d.canceled, d.applied)),
     );
     // `rewrites` is the effect counter: a voice rule that never rewrites is not doing anything.
     const v = Voice.stats();
     cmd.reply(
-      v === null
-        ? "[ttt] voice: unsupported on this runtime"
-        : `[ttt] voice: calls=${v.calls} rules=${v.entries} rewrites=${v.rewrites}`,
+      v === null ? replyPhraseFor(cmd, "ttt.diagnostics.voice_unsupported") : replyPhraseFor(cmd, "ttt.diagnostics.voice_counts", v.calls, v.entries, v.rewrites),
     );
     for (let i = 0; i < active.length; i++) {
       const slot = active[i]!;
       cmd.reply(
-        `  [${slot}] ${reg.nameOf(slot)} role=${roleName(reg.roleOf(slot)) || "none"}` +
-          ` alive=${reg.isAlive(slot)}(engine:${reg.computeAlive(slot)})` +
-          ` hp=${getHealth(slot)} team=${teamOf(slot)} credits=${balanceOf(slot)} karma=${karmaOf(slot)}`,
+        ((replyPhraseFor(cmd, "ttt.diagnostics.player_role", slot, reg.nameOf(slot), roleNameFor(cmd.callerSlot, reg.roleOf(slot)) || msgFor(cmd.callerSlot, "ttt.common.none")) + replyPhraseFor(cmd, "ttt.diagnostics.player_alive", String(reg.isAlive(slot)), String(reg.computeAlive(slot)))) + replyPhraseFor(cmd, "ttt.diagnostics.player_stats", getHealth(slot), teamOf(slot), balanceOf(slot), karmaOf(slot))),
       );
     }
   });
@@ -308,7 +299,7 @@ export function registerCommands(): void {
     // it mid-round has solved the game. `isAdmin` lets the server console through, which is right:
     // an operator reading their own console is not a participant.
     if (!isAdmin(cmd.callerSlot)) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_NO_PERMISSION"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.no_permission"));
       return;
     }
     // NO game-state gate. An admin rules on a report during the NEXT round, or between maps, or
@@ -318,9 +309,9 @@ export function registerCommands(): void {
     // Viewing the logs while alive is announced, exactly as the original did — it is an
     // information advantage the rest of the server is entitled to know about.
     if (slot >= 0 && reg.isAlive(slot)) {
-      tellAll(msg("LOGS_VIEWED_ALIVE", reg.nameOf(slot)));
+      tellAll(recipient => chatMsgFor(recipient, "ttt.logs.viewed_alive", reg.nameOf(slot)));
     } else if (slot >= 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "LOGS_VIEWED_INFO"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.logs.printed"));
     }
     // The pageable browser for a player; the flat console dump for rcon.
     if (slot < 0 || getTttHud()?.openLogBrowser(slot) !== true) printLogsTo(slot);
@@ -330,31 +321,31 @@ export function registerCommands(): void {
   // The Panorama prompt is the primary path; these exist so a missed click does not lose the report.
   command("sm_rdmyes", (cmd) => {
     const slot = cmd.callerSlot;
-    if (slot < 0) { cmd.reply(msgFor(slot, "GENERIC_PLAYER_ONLY")); return; }
-    if (!answerPending(slot, true)) cmd.reply(msgFor(slot, "RDM_ASK_EXPIRED"));
+    if (slot < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only")); return; }
+    if (!answerPending(slot, true)) cmd.reply(replyPhraseFor(cmd, "ttt.reports.prompt_expired"));
   });
 
   command("sm_rdmno", (cmd) => {
     const slot = cmd.callerSlot;
-    if (slot < 0) { cmd.reply(msgFor(slot, "GENERIC_PLAYER_ONLY")); return; }
-    if (!answerPending(slot, false)) cmd.reply(msgFor(slot, "RDM_ASK_EXPIRED"));
+    if (slot < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only")); return; }
+    if (!answerPending(slot, false)) cmd.reply(replyPhraseFor(cmd, "ttt.reports.prompt_expired"));
   });
 
   command("sm_karma", (cmd) => {
     if (cmd.callerSlot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_PLAYER_ONLY"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only"));
       return;
     }
-    cmd.reply(msgFor(cmd.callerSlot, "KARMA_COMMAND", karmaOf(cmd.callerSlot)));
+    cmd.reply(replyPhraseFor(cmd, "ttt.karma.balance", karmaOf(cmd.callerSlot)));
   });
 
   // ── shop ──────────────────────────────────────────────────────────────────
   const balance = (cmd: CommandInvocation): void => {
     if (cmd.callerSlot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_PLAYER_ONLY"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only"));
       return;
     }
-    cmd.reply(msgFor(cmd.callerSlot, "COMMAND_BALANCE", balanceOf(cmd.callerSlot)));
+    cmd.reply(replyPhraseFor(cmd, "ttt.shop.balance", balanceOf(cmd.callerSlot)));
   };
 
   const list = (cmd: CommandInvocation): void => {
@@ -363,7 +354,7 @@ export function registerCommands(): void {
     // anyone had a role, which both leaks the Traitor list and invites buying into a role you have
     // not been dealt. Console (slot < 0) still lists everything, for operators.
     if (slot >= 0 && game.state !== GameState.InProgress) {
-      cmd.reply(msgFor(slot, "SHOP_INACTIVE"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.inactive"));
       return;
     }
     const items = slot < 0 ? (allItems() as ShopItem[]) : sortedFor(slot, listBuffer);
@@ -373,39 +364,39 @@ export function registerCommands(): void {
       const item = items[i]!;
       const affordable =
         (slot < 0 || canPurchase(slot, item) === PurchaseResult.Success) && item.price <= bal;
-      cmd.replyToChat(formatItem(item, i + 1, affordable));
+      cmd.replyToChat(formatItem(cmd.callerSlot, item, i + 1, affordable));
     }
 
     if (slot < 0 || game.state !== GameState.InProgress) return;
     const role = reg.roleOf(slot);
     if (role === RoleId.None) return;
-    cmd.replyToChat(msg("SHOP_LIST_FOOTER", roleName(role), bal));
+    cmd.replyToChat(chatMsgFor(cmd.callerSlot, "ttt.shop.list_footer", roleNameFor(cmd.callerSlot, role), bal));
   };
 
   const buy = (cmd: CommandInvocation, query = cmd.argsFrom(0).trim()): void => {
     const slot = cmd.callerSlot;
     if (slot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_PLAYER_ONLY"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only"));
       return;
     }
     if (game.state !== GameState.InProgress || !reg.isAlive(slot)) {
-      cmd.reply(msgFor(cmd.callerSlot, "SHOP_INACTIVE"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.inactive"));
       return;
     }
     if (query === "") {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "buy <item>"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.buy_arguments")));
       return;
     }
 
     const item = findItem(slot, query);
     if (item === undefined) {
-      cmd.reply(msgFor(cmd.callerSlot, "SHOP_ITEM_NOT_FOUND", query));
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.item_not_found", query));
       return;
     }
     if (tryPurchase(slot, item) !== PurchaseResult.Success) return;
-    cmd.reply(msgFor(cmd.callerSlot, "SHOP_PURCHASED", msgFor(cmd.callerSlot, item.nameKey)));
-    const desc = msg(item.descKey);
-    if (desc !== "" && desc !== item.descKey) cmd.reply(msgFor(cmd.callerSlot, "SHOP_PURCHASED_DETAIL", desc));
+    cmd.reply(replyPhraseFor(cmd, "ttt.shop.purchased", msgFor(cmd.callerSlot, item.nameKey)));
+    const desc = msgFor(cmd.callerSlot, item.descKey);
+    if (desc !== "" && desc !== item.descKey) cmd.reply(replyPhraseFor(cmd, "ttt.shop.purchased_detail", desc));
   };
 
 
@@ -416,30 +407,30 @@ export function registerCommands(): void {
 
   command("sm_report", (cmd) => {
     const slot = cmd.callerSlot;
-    if (slot < 0) { cmd.reply(msgFor(slot, "GENERIC_PLAYER_ONLY")); return; }
+    if (slot < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only")); return; }
     const targetQuery = cmd.arg(0);
     const reason = cmd.argsFrom(1).trim();
     // Bare `!report` picks the player in the HUD, then asks for the reason in chat.
     if (targetQuery === "" && reportsAvailable() && getTttHud()?.openReportPicker(slot) === true) return;
     if (targetQuery === "" || reason === "") {
-      cmd.reply(msgFor(slot, "GENERIC_USAGE", "report <player> <what happened>"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(slot, "ttt.commands.report_arguments")));
       return;
     }
     const accused = resolveTarget(targetQuery);
-    if (accused < 0) { cmd.reply(msgFor(slot, "GENERIC_NO_TARGET", targetQuery)); return; }
+    if (accused < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.commands.no_target", targetQuery)); return; }
 
-    if(!reportsAvailable()){cmd.reply("[ttt] Reports plugin is unavailable.");return;}
+    if(!reportsAvailable()){cmd.reply(replyPhraseFor(cmd, "ttt.reports.unavailable"));return;}
     const { result, report, unavailable } = fileReport(slot, accused, reason);
-    if(unavailable){cmd.reply('[ttt] Reports plugin is unavailable. An admin should verify whether the report was filed.');return;}
+    if(unavailable){cmd.reply(replyPhraseFor(cmd, "ttt.reports.delivery_uncertain"));return;}
 
-    if (result === FileResult.SelfReport)  { cmd.reply("[ttt] You cannot report yourself."); return; }
-    if (result === FileResult.EmptyReason) { cmd.reply("[ttt] Describe what happened."); return; }
-    if (result === FileResult.Duplicate)   { cmd.reply("[ttt] You already reported them this round."); return; }
+    if (result === FileResult.SelfReport)  { cmd.reply(replyPhraseFor(cmd, "ttt.reports.self_report")); return; }
+    if (result === FileResult.EmptyReason) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.reason_required")); return; }
+    if (result === FileResult.Duplicate)   { cmd.reply(replyPhraseFor(cmd, "ttt.reports.already_reported_round")); return; }
     if (result === FileResult.RateLimited) {
-      cmd.reply(`[ttt] Report limit reached (${REPORTS_PER_ROUND} per round).`);
+      cmd.reply(replyPhraseFor(cmd, "ttt.reports.round_limit", REPORTS_PER_ROUND));
       return;
     }
-    cmd.reply("[ttt] Report filed. An admin will review it.");
+    cmd.reply(replyPhraseFor(cmd, "ttt.reports.filed"));
     if (report) {
       getTttHud()?.notifyAdmins("RDM report", `${report.reporterName} → ${report.accusedName}`);
     }
@@ -449,9 +440,9 @@ export function registerCommands(): void {
   // segfaulted a live server at round start. So it is an explicit admin action, not implicit.
   command.admin("sm_ttt_hud", ADMFLAG.GENERIC, (cmd) => {
     const hud = getTttHud();
-    if (!hud) { cmd.reply("[ttt] HUD unavailable."); return; }
+    if (!hud) { cmd.reply(replyPhraseFor(cmd, "ttt.hud.unavailable")); return; }
     const why = hud.ensure();
-    cmd.reply(why === null ? "[ttt] HUD layout spawned." : `[ttt] HUD not ready: ${why}`);
+    cmd.reply(why === null ? replyPhraseFor(cmd, "ttt.hud.spawned") : replyPhraseFor(cmd, "ttt.hud.not_ready", why === "UI provider ended" ? msgFor(cmd.callerSlot, "ttt.hud.provider_ended") : why === "UI provider unavailable" ? msgFor(cmd.callerSlot, "ttt.hud.provider_unavailable") : why));
   });
 
   command.admin("sm_rdm", ADMFLAG.GENERIC, (cmd) => {
@@ -459,15 +450,15 @@ export function registerCommands(): void {
     const queue = pendingReports();
     if (slot < 0) {
       // Console has no HUD; give it the queue as text rather than nothing.
-      cmd.reply(`[ttt] ${queue.length} pending report(s)`);
+      cmd.reply(replyPhraseFor(cmd, "ttt.reports.pending_count", queue.length));
       for (const r of queue) {
-        cmd.reply(`  #${r.id} ${r.reporterName} -> ${r.accusedName} (round ${r.round}): ${r.reason}`);
+        cmd.reply(replyPhraseFor(cmd, "ttt.reports.queue_entry", r.id, r.reporterName, r.accusedName, r.round, r.reason));
       }
       return;
     }
-    if (queue.length === 0) { cmd.reply("[ttt] No pending reports."); return; }
+    if (queue.length === 0) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.none_pending")); return; }
     const hud = getTttHud();
-    if (!hud) { cmd.reply("[ttt] HUD unavailable."); return; }
+    if (!hud) { cmd.reply(replyPhraseFor(cmd, "ttt.hud.unavailable")); return; }
     hud.openRdm(slot);
   });
 
@@ -479,7 +470,7 @@ export function registerCommands(): void {
   // commands when they have no HUD, rather than appearing to do nothing.
   const shopMenu = (cmd: CommandInvocation): void => {
     const slot = cmd.callerSlot;
-    if (slot < 0) { cmd.reply("sm_shop needs an in-game caller"); return; }
+    if (slot < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.shop.player_only")); return; }
     if (!openShopHud(slot)) openShopMenu(slot);
   };
   command("sm_shopmenu", shopMenu);
@@ -527,38 +518,38 @@ export function registerCommands(): void {
         if (!openShopHud(cmd.callerSlot)) openShopMenu(cmd.callerSlot);
         return;
       default:
-        cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "shop <list|buy [item]|balance>"));
+        cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.shop_arguments")));
     }
   });
 
   // ── admin ─────────────────────────────────────────────────────────────────
   command.admin("sm_ttt_start", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.Waiting) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", "A round is already running"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.round.already_running"));
       return;
     }
     startGame();
-    cmd.reply(msgFor(cmd.callerSlot, "CMD_ROUND_STARTING"));
+    cmd.reply(replyPhraseFor(cmd, "ttt.commands.round_starting"));
   });
 
   command.admin("sm_ttt_end", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.InProgress && game.state !== GameState.Countdown) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_ERROR", "No round is running"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.round.not_running"));
       return;
     }
-    endGame(RoleId.None, "Ended by an admin");
-    cmd.reply(msgFor(cmd.callerSlot, "CMD_ROUND_ENDED"));
+    endGame(RoleId.None, "ttt.round.ended_by_admin");
+    cmd.reply(replyPhraseFor(cmd, "ttt.commands.round_ended"));
   });
 
   command.admin("sm_ttt_special", ADMFLAG.GENERIC, (cmd) => {
-    if (!specialAvailable()) { cmd.reply("[ttt] Special-round plugin is unavailable."); return; }
+    if (!specialAvailable()) { cmd.reply(replyPhraseFor(cmd, "ttt.special.unavailable")); return; }
     const id = cmd.arg(0).toLowerCase();
     if (id === "") {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_SPECIAL_AVAILABLE", roundIds().join(", ")));
+      cmd.reply(replyPhraseFor(cmd, "ttt.special.available", roundIds().join(", ")));
       return;
     }
     const started = startSpecialRounds([id]);
-    cmd.reply(started.length > 0 ? `Started: ${started.join(", ")}` : `Unknown round: ${id}`);
+    cmd.reply(started.length > 0 ? replyPhraseFor(cmd, "ttt.special.admin_started", started.join(", ")) : replyPhraseFor(cmd, "ttt.special.unknown_round", id));
   });
 
   /**
@@ -569,67 +560,64 @@ export function registerCommands(): void {
    * the C# build exposed neither (its `!karma` only ever read your own).
    */
   command.admin("sm_ttt_karma", ADMFLAG.GENERIC, (cmd) => {
-    if (!karmaAvailable()) { cmd.reply("[ttt] Karma plugin is unavailable."); return; }
+    if (!karmaAvailable()) { cmd.reply(replyPhraseFor(cmd, "ttt.karma.unavailable")); return; }
     if (cmd.argCount === 0) {
       const active = reg.activeSlots();
       for (let i = 0; i < active.length; i++) {
         const slot = active[i]!;
         const out = timeoutRemaining(slot);
         cmd.reply(
-          `  [${slot}] ${reg.nameOf(slot)} karma=${karmaOf(slot)}` +
-            (out > 0 ? ` (benched ${out} more round${out === 1 ? "" : "s"})` : ""),
+          (replyPhraseFor(cmd, "ttt.karma.player_entry", slot, reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
         );
       }
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_USAGE_KARMA"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.karma_usage"));
       return;
     }
 
     const slot = resolveTarget(cmd.arg(0));
     if (slot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_NO_PLAYER_MATCH", cmd.arg(0)));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
       return;
     }
     if (cmd.argCount < 2) {
       const out = timeoutRemaining(slot);
       cmd.reply(
-        `[ttt] ${reg.nameOf(slot)} karma=${karmaOf(slot)}` +
-          (out > 0 ? ` (benched ${out} more round${out === 1 ? "" : "s"})` : ""),
+        (replyPhraseFor(cmd, "ttt.karma.player_balance", reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
       );
       return;
     }
 
     const value = cmd.argInt(1, -1);
     if (value < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "ttt_karma <slot|name> <value>"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.karma_arguments")));
       return;
     }
     adminSetKarma(slot, value);
     cmd.reply(
-      `[ttt] ${reg.nameOf(slot)} karma set to ${karmaOf(slot)}` +
-        (timeoutRemaining(slot) === 0 ? " (timeout cleared)" : ""),
+      (replyPhraseFor(cmd, "ttt.karma.admin_set", reg.nameOf(slot), karmaOf(slot)) + (timeoutRemaining(slot) === 0 ? replyPhraseFor(cmd, "ttt.karma.timeout_cleared") : "")),
     );
   });
 
   /** `ttt_give <target> <item>` — grant a shop item for free (port of the C# `GiveItemCommand`). */
   command.admin("sm_ttt_give", ADMFLAG.GENERIC, (cmd) => {
     if (cmd.argCount === 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_ITEM_LIST", allItems().map((i) => i.id).join(", ")));
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_USAGE_GIVE"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.item_list", allItems().map((i) => i.id).join(", ")));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.give_usage"));
       return;
     }
     const slot = resolveTarget(cmd.arg(0));
     if (slot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_NO_PLAYER_MATCH", cmd.arg(0)));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
       return;
     }
     const item = itemById(cmd.arg(1).toLowerCase());
     if (item === undefined) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_UNKNOWN_ITEM", cmd.arg(1)));
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.unknown_item", cmd.arg(1)));
       return;
     }
     grantShopItem(slot,item.id);
     cmd.reply(
-      msgFor(cmd.callerSlot, "CMD_GAVE_ITEM", msgFor(cmd.callerSlot, item.nameKey), reg.nameOf(slot)),
+      replyPhraseFor(cmd, "ttt.shop.item_given", msgFor(cmd.callerSlot, item.nameKey), reg.nameOf(slot)),
     );
   });
 
@@ -642,7 +630,7 @@ export function registerCommands(): void {
    */
   command.admin("sm_ttt_roles", ADMFLAG.GENERIC, (cmd) => {
     if (game.state !== GameState.InProgress && game.state !== GameState.Finished) {
-      cmd.replyToChat(msg("GAME_LOGS_NONE"));
+      cmd.replyToChat(chatMsgFor(cmd.callerSlot, "ttt.logs.inactive"));
       return;
     }
 
@@ -655,7 +643,7 @@ export function registerCommands(): void {
       const role = order[r]!;
       const colour =
         role === RoleId.Traitor ? ChatColors.Red
-        : role === RoleId.Detective ? ChatColors.Blue
+        : role === RoleId.Detective ? ChatColors.DarkBlue
         : role === RoleId.Innocent ? ChatColors.Green
         : ChatColors.Grey;
 
@@ -664,14 +652,12 @@ export function registerCommands(): void {
         if (reg.roleOf(slot) !== role) continue;
         const dead = !reg.isAlive(slot);
         cmd.replyToChat(
-          ` ${colour}${roleName(role)}${ChatColors.Grey} - ` +
-            `${dead ? ChatColors.Grey : ChatColors.Default}${reg.nameOf(slot)}` +
-            `${dead ? ` ${ChatColors.DarkRed}[DEAD]` : ""}`,
+          chatMsgFor(cmd.callerSlot, "ttt.role.roster_entry", colour, roleNameFor(cmd.callerSlot, role), dead ? ChatColors.Grey : ChatColors.Default, reg.nameOf(slot), dead ? msgFor(cmd.callerSlot, "ttt.role.dead_marker") : ""),
         );
         shown++;
       }
     }
-    if (shown === 0) cmd.replyToChat(msg("GAME_LOGS_NONE"));
+    if (shown === 0) cmd.replyToChat(chatMsgFor(cmd.callerSlot, "ttt.logs.inactive"));
   });
 
   /**
@@ -705,35 +691,35 @@ export function registerCommands(): void {
    */
   command.admin("sm_ttt_credits", ADMFLAG.ROOT, (cmd) => {
     if (cmd.arg(0) === "" || cmd.arg(1) === "") {
-      cmd.reply("usage: sm_ttt_credits <target> <amount>");
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.credits_usage"));
       return;
     }
     const slot = resolveTarget(cmd.arg(0));
     if (slot < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_NO_PLAYER_MATCH", cmd.arg(0)));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
       return;
     }
     const want = Number.parseInt(cmd.arg(1), 10);
     if (!Number.isFinite(want) || want < 0) {
-      cmd.reply(`'${cmd.arg(1)}' is not a credit amount`);
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.invalid_credit_amount", cmd.arg(1)));
       return;
     }
     addBalance(slot, want - balanceOf(slot), "Admin", false);
-    cmd.reply(`${reg.nameOf(slot)} now has ${String(balanceOf(slot))} credits`);
+    cmd.reply(replyPhraseFor(cmd, "ttt.shop.admin_balance", reg.nameOf(slot), String(balanceOf(slot))));
   });
 
   command.admin("sm_ttt_testkill", ADMFLAG.ROOT, (cmd) => {
     if (cmd.arg(0) === "") {
-      cmd.reply("usage: sm_ttt_testkill <victim> [killer]  (killer defaults to a live Traitor)");
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.testkill_usage"));
       return;
     }
     const victim = resolveTarget(cmd.arg(0));
     if (victim < 0) {
-      cmd.reply(msgFor(cmd.callerSlot, "CMD_NO_PLAYER_MATCH", cmd.arg(0)));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
       return;
     }
     if (!reg.isAlive(victim)) {
-      cmd.reply(`${reg.nameOf(victim)} is already dead`);
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.target_already_dead", reg.nameOf(victim)));
       return;
     }
 
@@ -741,7 +727,7 @@ export function registerCommands(): void {
     if (cmd.arg(1) !== "") {
       killer = resolveTarget(cmd.arg(1));
       if (killer < 0) {
-        cmd.reply(msgFor(cmd.callerSlot, "CMD_NO_PLAYER_MATCH", cmd.arg(1)));
+        cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(1)));
         return;
       }
     } else {
@@ -754,23 +740,23 @@ export function registerCommands(): void {
         }
       }
       if (killer < 0) {
-        cmd.reply("no living Traitor to credit — pass one explicitly: sm_ttt_testkill <victim> <killer>");
+        cmd.reply(replyPhraseFor(cmd, "ttt.commands.testkill_no_traitor"));
         return;
       }
     }
     if (killer === victim) {
-      cmd.reply("killer and victim must differ, or the corpse records a suicide and carries no DNA");
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.testkill_same_player"));
       return;
     }
 
     killWithGadget(victim, killer, "[Test Kill]");
-    cmd.reply(`killed ${reg.nameOf(victim)}, credited to ${reg.nameOf(killer)} (${roleName(reg.roleOf(killer))})`);
+    cmd.reply(replyPhraseFor(cmd, "ttt.commands.testkill_result", reg.nameOf(victim), reg.nameOf(killer), roleNameFor(cmd.callerSlot, reg.roleOf(killer))));
   });
 
   command.admin("sm_ttt_myrole", ADMFLAG.ROOT, (cmd) => {
     const me = cmd.callerSlot;
     if (me < 0) {
-      cmd.reply(msgFor(me, "CMD_MYROLE_NO_SLOT"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.myrole_player_only"));
       return;
     }
     const want = cmd.arg(0).toLowerCase();
@@ -781,17 +767,17 @@ export function registerCommands(): void {
       : want === "none" || want === "clear" ? RoleId.Spectator
       : RoleId.None;
     if (role === RoleId.None) {
-      cmd.reply(msgFor(me, "CMD_MYROLE_USAGE"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.myrole_usage"));
       return;
     }
     // `Spectator` is the sentinel for "cancel" here, not a role anyone can reserve.
     if (role === RoleId.Spectator) {
       reserveRole(me, RoleId.None);
-      cmd.reply(msgFor(me, "CMD_MYROLE_CLEARED"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.role.reservation_cleared"));
       return;
     }
     reserveRole(me, role);
-    cmd.reply(msgFor(me, "CMD_MYROLE_SET", roleNameFor(me, role)));
+    cmd.reply(replyPhraseFor(cmd, "ttt.role.reserved", roleNameFor(me, role)));
   });
 
   /*
@@ -809,14 +795,14 @@ export function registerCommands(): void {
     const me = cmd.callerSlot;
     // A context is applied to a pawn, and the console does not have one.
     if (me < 0) {
-      cmd.reply(msgFor(me, "GENERIC_PLAYER_ONLY"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_only"));
       return;
     }
 
     const want = cmd.arg(0).toLowerCase();
     if (want === "clear") {
       clearMapContexts(me);
-      cmd.reply("cleared TRAITOR, DETECTIVE and INNOCENT from your pawn");
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.context_cleared"));
       return;
     }
 
@@ -826,15 +812,13 @@ export function registerCommands(): void {
       : want === "innocent" ? RoleId.Innocent
       : RoleId.None;
     if (role === RoleId.None) {
-      cmd.reply(msgFor(me, "GENERIC_USAGE", "ttt_context [traitor|detective|innocent|clear]"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(me, "ttt.commands.context_arguments")));
       return;
     }
 
     const applied = applyMapContext(me, role);
     cmd.reply(
-      applied === ""
-        ? "no live pawn to put a context on"
-        : `applied ${applied}:1 to your pawn (replacing any role context already on it)`,
+      applied === "" ? replyPhraseFor(cmd, "ttt.commands.context_no_pawn") : replyPhraseFor(cmd, "ttt.commands.context_applied", `${role === RoleId.Innocent ? ChatColors.Green : role === RoleId.Traitor ? ChatColors.Red : ChatColors.DarkBlue}${applied}${ChatColors.Grey}`),
     );
   });
 
@@ -852,11 +836,11 @@ export function registerCommands(): void {
       : roleName_ === "innocent" ? RoleId.Innocent
       : RoleId.None;
     if (slot < 0 || !reg.isConnected(slot) || role === RoleId.None) {
-      cmd.reply(msgFor(cmd.callerSlot, "GENERIC_USAGE", "ttt_setrole <slot> <innocent|traitor|detective>"));
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.setrole_arguments")));
       return;
     }
     reg.setRole(slot, role);
-    cmd.reply(msgFor(cmd.callerSlot, "CMD_ROLE_SET", slot, roleNameFor(cmd.callerSlot, role)));
+    cmd.reply(replyPhraseFor(cmd, "ttt.role.admin_set", slot, roleNameFor(cmd.callerSlot, role)));
   });
 }
 
@@ -917,10 +901,10 @@ function findItem(slot: number, query: string): ShopItem | undefined {
 }
 
 /** Format one shop listing line, matching the original's colour scheme. */
-function formatItem(item: ShopItem, index: number, affordable: boolean): string {
-  const name = msg(item.nameKey);
+function formatItem(slot: number, item: ShopItem, index: number, affordable: boolean): string {
+  const name = msgFor(slot, item.nameKey);
   if (!affordable) {
-    return ` ${ChatColors.Grey}- [${ChatColors.DarkRed}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name}`;
+    return ` ${ChatColors.Grey}- [${ChatColors.Yellow}${item.price}${ChatColors.Grey}] ${ChatColors.Red}${name}`;
   }
   if (index > 9) {
     return ` ${ChatColors.Default}- [${ChatColors.Yellow}${item.price}${ChatColors.Default}] ${ChatColors.Green}${name}`;

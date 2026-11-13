@@ -5,168 +5,168 @@ import {n} from './settings';
 export const CATALOG:readonly {id:ShopItemId;nameKey:string;descriptionKey:string;role:RoleId;priceAlias:string;limit:number}[] = [
   {
     "id": "armor",
-    "nameKey": "SHOP_ITEM_ARMOR",
-    "descriptionKey": "SHOP_ITEM_ARMOR_DESC",
+    "nameKey": "ttt.armor.name",
+    "descriptionKey": "ttt.armor.description",
     "role": 0,
     "priceAlias": "sm_ttt_shop_armor_price",
     "limit": 0
   },
   {
     "id": "healthshot",
-    "nameKey": "SHOP_ITEM_HEALTHSHOT",
-    "descriptionKey": "SHOP_ITEM_HEALTHSHOT_DESC",
+    "nameKey": "ttt.healthshot.name",
+    "descriptionKey": "ttt.healthshot.description",
     "role": 0,
     "priceAlias": "sm_ttt_shop_healthshot_price",
     "limit": 2
   },
   {
     "id": "m4a1",
-    "nameKey": "SHOP_ITEM_M4A1",
-    "descriptionKey": "SHOP_ITEM_M4A1_DESC",
+    "nameKey": "ttt.rifle.name",
+    "descriptionKey": "ttt.rifle.description",
     "role": 0,
     "priceAlias": "sm_ttt_shop_m4a1_price",
     "limit": 0
   },
   {
     "id": "taser",
-    "nameKey": "SHOP_ITEM_TASER",
-    "descriptionKey": "SHOP_ITEM_TASER_DESC",
+    "nameKey": "ttt.taser.name",
+    "descriptionKey": "ttt.taser.description",
     "role": 0,
     "priceAlias": "sm_ttt_shop_taser_price",
     "limit": 0
   },
   {
     "id": "deagle",
-    "nameKey": "SHOP_ITEM_DEAGLE",
-    "descriptionKey": "SHOP_ITEM_DEAGLE_DESC",
+    "nameKey": "ttt.revolver.name",
+    "descriptionKey": "ttt.revolver.description",
     "role": 3,
     "priceAlias": "sm_ttt_shop_onedeagle_price",
     "limit": 1
   },
   {
     "id": "stickers",
-    "nameKey": "SHOP_ITEM_STICKERS",
-    "descriptionKey": "SHOP_ITEM_STICKERS_DESC",
+    "nameKey": "ttt.stickers.name",
+    "descriptionKey": "ttt.stickers.description",
     "role": 3,
     "priceAlias": "sm_ttt_shop_stickers_price",
     "limit": 1
   },
   {
     "id": "dna",
-    "nameKey": "SHOP_ITEM_DNA",
-    "descriptionKey": "SHOP_ITEM_DNA_DESC",
+    "nameKey": "ttt.dna.name",
+    "descriptionKey": "ttt.dna.description",
     "role": 3,
     "priceAlias": "sm_ttt_shop_dna_price",
     "limit": 1
   },
   {
     "id": "healthstation",
-    "nameKey": "SHOP_ITEM_STATION_HEALTH",
-    "descriptionKey": "SHOP_ITEM_STATION_HEALTH_DESC",
+    "nameKey": "ttt.health_station.name",
+    "descriptionKey": "ttt.health_station.description",
     "role": 3,
     "priceAlias": "sm_ttt_shop_healthstation_price",
     "limit": 0
   },
   {
     "id": "compass_body",
-    "nameKey": "SHOP_ITEM_COMPASS_BODY",
-    "descriptionKey": "SHOP_ITEM_COMPASS_BODY_DESC",
+    "nameKey": "ttt.body_compass.name",
+    "descriptionKey": "ttt.body_compass.description",
     "role": 3,
     "priceAlias": "sm_ttt_shop_compass_price",
     "limit": 1
   },
   {
     "id": "c4",
-    "nameKey": "SHOP_ITEM_C4",
-    "descriptionKey": "SHOP_ITEM_C4_DESC",
+    "nameKey": "ttt.c4.name",
+    "descriptionKey": "ttt.c4.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_c4_price",
     "limit": 0
   },
   {
     "id": "gloves",
-    "nameKey": "SHOP_ITEM_GLOVES",
-    "descriptionKey": "SHOP_ITEM_GLOVES_DESC",
+    "nameKey": "ttt.gloves.name",
+    "descriptionKey": "ttt.gloves.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_gloves_price",
     "limit": 1
   },
   {
     "id": "camo",
-    "nameKey": "SHOP_ITEM_CAMO",
-    "descriptionKey": "SHOP_ITEM_CAMO_DESC",
+    "nameKey": "ttt.camouflage.name",
+    "descriptionKey": "ttt.camouflage.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_camo_price",
     "limit": 1
   },
   {
     "id": "bodypaint",
-    "nameKey": "SHOP_ITEM_BODY_PAINT",
-    "descriptionKey": "SHOP_ITEM_BODY_PAINT_DESC",
+    "nameKey": "ttt.body_paint.name",
+    "descriptionKey": "ttt.body_paint.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_bodypaint_price",
     "limit": 1
   },
   {
     "id": "onehitknife",
-    "nameKey": "SHOP_ITEM_ONE_HIT_KNIFE",
-    "descriptionKey": "SHOP_ITEM_ONE_HIT_KNIFE_DESC",
+    "nameKey": "ttt.one_hit_knife.name",
+    "descriptionKey": "ttt.one_hit_knife.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_onehitknife_price",
     "limit": 1
   },
   {
     "id": "silentawp",
-    "nameKey": "SHOP_ITEM_SILENT_AWP",
-    "descriptionKey": "SHOP_ITEM_SILENT_AWP_DESC",
+    "nameKey": "ttt.silent_awp.name",
+    "descriptionKey": "ttt.silent_awp.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_silentawp_price",
     "limit": 1
   },
   {
     "id": "poisonsmoke",
-    "nameKey": "SHOP_ITEM_POISON_SMOKE",
-    "descriptionKey": "SHOP_ITEM_POISON_SMOKE_DESC",
+    "nameKey": "ttt.poison_smoke.name",
+    "descriptionKey": "ttt.poison_smoke.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_poisonsmoke_price",
     "limit": 1
   },
   {
     "id": "poisonshots",
-    "nameKey": "SHOP_ITEM_POISON_SHOTS",
-    "descriptionKey": "SHOP_ITEM_POISON_SHOTS_DESC",
+    "nameKey": "ttt.poison_shots.name",
+    "descriptionKey": "ttt.poison_shots.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_poisonshots_price",
     "limit": 1
   },
   {
     "id": "clustergrenade",
-    "nameKey": "SHOP_ITEM_CLUSTER_GRENADE",
-    "descriptionKey": "SHOP_ITEM_CLUSTER_GRENADE_DESC",
+    "nameKey": "ttt.cluster_grenade.name",
+    "descriptionKey": "ttt.cluster_grenade.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_clustergrenade_price",
     "limit": 1
   },
   {
     "id": "damagestation",
-    "nameKey": "SHOP_ITEM_STATION_HURT",
-    "descriptionKey": "SHOP_ITEM_STATION_HURT_DESC",
+    "nameKey": "ttt.hurt_station.name",
+    "descriptionKey": "ttt.hurt_station.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_damagestation_price",
     "limit": 3
   },
   {
     "id": "compass_player",
-    "nameKey": "SHOP_ITEM_COMPASS_PLAYER",
-    "descriptionKey": "SHOP_ITEM_COMPASS_PLAYER_DESC",
+    "nameKey": "ttt.player_compass.name",
+    "descriptionKey": "ttt.player_compass.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_compass_price",
     "limit": 1
   },
   {
     "id": "tripwire",
-    "nameKey": "SHOP_ITEM_TRIPWIRE",
-    "descriptionKey": "SHOP_ITEM_TRIPWIRE_DESC",
+    "nameKey": "ttt.tripwire.name",
+    "descriptionKey": "ttt.tripwire.description",
     "role": 2,
     "priceAlias": "sm_ttt_shop_tripwire_price",
     "limit": 0

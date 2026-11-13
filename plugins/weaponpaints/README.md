@@ -11,7 +11,7 @@ in game or on the WeaponPaints website, and get them back every time they join.
 ## Install
 
 Requires a Linux CS2 server with a current [s2script](https://www.s2script.com/) runtime.
-Built against SDK **0.35.0** and CS2 types **0.22.0**. CounterStrikeSharp, MenuManagerCS2,
+Built with the shared SDK/CS2 versions pinned in the root `package.json`. CounterStrikeSharp, MenuManagerCS2,
 PlayerSettingsCS2 and AnyBaseLibCS2 are not needed.
 
 1. Run `npm run build -- --filter @edgegamers/s2s-weaponpaints` from the repository root.

@@ -11,7 +11,7 @@ export interface ReportQueueRow extends ReportView { priorGuilty:number;suggeste
 export interface ReportQueue { baseSlays:2;maxQueued:10;rows:ReportQueueRow[]; }
 export interface ReportRuling { report:ReportView;action:'acquit'|'convict'|'ban';priorGuilty:number;totalOwed:number; }
 export interface ServedSlay { actor:ReportActor;steamId:string;remaining:number; }
-export type ReportPhrase='RDM_ASK_TITLE'|'RDM_ASK_YES'|'RDM_ASK_NO'|'RDM_ASK_DISMISSED'|'RDM_ASK_CONTEXT'|'RDM_ASK_EXPIRED'|'RDM_FILE_RATE_LIMITED'|'RDM_FILE_DUPLICATE'|'RDM_FILE_FAILED'|'RDM_FILE_OK'|'RDM_ADMIN_NEW';
+export type ReportPhrase='ttt.reports.prompt_title'|'ttt.reports.prompt_yes'|'ttt.reports.prompt_no'|'ttt.reports.prompt_dismissed'|'ttt.reports.prompt_context'|'ttt.reports.prompt_expired'|'ttt.reports.rate_limited'|'ttt.reports.duplicate'|'ttt.reports.file_failed'|'ttt.reports.filed_against'|'ttt.reports.admin_new';
 export interface ReportsMethods {
  fileReport(reporter:ReportActor,accused:ReportActor,reason:string):ReportFiled;
  captureSay(actor:ReportActor,raw:string):ReportCapture;

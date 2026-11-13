@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
+import { readFileSync } from 'node:fs';
+const english = JSON.parse(readFileSync('translations/decluttr.phrases.json', 'utf8'));
 const code = buildSync({ entryPoints: ['src/chat.ts'], bundle: true, write: false, format: 'cjs', platform: 'neutral' }).outputFiles[0].text;
 const module = { exports: {} }; vm.runInNewContext(code, { module, exports: module.exports });
 const { createChatPolicy } = module.exports;
@@ -18,7 +20,7 @@ function fixture(patch) {
   const policy = createChatPolicy(() => config, { at: slot => players.get(slot) ?? null, all: () => [...players.values()],
     flags: (slot, mask) => ((players.get(slot)?.flags ?? 0) & mask) === mask,
     now: () => now, tick: () => tick, live: () => true, color: s => s,
-    phrase: (_slot, key, ...args) => `${key}:${args.join('|')}` });
+    phrase: (_slot, key, ...args) => (english[key] ?? key).replace(/\{(\d+)\}/g, (_, n) => args[Number(n) - 1] ?? '') });
   return { policy, config, players, messages, advance: ms => { now += ms; tick++; } };
 }
 test('off features leave normal chat and names untouched', () => {
@@ -61,11 +63,63 @@ test('custom chat escapes player control/color input and respects the current re
   f.players.get(1).name = '{red}Eve\x03';
   assert.equal(f.policy.relayChat(1, '{red}hello\x02', true), 2);
   assert.deepEqual(f.messages.map(x => x[0]), [1]);
-  assert.ok(!f.messages[0][1].includes('{red}')); assert.ok(!f.messages[0][1].includes('\x02'));
+  assert.ok(f.messages[0][1].includes('｛red｝Eve')); assert.ok(f.messages[0][1].includes('｛red｝hello'));
+  assert.ok(!f.messages[0][1].includes('\x02'));
 });
 test('grenade replacements retain team privacy and replacement switches are independent', () => {
   const f = fixture({ chat: { format: { grenade: { enabled: true } } } });
   f.policy.event('grenade', 0, { grenade: 'smokegrenade' });
   assert.deepEqual(f.messages.map(x => x[0]), [0, 1, 3]);
   assert.equal(f.policy.relayChat(0, 'hello', false), 0);
+});
+
+for (const [label, slot, team, alive, channel, teamOnly, expected] of [
+  ['public', 0, 2, true, 'normal', false, '  {default}p0:{grey} hello'],
+  ['T team', 0, 2, true, 'normal', true, ' {red}[T] {default} {default}p0:{grey} hello'],
+  ['CT team', 2, 3, true, 'normal', true, ' {blue}[CT] {default} {default}p2:{grey} hello'],
+  ['dead public', 1, 2, false, 'dead', false, ' {lightred}☠ {default} {default}p1:{grey} hello'],
+  ['dead T team', 1, 2, false, 'dead', true, ' {lightred}☠ {default}{red}[T] {default} {default}p1:{grey} hello'],
+  ['dead CT team', 2, 3, false, 'dead', true, ' {lightred}☠ {default}{blue}[CT] {default} {default}p2:{grey} hello'],
+  ['spectator public', 4, 1, false, 'spectator', false, '  {default}p4:{grey} hello'],
+  ['spectator team', 4, 1, false, 'spectator', true, ' {white}[S] {default} {default}p4:{grey} hello'],
+  ['unassigned team', 0, 0, true, 'normal', true, ' {grey}[?] {default} {default}p0:{grey} hello'],
+]) test(`legacy ${label} formatting keeps the marker order and name/message colors`, () => {
+  const f = fixture({ chat: { format: { enabled: true } } }), p = f.players.get(slot);
+  Object.assign(p, { team, alive, dead: !alive && team > 1 });
+  assert.equal(f.policy.formatChat(slot, 'hello', teamOnly, slot, channel), expected);
+});
+
+test('dead spectators keep the skull while pawnless spectators do not gain one', () => {
+  const f = fixture({ chat: { format: { enabled: true } } }), p = f.players.get(4);
+  p.dead = true;
+  assert.equal(f.policy.formatChat(4, 'hello', true, 4, 'spectator'),
+    ' {lightred}☠ {default}{white}[S] {default} {default}p4:{grey} hello');
+  p.dead = false;
+  assert.equal(f.policy.formatChat(4, 'hello', true, 4, 'spectator'),
+    ' {white}[S] {default} {default}p4:{grey} hello');
+});
+
+test('legacy layout keeps permission tags before the name and honors custom templates', () => {
+  const f = fixture({ chat: { format: { enabled: true, prefixes: [{ flags: 'b', text: '{purple}[VIP] ' }] } } });
+  assert.equal(f.policy.formatChat(2, 'hello', true, 2, 'normal'),
+    ' {blue}[CT] {default} {purple}[VIP] {default}p2:{grey} hello');
+  f.config.chat.format.templates.dead = 'CUSTOM {name}: {message}';
+  assert.equal(f.policy.formatChat(1, 'hello', true, 1, 'dead'), 'CUSTOM p1: hello');
+});
+
+test('older generated defaults adopt the new layout while custom formats stay literal', () => {
+  const f = fixture({ chat: { format: { enabled: true, templates: {
+    public: '{prefix}{blue}{name}{grey}: {message}',
+    team: '{grey}(TEAM) {prefix}{blue}{name}{grey}: {message}',
+    dead: '{grey}*DEAD* {prefix}{blue}{name}{grey}: {message}',
+    spectator: '{grey}*SPEC* {prefix}{blue}{name}{grey}: {message}',
+  } } } });
+  assert.equal(f.policy.formatChat(0, 'hello', false, 0, 'normal'), '  {default}p0:{grey} hello');
+  assert.equal(f.policy.formatChat(1, 'hello', true, 1, 'dead'),
+    ' {lightred}☠ {default}{red}[T] {default} {default}p1:{grey} hello');
+});
+
+test('a custom TTT channel label keeps the traitor role color', () => {
+  const f = fixture({ chat: { format: { enabled: true, templates: { traitor: '{channel}: {message}' } } } });
+  assert.equal(f.policy.formatChat(0, 'hello', false, 0, 'traitor'), '{red}traitor{grey}: hello');
 });

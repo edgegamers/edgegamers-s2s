@@ -72,7 +72,7 @@ import { createOrderedCoordinator } from "./core/ordered.ts";
 import { registerCvars, disposeCvars, cfg, n } from "./core/cvars";
 import { refreshSettings } from "./core/settings";
 import { config } from "@s2script/sdk/config";
-import { installPhrases, msg, msgFor } from "./core/msgs";
+import { installPhrases, msg, msgFor, chatMsgFor } from "./core/msgs";
 import * as reg from "./core/registry";
 import { bindForwards, forwardKill, unbindForwards } from "./core/forwards";
 
@@ -258,7 +258,7 @@ export function OnPluginStart(): void {
     getGame: () => ({ ...game, epoch: roundEpoch() }),
     getKarmaSettings,
     getNumber: n,
-    formatKarmaWarning: (remaining) => msg('KARMA_WARNING', remaining),
+    formatKarmaWarning: (remaining) => msg('ttt.karma.warning', remaining),
     dispatchDomain: event=>copyEvent(ordered.dispatchDomain(event)),
     hasDomain: (kind) => bus.has(kind),
   });
@@ -711,14 +711,14 @@ function serveQueuedSlays(): void {
     // sanctions for a round that is already over.
     if (game.state !== GameState.InProgress && game.state !== GameState.Countdown) break;
     if(!uiModels.matchesUiActor(s.actor))continue;
-    tell(s.actor.slot, `[ttt] Slain for RDM.${s.remaining > 0 ? ` ${s.remaining} slay(s) remaining.` : ""}`);
+    tell(s.actor.slot, chatMsgFor(s.actor.slot, "ttt.reports.slain", s.remaining > 0 ? msgFor(s.actor.slot, "ttt.reports.slays_remaining", s.remaining) : ""));
     // Say WHY they had no role this round. Being killed at the buzzer with no explanation reads as
     // a bug, and the exclusion from role selection is the half nobody can see.
-    tell(s.actor.slot, msg("RDM_SANCTION_BENCHED"));
+    tell(s.actor.slot, chatMsgFor(s.actor.slot, "ttt.reports.sanction_benched"));
     // Announced to EVERYONE, not just the person served. A player dropping dead at the round start
     // with no explanation looks like a bug to the other nine people watching it happen, and the
     // deterrent only works if the server can see it land.
-    tellAll(msg("RDM_SANCTION_SERVED", reg.nameOf(s.actor.slot)));
+    tellAll(recipient => chatMsgFor(recipient, "ttt.reports.sanction_served", reg.nameOf(s.actor.slot)));
     // The death illusion must never cover a sanction: TTT normally keeps a dead player reading as
     // alive until their body is found, which would leave a slain player showing as alive on the
     // scoreboard for the whole round. This is a punishment, not a secret.

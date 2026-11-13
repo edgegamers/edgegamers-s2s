@@ -19,6 +19,7 @@ in README.md.
 This derived work is distributed under the GNU General Public License version 3.
 The full license is in LICENSE. There is no warranty.
 
-s2script SDK 0.35.0 and CS2 types 0.22.0 are development dependencies, licensed
+The s2script SDK and CS2 types are development dependencies; versions are pinned
+in the root package.json. They are licensed
 MIT OR Apache-2.0 by their authors. The framework is installed separately and is
 not bundled in this release.

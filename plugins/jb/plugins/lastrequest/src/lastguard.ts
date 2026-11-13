@@ -1,10 +1,12 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * Last guard (C# `LastGuard`): when the second-to-last guard dies, the remaining guard faces every
  * prisoner alone. They get HP pooled from the prisoners, everyone is beaconed, every prisoner
  * becomes a rebel, and the round clock is reset. Each prisoner death adds time and hands a
  * glock to a random unarmed prisoner. Never starts once LR is on, and needs core's "lastguard" mode.
  */
-import { after, Chat } from "@s2script/sdk";
+import { after } from "@s2script/sdk";
 import { HintText, Player } from "@s2script/cs2";
 import { Colors, isAlive, Team } from "@edgegamers/jailbreak-shared";
 import { log, markRebel } from "@edgegamers/jailbreak-core";
@@ -125,7 +127,7 @@ export function startLastGuard(lastGuard: Player): boolean {
   const ctHealth = pawn.health ?? 0;
   const tHealth = ts.reduce((sum, p) => sum + (p.pawn?.health ?? 0), 0);
   for (const line of msg.lgStartedChat(guard.name, ctHealth, tHealth)) Chat.toAll(line);
-  for (const p of Player.all()) HintText.to(p.slot, msg.lgStartedCenter(guard.name, ctHealth, tHealth));
+  for (const p of Player.all()) HintText.to(p.slot, consoleText(msg.lgStartedCenter(guard.name, ctHealth, tHealth), p.slot));
 
   for (const p of ts) {
     startBeacon(p.userId, Colors.Red);

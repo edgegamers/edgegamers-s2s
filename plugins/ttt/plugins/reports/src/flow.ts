@@ -36,7 +36,7 @@ function considerDeath(victim:number,killer:number):void{
  const subject:Subject={accusedSlot:killer,accusedName:k.name,accusedSteamId:k.actor.steamId,round,what:describeKill(klass)};
  if(!offer(victim,subject,Date.now()/1000)){why('offer refused');return;}
  connections.set(victim,{...v.actor});
- if(!present(b,v.actor,'RDM_ASK_TITLE',subject.accusedName)&&current(b)){tell(b,v.actor,'RDM_ASK_TITLE',subject.accusedName);tell(b,v.actor,'RDM_ASK_YES');tell(b,v.actor,'RDM_ASK_NO');}
+ if(!present(b,v.actor,'ttt.reports.prompt_title',subject.accusedName)&&current(b)){tell(b,v.actor,'ttt.reports.prompt_title',subject.accusedName);tell(b,v.actor,'ttt.reports.prompt_yes');tell(b,v.actor,'ttt.reports.prompt_no');}
  console.log(`[ttt/rdm] prompted slot ${victim} about ${subject.accusedName} (class ${klass})`);
 }
 export function installFlow(bus:DomainBus):void{bus.on('death',e=>considerDeath(e.slot,e.killer),{ignoreCanceled:true});bus.on('leave',e=>forgetPrompt(e.slot));}
@@ -51,10 +51,10 @@ export function fileManual(reporter:ReportActor,accused:ReportActor,reason:strin
 function submit(b:Binding,actor:ReportActor,subject:Subject,text:string):void{
  const version=revision,r=player(actor,b);if(!r||revision!==version||!current(b))return;
  const {result,report}=fileReport({reporterSlot:actor.slot,reporterName:r.name,accusedSlot:subject.accusedSlot,accusedName:subject.accusedName,accusedSteamId:subject.accusedSteamId,reason:subject.what?`(${subject.what}) ${text}`:text,round:subject.round,now:Date.now()/1000});
- if(result===FileResult.RateLimited){notify(b,actor,'RDM_FILE_RATE_LIMITED',REPORTS_PER_ROUND);return;}
- if(result===FileResult.Duplicate){notify(b,actor,'RDM_FILE_DUPLICATE',subject.accusedName);return;}
- if(result!==FileResult.Ok||!report){notify(b,actor,'RDM_FILE_FAILED');return;}
- notify(b,actor,'RDM_FILE_OK',subject.accusedName);
+ if(result===FileResult.RateLimited){notify(b,actor,'ttt.reports.rate_limited',REPORTS_PER_ROUND);return;}
+ if(result===FileResult.Duplicate){notify(b,actor,'ttt.reports.duplicate',subject.accusedName);return;}
+ if(result!==FileResult.Ok||!report){notify(b,actor,'ttt.reports.file_failed');return;}
+ notify(b,actor,'ttt.reports.filed_against',subject.accusedName);
  if(current(b)&&revision===version)b.core.notifyReportAdmins(report.id,'prompt');
 }
 export function captureSay(actor:ReportActor,raw:string):ReportCapture{
@@ -63,7 +63,7 @@ export function captureSay(actor:ReportActor,raw:string):ReportCapture{
  // Commit the private-line decision before any notification or other external call.
  if(text.toLowerCase()==='cancel'){
   decline(actor.slot);connections.delete(actor.slot);
-  try{notify(b,actor,'RDM_ASK_DISMISSED');}catch(error){warn(error);}
+  try{notify(b,actor,'ttt.reports.prompt_dismissed');}catch(error){warn(error);}
   return {consumed:true,awaiting:current(b)&&awaiting(actor,b)};
  }
  const subject=takeContext(actor.slot);if(!subject)return {consumed:false,awaiting:false};
@@ -74,9 +74,9 @@ export function captureSay(actor:ReportActor,raw:string):ReportCapture{
 export function answerPending(actor:ReportActor,yes:boolean):ReportAnswer{
  const b=held();if(!b||!matchesPrompt(actor,b)||stageOf(actor.slot)!==Stage.Offered)return {answered:false,awaiting:b?awaiting(actor,b):false};
  const subject=subjectOf(actor.slot);
- if(!yes||subject===null){decline(actor.slot);connections.delete(actor.slot);try{notify(b,actor,'RDM_ASK_DISMISSED');}catch(error){warn(error);}return {answered:true,awaiting:current(b)&&awaiting(actor,b)};}
+ if(!yes||subject===null){decline(actor.slot);connections.delete(actor.slot);try{notify(b,actor,'ttt.reports.prompt_dismissed');}catch(error){warn(error);}return {answered:true,awaiting:current(b)&&awaiting(actor,b)};}
  if(!acceptOffer(actor.slot,Date.now()/1000))return {answered:false,awaiting:awaiting(actor,b)};
- try{notify(b,actor,'RDM_ASK_CONTEXT',subject.accusedName);}catch(error){warn(error);}
+ try{notify(b,actor,'ttt.reports.prompt_context',subject.accusedName);}catch(error){warn(error);}
  return {answered:true,awaiting:current(b)&&awaiting(actor,b)};
 }
 /** A report the player chose from the picker: skip the yes/no and await the chat reason. */
@@ -89,7 +89,7 @@ export function beginReport(reporter:ReportActor,accused:ReportActor):ReportAnsw
  const subject:Subject={accusedSlot:accused.slot,accusedName:a.name,accusedSteamId:a.actor.steamId,round,what:''};
  if(!begin(reporter.slot,subject,Date.now()/1000))return {answered:false,awaiting:awaiting(reporter,b)};
  connections.set(reporter.slot,{...r.actor});
- try{notify(b,reporter,'RDM_ASK_CONTEXT',subject.accusedName);}catch(error){warn(error);}
+ try{notify(b,reporter,'ttt.reports.prompt_context',subject.accusedName);}catch(error){warn(error);}
  return {answered:true,awaiting:current(b)&&awaiting(reporter,b)};
 }
 export function tick():void{
@@ -100,11 +100,11 @@ export function tick():void{
   if(!current(b)||version!==revision)return;
   if(actor&&stage===Stage.AwaitingContext){
    const fresh=players(b).find(p=>sameConnection(p.actor,actor));
-   if(current(b)&&version===revision&&fresh&&stageOf(actor.slot)===Stage.Idle)notify(b,fresh.actor,'RDM_ASK_EXPIRED');
+   if(current(b)&&version===revision&&fresh&&stageOf(actor.slot)===Stage.Idle)notify(b,fresh.actor,'ttt.reports.prompt_expired');
   }else if(actor&&stage===Stage.Offered){
    // An unanswered question used to lapse silently in chat; only the open HUD prompt needs closing.
    const fresh=players(b).find(p=>sameConnection(p.actor,actor));
-   if(current(b)&&version===revision&&fresh&&stageOf(actor.slot)===Stage.Idle)present(b,fresh.actor,'RDM_ASK_EXPIRED');
+   if(current(b)&&version===revision&&fresh&&stageOf(actor.slot)===Stage.Idle)present(b,fresh.actor,'ttt.reports.prompt_expired');
   }
  }
 }

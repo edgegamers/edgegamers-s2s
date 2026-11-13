@@ -1,5 +1,9 @@
+import { consoleText } from "@edgegamers/jailbreak-shared";
+import { createPhrases, joinText, type Text } from "@edgegamers/jailbreak-shared";
+import english from "../translations/jailbreak-warden.phrases.json";
+export const { phrase, loadPhrases } = createPhrases("jailbreak-warden", english);
 import { ChatColors } from "@s2script/cs2";
-import { hl, tag, teamColored } from "@edgegamers/jailbreak-shared";
+import { tag } from "@edgegamers/jailbreak-shared";
 
 /**
  * Every player-facing string of the warden plugin (ported from lang/Jailbreak.English Warden*,
@@ -8,111 +12,134 @@ import { hl, tag, teamColored } from "@edgegamers/jailbreak-shared";
  */
 
 const G = ChatColors.Grey;
-const W = (s: string): string => `${tag("Warden", ChatColors.DarkBlue)}${G}${s}`;
-const V = (s: string): string => `${tag("Voice", ChatColors.DarkBlue)}${G}${s}`;
-const CD = (s: string): string => `${tag("Countdown", ChatColors.DarkBlue)}${G}${s}`;
-const cmd = (c: string): string => `${ChatColors.BlueGrey}${c}${G}`;
-const s = (n: number): string => (n === 1 ? "" : "s");
+const W = (s: Text): Text => joinText(tag(phrase("jailbreak.warden.warden_prefix"), ChatColors.Blue), G, s);
+const V = (s: Text): Text => joinText(tag(phrase("jailbreak.warden.voice_prefix"), ChatColors.Blue), G, s);
+const CD = (s: Text): Text => joinText(tag(phrase("jailbreak.warden.countdown_prefix"), ChatColors.Blue), G, s);
+const s = (n: number): Text => (n === 1 ? "" : phrase("jailbreak.warden.plural_suffix"));
 
-/** A player name coloured by team. */
-export const who = (name: string, teamNum: number | null | undefined): string => `${teamColored(name, teamNum)}${G}`;
+/** Keep names literal; each phrase colors its executor or target argument. */
+export const who = (name: string, _teamNum: number | null | undefined): string => name;
 
-const COMMAND_STANDS = "The previous command stands for 10 seconds.";
+const COMMAND_STANDS = phrase("jailbreak.warden.command_stands");
 
 export const msg = {
   // ── warden (WardenLocale) ────────────────────────────────────────────────
-  pickingShortly: W(`Picking a warden shortly, type ${cmd("!warden")} to enter the queue.`),
-  noWardens: W(`No one in queue. Next guard to ${cmd("!warden")} will become warden.`),
-  nowFreeday: W(`It is now a freeday! CTs must pursue ${cmd("!warden")}.`),
-  wardenLeft: W(`The warden left the game. ${COMMAND_STANDS}`),
-  wardenLeftCenter: `The warden left the game. ${COMMAND_STANDS}`,
+  pickingShortly: W(phrase("jailbreak.warden.picking_shortly", "!warden")),
+  noWardens: W(phrase("jailbreak.warden.no_wardens", "!warden")),
+  nowFreeday: W(phrase("jailbreak.warden.now_freeday", "!warden")),
+  wardenLeft: W(phrase("jailbreak.warden.warden_left", COMMAND_STANDS)),
+  wardenLeftCenter: phrase("jailbreak.warden.warden_left_center", COMMAND_STANDS),
   wardenDied: [
-    W(`The warden ${ChatColors.Red}died${G}. It is a freeday!`),
-    W(`CTs must pursue ${cmd("!warden")}.`),
+    W(phrase("jailbreak.warden.warden_died")),
+    W(phrase("jailbreak.warden.freeday_warden_hint", "!warden")),
   ],
-  wardenDiedCenter: "The warden died. It is a freeday!",
-  becomeNextWarden: W(`Type ${cmd("!warden")} to become the warden.`),
-  joinRaffle: W(`You ${ChatColors.White}joined ${G}the warden raffle.`),
-  leaveRaffle: W(`You ${ChatColors.Red}left ${G}the warden raffle.`),
-  notWarden: W(`${ChatColors.LightRed}You are not the warden.`),
-  togglingNotEnabled: W("Toggling Auto-Warden is not supported on this server."),
-  passWarden: (name: string): string => W(`${name} resigned from warden. ${COMMAND_STANDS}`),
-  passWardenCenter: (name: string): string => `${name} resigned from warden.`,
-  fireWarden: (name: string): string => W(`${name} was fired from warden. ${COMMAND_STANDS}`),
-  fireWardenBy: (admin: string, name: string): string => W(`${admin} fired ${name} from warden. ${COMMAND_STANDS}`),
-  newWarden: (name: string): string => W(`${name} is now the warden.`),
-  newWardenCenter: (name: string): string => `${name} is now the warden.`,
-  currentWarden: (name: string | null): string =>
-    name === null ? W("There is no warden.") : W(`The warden is ${name}.`),
-  cannotWardenDuringWarmup: W("You cannot warden during warmup."),
-  markerPlaced: W("Marker placed."),
-  autoWardenToggled: (enabled: boolean): string =>
-    W(`You ${enabled ? `${ChatColors.Green}enabled` : `${ChatColors.Red}disabled`}${G} Auto-Warden.`),
-  removeFailed: W("[BUG] Couldn't remove warden :^("),
+  wardenDiedCenter: phrase("jailbreak.warden.warden_died_center"),
+  becomeNextWarden: W(phrase("jailbreak.warden.become_next_warden", "!warden")),
+  joinRaffle: W(phrase("jailbreak.warden.join_raffle")),
+  leaveRaffle: W(phrase("jailbreak.warden.leave_raffle")),
+  notWarden: W(phrase("jailbreak.warden.not_warden")),
+  togglingNotEnabled: W(phrase("jailbreak.warden.toggling_not_enabled")),
+  passWarden: (name: string): Text => W(phrase("jailbreak.warden.pass_warden", name, COMMAND_STANDS)),
+  passWardenCenter: (name: string): Text => phrase("jailbreak.warden.pass_warden_center", name),
+  fireWarden: (name: string): Text => W(phrase("jailbreak.warden.fire_warden", name, COMMAND_STANDS)),
+  fireWardenBy: (admin: string, name: string): Text => W(phrase("jailbreak.warden.fire_warden_by", admin, name, COMMAND_STANDS)),
+  newWarden: (name: string): Text => W(phrase("jailbreak.warden.new_warden", name)),
+  newWardenCenter: (name: string): Text => phrase("jailbreak.warden.new_warden_center", name),
+  currentWarden: (name: string | null): Text =>
+    name === null ? W(phrase("jailbreak.warden.no_current_warden")) : W(phrase("jailbreak.warden.current_warden", name)),
+  cannotWardenDuringWarmup: W(phrase("jailbreak.warden.cannot_warden_during_warmup")),
+  markerPlaced: W(phrase("jailbreak.warden.marker_placed")),
+  autoWardenToggled: (enabled: boolean): Text =>
+    W(phrase("jailbreak.warden.auto_warden_toggled", enabled ? phrase("jailbreak.warden.auto_warden_enabled") : phrase("jailbreak.warden.auto_warden_disabled"))),
+  removeFailed: W(phrase("jailbreak.warden.remove_failed")),
 
   // ── open (WardenCmdOpenLocale) ───────────────────────────────────────────
-  cannotOpenYet: (seconds: number): string => W(`You must wait ${hl(seconds)}${G} seconds before opening the cells.`),
-  alreadyOpened: W("Cells are already opened."),
-  cellsOpenedByWarden: W(`${ChatColors.Blue}The warden ${G}opened the cells.`),
-  cellsOpenedBy: (name: string): string => W(`${name} opened the cells.`),
-  openingFailed: W("Failed to open the cells."),
+  cannotOpenYet: (seconds: number): Text => W(phrase("jailbreak.warden.cannot_open_yet", seconds)),
+  alreadyOpened: W(phrase("jailbreak.warden.already_opened")),
+  cellsOpenedByWarden: W(phrase("jailbreak.warden.cells_opened_by_warden")),
+  cellsOpenedBy: (name: string): Text => W(phrase("jailbreak.warden.cells_opened_by", name)),
+  openingFailed: W(phrase("jailbreak.warden.opening_failed")),
 
   // ── count (WardenCmdCountLocale) ─────────────────────────────────────────
-  prisonersInMarker: (n: number): string =>
-    W(`There ${n === 1 ? "is" : "are"} ${hl(n)}${G} prisoner${s(n)} in the marker.`),
-  cannotCountYet: (seconds: number): string => W(`You must wait ${hl(seconds)}${G} seconds before counting prisoners.`),
-  noMarkerSet: W("No marker set."),
+  prisonersInMarker: (n: number): Text =>
+    W(phrase("jailbreak.warden.prisoners_in_marker", n === 1 ? phrase("jailbreak.warden.prisoner_is") : phrase("jailbreak.warden.prisoners_are"), n, s(n))),
+  cannotCountYet: (seconds: number): Text => W(phrase("jailbreak.warden.cannot_count_yet", seconds)),
+  noMarkerSet: W(phrase("jailbreak.warden.no_marker_set")),
 
   // ── roll / chicken / soccer ──────────────────────────────────────────────
-  roll: (n: number): string => W(`warden has rolled ${hl(n)}${G}!`),
-  chickenSpawned: W(`${ChatColors.Blue}The warden${G} spawned a chicken.`),
-  chickenFailed: W(`${ChatColors.Red}Failed to spawn a chicken.`),
-  tooManyChickens: W("Too many chickens."),
-  soccerSpawned: W(`${ChatColors.Blue}The warden${G} spawned a soccer ball.`),
-  soccerFailed: W(`${ChatColors.Red}Failed to spawn a soccer ball.`),
-  tooManySoccers: W("Too many soccer balls."),
+  roll: (n: number): Text => W(phrase("jailbreak.warden.roll", n)),
+  chickenSpawned: W(phrase("jailbreak.warden.chicken_spawned")),
+  chickenFailed: W(phrase("jailbreak.warden.chicken_failed")),
+  tooManyChickens: W(phrase("jailbreak.warden.too_many_chickens")),
+  soccerSpawned: W(phrase("jailbreak.warden.soccer_spawned")),
+  soccerFailed: W(phrase("jailbreak.warden.soccer_failed")),
+  tooManySoccers: W(phrase("jailbreak.warden.too_many_soccers")),
 
   // ── marker customisation (WardenCmdMarkerLocale) ─────────────────────────
-  markerTypeChanged: (type: string): string => W(`Changed marker type to ${type}.`),
-  markerColorChanged: (color: string): string => W(`Changed marker color to ${color}.`),
-  markerSaveFailed: W("Could not save your marker preference right now, please try again."),
+  markerTypeChanged: (type: Text): Text => W(phrase("jailbreak.warden.marker_type_changed", type)),
+  markerColorChanged: (color: Text): Text => W(phrase("jailbreak.warden.marker_color_changed", color)),
+  markerSaveFailed: W(phrase("jailbreak.warden.marker_save_failed")),
 
   // ── countdown ────────────────────────────────────────────────────────────
-  countdownStarted: (n: number): string => CD(`A ${n} second countdown has begun!`),
-  countdownTick: (n: number): string => CD(`${n}`),
-  countdownGo: CD("GO! GO! GO!"),
+  countdownStarted: (n: number): Text => CD(phrase("jailbreak.warden.countdown_started", n)),
+  countdownTick: (n: number): Text => CD(joinText(ChatColors.Yellow, n, G)),
+  countdownGo: CD(phrase("jailbreak.warden.countdown_go")),
 
   // ── special treatment (WardenSTLocale) ───────────────────────────────────
-  stUsage: W(`Usage: ${cmd("!st <prisoner name | #userid>")}`),
-  stGranted: W(`You now have ${ChatColors.Green}Special Treatment${ChatColors.White}!`),
-  stGrantedCenter: "You now have Special Treatment!",
-  stRevoked: W(`Your Special Treatment was ${ChatColors.Red}removed${ChatColors.White}.`),
-  stRevokedCenter: "Your Special Treatment was removed.",
-  stGrantedTo: (name: string): string => W(`${name} now has ${ChatColors.Green}Special Treatment${ChatColors.White}!`),
-  stRevokedFrom: (name: string): string => W(`${name} ${ChatColors.Red}no longer ${G}has Special Treatment.`),
+  stUsage: W(phrase("jailbreak.warden.st_usage", "!st <prisoner name | #userid>")),
+  stGranted: W(phrase("jailbreak.warden.st_granted")),
+  stGrantedCenter: phrase("jailbreak.warden.st_granted_center"),
+  stRevoked: W(phrase("jailbreak.warden.st_revoked")),
+  stRevokedCenter: phrase("jailbreak.warden.st_revoked_center"),
+  stGrantedTo: (name: string): Text => W(phrase("jailbreak.warden.st_granted_to", name)),
+  stRevokedFrom: (name: string): Text => W(phrase("jailbreak.warden.st_revoked_from", name)),
 
   // ── peace (WardenPeaceLocale) ────────────────────────────────────────────
-  peaceByAdmin: (n: number): string => V(`An admin enacted peace for ${hl(n)}${G} second${s(n)}.`),
-  peaceByWarden: (n: number): string => V(`The warden enacted peace for ${hl(n)}${G} seconds.`),
-  peaceGeneral: (n: number): string => V(`Peace was enacted for ${hl(n)}${G} second${s(n)}.`),
-  unmutedGuards: V(`${ChatColors.Blue}Guards${G} were unmuted.`),
-  unmutedPrisoners: V(`${ChatColors.LightRed}Prisoners${G} were unmuted.`),
-  muteReminder: "You are currently muted.",
-  deadReminder: "You are dead. Only dead players can hear you.",
-  adminDeadReminder: "You are dead. Only dead players can hear you. Use !speaktoall to talk to everyone.",
-  adminMutedReminder: "You are muted. Use !speaktoall to talk to everyone.",
-  lockedReminder: "Prisoners are muted until last request.",
-  prisonersLockedUntilLR: V(`${ChatColors.LightRed}Prisoners${G} are muted until last request.`),
-  peaceOverPrisonersLocked: V(`Peace is over. ${ChatColors.LightRed}Prisoners${G} stay muted until last request.`),
-  speakToAllOn: V("You are now speaking to everyone. Type !speaktoall again to stop."),
-  speakToAllOff: V("You are no longer speaking to everyone."),
-  peaceActive: V("Peace is currently active."),
+  peaceByAdmin: (n: number): Text => V(phrase("jailbreak.warden.peace_by_admin", n, s(n))),
+  peaceByWarden: (n: number): Text => V(phrase("jailbreak.warden.peace_by_warden", n)),
+  peaceGeneral: (n: number): Text => V(phrase("jailbreak.warden.peace_general", n, s(n))),
+  unmutedGuards: V(phrase("jailbreak.warden.unmuted_guards")),
+  unmutedPrisoners: V(phrase("jailbreak.warden.unmuted_prisoners")),
+  muteReminder: phrase("jailbreak.warden.mute_reminder"),
+  deadReminder: phrase("jailbreak.warden.dead_reminder"),
+  adminDeadReminder: phrase("jailbreak.warden.admin_dead_reminder"),
+  adminMutedReminder: phrase("jailbreak.warden.admin_muted_reminder"),
+  lockedReminder: phrase("jailbreak.warden.locked_reminder"),
+  prisonersLockedUntilLR: V(phrase("jailbreak.warden.prisoners_locked_until_lr")),
+  peaceOverPrisonersLocked: V(phrase("jailbreak.warden.peace_over_prisoners_locked")),
+  speakToAllOn: V(phrase("jailbreak.warden.speak_to_all_on")),
+  speakToAllOff: V(phrase("jailbreak.warden.speak_to_all_off")),
+  peaceActive: V(phrase("jailbreak.warden.peace_active")),
 
   // ── generic (GenericCmdLocale) ───────────────────────────────────────────
-  playerNotFound: (q: string): string => W(`Player '${cmd(q)}' not found.`),
-  playerFoundMultiple: (q: string): string => W(`Multiple players found for '${cmd(q)}'.`),
-  onCooldown: (seconds: number): string => W(`Command is on cooldown for ${hl(seconds)}${G} second${s(seconds)}.`),
-  invalidParameter: (arg: string, expected: string): string =>
-    W(`Invalid parameter '${cmd(arg)}', expected a${/^[aeiou]/i.test(expected) ? "n" : ""} ${cmd(expected)}.`),
-  noPermission: (flag: string): string => W(`This requires the ${cmd(flag)} permission.`),
+  playerNotFound: (q: string): Text => W(phrase("jailbreak.warden.player_not_found", q)),
+  playerFoundMultiple: (q: string): Text => W(phrase("jailbreak.warden.player_found_multiple", q)),
+  onCooldown: (seconds: number): Text => W(phrase("jailbreak.warden.on_cooldown", seconds, s(seconds))),
+  invalidParameter: (arg: string, expected: Text): Text =>
+    W(phrase("jailbreak.warden.invalid_parameter", arg, /^[aeiou]/i.test(consoleText(expected)) ? phrase("jailbreak.warden.article_an_suffix") : "", expected)),
+  noPermission: (flag: Text): Text => W(phrase("jailbreak.warden.no_permission", flag)),
+};
+
+export const MARKER_LABELS = {
+  circle: phrase("jailbreak.warden.shape_circle"),
+  triangle: phrase("jailbreak.warden.shape_triangle"),
+  square: phrase("jailbreak.warden.shape_square"),
+  diamond: phrase("jailbreak.warden.shape_diamond"),
+  pentagon: phrase("jailbreak.warden.shape_pentagon"),
+  hexagon: phrase("jailbreak.warden.shape_hexagon"),
+  heart: phrase("jailbreak.warden.shape_heart"),
+  star: phrase("jailbreak.warden.shape_star"),
+  jelly_bean: phrase("jailbreak.warden.shape_jelly_bean"),
+  among_us: phrase("jailbreak.warden.shape_among_us"),
+};
+export const MARKER_COLOR_LABELS: Record<string, Text> = {
+  Red: phrase("jailbreak.warden.color_red"),
+  Green: phrase("jailbreak.warden.color_green"),
+  Blue: phrase("jailbreak.warden.color_blue"),
+  Magenta: phrase("jailbreak.warden.color_magenta"),
+  Yellow: phrase("jailbreak.warden.color_yellow"),
+  Purple: phrase("jailbreak.warden.color_purple"),
+  Pink: phrase("jailbreak.warden.color_pink"),
+  Cyan: phrase("jailbreak.warden.color_cyan"),
+  White: phrase("jailbreak.warden.color_white"),
 };

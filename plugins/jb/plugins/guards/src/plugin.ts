@@ -1,3 +1,4 @@
+import { loadPhrases } from "./messages";
 /**
  * @edgegamers/jailbreak-guards — wiring only. Guard queue, ratio, priority and CT bans live in their
  * own modules; this file connects them to core, the SDK lifecycle and the published contract.
@@ -35,6 +36,7 @@ function ready(steamId: string): void {
 }
 
 export function OnPluginStart(): void {
+  loadPhrases();
   loadSettings();
   disableEngineBalance();
   config.onChange(() => {

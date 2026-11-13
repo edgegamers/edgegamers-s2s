@@ -1,3 +1,5 @@
+import { Translations } from '@s2script/sdk';
+import english from '../translations/arcadescripts.phrases.json';
 // ArcadeScripts for s2script. Derived from ArcadeScripts-CSS 1.0.2 by Supergosciuツ (GPL-3.0).
 // See LICENSE and NOTICE. Port of ArcadeScripts.cs and Events.cs.
 //
@@ -73,6 +75,7 @@ export const SCRIPTS: Readonly<Record<string, ScriptConstructor>> = {
 const rt = new Runtime(SCRIPTS);
 
 export function OnPluginStart(): void {
+  Translations.load('arcadescripts', english);
   rt.mapStart(Server.mapName);
 
   const scope = createScope();

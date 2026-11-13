@@ -14,10 +14,10 @@ class Vector {
 }
 
 // Only the engine boundary is doubled. Tests execute the real bundled plugin.
-export function fixture({ map = 'jb_arcade_b6' } = {}) {
+export function fixture({ map = 'jb_arcade_b6', translations = {} } = {}) {
   const logs = [], inputs = [], damage = [], chat = [], center = [];
   const handlers = { create: [], spawn: [], remove: [], frame: [], mapStart: [], events: new Map(), inputs: [] };
-  const players = new Map();
+  const players = new Map(), phrases = new Map();
   let timers = [], now = 0, serial = 1, layoutLie = false;
 
   const ptr = (target) => ({
@@ -100,13 +100,17 @@ export function fixture({ map = 'jb_arcade_b6' } = {}) {
     },
     every() { throw Error('unexpected repeating timer'); },
     createEntity: (className) => entity(className),
-    Chat: { toAll: (text) => chat.push(text) },
+    Chat: { toAll: (text) => chat.push(text), toSlot: (slot, text) => chat.push({ slot, text }) },
+    Clients: { all: () => [...players.values()] },
+    Translations: { load: (_name, seed) => { for (const [k, v] of Object.entries(seed)) phrases.set(k, v); },
+      translate: (slot, key, ...args) => (translations[slot]?.[key] ?? phrases.get(key) ?? key)
+        .replace(/\{(\d+)\}/g, (_, n) => String(args[Number(n) - 1] ?? '')) },
     Ptr: { from: (ref) => (ref.isValid() ? ptr({ kind: 'instance', ref }) : null) },
   };
   const cs2 = {
     Player: { all: () => [...players.values()], fromSlot: (slot) => players.get(slot) ?? null },
     CenterHtml: { to: (slot, html, seconds) => center.push({ slot, html, seconds }) },
-    ChatColors: { Default: '\x01', Olive: '\x05', Green: '\x04' },
+    ChatColors: { Default: '\x01', White: '\x01', DarkRed: '\x02', LightPurple: '\x03', Green: '\x04', Olive: '\x05', Lime: '\x06', Red: '\x07', Grey: '\x08', Yellow: '\x09', Silver: '\x0a', Blue: '\x0b', DarkBlue: '\x0c', BlueGrey: '\x0d', Purple: '\x0e', LightRed: '\x0f', Orange: '\x10' },
     sceneNodeOf: (ref) => ({ absRotation: ref.angles }),
     wrapEntity: (cls, ref) => ref,
   };

@@ -70,3 +70,19 @@ nothing, so the bridge can resend it freely.
 
 `api.d.ts`: `load(spec)`, `clear(reason)`, `status()`; forwards `OnStateChanged`, `OnRoundEnd` and
 `OnMatchEnd`. Teams are the portal's teams (1 and 2), not sides.
+
+## Translations
+
+Player announcements and command replies use the embedded English defaults in
+[`translations/pug.phrases.json`](translations/pug.phrases.json). Override them in
+`addons/s2script/translations/pug.phrases.json`; add other languages under
+`addons/s2script/translations/<language-code>/pug.phrases.json`. Broadcasts resolve each player's
+language, including nested ready states, side choices and cancellation reasons.
+
+Keys follow `pug.feature.function` and arguments are one-based (`{1}`, `{2}`, …). The editable
+`pug.chat.prefix` defaults to `{blue}PUG {grey}» `; `pug.console.prefix` retains `[PUG] ` for console
+replies. Color tags apply to translation templates. Player names, portal team names and custom
+cancellation reasons remain literal, with control characters removed from displayed arguments.
+Their braces display as fullwidth `｛` / `｝` so native chat and console tag expansion keeps them
+visible instead of interpreting them as colors.
+Protocol phase/side IDs, parser errors, logs and the plain kick reason keep their existing values.

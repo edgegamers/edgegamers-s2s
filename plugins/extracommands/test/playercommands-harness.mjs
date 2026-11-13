@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { buildSync } from "esbuild";
+import { chatColors } from "./chat-colors.mjs";
 
 const source = buildSync({
   entryPoints: [new URL("../src/plugin.ts", import.meta.url).pathname],
@@ -10,13 +11,18 @@ const source = buildSync({
 export function fixture(options = {}) {
   const commands = new Map(), players = new Map(), targets = new Map(), menu = new Map();
   const messages = [], menus = [], sets = new Map(), dispatches = [];
-  const replies = [], targetCalls = [], frames = [], events = [];
+  const replies = [], targetCalls = [], frames = [], events = [], activities = [], logs = [];
   let serial = 1, frameFails = false;
   const ref = valid => ({ index: serial, id: serial++, isValid: valid });
   const command = (name, handler) => commands.set(name, { flags: 0, handler });
   command.admin = (name, flags, handler) => commands.set(name, { flags, handler });
   const sdk = {
     command,
+    Activity: {
+      showT(actor, key, ...args) { activities.push({ actor, key, args, tag: sdk.Activity.tag }); replies.push([key, ...args]); },
+      describe(actor) { return `actor<${typeof actor === "number" ? actor : actor.callerSlot}>`; },
+      log(actor, target, message) { logs.push({ actor, target, message }); },
+    },
     Clients: { fromSlot: slot => players.get(slot)?.client ?? null },
     ADMFLAG: { SLAY: 32, CHEATS: 8192, KICK: 4, ROOT: 16384 }, HookResult: { Handled: 2 },
     topmenu: { addTab() {}, addCategory() {}, addItem: (category, item) => menu.set(item.id, { ...item, category }) },
@@ -52,8 +58,8 @@ export function fixture(options = {}) {
     nextFrame: () => frameFails ? Promise.reject(new Error("AsyncQueueFull")) : new Promise(resolve => frames.push(resolve)),
   };
   const cs2 = {
-    ChatColors: { Blue: "\x0b", Red: "\x07", Grey: "\x08", Yellow: "\x09" },
-    CsItem: { AK47: "weapon_ak47", M4A1S: "weapon_m4a1_silencer", USPS: "weapon_usp_silencer", HighExplosive: "weapon_hegrenade", Kevlar: "item_kevlar" },
+    ChatColors: chatColors,
+    CsItem: { AK47: "weapon_ak47", M4A1S: "weapon_m4a1_silencer", USPS: "weapon_usp_silencer", HighExplosive: "weapon_hegrenade", "extracommands.items.kevlar": "item_kevlar" },
     Player: {
       // Legacy fromSlot may omit pawnless controllers; admin targets/allConnected include them.
       fromUserId: id => [...players.values()].find(p => p.userId === id) ?? null,
@@ -136,7 +142,7 @@ export function fixture(options = {}) {
       callerSlot, args, arg: n => args[n] ?? "", argInt: (n, fallback) => parseInt(args[n], 10) || fallback,
       argsFrom: n => args.slice(n).join(" "), replyT: (...args) => replies.push(args) });
   }
-  return { api, commands, players, replies, targetCalls, menu, menus, messages, sets, dispatches, events, player, pawn, weapon, call,
+  return { api, commands, players, replies, targetCalls, menu, menus, messages, sets, dispatches, events, activities, logs, player, pawn, weapon, call,
     targets(pattern, selected) { targets.set(pattern, selected); },
     openMenu(slot) { return menus.filter(m => m.slot === slot).at(-1); },
     failFrame() { frameFails = true; },

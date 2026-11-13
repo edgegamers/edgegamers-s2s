@@ -1,3 +1,4 @@
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Player helpers. A {@link Participant} remembers who someone is (userId + slot) and re-resolves
  * the live player every time it is used, so nothing stale is held across timers.
@@ -51,8 +52,8 @@ export class Participant {
     return { slot: this.slot, userId: this.userId, steamId: this.steamId, name: this.name };
   }
 
-  chat(message: string): void {
-    if (this.present) Clients.fromSlot(this.slot)?.chat(message);
+  chat(message: Text): void {
+    if (this.present) Clients.fromSlot(this.slot)?.chat(chatText(message, this.slot));
   }
 
   setHealth(hp: number): void {

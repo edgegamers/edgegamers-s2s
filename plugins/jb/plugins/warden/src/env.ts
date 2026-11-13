@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 import { Admin, after, Clients } from "@s2script/sdk";
 import type { Timer, TypedPublishHandle } from "@s2script/sdk";
 import { GameRules, HintText, Player } from "@s2script/cs2";
@@ -78,10 +79,10 @@ export function playToAll(path: string): void {
 }
 
 /** Centre/hint text to everyone (C# `.ToAllCenter()`). */
-export function centerAll(text: string): void {
-  for (const p of Player.all()) HintText.to(p.slot, text);
+export function centerAll(text: Text): void {
+  for (const p of Player.all()) HintText.to(p.slot, consoleText(text, p.slot));
 }
 
-export function centerTo(slot: number, text: string): void {
-  HintText.to(slot, text);
+export function centerTo(slot: number, text: Text): void {
+  HintText.to(slot, consoleText(text, slot));
 }

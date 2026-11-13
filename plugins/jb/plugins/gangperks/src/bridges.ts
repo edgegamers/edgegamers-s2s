@@ -1,9 +1,10 @@
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * The perk effects: Jailbreak Transform forwards patched from cached gang data, and the
  * special-day gang tint. Every handler is synchronous, reads Gangs' cache directly, and never
  * throws (`guard`) — anything that does not apply returns Continue.
  */
-import { Chat, HookResult } from "@s2script/sdk";
+import { HookResult } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { rainbow, setPawnColor, parseColor, Colors, isSteamId64 } from "@edgegamers/jailbreak-shared";
 import type { IconRequest, PaintColorRequest } from "@edgegamers/jailbreak-warden";

@@ -1,3 +1,5 @@
+import type { Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * Jailbreak gang stats and credit rewards, fed from the Jailbreak forwards and game events.
  *
@@ -6,7 +8,7 @@
  * lived inside the Jailbreak modules (LR reached/won, guard/warden kill, last-guard kill, rebel
  * kill) — after the split, gangperks is the only plugin that may talk to Gangs.
  */
-import { Chat } from "@s2script/sdk";
+
 import { Player } from "@s2script/cs2";
 import type { GameEvents } from "@s2script/cs2";
 import { Team, isAlive, isSteamId64 } from "@edgegamers/jailbreak-shared";
@@ -15,7 +17,7 @@ import type { WardenEvent, WardenRemovedEvent } from "@edgegamers/jailbreak-ward
 import type { BombDetonatedEvent, RebelEvent } from "@edgegamers/jailbreak-core";
 import type { StatRecordDef } from "./records.ts";
 import { Credits, LG_STAT, LR_STAT, WARDEN_STAT, bumpRecord, rebelKillDefault, rebelWeaponScore } from "./records.ts";
-import { msg } from "./messages.ts";
+import { msg, phrase } from "./messages.ts";
 import { deps, guard, readyGangs } from "./state.ts";
 
 /** How long after a "death" removal/clear we still treat the dead player as warden/rebel. */
@@ -47,10 +49,10 @@ function bump<F extends string>(def: StatRecordDef<F>, steamId: string, field: F
   gangs.setPlayerStat(steamId, def.statId, bumpRecord(def, gangs.getPlayerStat(steamId, def.statId), field));
 }
 
-function grant(p: Player, amount: number, reason: string): void {
+function grant(p: Player, amount: number, reason: { ledger: string; chat: Text }): void {
   const gangs = readyGangs();
   if (!gangs || !isSteamId64(p.steamId) || amount <= 0) return;
-  if (gangs.grantPlayer(p.steamId, amount, reason) >= 0) Chat.toSlot(p.slot, msg.creditsEarned(amount, reason));
+  if (gangs.grantPlayer(p.steamId, amount, reason.ledger) >= 0) Chat.toSlot(p.slot, msg.creditsEarned(amount, reason.chat));
 }
 
 const humans = (): Player[] => Player.all().filter((p) => isSteamId64(p.steamId));
@@ -66,7 +68,7 @@ export function onLREnabled(_ev: LREnabledEvent): void {
       const prisoner = p.teamNum === Team.Prisoner;
       bump(LR_STAT, p.steamId, prisoner ? "TLrs" : "CtLrs");
       if (!pay) continue;
-      grant(p, Credits.lrReached(prisoner), "LR Reached");
+      grant(p, Credits.lrReached(prisoner), reasons.lrReached);
       bump(LR_STAT, p.steamId, prisoner ? "LRsReachedAsT" : "LRsReachedAsCt");
     }
   });
@@ -89,7 +91,7 @@ export function onLREnd(ev: LREndEvent): void {
     bump(LR_STAT, winner.steamId, guardWon ? "CTLrsWon" : "TLrsWon");
     if (!creditsAllowed()) return;
     const p = Player.fromUserId(winner.userId);
-    if (p) grant(p, Credits.lrWin(guardWon), "LR Win");
+    if (p) grant(p, Credits.lrWin(guardWon), reasons.lrWin);
   });
 }
 
@@ -113,7 +115,7 @@ export function onLastGuardEnd(): void {
 /**
  * Last guard is running — or just ended: @edgegamers/jailbreak-lastrequest emits OnLastGuardEnd from its own
  * player_death handler when the last guard dies, which may run before ours, and that death is
- * exactly the "LG Kill" the C# paid for (it only cleared the flag at round end).
+ * exactly the reasons.lastGuardKill the C# paid for (it only cleared the flag at round end).
  */
 function lastGuardRunning(): boolean {
   return lastGuardActive || (lastGuardEndedAt !== 0 && Date.now() - lastGuardEndedAt < DEATH_WINDOW_MS);
@@ -153,7 +155,7 @@ export function onRebelChanged(ev: RebelEvent): void {
 }
 
 /**
- * @edgegamers/jailbreak-core OnBombDetonated — C4Behavior.detonate's `eco.Grant(bomber, killed * 25, "C4 Kill")`.
+ * @edgegamers/jailbreak-core OnBombDetonated — C4Behavior.detonate's `eco.Grant(bomber, killed * 25, reasons.c4Kill)`.
  * The bomber is already dead here, so they are resolved by userId. Gated by
  * `min_players_for_credits` like every other Jailbreak credit in this plugin (the C# did not gate it).
  */
@@ -161,7 +163,7 @@ export function onBombDetonated(ev: BombDetonatedEvent): void {
   guard("C4 kill credits", undefined, () => {
     if (ev.killed <= 0 || !creditsAllowed()) return;
     const p = Player.fromUserId(ev.player.userId);
-    if (p) grant(p, Credits.c4Kill(ev.killed), "C4 Kill");
+    if (p) grant(p, Credits.c4Kill(ev.killed), reasons.c4Kill);
   });
 }
 
@@ -217,14 +219,14 @@ export function onPlayerDeath(ev: GameEvents["player_death"]): void {
 
     if (victim.teamNum === Team.Guard) {
       if (!specialDayRunning()) guardDeath(victim, killer, pay);
-      if (lastGuardRunning() && killer) grant(killer, Credits.lastGuardKill, "LG Kill");
+      if (lastGuardRunning() && killer) grant(killer, Credits.lastGuardKill, reasons.lastGuardKill);
       return;
     }
 
     if (victim.teamNum === Team.Prisoner && isSteamId64(victim.steamId) && pay && killer && isSteamId64(killer.steamId)) {
       if (!wasRebel(victim)) return;
       const score = rebelScores.get(victim.userId) ?? rebelKillDefault(lastGuardRunning());
-      grant(killer, score, "Rebel Kill");
+      grant(killer, score, reasons.rebelKill);
     }
   });
 }
@@ -242,7 +244,7 @@ function guardDeath(victim: Player, killer: Player | null, pay: boolean): void {
   const isWarden = wasWarden(victim.steamId);
   if (killer) {
     if (isWarden) bump(WARDEN_STAT, killer.steamId, "WardensKilled");
-    if (pay) grant(killer, Credits.guardKill(isWarden), isWarden ? "Warden Kill" : "Guard Kill");
+    if (pay) grant(killer, Credits.guardKill(isWarden), isWarden ? reasons.wardenKill : reasons.guardKill);
   }
   if (isWarden) {
     // The warden died: every other guard let their warden die.
@@ -254,3 +256,13 @@ function guardDeath(victim: Player, killer: Player | null, pay: boolean): void {
     bump(WARDEN_STAT, wardenSteam, "GuardDeathsAsWarden");
   }
 }
+
+const reasons = {
+lrReached: {ledger: "LR Reached", chat: phrase("jailbreak.gangperks.credit_reason_lr_reached")},
+lrWin: {ledger: "LR Win", chat: phrase("jailbreak.gangperks.credit_reason_lr_win")},
+c4Kill: {ledger: "C4 Kill", chat: phrase("jailbreak.gangperks.credit_reason_c4_kill")},
+lastGuardKill: {ledger: "LG Kill", chat: phrase("jailbreak.gangperks.credit_reason_last_guard_kill")},
+rebelKill: {ledger: "Rebel Kill", chat: phrase("jailbreak.gangperks.credit_reason_rebel_kill")},
+wardenKill: {ledger: "Warden Kill", chat: phrase("jailbreak.gangperks.credit_reason_warden_kill")},
+guardKill: {ledger: "Guard Kill", chat: phrase("jailbreak.gangperks.credit_reason_guard_kill")}
+};

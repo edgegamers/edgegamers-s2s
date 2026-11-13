@@ -1,6 +1,18 @@
-import { flagMask, type DecluttrConfig } from './config';
+import { DEFAULT_CONFIG, flagMask, type DecluttrConfig } from './config';
+const chatFormats = {
+  public: 'decluttr.chat.public', team: 'decluttr.chat.team', dead: 'decluttr.chat.dead',
+  spectator: 'decluttr.chat.spectator', traitor: 'decluttr.chat.traitor',
+};
+const eventFormats = { teamJoin: 'decluttr.announcements.team_join', grenade: 'decluttr.announcements.grenade' };
+const channelPhrases: Readonly<Record<string, string>> = {
+  normal: 'decluttr.channels.normal', public: 'decluttr.channels.public', team: 'decluttr.channels.team',
+  dead: 'decluttr.channels.dead', spectator: 'decluttr.channels.spectator', traitor: 'decluttr.channels.traitor',
+  teamJoin: 'decluttr.channels.team_join', grenade: 'decluttr.channels.grenade',
+};
 export interface ChatPlayer {
   slot: number; steamId: string; name: string; team: number; alive: boolean; bot: boolean; location: string;
+  /** A dead pawn exists; a pawnless spectator is not marked dead. */
+  dead?: boolean;
   valid(): boolean;
   send(text: string): void;
 }
@@ -36,14 +48,14 @@ export function createChatPolicy(config: () => DecluttrConfig, env: ChatEnvironm
     const last = rejected.get(key), tick = env.tick();
     if (last?.tick === tick && last.text === text) return;
     rejected.set(key, { tick, text });
-    if (kind === 'chat') player.send(env.phrase(player.slot, 'advertising_rejected'));
+    if (kind === 'chat') player.send(env.phrase(player.slot, 'decluttr.advertising.blocked'));
     const c = config().chat.advertising, now = env.now();
     if (now - (alerts.get(id) ?? -Infinity) < c.cooldownSeconds * 1000) return;
     alerts.set(id, now);
     for (const staff of env.all()) {
       if (!player.valid()) break;
       if (staff.valid() && env.flags(staff.slot, flagMask(c.notifyFlags)))
-        staff.send(env.phrase(staff.slot, 'advertising_alert', safeText(player.name), safeText(player.steamId), safeText(text)));
+        staff.send(env.phrase(staff.slot, 'decluttr.advertising.alert', safeText(player.name), safeText(player.steamId), safeText(text)));
     }
   }
   function checkChat(slot: number, text: string): boolean {
@@ -67,23 +79,31 @@ export function createChatPolicy(config: () => DecluttrConfig, env: ChatEnvironm
     if (teamOnly && from.team !== to.team) return false;
     return sender === receiver || !live || senderAlive && from.team > 1 || !receiverAlive || to.team <= 1 || env.flags(receiver, flagMask(c.readFlags));
   }
-  function render(template: string, p: ChatPlayer, text: string, channel: string, extra: Record<string, string> = {}): string {
+  function render(template: string, p: ChatPlayer, text: string, channel: string, recipient: number, extra: Record<string, string> = {}): string {
     const prefix = config().chat.format.prefixes.find(rule => env.flags(p.slot, flagMask(rule.flags)))?.text ?? '';
     const values: Record<string, string> = { name: safeText(p.name), message: safeText(text), prefix,
-      team: p.team === 2 ? 'Terrorists' : p.team === 3 ? 'Counter-Terrorists' : 'Spectators',
-      channel: safeText(channel), location: safeText(p.location), grenade: '', ...extra };
-    return env.color(template.replace(/\{(name|message|prefix|team|channel|location|grenade)\}/g, (_, key: string) => values[key]));
+      team: env.phrase(recipient, p.team === 2 ? 'decluttr.teams.terrorists' : p.team === 3 ? 'decluttr.teams.counter_terrorists' : 'decluttr.teams.spectators'),
+      channel: Object.hasOwn(channelPhrases, channel) ? env.phrase(recipient, channelPhrases[channel]) : safeText(channel),
+      location: safeText(p.location), grenade: '',
+      dead: '', team_chat: '', ...extra };
+    return env.color(template.replace(/\{(name|message|prefix|team|channel|location|grenade|dead|team_chat)\}/g, (_, key: string) => values[key]));
   }
-  function formatChat(slot: number, text: string, teamOnly: boolean, _recipient: number, channel: string): string | null {
+  function formatChat(slot: number, text: string, teamOnly: boolean, recipient: number, channel: string): string | null {
     const c = config().chat.format, p = env.at(slot);
     if (!c.enabled || !p?.valid()) return null;
     const kind = channel === 'traitor' || channel === 'dead' || channel === 'spectator' ? channel : teamOnly ? 'team' : 'public';
-    return render(c.templates[kind], p, text, channel);
+    const template = c.templates[kind] === DEFAULT_CONFIG.chat.format.templates[kind]
+      ? env.phrase(recipient, chatFormats[kind]) : c.templates[kind];
+    return render(template, p, text, channel, recipient, {
+      dead: channel === 'dead' || (p.dead ?? !p.alive) ? env.phrase(recipient, 'decluttr.chat.dead_marker') : '',
+      team_chat: teamOnly ? env.phrase(recipient, p.team === 2 ? 'decluttr.chat.team_marker_t' : p.team === 3 ? 'decluttr.chat.team_marker_ct'
+        : p.team === 1 ? 'decluttr.chat.team_marker_spectator' : 'decluttr.chat.team_marker_unassigned') : '',
+    });
   }
   function relayChat(slot: number, text: string, teamOnly: boolean): 0 | 2 {
     if (!config().chat.format.enabled) return 0;
     const from = env.at(slot); if (!from?.valid()) return 2;
-    const channel = from.team <= 1 ? 'spectator' : !from.alive ? 'dead' : 'normal';
+    const channel = from.team <= 1 ? 'spectator' : (from.dead ?? !from.alive) ? 'dead' : 'normal';
     for (const to of env.all()) {
       if (!from.valid()) break;
       if (!to.valid()) continue;
@@ -100,7 +120,10 @@ export function createChatPolicy(config: () => DecluttrConfig, env: ChatEnvironm
     const safe = Object.fromEntries(Object.entries(extra).map(([key, value]) => [key, safeText(value)]));
     for (const to of env.all()) {
       if (!p.valid()) break;
-      if (to.valid() && (kind !== 'grenade' || p.team === to.team)) to.send(render(c.template, p, '', kind, safe));
+      if (!to.valid() || kind === 'grenade' && p.team !== to.team) continue;
+      const template = c.template === DEFAULT_CONFIG.chat.format[kind].template
+        ? env.phrase(to.slot, eventFormats[kind]) : c.template;
+      to.send(render(template, p, '', kind, to.slot, safe));
     }
   }
   function forget(steamId: string): void {

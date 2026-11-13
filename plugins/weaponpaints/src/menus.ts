@@ -9,7 +9,7 @@ import {
   commandsAllowed, giveGloves, giveMusicKit, givePin, refreshWeapons, showImage,
 } from './apply';
 import { maySelect } from './gate';
-import { phrase, say } from './messages';
+import { plainPhrase as phrase, say } from './messages';
 import { asTeam, getLoadout, selectionTeams, teamWeapons, type Loadout } from './state';
 import { saveAgent, saveGlove, saveKnife, saveMusic, savePin, saveWeaponPaints } from './store';
 
@@ -43,7 +43,7 @@ const alive = (player: Player): boolean => player.pawn?.isValid === true && play
 
 export function openKnifeMenu(player: Player): void {
   const slot = player.slot, userId = player.userId;
-  const m = menu(slot, 'wp_knife_menu_title');
+  const m = menu(slot, 'weaponpaints.knife.menu_title');
   for (const [cls, name] of KNIVES) m.addItem(cls, name);
   m.onSelect(e => {
     const s = selector(slot, userId);
@@ -53,8 +53,8 @@ export function openKnifeMenu(player: Player): void {
     if (e.info !== 'weapon_knife' &&
       !maySelect(s.player, choiceTeam(s.player), 'knife', { defindex: defindexOf(e.info), model: e.info })) return;
     const teams = selectionTeams(s.player.teamNum);
-    say(slot, 'wp_knife_menu_select', name);
-    if (settings.commandKillEnabled) say(slot, 'wp_knife_menu_kill');
+    say(slot, 'weaponpaints.knife.selected', name);
+    if (settings.commandKillEnabled) say(slot, 'weaponpaints.knife.kill_hint');
     for (const team of teams) s.loadout.knife.set(team, e.info);
     if (commandsAllowed && alive(s.player)) refreshWeapons(s.player);
     saveKnife(s.loadout.steamId, e.info, teams);
@@ -64,7 +64,7 @@ export function openKnifeMenu(player: Player): void {
 
 export function openSkinsMenu(player: Player): void {
   const slot = player.slot, userId = player.userId;
-  const m = menu(slot, 'wp_skin_menu_weapon_title');
+  const m = menu(slot, 'weaponpaints.skin.weapon_menu_title');
   for (const [cls, name] of SKIN_WEAPONS) m.addItem(cls, name);
   m.onSelect(e => {
     if (!selector(slot, userId)) return;
@@ -77,7 +77,7 @@ function openWeaponSkins(slot: number, userId: number, className: string, weapon
   const skins = catalog.skins.filter(s => s.weaponName === className);
   const defindex = skins[0]?.defindex ?? 0;
   if (defindex === 0) return;
-  const m = menu(slot, 'wp_skin_menu_skin_title', weaponName);
+  const m = menu(slot, 'weaponpaints.skin.menu_title', weaponName);
   for (const skin of skins) {
     if (skin.paintName) m.addItem(String(skin.paint), `${skin.paintName} (${skin.paint})`);
   }
@@ -87,7 +87,7 @@ function openWeaponSkins(slot: number, userId: number, className: string, weapon
     if (!s || !Number.isInteger(paint)) return;
     if (paint > 0 && !maySelect(s.player, choiceTeam(s.player), 'skin', { defindex, paint })) return;
     showImage(slot, skins.find(x => x.paint === paint)?.image ?? '');
-    say(slot, 'wp_skin_menu_select', e.display);
+    say(slot, 'weaponpaints.skin.selected', e.display);
     for (const team of selectionTeams(s.player.teamNum)) {
       const weapons = teamWeapons(s.loadout, team);
       const info = weapons.get(defindex) ?? newWeaponInfo();
@@ -104,7 +104,7 @@ function openWeaponSkins(slot: number, userId: number, className: string, weapon
 
 export function openGlovesMenu(player: Player): void {
   const slot = player.slot, userId = player.userId;
-  const m = menu(slot, 'wp_glove_menu_title');
+  const m = menu(slot, 'weaponpaints.glove.menu_title');
   catalog.gloves.forEach((glove, i) => { if (glove.paintName) m.addItem(String(i), glove.paintName); });
   m.onSelect(e => {
     const s = selector(slot, userId);
@@ -113,7 +113,7 @@ export function openGlovesMenu(player: Player): void {
     if (glove.paint !== 0 &&
       !maySelect(s.player, choiceTeam(s.player), 'gloves', { defindex: glove.defindex, paint: glove.paint })) return;
     showImage(slot, glove.image);
-    say(slot, 'wp_glove_menu_select', glove.paintName);
+    say(slot, 'weaponpaints.glove.selected', glove.paintName);
     const teams = selectionTeams(s.player.teamNum);
     if (glove.paint !== 0) {
       for (const team of teams) {
@@ -138,7 +138,7 @@ export function openGlovesMenu(player: Player): void {
 export function openAgentsMenu(player: Player): void {
   const slot = player.slot, userId = player.userId;
   const team = player.teamNum ?? 0;
-  const m = menu(slot, 'wp_agent_menu_title');
+  const m = menu(slot, 'weaponpaints.agent.menu_title');
   catalog.agents.forEach((agent, i) => { if (agent.team === team && agent.name) m.addItem(String(i), agent.name); });
   m.onSelect(e => {
     const s = selector(slot, userId);
@@ -146,7 +146,7 @@ export function openAgentsMenu(player: Player): void {
     if (!s || !agent || agent.team !== s.player.teamNum) return;
     if (agent.model && !maySelect(s.player, choiceTeam(s.player), 'agent', { model: agent.model })) return;
     showImage(slot, agent.image);
-    say(slot, 'wp_agent_menu_select', agent.name);
+    say(slot, 'weaponpaints.agent.selected', agent.name);
     if (s.player.teamNum === 3) s.loadout.agent.ct = agent.model;
     else s.loadout.agent.t = agent.model;
     saveAgent(s.loadout.steamId, s.loadout.agent.ct, s.loadout.agent.t);
@@ -157,8 +157,8 @@ export function openAgentsMenu(player: Player): void {
 function openCollectibleMenu(player: Player, kind: 'music' | 'pin'): void {
   const slot = player.slot, userId = player.userId;
   const items = kind === 'music' ? catalog.music : catalog.pins;
-  const m = menu(slot, kind === 'music' ? 'wp_music_menu_title' : 'wp_pins_menu_title');
-  m.addItem('none', phrase(slot, 'None'));
+  const m = menu(slot, kind === 'music' ? 'weaponpaints.music.menu_title' : 'weaponpaints.pin.menu_title');
+  m.addItem('none', phrase(slot, 'weaponpaints.menu.none'));
   items.forEach((item, i) => { if (item.name) m.addItem(String(i), item.name); });
   m.onSelect(e => {
     const s = selector(slot, userId);
@@ -170,13 +170,13 @@ function openCollectibleMenu(player: Player, kind: 'music' | 'pin'): void {
     const teams = selectionTeams(s.player.teamNum);
     const choices = kind === 'music' ? s.loadout.music : s.loadout.pin;
     for (const team of teams) choices.set(team, id);
-    const name = item?.name ?? phrase(slot, 'None');
+    const name = item?.name ?? phrase(slot, 'weaponpaints.menu.none');
     if (kind === 'music') {
       giveMusicKit(s.player);
-      say(slot, 'wp_music_menu_select', name);
+      say(slot, 'weaponpaints.music.selected', name);
       saveMusic(s.loadout.steamId, id, teams);
     } else {
-      say(slot, 'wp_pins_menu_select', name);
+      say(slot, 'weaponpaints.pin.selected', name);
       givePin(s.player);
       savePin(s.loadout.steamId, id, teams);
     }

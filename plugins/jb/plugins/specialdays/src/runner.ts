@@ -1,3 +1,5 @@
+import { consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { phrase } from "./messages.ts";
 /**
  * The shared part of every special day (AbstractSpecialDay): convars, round time, respawn/health/
  * strip, invulnerability, rebels, cells, teleports, freeze, zone restriction, the pickup gate and
@@ -17,7 +19,7 @@ import { setPickupRule } from "./pickup.ts";
 import type { PickupRule } from "./pickup.ts";
 import { ZoneRestriction, restrictionArea } from "./restrict.ts";
 import { zoneCenters } from "./zones.ts";
-import { msg } from "./messages.ts";
+import { DAY_NAMES, msg } from "./messages.ts";
 import {
   alive,
   clearColors,
@@ -122,7 +124,7 @@ export class DayRun implements DayContext {
   }
 
   beginsIn(seconds: number): void {
-    toAll(this.day.beginsIn?.(seconds) ?? msg.beginsIn(this.day.name, seconds));
+    toAll(this.day.beginsIn?.(seconds) ?? msg.beginsIn(DAY_NAMES[this.day.type], seconds));
   }
 
   disarmPickups(): void {
@@ -136,9 +138,9 @@ export class DayRun implements DayContext {
     if (!setCvar(name, value)) console.log(`[specialdays] invalid convar: ${name}`);
   }
 
-  panic(reason: string): void {
-    toAll(msg.error(`PANIC: ${reason}`));
-    this.core.log(`Special day ${this.day.name} panicked: ${reason}`);
+  panic(reason: Text): void {
+    toAll(msg.error(phrase("jailbreak.specialdays.internal_panic", reason)));
+    this.core.log(`Special day ${this.day.name} panicked: ${consoleText(reason)}`);
     Server.setCvar("mp_ignore_round_win_conditions", "0");
     setTimeRemaining(1);
   }

@@ -2,127 +2,159 @@
  * Every player-facing English string for last requests and last guard (ported from
  * lang/Jailbreak.English/LastRequest/* and LastGuard/LGLocale.cs).
  */
+import { createPhrases, joinText, type Text } from "@edgegamers/jailbreak-shared";
+import english from "../translations/jailbreak-lastrequest.phrases.json";
+export const { phrase, loadPhrases } = createPhrases("jailbreak-lastrequest", english);
 import { ChatColors } from "@s2script/cs2";
-import { hl, tag, teamColored, Team } from "@edgegamers/jailbreak-shared";
+import { tag } from "@edgegamers/jailbreak-shared";
 import type { LRResult, LRType } from "../api";
-import { lrName, rpsName } from "./logic";
 
 const C = ChatColors;
-export const PREFIX = tag("LR", C.DarkBlue);
-const LG_PREFIX = tag("Guard", C.DarkBlue);
+export const PREFIX = tag(phrase("jailbreak.lastrequest.prefix"), C.Blue);
+const LG_PREFIX = tag(phrase("jailbreak.lastrequest.last_guard_prefix"), C.Blue);
 
-/** A participant name coloured by side. */
-export const prisonerName = (name: string): string => teamColored(name, Team.Prisoner);
-export const guardName = (name: string): string => teamColored(name, Team.Guard);
+/** Keep participant data literal; phrases apply target colors for each context. */
+export const prisonerName = (name: string): string => name;
+export const guardName = (name: string): string => name;
 
 export const msg = {
   // --- enabling / commands -----------------------------------------------------------------
-  enabled: (): string =>
-    `${PREFIX}Last Request activated. Type ${C.BlueGrey}!lr${C.Default} to start a last request.`,
-  disabled: (): string => `${PREFIX}Last Request ${C.Red}disabled${C.Default}.`,
-  notEnabled: (): string => `${PREFIX}Last Request is not enabled.`,
-  invalid: (query: string): string => `${PREFIX}Invalid Last Request: ${hl(query)}`,
-  unavailable: (type: LRType): string => `${PREFIX}${hl(lrName(type))} is not available right now.`,
-  needsTier: (type: LRType, tier: number): string =>
-    `${PREFIX}${hl(lrName(type))} is for ${hl(`Tier ${String(tier)}+`)} supporters only.`,
-  cannotLR: (reason: string): string => `${PREFIX}You cannot LR, ${C.BlueGrey}${reason}${C.Default}.`,
-  cannotLRWith: (name: string, reason: string): string =>
-    `${PREFIX}You cannot LR ${name}, ${C.BlueGrey}${reason}${C.Red}.`,
-  playerNotFound: (query: string): string => `${PREFIX}No player found matching ${hl(query)}.`,
-  playerFoundMultiple: (query: string): string => `${PREFIX}More than one player matches ${hl(query)}.`,
-  initFailed: (): string =>
-    `${PREFIX}An error occurred while initiating the last request. Please try again later.`,
+  enabled: (): Text =>
+    phrase("jailbreak.lastrequest.enabled", PREFIX),
+  disabled: (): Text => phrase("jailbreak.lastrequest.disabled", PREFIX),
+  notEnabled: (): Text => phrase("jailbreak.lastrequest.not_enabled", PREFIX),
+  invalid: (query: string): Text => phrase("jailbreak.lastrequest.invalid", PREFIX, query),
+  unavailable: (type: LRType): Text => phrase("jailbreak.lastrequest.unavailable", PREFIX, LR_NAMES[type]),
+  needsTier: (type: LRType, tier: number): Text =>
+    phrase("jailbreak.lastrequest.needs_tier", PREFIX, LR_NAMES[type], phrase("jailbreak.lastrequest.supporter_tier", String(tier))),
+  cannotLR: (reason: Text): Text => phrase("jailbreak.lastrequest.cannot_lr", PREFIX, reason),
+  cannotLRWith: (name: string, reason: Text): Text =>
+    phrase("jailbreak.lastrequest.cannot_lr_with", PREFIX, name, reason),
+  playerNotFound: (query: string): Text => phrase("jailbreak.lastrequest.player_not_found", PREFIX, query),
+  playerFoundMultiple: (query: string): Text => phrase("jailbreak.lastrequest.player_found_multiple", PREFIX, query),
+  initFailed: (): Text =>
+    phrase("jailbreak.lastrequest.init_failed", PREFIX),
 
   // --- lifecycle ------------------------------------------------------------------------------
-  inform: (prisoner: string, type: LRType, guard: string): string =>
-    `${PREFIX}${prisonerName(prisoner)} is starting a ${C.White}${lrName(type)}${C.Default} LR against ${guardName(guard)}.`,
-  countdown: (seconds: number): string => `${PREFIX}Starting in ${hl(seconds)}...`,
-  go: (): string => `${PREFIX}Go!`,
+  inform: (prisoner: string, type: LRType, guard: string): Text =>
+    phrase("jailbreak.lastrequest.inform", PREFIX, prisonerName(prisoner), LR_NAMES[type], guardName(guard)),
+  countdown: (seconds: number): Text => phrase("jailbreak.lastrequest.countdown", PREFIX, seconds),
+  go: (): Text => phrase("jailbreak.lastrequest.go", PREFIX),
   decided: (
     result: LRResult,
     prisoner: string,
     guard: string,
     prisonerPresent: boolean,
     guardPresent: boolean,
-  ): string => {
-    if (!prisonerPresent && !guardPresent) return `${PREFIX}Last Request decided.`;
+  ): Text => {
+    if (!prisonerPresent && !guardPresent) return phrase("jailbreak.lastrequest.decided", PREFIX);
     if (!prisonerPresent && result === "prisoner_win")
-      return `${PREFIX}${guardName(guard)} lost the LR, but the prisoner left the game?`;
+      return phrase("jailbreak.lastrequest.prisoner_left_result", PREFIX, guardName(guard));
     if (!guardPresent && result === "guard_win")
-      return `${PREFIX}${prisonerName(prisoner)} lost the LR, but the guard left the game?`;
+      return phrase("jailbreak.lastrequest.guard_left_result", PREFIX, prisonerName(prisoner));
     switch (result) {
       case "timed_out":
-        return `${PREFIX}${C.Grey}Last Request timed out.`;
+        return phrase("jailbreak.lastrequest.timed_out", PREFIX);
       case "interrupted":
-        return `${PREFIX}${C.Grey}Last Request interrupted.`;
+        return phrase("jailbreak.lastrequest.interrupted", PREFIX);
       case "prisoner_win":
-        return `${PREFIX}${prisonerName(prisoner)} won.`;
+        return phrase("jailbreak.lastrequest.prisoner_won", PREFIX, prisonerName(prisoner));
       case "guard_win":
-        return `${PREFIX}${guardName(guard)} won.`;
+        return phrase("jailbreak.lastrequest.guard_won", PREFIX, guardName(guard));
     }
   },
-  winByHealth: (name: string): string => `${PREFIX}${name} won by health.`,
-  winByReason: (name: string, reason: string): string => `${PREFIX}${name} won by ${reason}.`,
-  lrColor: (colorLabel: string): string => `${PREFIX}Your LR will be ${colorLabel}${C.Grey}.`,
-  lrRainbow: (): string =>
-    `${PREFIX}Your LR will be ${C.Red}r${C.Orange}a${C.Yellow}i${C.Green}n${C.Blue}b${C.Purple}o${C.LightPurple}w${C.Grey}.`,
+  winByHealth: (name: string): Text => phrase("jailbreak.lastrequest.win_by_health", PREFIX, name),
+  winByReason: (name: string, reason: Text): Text => phrase("jailbreak.lastrequest.win_by_reason", PREFIX, name, reason),
+  lrColor: (colorLabel: string): Text => phrase("jailbreak.lastrequest.lr_color", PREFIX, colorLabel),
+  lrRainbow: (): Text =>
+    phrase("jailbreak.lastrequest.lr_rainbow", PREFIX),
 
   // --- damage (centre text) -------------------------------------------------------------------
-  damageBlockedInside: "You or they are in LR, damage blocked.",
-  damageBlockedOtherLR: "You are not in the same LR as them, damage blocked.",
+  damageBlockedInside: phrase("jailbreak.lastrequest.damage_blocked_inside"),
+  damageBlockedOtherLR: phrase("jailbreak.lastrequest.damage_blocked_other_lr"),
 
   // --- LR rebel -------------------------------------------------------------------------------
-  rebel: (name: string, hp: number): string =>
-    `${PREFIX}${prisonerName(name)} ${C.LightRed}has decided to ${C.DarkRed}LR Rebel ${C.LightRed}with ${hl(hp)} ${C.LightRed}HP!`,
-  rebelDisabled: (): string => `${PREFIX}Rebelling during last request is disabled.`,
-  rebelCt: (): string => `${PREFIX}You cannot rebel as a CT during the last request.`,
+  rebel: (name: string, hp: number): Text =>
+    phrase("jailbreak.lastrequest.rebel", PREFIX, prisonerName(name), hp),
+  rebelDisabled: (): Text => phrase("jailbreak.lastrequest.rebel_disabled", PREFIX),
+  rebelCt: (): Text => phrase("jailbreak.lastrequest.rebel_ct", PREFIX),
 
   // --- shot for shot / mag for mag -------------------------------------------------------------
-  goesFirst: (name: string): string => `${PREFIX}Randomly selected ${name} to go first.`,
-  cheated: (name: string): string => `${PREFIX}${name} cheated.`,
-  cannotDrop: (): string => "You can't drop your weapon during this last request.",
-  choosePistol: "Choose Pistol",
-  chooseRifle: "Choose Rifle",
+  goesFirst: (name: string): Text => phrase("jailbreak.lastrequest.goes_first", PREFIX, name),
+  cheated: (name: string): Text => phrase("jailbreak.lastrequest.cheated", PREFIX, name),
+  cannotDrop: (): Text => phrase("jailbreak.lastrequest.cannot_drop_weapon"),
+  choosePistol: phrase("jailbreak.lastrequest.choose_pistol"),
+  chooseRifle: phrase("jailbreak.lastrequest.choose_rifle"),
 
   // --- coinflip -------------------------------------------------------------------------------
-  coinflipTitle: (prisoner: string, guard: string): string => `Heads or Tails? - ${prisoner} vs ${guard}`,
-  failedToChoose: (heads: boolean): string =>
-    `${PREFIX}You failed to choose in time, defaulting to ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}.`,
-  guardChose: (guard: string, heads: boolean): string =>
-    `${PREFIX}${guardName(guard)} chose ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}, flipping...`,
-  coinLands: (heads: boolean): string =>
-    `${PREFIX}The coin landed on ${C.Green}${heads ? "Heads" : "Tails"}${C.Grey}.`,
-  coinEvent: (text: string): string => `${PREFIX}${text}`,
+  coinflipTitle: (prisoner: string, guard: string): Text => phrase("jailbreak.lastrequest.coinflip_title", prisoner, guard),
+  failedToChoose: (heads: boolean): Text =>
+    phrase("jailbreak.lastrequest.failed_to_choose", PREFIX, heads ? phrase("jailbreak.lastrequest.default_choice_heads") : phrase("jailbreak.lastrequest.default_choice_tails")),
+  guardChose: (guard: string, heads: boolean): Text =>
+    phrase("jailbreak.lastrequest.guard_chose", PREFIX, guardName(guard), heads ? phrase("jailbreak.lastrequest.guard_choice_heads") : phrase("jailbreak.lastrequest.guard_choice_tails")),
+  coinLands: (heads: boolean): Text =>
+    phrase("jailbreak.lastrequest.coin_lands", PREFIX, heads ? phrase("jailbreak.lastrequest.coin_result_heads") : phrase("jailbreak.lastrequest.coin_result_tails")),
+  coinEvent: (text: Text): Text => joinText(PREFIX, text),
 
   // --- rock paper scissors -------------------------------------------------------------------
-  rpsTitle: (prisoner: string, guard: string): string => `Rock Paper Scissors - ${prisoner} vs ${guard}`,
-  rpsMadeChoice: (name: string): string => `${PREFIX}${name} made their choice.`,
-  rpsBoth: (): string => `${PREFIX}Both players rocked, papered, and scissored! (ew)`,
-  rpsTie: (): string => `${PREFIX}It's a tie! Let's go again!`,
-  rpsResults: (guard: string, guardPick: number, prisoner: string, prisonerPick: number): string =>
-    `${PREFIX}Results: ${guardName(guard)} picked ${hl(rpsName(guardPick))} and ${prisonerName(prisoner)} picked ${hl(rpsName(prisonerPick))}`,
+  rpsTitle: (prisoner: string, guard: string): Text => phrase("jailbreak.lastrequest.rps_title", prisoner, guard),
+  rpsMadeChoice: (name: string): Text => phrase("jailbreak.lastrequest.rps_made_choice", PREFIX, name),
+  rpsBoth: (): Text => phrase("jailbreak.lastrequest.rps_both", PREFIX),
+  rpsTie: (): Text => phrase("jailbreak.lastrequest.rps_tie", PREFIX),
+  rpsResults: (guard: string, guardPick: number, prisoner: string, prisonerPick: number): Text =>
+    phrase("jailbreak.lastrequest.rps_results", PREFIX, guardName(guard), rpsText(guardPick), prisonerName(prisoner), rpsText(prisonerPick)),
 
   // --- race -------------------------------------------------------------------------------------
-  endRaceInstruction: (): string => `${PREFIX}Type ${C.Blue}!endrace${C.White} to set the end point!`,
-  raceStarting: (prisoner: string): string =>
-    `${PREFIX}${prisonerName(prisoner)} is racing you. Pay attention to where they set the end point!`,
-  notInRace: (): string => `${PREFIX}${C.Red}You must be in a race ${C.Blue}!lr${C.Red} to use this.`,
-  notPending: (): string => `${PREFIX}${C.Red}You must be in the pending state to use this command.`,
+  endRaceInstruction: (): Text => phrase("jailbreak.lastrequest.end_race_instruction", PREFIX),
+  raceStarting: (prisoner: string): Text =>
+    phrase("jailbreak.lastrequest.race_starting", PREFIX, prisonerName(prisoner)),
+  notInRace: (): Text => phrase("jailbreak.lastrequest.not_in_race", PREFIX),
+  notPending: (): Text => phrase("jailbreak.lastrequest.not_pending", PREFIX),
 
   // --- last guard -------------------------------------------------------------------------------
-  lgStartedChat: (guard: string, ctHealth: number, tHealth: number): string[] => [
-    `${LG_PREFIX}${C.Grey}All Ts are rebels! ${C.DarkRed}LAST GUARD${C.Grey} must kill until two prisoners alive (${C.BlueGrey}LR${C.Grey}).`,
-    `${LG_PREFIX}${guardName(guard)} ${C.Grey}has ${hl(ctHealth)} ${C.Grey}health, Ts have ${hl(tHealth)} ${C.Grey}health total.`,
+  lgStartedChat: (guard: string, ctHealth: number, tHealth: number): Text[] => [
+    phrase("jailbreak.lastrequest.last_guard_started_chat", LG_PREFIX),
+    phrase("jailbreak.lastrequest.last_guard_health", LG_PREFIX, guardName(guard), ctHealth, tHealth),
   ],
-  lgStartedCenter: (guard: string, ctHealth: number, tHealth: number): string =>
-    `LAST GUARD! ${guard} has ${ctHealth} health, Ts have ${tHealth} health total.`,
+  lgStartedCenter: (guard: string, ctHealth: number, tHealth: number): Text =>
+    phrase("jailbreak.lastrequest.last_guard_started_center", guard, ctHealth, tHealth),
 
   // --- debug ------------------------------------------------------------------------------------
-  debugEnabled: "Last Request enabled.",
-  debugDisabled: "Last Request disabled.",
-  debugEnableRefused: "Could not enable Last Request: the round mode is owned by something else.",
-  debugLastGuard: (name: string): string => `Enabled LastGuard for ${name}`,
-  debugLastGuardRefused: (name: string): string =>
-    `Could not start LastGuard for ${name}: the round mode is owned by something else.`,
-  debugUsage: "Usage: sm_lrdebug [enable|disable|<lr type> [player] [target]]",
+  debugEnabled: phrase("jailbreak.lastrequest.debug_enabled"),
+  debugDisabled: phrase("jailbreak.lastrequest.debug_disabled"),
+  debugEnableRefused: phrase("jailbreak.lastrequest.debug_enable_refused"),
+  debugLastGuard: (name: string): Text => phrase("jailbreak.lastrequest.debug_last_guard", name),
+  debugLastGuardRefused: (name: string): Text =>
+    phrase("jailbreak.lastrequest.debug_last_guard_refused", name),
+  debugUsage: phrase("jailbreak.lastrequest.debug_usage"),
 };
+
+export const LR_NAMES = {
+  gun_toss: phrase("jailbreak.lastrequest.lr_name_gun_toss"),
+  rock_paper_scissors: phrase("jailbreak.lastrequest.lr_name_rock_paper_scissors"),
+  knife_fight: phrase("jailbreak.lastrequest.lr_name_knife_fight"),
+  no_scope: phrase("jailbreak.lastrequest.lr_name_no_scope"),
+  coinflip: phrase("jailbreak.lastrequest.lr_name_coinflip"),
+  shot_for_shot: phrase("jailbreak.lastrequest.lr_name_shot_for_shot"),
+  mag_for_mag: phrase("jailbreak.lastrequest.lr_name_mag_for_mag"),
+  race: phrase("jailbreak.lastrequest.lr_name_race")
+};
+
+export const COIN_EVENTS: readonly Text[] = [phrase("jailbreak.lastrequest.coin_event_silver_glint"),
+phrase("jailbreak.lastrequest.coin_event_half_turn"),
+phrase("jailbreak.lastrequest.coin_event_heavy_gravity"),
+phrase("jailbreak.lastrequest.coin_event_quiet_clink"),
+phrase("jailbreak.lastrequest.coin_event_arrow_hit"),
+phrase("jailbreak.lastrequest.coin_event_shot"),
+phrase("jailbreak.lastrequest.coin_event_answer"),
+phrase("jailbreak.lastrequest.coin_event_and_yet"),
+phrase("jailbreak.lastrequest.coin_event_copper_sliver"),
+phrase("jailbreak.lastrequest.coin_event_lucky_seven"),
+phrase("jailbreak.lastrequest.coin_event_side_landing"),
+phrase("jailbreak.lastrequest.coin_event_eagle"),
+phrase("jailbreak.lastrequest.coin_event_no_room"),
+phrase("jailbreak.lastrequest.coin_event_woosh"),
+phrase("jailbreak.lastrequest.coin_event_banana")];
+
+const RPS_NAMES = [phrase("jailbreak.lastrequest.rps_choice_rock"), phrase("jailbreak.lastrequest.rps_choice_paper"), phrase("jailbreak.lastrequest.rps_choice_scissors"), phrase("jailbreak.lastrequest.rps_choice_unknown")];
+const rpsText = (pick: number): Text => RPS_NAMES[pick] ?? RPS_NAMES[3];

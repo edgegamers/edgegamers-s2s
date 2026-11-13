@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Ghost War: FFA where everyone flickers between visible and hidden on a cycle (GhostDay). The C#
  * hooked CheckTransmit by signature; here the declarative Transmit API hides every living pawn from
@@ -56,7 +57,7 @@ export function ghostDay(): SpecialDay {
         const shouldBeVisible = mod < visibleFor;
         const left = Math.floor((shouldBeVisible ? visibleFor : cycle) - mod);
         if (shouldBeVisible !== visible) setVisibility(shouldBeVisible);
-        for (const p of alive()) HintText.to(p.slot, msg.ghostCountdown(visible, left));
+        for (const p of alive()) HintText.to(p.slot, consoleText(msg.ghostCountdown(visible, left), p.slot));
       });
     },
     teardown() {

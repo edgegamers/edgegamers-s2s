@@ -4,7 +4,7 @@ export interface CommunicationPlayer {
   role: number; alive: boolean; participating: boolean;
 }
 export interface CommunicationSnapshot { state: number; epoch: number; players: CommunicationPlayer[]; }
-export type CommunicationPhrase = 'DEAD_CHAT_FORMAT' | 'TRAITOR_CHAT_FORMAT' | 'DEAD_MUTE_REMINDER';
+export type CommunicationPhrase = 'ttt.chat.dead_format' | 'ttt.chat.traitor_format' | 'ttt.chat.dead_mute_reminder';
 export interface CommunicationCoreMethods {
   /** Skip-only logical-life hint; native snapshots remain required for effects and chat. */
   hasCommunicationDeadPlayers(): boolean;

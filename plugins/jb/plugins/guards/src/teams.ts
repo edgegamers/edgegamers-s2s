@@ -1,5 +1,6 @@
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /** `jointeam` handling and round start/end balancing (CTBans listeners). */
-import { Chat, Commands, HookResult, Server } from "@s2script/sdk";
+import { Commands, HookResult, Server } from "@s2script/sdk";
 import type { HookResultValue } from "@s2script/sdk";
 import { GameRules, Player } from "@s2script/cs2";
 import { Team } from "@edgegamers/jailbreak-shared";

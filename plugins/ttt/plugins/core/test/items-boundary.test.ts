@@ -6,7 +6,7 @@ import {createContext,runInContext} from 'node:vm';
 const mocks:Record<string,string>={
  './ui-actor':'export const captureUiActor=s=>s===fixture.actor.slot?{...fixture.actor}:null,matchesUiActor=a=>a.slot===fixture.actor.slot&&a.steamId===fixture.actor.steamId&&a.generation===fixture.actor.generation&&a.roundEpoch===fixture.actor.roundEpoch;',
  '../core/cvars':'export const n=()=>2,list=()=>[],s=()=>"weapon_revolver";',
- '../core/msgs':'export const msgFor=()=>"armed";',
+ '../core/msgs':"export const msgFor=()=>\"armed\"; export const chatMsgFor = msgFor;",
  '../cs2/handlers':'export const giveArmorWithHelmet=()=>fixture.calls.push("armor");',
  '../cs2/icons':'export const armStickers=()=>fixture.calls.push("stickers");',
  '../cs2/inventory':'export const GearSlot={Pistol:1,Rifle:2},clearSlot=()=>{},give=(s,w)=>{fixture.calls.push(w);fixture.onGive?.();},giveReplacing=(s,w)=>{fixture.calls.push(...w);fixture.onGive?.();},replaceInSlot=()=>{fixture.calls.push("replace");fixture.onGive?.();};',

@@ -56,13 +56,13 @@ function fixture({attachItems=true,definition=31,className,health=100,state=2}:a
 test('typed SDK taser without designer/class name scans and never applies lethal damage',()=>{
  const f=fixture(),r=f.hit();
  assert.equal(r.info.damage,0);assert.equal(r.result,2);assert.equal(r.health,100);assert.equal(r.dead,false);
- assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')));
+ assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')));
  assert.equal(f.items.ops.filter(o=>o[0]==='health').length,0,'no resurrection/health-write workaround');
  assert.equal(f.logs.length,0,'no damaging hit logged');
 });
 test('map or picked-up taser needs no shop entitlement and preserves one-health victim',()=>{
  const f=fixture({health:1}),r=f.hit(1000);assert.equal(r.health,1);assert.equal(r.dead,false);assert.equal(r.info.damage,0);
- assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')));
+ assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')));
 });
 test('Core nonlethal rule survives missing Items provider and out-of-round free roam',()=>{
  for(const state of [0,1,2,3]){
@@ -71,12 +71,12 @@ test('Core nonlethal rule survives missing Items provider and out-of-round free 
 });
 test('actual copied Items reply still cancels and scan failure cannot cause a kill',()=>{
  const f=fixture();f.items.fail.chat=true;const r=f.hit();assert.equal(r.info.damage,0);assert.equal(r.dead,false);
- assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),'scan chat attempted before its injected failure');
+ assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),'scan chat attempted before its injected failure');
 });
 test('ordinary non-taser weapon damage retains existing behavior',()=>{
  const f=fixture({definition:60,className:'weapon_m4a1_silencer'}),r=f.hit(25);
  assert.equal(r.info.damage,25);assert.equal(r.health,75);assert.equal(r.result,undefined);assert.equal(f.logs.length,1);
- assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),false);
+ assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),false);
 });
 
 test('later damage modifier cannot turn an identification hit back into lethal damage',()=>{
@@ -87,30 +87,30 @@ test('nullable and unrelated typed weapon preserve normal damage without scannin
  for(const weapon of [null,{attributeManager:{item:{itemDefinitionIndex:60}}}]){
   const f=fixture();f.items.players.get(0).pawn.activeWeapon=weapon;const r=f.hit(25);
   assert.equal(r.info.damage,25);assert.equal(r.health,75);assert.equal(r.result,undefined);
-  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),false);
+  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),false);
  }
 });
 test('blast, fire, fall and poison remain damaging while the credited attacker holds a taser',()=>{
  for(const damageType of [64,4096,8,32,32768,16384,1,16]){
   const f=fixture(),r=f.hit(25,{damageType});assert.equal(r.info.damage,25);assert.equal(r.health,75);assert.equal(r.result,undefined);
-  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),false);
+  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),false);
  }
 });
 test('unrelated inflictor and same-index successor cannot masquerade as a taser shot',()=>{
  for(const inflictor of [{index:987,id:654},{index:fixture().items.players.get(0).pawn.ref.index,id:99999}]){
   const f=fixture(),r=f.hit(25,{inflictor});assert.equal(r.info.damage,25);assert.equal(r.health,75);
-  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),false);
+  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),false);
  }
 });
 test('shock plus shot flags and nullable inflictor keep taser identification nonlethal',()=>{
  for(const overrides of [{damageType:256|2},{damageType:256|524288},{inflictor:null}]){
   const f=fixture(),r=f.hit(500,overrides);assert.equal(r.info.damage,0);assert.equal(r.health,100);
-  assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')));
+  assert.ok(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')));
  }
 });
 test('generic or earlier bullet damage does not become a tase after switching to the taser',()=>{
  for(const damageType of [0,2]){
   const f=fixture(),r=f.hit(25,{damageType});assert.equal(r.info.damage,25);assert.equal(r.health,75);assert.equal(r.result,undefined);
-  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('TASER_SCANNED')),false);
+  assert.equal(f.items.ops.some(o=>o[0]==='chat'&&o[2].startsWith('ttt.taser.scanned')),false);
  }
 });

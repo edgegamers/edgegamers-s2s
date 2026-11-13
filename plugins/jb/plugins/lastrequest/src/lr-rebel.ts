@@ -1,9 +1,12 @@
+import { phrase } from "./messages.ts";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { replyChat, localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * LR rebel (C# `LastRequestRebelCommand` / `LastRequestRebelManager`): the last prisoner alive may
  * `!rebel` instead of taking an LR — they become a rebel with HP pooled from the living guards and
  * a heavy weapon. Dropping a weapon afterwards takes their HP back down to what they had before.
  */
-import { Chat } from "@s2script/sdk";
+
 import type { CommandInvocation } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { isAlive, Team } from "@edgegamers/jailbreak-shared";
@@ -26,14 +29,14 @@ export function rebelCommand(cmd: CommandInvocation): void {
   const slot = cmd.callerSlot;
   const p = Player.fromSlot(slot);
   if (!p) return;
-  const tell = (m: string): void => cmd.replyToChat(m);
+  const tell = (m: Text): void => replyChat(cmd, m);
 
   if (!settings.rebelOn) return tell(msg.rebelDisabled());
   if (p.teamNum !== Team.Prisoner) return tell(msg.rebelCt());
   if (!isEnabled() || !isAlive(p)) return tell(msg.notEnabled());
-  if (isInLR(slot) || isRebelling(slot)) return tell(msg.cannotLR("You are already in an LR"));
+  if (isInLR(slot) || isRebelling(slot)) return tell(msg.cannotLR(phrase("jailbreak.lastrequest.rebel_already_in_lr")));
   const alivePrisoners = Player.all().filter((q) => q.teamNum === Team.Prisoner && isAlive(q)).length;
-  if (alivePrisoners > 1) return tell(msg.cannotLR("You must be the last alive to !rebel"));
+  if (alivePrisoners > 1) return tell(msg.cannotLR(phrase("jailbreak.lastrequest.rebel_last_alive_required")));
 
   healthBefore.set(slot, p.pawn?.health ?? 0);
   startRebelling(p);

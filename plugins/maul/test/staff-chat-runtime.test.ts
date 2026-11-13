@@ -13,7 +13,7 @@ const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.
 const leader = { ...notFound(), found: true, primaryRank: 60 };
 const supporter = { ...notFound(), found: true, ds: { ds: true, tier: 1 } };
 const ordinary = { ...notFound(), found: true };
-const colors = { Green: "\x04", Default: "\x01", Blue: "\x0b", Grey: "\x08", Yellow: "\x09", Red: "\x02" };
+const colors = { Default: "\x01", White: "\x01", DarkRed: "\x02", LightPurple: "\x03", Green: "\x04", Olive: "\x05", Lime: "\x06", Red: "\x07", Grey: "\x08", Yellow: "\x09", Silver: "\x0a", Blue: "\x0b", DarkBlue: "\x0c", BlueGrey: "\x0d", Purple: "\x0e", LightRed: "\x0f", Orange: "\x10" };
 const nativeColors = Object.fromEntries(Object.entries(colors).map(([name, code]) => [name.toLowerCase(), code]));
 
 function fixture(overrides: Record<string, unknown> = {}) {
@@ -35,7 +35,8 @@ function fixture(overrides: Record<string, unknown> = {}) {
       load: (_name: string, seed: Record<string, string>) => { for (const [key, value] of Object.entries(seed)) seeds.set(key, value); },
       translate: (slot: number, key: string, ...args: (string | number)[]) => {
         // Recipient 1 has one translated phrase; all other keys must fall back to English.
-        const translated = slot === 1 && key === "MAUL_CHAT_TO_LEADERSHIP" ? "{blue}Équipe {grey}» {blue}{1}{grey}: " : seeds.get(key) ?? key;
+        const translated = slot === 1 && key === "maul.leadership.label" ? "Équipe"
+          : slot === 5 && key === "maul.supporter.chat" ? "{green}Soutien {1}: {default}" : seeds.get(key) ?? key;
         return translated.replace(/\{(\d+)\}/g, (_, index) => String(args[Number(index) - 1] ?? "").replace(/[{}]/g, ""));
       },
     },
@@ -58,7 +59,7 @@ function fixture(overrides: Record<string, unknown> = {}) {
   }));
   module.exports.OnPluginStart();
   function add(slot: number, profile: PlayerLookup | null, name = `player-${slot}`, steamId = `id-${slot}`) {
-    players.set(slot, { slot, steamId, playerName: name, name, isBot: false, isValid: () => true });
+    players.set(slot, { slot, userId: 100 + slot, steamId, playerName: name, name, isBot: false, isValid: () => true });
     if (profile) profiles.set(steamId, profile);
   }
   add(0, ordinary); add(1, leader); add(2, leader); add(3, supporter); add(4, ordinary);
@@ -72,14 +73,27 @@ for (const teamonly of [false, true]) {
     expect(f.api.OnClientSayCommand(0, "%hello leaders", teamonly)).toBe(2);
     expect(f.sent.map(([slot]) => slot)).toEqual([0, 1, 2]);
     expect(f.sent.every(([, line]) => line.includes("hello leaders"))).toBe(true);
-    expect(f.sent[1]![1]).toContain("Équipe");
-    expect(f.sent[2]![1]).toContain("To leadership");
+    expect(f.sent).toEqual([
+      [0, "\x0c(TO LEADERSHIP) \x0cplayer-0: hello leaders"],
+      [1, "\x0c(TO Équipe) \x0cplayer-0 #100: hello leaders"],
+      [2, "\x0c(TO LEADERSHIP) \x0cplayer-0 #100: hello leaders"],
+    ]);
   });
 
   test(`leader % in ${channel} chat preserves its audience`, () => {
     const f = fixture();
     expect(f.api.OnClientSayCommand(1, "%hello", teamonly)).toBe(2);
     expect(f.sent.map(([slot]) => slot)).toEqual(teamonly ? [1, 2] : [0, 1, 2, 3, 4]);
+    expect(f.sent).toEqual(teamonly ? [
+      [1, "\x0c(Équipe) player-1: hello"],
+      [2, "\x0c(LEADERSHIP) player-1: hello"],
+    ] : [
+      [0, "\x0c(LEADERSHIP TO ALL): hello"],
+      [1, "\x0c(TO ALL) player-1: hello"],
+      [2, "\x0c(TO ALL) player-1: hello"],
+      [3, "\x0c(LEADERSHIP TO ALL): hello"],
+      [4, "\x0c(LEADERSHIP TO ALL): hello"],
+    ]);
   });
 
   test(`leader %% in ${channel} chat sends only to the target and sender`, () => {
@@ -87,9 +101,10 @@ for (const teamonly of [false, true]) {
     expect(f.api.OnClientSayCommand(1, "%%player-4 private hello", teamonly)).toBe(2);
     expect(f.targetCalls).toEqual([["player-4", 1]]);
     expect(f.sent.map(([slot]) => slot)).toEqual([4, 1]);
-    expect(f.sent.every(([, line]) => line.includes("private hello"))).toBe(true);
-    expect(f.sent[0]![1]).toContain("player-1");
-    expect(f.sent[1]![1]).toContain("player-4");
+    expect(f.sent).toEqual([
+      [4, "\x0c(From LEADERSHIP) \x0cplayer-1: private hello"],
+      [1, "\x0c(Private to player-4) \x0cplayer-1: private hello"],
+    ]);
   });
 
   test(`non-leader %% in ${channel} chat stays ordinary chat`, () => {
@@ -169,7 +184,24 @@ for (const [slot, text, teamonly, audience] of [
     f.add(1, leader, "Leader{red}\x04");
     expect(f.api.OnClientSayCommand(slot, text, teamonly)).toBe(2);
     expect(f.sent.map(([recipient]) => recipient)).toEqual([...audience]);
-    expect(f.sent.every(([, line]) => !line.includes("\x04") && !line.includes("\x02") && line.endsWith("body｛blue｝ and ｛literal｝"))).toBe(true);
-    if (slot === 1) expect(f.sent[0]![1]).toContain("Leaderred");
+    expect(f.sent.every(([, line]) => !line.includes("\x04") && line.endsWith("body｛blue｝ and ｛literal｝"))).toBe(true);
+    if (slot === 1) expect(f.sent.find(([recipient]) => recipient === slot)![1]).toContain("Leaderred");
   });
 }
+
+test("DS wrappers use each recipient's language while preserving the player's body", () => {
+  const f = fixture(); f.add(5, supporter);
+  f.api.OnClientSayCommand(3, "$private room", true);
+  expect(f.sent.find(([slot]) => slot === 5)?.[1]).toContain("Soutien player-3: ");
+  expect(f.sent.find(([slot]) => slot === 3)?.[1]).toContain("\x0bDS \x08» \x0fplayer-3\x08: ");
+  expect(f.sent.every(([, line]) => line.endsWith("private room"))).toBe(true);
+});
+
+test("staff chat changes only its owned header, preserving bracketed and pipe body text", () => {
+  const f = fixture();
+  f.api.OnClientSayCommand(3, "$[body] | > »", true);
+  expect(f.sent.every(([, line]) => line.endsWith("[body] | > »"))).toBe(true);
+  expect(f.sent[0]![1]).toStartWith("\x0bDS \x08» ");
+  f.api.OnClientSayCommand(1, "%%missing text", false);
+  expect(f.sent.at(-1)![1]).toStartWith("\x07Leadership \x08» ");
+});

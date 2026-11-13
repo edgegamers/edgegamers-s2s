@@ -181,7 +181,7 @@ export const cfg={
 };
 export function roleName(role:RoleId):string {
  if(role===RoleId.None)return '';
- const phrase=role===RoleId.Innocent?'ROLE_INNOCENT':role===RoleId.Traitor?'ROLE_TRAITOR':role===RoleId.Detective?'ROLE_DETECTIVE':role===RoleId.Spectator?'ROLE_SPECTATOR':'ROLE_NONE';
+ const phrase=role===RoleId.Innocent?'ttt.role.innocent':role===RoleId.Traitor?'ttt.role.traitor':role===RoleId.Detective?'ttt.role.detective':role===RoleId.Spectator?'ttt.role.spectator':'ttt.role.none';
  return phraseFor(-1,phrase);
 }
 

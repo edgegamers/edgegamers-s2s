@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { buildSync } from "esbuild";
+import { chatColors } from "./chat-colors.mjs";
 
 // Exercise the real registrations and effect manager, replacing only host-injected operations.
 const source = buildSync({ entryPoints: [new URL("../src/plugin.ts", import.meta.url).pathname], bundle: true,
@@ -8,7 +9,7 @@ const source = buildSync({ entryPoints: [new URL("../src/plugin.ts", import.meta
 
 export function fixture() {
   const commands = new Map(), players = new Map(), timers = new Set(), replies = [], targetsCalled = [];
-  const fades = [], teleports = [], beams = [], events = new Map(), moves = [];
+  const fades = [], teleports = [], beams = [], events = new Map(), moves = [], activities = [], logs = [];
   let targets = [], now = 0, identity = 0, failBeamAt = -1, failFade = false, onFade, onBeam, failTimer = false;
   const timer = (ms, fn, repeat) => {
     if (failTimer) throw Error("AsyncQueueFull");
@@ -19,6 +20,11 @@ export function fixture() {
   command.admin = (name, flags, handler) => commands.set(name, { flags, handler });
   const sdk = {
     command, topmenu: { addTab() {}, addCategory() {}, addItem() {} },
+    Activity: {
+      showT(actor, key, ...args) { activities.push({ actor, key, args }); replies.push([key, ...args]); },
+      describe(actor) { return `actor<${typeof actor === "number" ? actor : actor.callerSlot}>`; },
+      log(actor, target, message) { logs.push({ actor, target, message }); },
+    },
     Translations: { load() {}, translate: (_slot, key, ...args) => { replies.push([key, ...args]); return key; } }, ADMFLAG: { SLAY: 32, CHEATS: 8192, KICK: 4 }, HookResult: { Handled: 2 },
     Clients: { fromSlot: slot => players.get(slot)?.client ?? null },
     every: (ms, fn) => timer(ms, fn, true), after: (ms, fn) => timer(ms, fn, false),
@@ -26,7 +32,7 @@ export function fixture() {
     Vector: class { constructor(x, y, z) { Object.assign(this, { x, y, z }); } },
   };
   const cs2 = {
-    ChatColors: { Blue: "\x0b", Red: "\x07", Grey: "\x08", Yellow: "\x09" },
+    ChatColors: chatColors,
     CsItem: { AK47: "weapon_ak47" },
     Player: { allConnected: () => [...players.values()], fromSlot: slot => players.get(slot)?.pawn ? players.get(slot) : null,
       fromUserId: uid => [...players.values()].find(p => p.userId === uid) ?? null,
@@ -65,7 +71,7 @@ export function fixture() {
     p.client = { slot, userId: p.userId, isValid: () => players.get(slot) === p };
     players.set(slot, p); addPawn(p); return p;
   };
-  return { api, players, commands, timers, replies, targetsCalled, fades, teleports, beams, addPlayer, addPawn,
+  return { api, players, commands, timers, replies, targetsCalled, fades, teleports, beams, activities, logs, addPlayer, addPawn,
     setTargets: list => targets = list,
     failBeams: index => failBeamAt = index, failFades: () => failFade = true, failTimers: () => failTimer = true,
     onFade: fn => onFade = fn, onBeam: fn => onBeam = fn,

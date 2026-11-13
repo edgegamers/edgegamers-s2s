@@ -12,7 +12,7 @@
 
 import { MAX_SLOTS, RoleId } from "../core/enums";
 import { cfg } from "../core/cvars";
-import { msg, msgFor } from "../core/msgs";
+import { msg, msgFor, chatMsgFor } from "../core/msgs";
 import * as reg from "../core/registry";
 import type { EventBus } from "../core/bus";
 import type { TttEvents } from "../core/events";
@@ -37,10 +37,10 @@ export function roleName(role: RoleId): string {
  */
 export function roleNameFor(slot: number, role: RoleId): string {
   switch (role) {
-    case RoleId.Innocent: return msgFor(slot, "ROLE_INNOCENT");
-    case RoleId.Traitor: return msgFor(slot, "ROLE_TRAITOR");
-    case RoleId.Detective: return msgFor(slot, "ROLE_DETECTIVE");
-    case RoleId.Spectator: return msgFor(slot, "ROLE_SPECTATOR");
+    case RoleId.Innocent: return msgFor(slot, "ttt.role.innocent");
+    case RoleId.Traitor: return msgFor(slot, "ttt.role.traitor");
+    case RoleId.Detective: return msgFor(slot, "ttt.role.detective");
+    case RoleId.Spectator: return msgFor(slot, "ttt.role.spectator");
     default: return "";
   }
 }
@@ -204,7 +204,7 @@ function choose(pool: number[], role: RoleId): number {
 
 /** Apply a role's health, armor and starting weapons, and tell the player what they are. */
 export function applyLoadout(slot: number, role: RoleId): void {
-  tell(slot, msgFor(slot, "ROLE_ASSIGNED", roleNameFor(slot, role)));
+  tell(slot, chatMsgFor(slot, "ttt.role.assigned", roleNameFor(slot, role)));
 
   const hp = cfg.roleHealth[role]!;
   if (hp > 0) setHealth(slot, hp);
@@ -291,15 +291,15 @@ export function revealTraitorBuddies(): void {
     getTttHud()?.showTraitor(me, mates);
 
     if (traitors.length === 1) {
-      tell(me, msgFor(me, "ROLE_REVEAL_TRAITORS_NONE"));
+      tell(me, chatMsgFor(me, "ttt.role.no_teammates"));
       continue;
     }
     // Formatted per RECIPIENT, not once outside the loop: the header was being rendered in the
     // server's language and sent to everyone, which defeats the point of per-client translation.
-    tell(me, msgFor(me, "ROLE_REVEAL_TRAITORS_HEADER"));
+    tell(me, chatMsgFor(me, "ttt.role.teammates_header"));
     for (let j = 0; j < traitors.length; j++) {
       if (j === i) continue;
-      tell(me, msgFor(me, "ROLE_REVEAL_TRAITORS_ENTRY", reg.nameOf(traitors[j]!)));
+      tell(me, chatMsgFor(me, "ttt.role.teammate_entry", reg.nameOf(traitors[j]!)));
     }
   }
 }

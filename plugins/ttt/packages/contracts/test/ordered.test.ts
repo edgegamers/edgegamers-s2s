@@ -62,5 +62,5 @@ test('actual old taser callbacks retain reward, scan, guilt bookkeeping and icon
         return { out, canceled: ev.canceled, damage: ev.damage };
     }
     assert.deepEqual(trace(true), trace(false));
-    assert.deepEqual(trace(true), { out: ['special', 'handlers', 'economy', 'credit:30', 'effects', 'TASER_SCANNED', 'SHOP_ITEM_STICKERS_HIT', 'reveal-role', 'karma', 'aggressor', 'icons', 'reveal-icon'], canceled: true, damage: 90 });
+    assert.deepEqual(trace(true), { out: ['special', 'handlers', 'economy', 'credit:30', 'effects', 'ttt.taser.scanned', 'ttt.stickers.role_revealed', 'reveal-role', 'karma', 'aggressor', 'icons', 'reveal-icon'], canceled: true, damage: 90 });
 });

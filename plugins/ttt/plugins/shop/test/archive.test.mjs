@@ -34,8 +34,8 @@ test('OnPurchase forwards only charged, delivered purchases with Core round iden
 test('OnBalanceChanged forwards committed credit changes with the stored value',()=>{const f=make();
  const changes=()=>f.forwarded.filter(([name])=>name==='OnBalanceChanged').map(([,p])=>p);
  f.deliver('roleAssigned',{slot:1,role:2});
- assert.deepEqual(changes(),[{round:1,player:{slot:1,steamId:'76561',name:'P1'},oldBalance:0,balance:100,reason:'Round Start'}]);
- f.forwarded.length=0;f.positiveScale(3);f.methods.addBalance(1,10,'Bonus',false);
+ assert.deepEqual(changes(),[{round:1,player:{slot:1,steamId:'76561',name:'P1'},oldBalance:0,balance:100,reason:'1|ttt.rewards.round_start'}]);
+ f.forwarded.length=0;f.positiveScale(3);f.methods.addBalance(1,10,'\x04Bonus\x08',false);
  assert.deepEqual(changes().map(p=>[p.oldBalance,p.balance,p.reason]),[[100,130,'Bonus']],'the rescaled value is what is sent');
  f.forwarded.length=0;f.cancelBalance(true);f.methods.addBalance(1,10,'',false);f.methods.addBalance(1,0,'',false);
  assert.deepEqual(changes(),[],'vetoed and zero changes send nothing');

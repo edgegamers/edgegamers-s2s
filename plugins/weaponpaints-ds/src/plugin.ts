@@ -7,12 +7,12 @@
 // A refused apply only shows the default item: the player's saved rows are never touched, so a
 // lapsed supporter gets everything back on resubscribing.
 
-import { Chat, Clients, command, config, HookResult, publish, use } from "@s2script/sdk";
+import { Clients, command, config, HookResult, publish, use } from "@s2script/sdk";
 import { fetch } from "@s2script/sdk/http";
 import type { HookResultValue } from "@s2script/sdk";
-import { ChatColors } from "@s2script/cs2";
 import type { ItemRequest } from "@edgegamers/s2s-weaponpaints";
-import { allows, DEFAULT_POLICY, parsePolicy, refusal, requiredTier, type Policy } from "./policy.ts";
+import { allows, DEFAULT_POLICY, parsePolicy, requiredTier, type Policy } from "./policy.ts";
+import { loadPhrases, refuseSelection } from "./messages.ts";
 
 /** The one WeaponPaints method this plugin calls. */
 type WeaponPaints = { refresh(slot: number): boolean };
@@ -93,6 +93,7 @@ function guard(what: string, fn: () => HookResultValue): HookResultValue {
 let weaponPaints: WeaponPaints | null = null;
 
 export function OnPluginStart(): void {
+  loadPhrases();
   publish("@edgegamers/s2s-weaponpaints-ds", {
     reloadPolicy: (): void => {
       if (weaponPaints) void fetchPolicy(weaponPaints, true);
@@ -108,8 +109,7 @@ export function OnPluginStart(): void {
 
   wp.on("OnSelectionRequested", (req: ItemRequest) => guard("OnSelectionRequested", () => {
     if (allows(policy, tierOf(req), req.item)) return HookResult.Continue;
-    Chat.toSlot(req.player.slot,
-      `${ChatColors.Green}[DS] ${ChatColors.Default}${refusal(req.item.kind, requiredTier(policy, req.item))}`);
+    refuseSelection(req.player.slot, req.item.kind, requiredTier(policy, req.item));
     return HookResult.Handled;
   }));
 

@@ -1,3 +1,5 @@
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * The perk commands (`!wardenicon`, `!sticon`, `!paint`, `!lrcolor`, `!sdcolor`, `!bombicon`) —
  * one generic flow for all six (C# `AbstractEnumCommand`, `SDColorCommand`, `BombIconCommand`):
@@ -8,7 +10,7 @@
  * - an unlocked option → equip it (per-player perks: for you; gang-wide perks: for the gang, needs
  *   MANAGE_PERKS, announced in gang chat).
  */
-import { Chat } from "@s2script/sdk";
+
 import { Player } from "@s2script/cs2";
 import type { EnumPerkDef, PerkOption } from "./perks.ts";
 import { ALL_PERKS } from "./perks.ts";
@@ -24,7 +26,7 @@ import {
   unlock,
   unlockedMask,
 } from "./enum-perk.ts";
-import { msg } from "./messages.ts";
+import { msg, phrase } from "./messages.ts";
 import { openPerkMenu } from "./menus.ts";
 import type { GangsApi } from "./state.ts";
 import { readyGangs, steamOfSlot } from "./state.ts";
@@ -57,7 +59,7 @@ function purchaseReason(def: EnumPerkDef, opt: PerkOption): string {
 
 /** Handle `!<perk> [option…]` for the player in `slot`. Never throws. */
 export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
-  const say = (m: string): void => Chat.toSlot(slot, m);
+  const say = (m: Text): void => Chat.toSlot(slot, m);
   const gangs = readyGangs();
   if (!gangs) return say(msg.notReady());
   const steam = steamOfSlot(slot);
@@ -73,7 +75,7 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
 
   const opt = findOption(def, args);
   if (!opt) {
-    const expected = def.resolve === "icon" || def.resolve === "gang-icon" ? "an icon" : "a color";
+    const expected = def.resolve === "icon" || def.resolve === "gang-icon" ? phrase("jailbreak.gangperks.expected_icon") : phrase("jailbreak.gangperks.expected_color");
     return say(msg.invalidParam(args.join(" "), expected));
   }
 
@@ -104,7 +106,7 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
         gangs.grantPlayer(steam, decision.cost, `Refund: ${purchaseReason(def, opt)}`);
         return say(msg.purchaseFailed());
       }
-      gangs.sendGangChat(gang.id, msg.purchased(who, def, opt));
+      gangs.sendGangChat(gang.id, chatText(msg.purchased(who, def, opt), -1));
       return;
     }
     case "equip": {
@@ -113,7 +115,7 @@ export function runPerk(def: EnumPerkDef, slot: number, args: string[]): void {
         return say(msg.equipped(def, opt));
       }
       gangs.setGangStat(gang.id, def.statId, encodeGangData({ Unlocked: view.stored, Equipped: opt.bit }));
-      gangs.sendGangChat(gang.id, msg.gangThingSet(who, def, opt));
+      gangs.sendGangChat(gang.id, chatText(msg.gangThingSet(who, def, opt), -1));
       return;
     }
   }

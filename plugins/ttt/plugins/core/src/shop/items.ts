@@ -1,7 +1,7 @@
 /** Temporary finite grant bridge. Catalog, prices, wallet and counts belong to Shop. */
 import type {ShopItemId,PurchaseResult} from '../../api';
 import {n,list,s as str} from '../core/cvars';
-import {msgFor} from '../core/msgs';
+import {chatMsgFor } from '../core/msgs';
 import {giveArmorWithHelmet} from '../cs2/handlers';
 import {armStickers} from '../cs2/icons';
 import {clearSlot,GearSlot,give,giveReplacing,replaceInSlot} from '../cs2/inventory';
@@ -165,7 +165,7 @@ export function grantShopItem(slot:number,id:ShopItemId):boolean {
       // Buying arms a charge; the next USE press places it. Purchase can no longer fail, so the
       // refund-on-miss dance is gone with it — you are no longer forced to be standing in the right
       // doorway with the shop open to spend your credits.
-      tell(slot, msgFor(slot, "SHOP_ITEM_TRIPWIRE_ARMED", fx.grantTripwire(slot)));
+      tell(slot, chatMsgFor(slot, "ttt.tripwire.armed", fx.grantTripwire(slot)));
 
       return true;
   }

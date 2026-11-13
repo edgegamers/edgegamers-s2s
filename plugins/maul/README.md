@@ -31,7 +31,7 @@ npm run build -- --filter @edgegamers/s2s-maul
 
 Drop the built `.s2sp` into the server's plugin directory and set at minimum `maul_key`.
 
-Builds against the shared `@s2script/sdk` 0.34.0 / `@s2script/cs2` 0.22.0 and needs an s2script runtime with host
+Builds against the SDK/CS2 versions pinned in the root `package.json` and needs an s2script runtime with host
 API 3 (protocol-2 plugin interop). Ban routing uses `@s2script/basebans` 1.x, whose contract is
 vendored at `.s2script/types/@s2script/basebans/index.d.ts` — an exact copy of s2script's
 `plugins/basebans/api.d.ts`; refresh it with `s2s add @s2script/basebans` once the registry
@@ -94,9 +94,15 @@ DS membership requires a found MAUL profile with `ds.ds` set to `true`; rank alo
 access. These recipient restrictions apply to in-game delivery. Existing server logging and the
 optional MAUL presence dashboard still record chat, including staff messages.
 
-Leadership wrappers use the startup-loaded `maul` translation set, with English embedded in the
+Staff-chat wrappers, DS join wrappers and command feedback use the startup-loaded `maul` translation set, with English embedded in the
 plugin. Operator overrides belong at `addons/s2script/translations/maul.phrases.json`, or under a
 language-code subdirectory for another locale. Reload the plugin after changing a phrase file.
+
+Leadership messages use the legacy dark-blue parenthesized formats. `maul.leadership.label`
+controls the displayed `LEADERSHIP` label. Incoming player messages show `#userid` to leadership;
+broadcasts show the sender to leaders and `(LEADERSHIP TO ALL)` to other players. Private messages
+use `(Private to name)` and `(From LEADERSHIP)` views. Message bodies are appended literally after
+the translated wrapper, so their braces cannot become chat color tags.
 
 ### Ranks table
 

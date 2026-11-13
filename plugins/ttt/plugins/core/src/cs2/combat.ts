@@ -38,7 +38,7 @@ import type { GameEvent } from "@s2script/sdk/events";
 import type { DamageInfo } from "@s2script/sdk/damage";
 import { Server } from "@s2script/sdk/server";
 import { GameState, MAX_SLOTS, RoleId } from "../core/enums";
-import { msg, msgFor } from "../core/msgs";
+import { msg, chatMsgFor } from "../core/msgs";
 import { Priority, type EventBus } from "../core/bus";
 import { sharedDamage, type TttEvents } from "../core/events";
 import * as reg from "../core/registry";
@@ -797,7 +797,7 @@ function handleDeath(
   if (killer >= 0 && killer !== victim) {
     const killerRole = reg.roleOf(killer);
     if (killerRole !== RoleId.None) {
-      tell(victim, msgFor(victim, "ROLE_REVEAL_DEATH", roleNameFor(victim, killerRole)));
+      tell(victim, chatMsgFor(victim, "ttt.role.killer_revealed", roleNameFor(victim, killerRole)));
     }
   }
 

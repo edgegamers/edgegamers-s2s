@@ -7,6 +7,7 @@
  */
 import { ChatColors } from "@s2script/cs2";
 import { loadPhrases, phraseFor } from "../../../../packages/contracts/phrases.ts";
+export { chatPhraseFor as chatMsgFor, replyPhraseFor } from "../../../../packages/contracts/phrases.ts";
 
 /** Register the phrase set with the SDK. Call once at load, before anything formats a message. */
 export function installPhrases(): void {
@@ -19,8 +20,8 @@ export function msg(key: string, ...args: (string | number)[]): string {
 }
 
 /**
- * Format a phrase in `slot`'s own language. Use this for anything addressed to one player; `msg`
- * stays correct for chat-wide and console text.
+ * Format in `slot`'s language. Broadcast callbacks resolve this separately for each recipient;
+ * `msg` is for the server default.
  */
 export function msgFor(slot: number, key: string, ...args: (string | number)[]): string {
   return phraseFor(slot, key, ...args);

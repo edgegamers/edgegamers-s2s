@@ -1,4 +1,5 @@
-import { Chat } from "@s2script/sdk";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+
 import { Fade, Player } from "@s2script/cs2";
 import { Colors, isAlive, packColor32, setPawnColor } from "@edgegamers/jailbreak-shared";
 import { describe, isRebel, log, unmarkRebel } from "@edgegamers/jailbreak-core";

@@ -13,7 +13,7 @@ Licensed GPL-3.0-only, like the original. See [LICENSE](LICENSE) and [NOTICE](NO
 ## Install
 
 Requires a Linux CS2 server with a current [s2script](https://www.s2script.com/) runtime.
-Built against SDK **0.35.0** and CS2 types **0.22.0**. It does not need CounterStrikeSharp.
+Built with the shared SDK/CS2 versions pinned in the root `package.json`. It does not need CounterStrikeSharp.
 
 1. Run `npm run build -- --filter @edgegamers/s2s-arcadescripts` from the repository root.
 2. Copy `dist/_edgegamers_s2s-arcadescripts.s2sp` to `addons/s2script/plugins/`.
@@ -90,3 +90,5 @@ not been run on a live server yet. A first live check on `jb_arcade_b6`:
 - [ ] Bee shows a word and definition, takes keyboard input, and grades it.
 - [ ] Lightning, Poison, Grab, Lunge and the decoys work when their secret items are picked up.
 - [ ] Surf, Decathlon and Strafe Jump send winners to the podiums.
+
+Chat answer announcements use `translations/arcadescripts.phrases.json`, with embedded English as a fallback. Copy phrase files to `addons/s2script/translations/`; another language belongs under its language-code subdirectory. Labels resolve separately for each recipient while the spelling word or math solution stays unchanged. Reload the plugin after editing phrases.

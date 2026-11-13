@@ -15,6 +15,7 @@ addons/s2script/docs/s2s-hide/source. There is no warranty.
 Modified 2026-10-26: updated s2script dependencies, registry packaging metadata,
 and GitHub Actions build/publish automation. Gameplay behavior is unchanged.
 
-s2script SDK 0.33.0 and CS2 types 0.22.0 are development dependencies, licensed
+The s2script SDK and CS2 types are development dependencies; versions are pinned
+in the root package.json. They are licensed
 MIT OR Apache-2.0 by their authors. The framework is installed separately and is
 not bundled in this release.

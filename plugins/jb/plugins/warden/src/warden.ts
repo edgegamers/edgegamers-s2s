@@ -1,4 +1,5 @@
-import { after, ADMFLAG, Chat, Entity, Clients } from "@s2script/sdk";
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { after, ADMFLAG, Entity, Clients } from "@s2script/sdk";
 import type { Timer } from "@s2script/sdk";
 import { Player, Weapon } from "@s2script/cs2";
 import type { Pawn } from "@s2script/cs2";

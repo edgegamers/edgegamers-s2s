@@ -22,19 +22,20 @@ function fixture(config = {}) {
     Events: { setRecipients() {} }, Sound: { emit() {} }, SDKHook: () => true, SDKUnhook() {},
     Cookies: { register: (_n, c) => c, get: () => '', set: () => true, areCached: () => true }, CookieAccess: { Private: 2 },
     Translations: { load: (_n, p) => phraseSets.set('en', p), translate(slot, key, ...args) {
-      const line = slot === 1 && key === 'advertising_alert' ? 'LOCAL {1} {2} {3}' : phraseSets.get('en')[key];
+      const translated = { "decluttr.advertising.alert": 'LOCAL {1} {2} {3}', "decluttr.announcements.team_join": '{name} rejoint {team}', "decluttr.teams.terrorists": 'Terroristes', "decluttr.chat.team": '(ÉQUIPE) {name}: {message}' };
+      const line = slot === 1 && key in translated ? translated[key] : phraseSets.get('en')[key];
       return line.replace(/\{(\d+)\}/g, (_, n) => args[+n - 1] ?? '');
     } },
   };
   const cs2 = { chat: { onCanHear: h => { hear = h; } }, GameRules: { get: () => ({ warmupPeriod: false, hasMatchStarted: true }) },
     Player: { fromSlot: s => players.get(s) ?? null, allConnected: () => [...players.values()] }, PlayerConnectedState: { Disconnecting: 3 },
-    ChatColors: { Blue: '\x0b', Grey: '\x08', Red: '\x02', Yellow: '\x09' } };
+    ChatColors: { Default: '\x01', White: '\x01', Blue: '\x0b', Grey: '\x08', Red: '\x07', LightRed: '\x0f', Yellow: '\x09' } };
   const m = { exports: {} }; vm.runInNewContext(code, { module: m, exports: m.exports, console: { log() {} }, Date,
     require: n => n === '@s2script/cs2' ? cs2 : sdk });
   function add(slot, flags = 0, team = 2, alive = true) {
     const p = { slot, flags, teamNum: team, pawnIsAlive: alive, playerName: `p${slot}`, steamId: `id${slot}`, musicKitID: 12, connected: 0 };
     p.ref = { index: slot + 1, id: serial++, isValid: () => players.get(slot) === p };
-    p.pawn = { ref: { index: slot + 100, id: serial++, isValid: () => players.get(slot) === p }, isValid: true, render: 0xffffffff, lastPlaceName: 'Mid' };
+    p.pawn = { ref: { index: slot + 100, id: serial++, isValid: () => players.get(slot) === p }, isValid: true, health: alive ? 100 : 0, render: 0xffffffff, lastPlaceName: 'Mid' };
     p.client = { slot, steamId: p.steamId, isBot: false, name: p.playerName, isValid: () => players.get(slot) === p,
       chat: value => { if (p.client.isValid()) sent.push([slot, value]); } };
     p.setName = name => { if (!p.ref.isValid()) return false; p.playerName = name; return true; };
@@ -98,4 +99,40 @@ test('round and spawn render resets keep hidden legs hidden and visible choices 
   hidden.pawn = { ...hidden.pawn, isValid: true, ref: { ...hidden.pawn.ref, id: 1000 }, render: 0xffffffff };
   f.event('player_spawn', { userid: 0 }); f.frame(); assert.equal(hidden.pawn.render, 0xfeffffff);
   f.mod.OnPluginEnd(); assert.equal(hidden.pawn.render, 0xffffffff); assert.equal(visible.pawn.render, 0xffffffff);
+});
+
+test('default chat and team notices use the recipient language without translating authored text', () => {
+  const f = fixture({ chat: { format: { enabled: true, teamJoin: { enabled: true } } } });
+  f.add(0); f.add(1); f.mod.OnPluginStart();
+  f.say(0, 'hello {blue}', true);
+  assert.match(f.sent.find(([slot]) => slot === 1)[1], /ÉQUIPE.*p0: hello ｛blue｝/);
+  assert.match(f.sent.find(([slot]) => slot === 0)[1], /\[T\]/);
+  f.sent.length = 0; f.event('player_team', { userid: 0 });
+  assert.equal(f.sent.find(([slot]) => slot === 1)[1], 'p0 rejoint Terroristes');
+  assert.match(f.sent.find(([slot]) => slot === 0)[1], /joined.*Terrorists/);
+  f.config({ chat: { format: { enabled: true, templates: { team: 'CUSTOM {name}: {message}' } } } });
+  f.cmd('sm_decluttr_reload'); f.sent.length = 0; f.say(0, 'literal', true);
+  assert.ok(f.sent.every(([, text]) => text === 'CUSTOM p0: literal'));
+});
+
+test('native chat output uses legacy colors and distinguishes a dead body from a pawnless spectator', () => {
+  const f = fixture({ chat: { format: { enabled: true } } });
+  f.add(0); f.add(2, 0, 3, false); const spectator = f.add(4, 0, 1, false); spectator.pawn = null;
+  f.mod.OnPluginStart();
+  f.say(0, 'hello', false);
+  assert.equal(f.sent.find(([slot]) => slot === 0)[1], '  \x01p0:\x08 hello');
+  f.sent.length = 0;
+  f.say(0, 'hello', true);
+  assert.equal(f.sent.find(([slot]) => slot === 0)[1], ' \x07[T] \x01 \x01p0:\x08 hello');
+  assert.equal(f.api.formatChat(2, 'hello', true, 0, 'dead'), ' \x0f☠ \x01\x0b[CT] \x01 \x01p2:\x08 hello');
+  assert.equal(f.api.formatChat(4, 'hello', false, 0, 'spectator'), '  \x01p4:\x08 hello');
+  assert.equal(f.api.formatChat(4, 'hello', true, 0, 'spectator'), ' \x01[S] \x01 \x01p4:\x08 hello');
+});
+
+test('native relay does not mark a pawnless T dead, while an owner can supply logical death', () => {
+  const f = fixture({ chat: { format: { enabled: true } } }), player = f.add(0, 0, 2, false);
+  player.pawn = null; f.mod.OnPluginStart();
+  f.say(0, 'hello', true);
+  assert.equal(f.sent[0][1], ' \x07[T] \x01 \x01p0:\x08 hello');
+  assert.equal(f.api.formatChat(0, 'hello', true, 0, 'dead'), ' \x0f☠ \x01\x07[T] \x01 \x01p0:\x08 hello');
 });

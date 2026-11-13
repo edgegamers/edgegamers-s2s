@@ -1,9 +1,10 @@
+import { localizedChat as Chat } from "@edgegamers/jailbreak-shared";
 /**
  * Cell doors (MapUtil.OpenCells + the warden's auto-open timer). The opener is a func_button:
  * a zone tagged `cell_button` (from the optional @s2script/zones plugin) marks it exactly;
  * otherwise the name heuristic picks the best-named button nearest the CT spawn.
  */
-import { Chat, Entity, config } from "@s2script/sdk";
+import { Entity, config } from "@s2script/sdk";
 import type { EntityRef, Timer } from "@s2script/sdk";
 import { after } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";

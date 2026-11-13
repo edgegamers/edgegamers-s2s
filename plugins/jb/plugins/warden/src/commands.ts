@@ -1,4 +1,7 @@
-import { ADMFLAG, after, Chat, command, createEntity, HookResult } from "@s2script/sdk";
+import { phrase } from "./messages.ts";
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
+import { reply as replyMessage, replyConsole, localizedChat as Chat } from "@edgegamers/jailbreak-shared";
+import { ADMFLAG, after, command, createEntity, HookResult } from "@s2script/sdk";
 import type { CommandInvocation, HookResultValue } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
 import { Team, isAlive } from "@edgegamers/jailbreak-shared";
@@ -37,9 +40,9 @@ const nameOf = (slot: number): string => {
   return who(p?.playerName ?? "", p?.teamNum);
 };
 
-function reply(cmd: CommandInvocation, text: string): void {
+function reply(cmd: CommandInvocation, text: Text): void {
   if (cmd.callerSlot >= 0) Chat.toSlot(cmd.callerSlot, text);
-  else cmd.reply(text);
+  else replyMessage(cmd, text);
 }
 
 /** Register a command under several names. */
@@ -96,7 +99,7 @@ export function registerCommands(): void {
       return H;
     }
     if (!hasFlags(cmd.callerSlot, ADMFLAG.BAN)) {
-      reply(cmd, msg.noPermission("@css/ban"));
+      reply(cmd, msg.noPermission(phrase("jailbreak.warden.permission_ban")));
       return H;
     }
     removeWarden("fire", cmd.callerSlot);
@@ -161,7 +164,7 @@ export function registerCommands(): void {
     const slot = cmd.callerSlot;
     if (slot < 0) return H;
     const on = toggleSpeakToAll(slot);
-    if (on === null) reply(cmd, msg.noPermission("@css/chat"));
+    if (on === null) reply(cmd, msg.noPermission(phrase("jailbreak.warden.permission_chat")));
     else reply(cmd, on ? msg.speakToAllOn : msg.speakToAllOff);
     return H;
   });
@@ -222,7 +225,7 @@ export function registerCommands(): void {
     }
     const r = parseRoll(cmd.args);
     if (!r.ok) {
-      reply(cmd, msg.invalidParameter(r.arg, "number"));
+      reply(cmd, msg.invalidParameter(r.arg, phrase("jailbreak.warden.expected_number")));
       return H;
     }
     Chat.toAll(msg.roll(rollBetween(r.min, r.max, Math.random)));
@@ -253,7 +256,7 @@ export function registerCommands(): void {
     if (slot < 0) return H;
     if (!isWarden(slot)) {
       reply(cmd, msg.notWarden);
-      cmd.replyToConsole(msg.notWarden);
+      replyConsole(cmd, msg.notWarden);
       return H;
     }
     const query = targetPattern(cmd.argString);
@@ -272,7 +275,7 @@ export function registerCommands(): void {
     if (found.kind !== "one") {
       const text = found.kind === "none" ? msg.playerNotFound(query) : msg.playerFoundMultiple(query);
       reply(cmd, text);
-      cmd.replyToConsole(text);
+      replyConsole(cmd, text);
       return H;
     }
     const target = found.target.slot;
@@ -309,17 +312,17 @@ export function registerCommands(): void {
   // ── debug: sm_markst <target> (C# `css_debug st`) ─────────────────────────
   command.admin("sm_markst", ADMFLAG.ROOT, (cmd) => {
     if (cmd.argCount === 0) {
-      cmd.reply("Specify target?");
+      replyMessage(cmd, phrase("jailbreak.warden.st_target_required"));
       return H;
     }
     const targets = Player.target(cmd.arg(0), cmd.callerSlot, true);
     if (targets.length === 0) {
-      cmd.reply(msg.playerNotFound(cmd.arg(0)));
+      replyMessage(cmd, msg.playerNotFound(cmd.arg(0)));
       return H;
     }
     for (const p of targets) setSpecialTreatment(p.slot, !isSpecialTreatment(p.slot));
-    const label = targets.length === 1 ? (targets[0].playerName ?? "") : `${targets.length} players`;
-    cmd.reply(`Toggled special treatment for ${label}.`);
+    const label = targets.length === 1 ? (targets[0].playerName ?? "") : phrase("jailbreak.warden.target_count", targets.length);
+    replyMessage(cmd, phrase("jailbreak.warden.st_toggled", label));
     return H;
   });
 }
@@ -358,7 +361,7 @@ function spawnForWarden(
   kv: Record<string, string>,
   underCap: () => boolean,
   count: () => void,
-  text: { tooMany: string; failed: string; spawned: string },
+  text: { tooMany: Text; failed: Text; spawned: Text },
 ): void {
   const slot = cmd.callerSlot;
   if (slot < 0) return;

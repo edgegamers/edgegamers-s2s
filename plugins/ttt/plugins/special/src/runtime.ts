@@ -1,9 +1,11 @@
 import {settingsNumber} from './settings';
+import { Clients } from '@s2script/sdk/clients';
 import { Chat } from '@s2script/sdk/chat';
 import type { TypedPublishHandle } from '@s2script/sdk';
 import type { CoreMethods } from '../../core/api';
 import type { Contract, TttSpecialRoundInfo } from '../api';
 import {phraseFor} from '../../../packages/contracts/phrases.ts';
+export {chatPhraseFor as chatMsgFor} from '../../../packages/contracts/phrases.ts';
 export const enum RoleId { None=0, Innocent=1, Traitor=2, Detective=3, Spectator=4 }
 export const enum GameState { Waiting=0, Countdown=1, InProgress=2, Finished=3 }
 export const Priority = { HIGHEST:10, HIGH:40, LOW:80 } as const;
@@ -32,8 +34,10 @@ export const game = {
 export function n(name:string):number { return settingsNumber(name); }
 export function msg(key:string,...args:(number|string)[]):string { return phraseFor(-1,key,...args); }
 export function tell(slot:number,message:string):void { Chat.toSlot(slot,message); }
-export function tellAll(message:string):void { Chat.toAll(message); }
+export function tellAll(format:(slot:number)=>string):void { for(const client of Clients.all())Chat.toSlot(client.slot,format(client.slot)); }
 export function setRoundDeadline(seconds:number):void { current().setRoundDeadline(seconds); }
 export function balanceOf(slot:number):number { return current().getBalance(slot); }
 export function addBalance(slot:number,amount:number,reason:string,print=true):void { current().addBalance(slot,amount,reason,print); }
 export function setSuppressPistols(on:boolean):void { current().setSuppressPistols(on); }
+
+export const msgFor = phraseFor;

@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * Keep a team inside an area until a day starts (AbstractZoneRestrictedDay + MovementRestrictor).
  * The area is the `armory`/`cell` tagged zones when @s2script/zones has them, otherwise the convex
@@ -65,7 +66,7 @@ export class ZoneRestriction {
   constructor(
     private readonly area: Area,
     teamNum: number,
-    private readonly reminder: string,
+    private readonly reminder: Text,
   ) {
     for (const p of onTeam(teamNum)) this.tracked.set(p.userId, null);
   }

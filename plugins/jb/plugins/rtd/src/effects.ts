@@ -1,3 +1,4 @@
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 import { decluttrCall } from '../../../../decluttr/src/owner.ts';
 /**
  * Round-long reward effects: "Cannot Use …" pickup blocks, the per-frame knife/scope blocks
@@ -150,6 +151,6 @@ export function onSay(slot: number, text: string, teamonly: boolean): void {
   for (const userId of spies) {
     const spy = Player.fromUserId(userId);
     if (!spy || spy.slot === slot || spy.teamNum === sender.teamNum) continue;
-    Clients.fromSlot(spy.slot)?.chat(line);
+    Clients.fromSlot(spy.slot)?.chat(chatText(line, spy.slot));
   }
 }

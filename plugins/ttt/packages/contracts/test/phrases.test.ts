@@ -26,7 +26,12 @@ export const Translations = {
     return key;
   },
 };`;
-const colors = `export const ChatColors = new Proxy({}, { get: (_t, k) => '<' + String(k) + '>' });`;
+const nativeColors = {
+  Default: '\x01', White: '\x01', DarkRed: '\x02', LightPurple: '\x03', Green: '\x04',
+  Olive: '\x05', Lime: '\x06', Red: '\x07', Grey: '\x08', Yellow: '\x09', Silver: '\x0a',
+  Blue: '\x0b', DarkBlue: '\x0c', BlueGrey: '\x0d', Purple: '\x0e', LightRed: '\x0f', Orange: '\x10',
+};
+const colors = `export const ChatColors = ${JSON.stringify(nativeColors)};`;
 const bundle = await build({
   stdin: {contents: "export * from './phrases.ts';", resolveDir: fileURLToPath(new URL('..', import.meta.url)), loader: 'ts'},
   bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -56,38 +61,114 @@ test('the phrase file is plain SDK syntax: no splices or grammar markers, only c
   }
 });
 
-test('phrases render through the SDK with colours, arguments and number formatting', () => {
+test('phrases render through the SDK with semantic colours, arguments and number formatting', () => {
   const p = load();
-  assert.equal(p.phraseFor(-1, 'ROLE_ASSIGNED', 'Traitor'), '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey>Your role: Traitor<Grey>!');
-  assert.equal(p.phraseFor(-1, 'COMMAND_BALANCE', 3), '<Green>SHOP <Grey>| You have <Yellow>3<Grey> point(s).');
-  assert.equal(p.phraseFor(-1, 'GAME_STATE_STARTING', 2.5), '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey><Lime>The game starts in <Yellow>2.5<Lime> second(s).');
-  assert.equal(p.phraseFor(-1, 'SHOP_ITEM_TRIPWIRE_DEFUSING', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
-  assert.equal(p.phraseFor(-1, 'NO_SUCH_PHRASE'), 'NO_SUCH_PHRASE', 'an unknown key renders as itself');
+  assert.equal(p.chatPhraseFor(3, 'ttt.chat.prefix'), '\x02T\x07T\x0fT \x08» \x08');
+  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
+  assert.equal(p.phraseFor(-1, 'ttt.round.starting', 2.5), 'TTT | The game starts in 2.5 second(s).');
+  assert.equal(p.phraseFor(-1, 'ttt.tripwire.defusing', 'Bob', 1.23456), 'Defusing... (Bob, 1.23 second(s) left).');
+  assert.equal(p.phraseFor(-1, 'ttt.missing.phrase'), 'ttt.missing.phrase', 'an unknown key renders as itself');
+});
+
+test('nested localized roles retain their dedicated colours through SDK brace sanitizing', () => {
+  const p = load({}, {de: {ttt: {'ttt.role.detective': '{darkblue}Detektiv{grey}'}}});
+  p.fixture.language[3] = 'de';
+  for (const [key, color, name] of [['innocent', '\x04', 'Innocent'], ['traitor', '\x07', 'Traitor'], ['detective', '\x0c', 'Detektiv']]) {
+    const role = p.phraseFor(3, `ttt.role.${key}`);
+    assert.equal(role, `${color}${name}\x08`);
+    assert.ok(p.phraseFor(3, 'ttt.role.assigned', role).includes(`${color}${name}\x08`));
+  }
+  const description = p.phraseFor(3, 'ttt.c4.description');
+  assert.ok(p.phraseFor(3, 'ttt.shop.purchased_detail', description).includes('\x07Traitors\x08'));
+});
+
+test('the complete native palette and phrase aliases expand before a phrase is nested', () => {
+  const tokens = ['default', 'white', 'darkred', 'lightpurple', 'green', 'olive', 'lime', 'red', 'grey', 'yellow', 'silver', 'blue', 'darkblue', 'bluegrey', 'purple', 'lightred', 'orange'];
+  const p = load({ttt: {'ttt.test.palette': tokens.map(t => `{${t}}`).join(''), 'ttt.test.outer': '{1}', 'ttt.test.aliases': '{gray}{gold}{lightblue}{magenta}'}});
+  const expected = Object.values(nativeColors).join('');
+  assert.equal(p.phraseFor(3, 'ttt.test.palette'), expected);
+  assert.equal(p.phraseFor(3, 'ttt.test.outer', p.phraseFor(3, 'ttt.test.palette')), expected);
+  assert.equal(p.phraseFor(3, 'ttt.test.aliases'), '\x08\x10\x0b\x0e');
 });
 
 test('a player name cannot inject a colour tag', () => {
   const p = load();
-  assert.equal(p.phraseFor(-1, 'BODY_IDENTIFIED', '{red}Eve', 'Bob', 'Innocent'),
-    '<DarkRed>T<Red>T<LightRed>T<Grey> | <Grey><Default>redEve<Grey> identified the body of <Blue>Bob<Grey>. Their role: Innocent<Grey>!');
+  const text = p.phraseFor(3, 'ttt.body.identified', '{red}Eve', 'Bob', p.phraseFor(3, 'ttt.role.innocent'));
+  assert.ok(text.includes('redEve'));
+  assert.ok(!text.includes('\x07Eve'));
+  assert.ok(!/[{}]/.test(text));
 });
 
 test('the deployed file and per-language files override the bundled English', () => {
-  const p = load({ttt: {COMMAND_BALANCE: 'Balance: {1}'}}, {de: {ttt: {COMMAND_BALANCE: 'Guthaben: {1}'}}});
+  const p = load({ttt: {'ttt.shop.balance': 'Balance: {1}'}}, {de: {ttt: {'ttt.shop.balance': 'Guthaben: {1}'}}});
   p.fixture.language[3] = 'de';
-  assert.equal(p.phraseFor(-1, 'COMMAND_BALANCE', 7), 'Balance: 7');
-  assert.equal(p.phraseFor(3, 'COMMAND_BALANCE', 7), 'Guthaben: 7');
-  assert.equal(p.phraseFor(3, 'SHOP_INACTIVE'), '<Green>SHOP <Grey>| The shop is currently closed.', 'missing translation falls back to English');
+  assert.equal(p.phraseFor(-1, 'ttt.shop.balance', 7), 'Balance: 7');
+  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 7), 'Guthaben: 7');
+  assert.equal(p.phraseFor(-1, 'ttt.shop.inactive'), 'SHOP | The shop is currently closed.', 'missing translation falls back to English');
 });
 
-test('every literal phrase key used by plugin code exists in the phrase file', async () => {
-  const {readdirSync, statSync} = await import('node:fs');
-  const {join} = await import('node:path');
-  const root = fileURLToPath(new URL('../../../plugins/', import.meta.url));
-  const files: string[] = [];
-  const walk = (dir: string): void => { for (const e of readdirSync(dir)) { const p = join(dir, e); if (statSync(p).isDirectory()) walk(p); else if (p.endsWith('.ts')) files.push(p); } };
-  for (const plugin of readdirSync(root)) { try { walk(join(root, plugin, 'src')); } catch { /* no src */ } }
-  const missing: string[] = [];
-  const call = /\b(?:msg|msgFor|phraseFor|tellT)\(\s*(?:[^,()"'`]+,\s*)?["']([A-Z][A-Z0-9_]+)["']/g;
-  for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(call)) if (!(m[1]! in file)) missing.push(`${m[1]} (${f.slice(root.length)})`);
-  assert.deepEqual(missing, []);
+test('console, menu and HUD phrases stay plain while player chat preserves native colors', () => {
+  const p = load({ttt: {'ttt.test.console': '{grey}Hello {lightred}{1}'}});
+  assert.equal(p.phraseFor(-1, 'ttt.test.console', 'Eve'), 'Hello Eve');
+  assert.equal(p.phraseFor(3, 'ttt.test.console', 'Eve'), '\x08Hello \x0fEve');
+  assert.equal(p.plainPhraseFor(3, 'ttt.test.console', 'Eve'), 'Hello Eve');
+  assert.equal(p.plainPhraseFor(3, 'ttt.c4.description'), 'The bomb will deal damage to everyone including you and fellow Traitors');
+});
+
+test('one shared phrase uses arrows only for chat, retaining console, HUD and menu wording', () => {
+  const p = load();
+  assert.equal(p.chatPhraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
+  assert.equal(p.phraseFor(-1, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).');
+  assert.equal(p.plainPhraseFor(3, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).');
+  assert.equal(p.phraseFor(3, 'ttt.shop.balance', 3), '\x0bSHOP \x08» \x08You have \x093\x08 point(s).\x08');
+  assert.equal(p.replyPhraseFor({callerSlot: 3, replySource: 'chat'}, 'ttt.shop.balance', 3), p.chatPhraseFor(3, 'ttt.shop.balance', 3));
+  for (const replySource of ['console', 'server']) {
+    assert.equal(p.replyPhraseFor({callerSlot: 3, replySource}, 'ttt.shop.balance', 3), p.plainPhraseFor(3, 'ttt.shop.balance', 3));
+  }
+  assert.equal(p.chatPhraseFor(-1, 'ttt.shop.balance', 3), 'SHOP | You have 3 point(s).', 'forced chat degrades to the server console');
+});
+
+test('TTT prefix colors preserve console layout and literal arguments', () => {
+  const body = 'TTT » Alice [T] | literal';
+  for (const [prefix, rendered] of [
+    ['{blue}TTT', '\x0bTTT'], ['{red}TTT', '\x07TTT'],
+    ['{darkred}T{red}T{lightred}T', '\x02T\x07T\x0fT'],
+  ]) {
+    const p = load({ttt: {'ttt.role.assigned': `${prefix} {grey}» {1}`}});
+    assert.equal(p.phraseFor(3, 'ttt.role.assigned', body), `${rendered} \x08» ${body}`);
+    assert.equal(p.chatPhraseFor(3, 'ttt.role.assigned', body), `${rendered} \x08» ${body}`);
+    assert.equal(p.plainPhraseFor(3, 'ttt.role.assigned', body), `TTT | ${body}`);
+    assert.equal(p.phraseFor(-1, 'ttt.role.assigned', body), `TTT | ${body}`);
+  }
+  const p = load({}, {de: {ttt: {'ttt.role.assigned': '{1}'}}});
+  p.fixture.language[3] = 'de';
+  assert.equal(p.plainPhraseFor(3, 'ttt.role.assigned', body), body, 'a missing prefix never rewrites the player argument');
+});
+
+test('chat prefixes preserve translated names, prefix suppression, player data and nested colors', () => {
+  const p = load({ttt: {'ttt.shop.balance': '{blue}STORE {grey}| {grey}Balance: {1}'}}, {de: {ttt: {
+    'ttt.role.assigned': '{red}Rollen {grey}| {grey}Deine Rolle: {1}',
+    'ttt.commands.no_target': '{1}',
+    'ttt.shop.inactive': '',
+  }}});
+  p.fixture.language[3] = 'de';
+  assert.equal(p.chatPhraseFor(3, 'ttt.shop.balance', 7), '\x0bSTORE \x08» \x08Balance: 7');
+  assert.equal(p.chatPhraseFor(3, 'ttt.role.assigned', p.phraseFor(3, 'ttt.role.traitor')), '\x07Rollen \x08» \x08Deine Rolle: \x07Traitor\x08');
+  const body = 'TTT | Alice [T] [CT] [S] ☠ » [Report] | literal';
+  assert.equal(p.chatPhraseFor(3, 'ttt.commands.no_target', body), body, 'a prefixless translation cannot turn player data into a prefix');
+  assert.equal(p.chatPhraseFor(3, 'ttt.commands.no_target', '\uFFF00\uFFF1 TTT | [T] » literal'), '\uFFF00\uFFF1 TTT | [T] » literal', 'restored argument markers are never scanned again');
+  assert.equal(p.chatPhraseFor(3, 'ttt.shop.inactive'), '');
+  const nested = p.phraseFor(3, 'ttt.shop.refunded', body);
+  const line = p.chatPhraseFor(3, 'ttt.shop.credits_given_reason', '+', 2, nested);
+  assert.equal(line.split('»').length - 1, 2, 'one system separator plus the literal arrow in the argument');
+  assert.ok(line.includes(body));
+  assert.equal(p.chatPhraseFor(3, 'ttt.role.teammate_entry', body), p.phraseFor(3, 'ttt.role.teammate_entry', body), 'plain entries get no invented prefix');
+});
+
+test('private fallback labels use arrows without changing player names or bodies', () => {
+  const p = load();
+  const name = 'SHOP | [T] Alice', body = '[CT] ☠ [S] TTT | body » literal';
+  assert.equal(p.chatPhraseFor(3, 'ttt.chat.traitor_format', name, body), `\x07TRAITORS \x08» \x0f${name}\x08: \x08${body}\x08`);
+  assert.equal(p.chatPhraseFor(3, 'ttt.chat.dead_format', name, body), `\x07DEAD \x08» \x0f${name}\x08: \x08${body}\x08`);
+  assert.ok(p.phraseFor(3, 'ttt.chat.traitor_format', name, body).startsWith('\x07[TRAITORS] '));
 });

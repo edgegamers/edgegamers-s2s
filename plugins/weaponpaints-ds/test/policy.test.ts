@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  allows, DEFAULT_POLICY, parsePolicy, parseTier, refusal, requiredTier, type Policy,
+  allows, DEFAULT_POLICY, parsePolicy, parseTier, requiredTier, type Policy,
 } from "../src/policy.ts";
 import type { ItemKind, ItemRef } from "@edgegamers/s2s-weaponpaints";
 
@@ -85,11 +85,6 @@ test("tiers parse from numbers or names", () => {
   assert.equal(parseTier(2.5), null);
   assert.equal(parseTier("Diamond"), null);
   assert.equal(parseTier(null), null);
-});
-
-test("the refusal names the tier that unlocks the item", () => {
-  assert.equal(refusal("gloves", 3), "These gloves need Platinum Dedicated Supporter or higher.");
-  assert.equal(refusal("knife", 2), "This knife needs Gold Dedicated Supporter or higher.");
 });
 
 test("the CS portal's /api/skins/policy answer parses as a policy", () => {

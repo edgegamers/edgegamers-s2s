@@ -11,6 +11,12 @@ It answers [WeaponPaints' gating hooks](../weaponpaints/README.md#gating-hooks) 
 [MAUL](../maul/README.md#contract-for-other-plugins) fetched on connect. Remove this plugin and
 WeaponPaints is ungated again.
 
+Player chat is editable in `translations/weaponpaints-ds.phrases.json`, using keys such as
+`weaponpaints_ds.selection.knife_requires_tier`. Displayed tier names are translated separately
+from the policy's canonical tier names. Follow the shared [translation style guide](../../docs/translations/STYLE.md).
+To override wording without rebuilding, copy the file to `addons/s2script/translations/`, or
+`addons/s2script/translations/<language-code>/` for another language. The embedded English is the fallback.
+
 ## Install
 
 Needs `@edgegamers/s2s-weaponpaints` and `@edgegamers/s2s-maul` loaded. Published as a restricted

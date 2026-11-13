@@ -1,5 +1,5 @@
 {
-  "Player.Hide.Enabled": "{orange}[Hide]{default} Вы {green}включили{default} скрытие игроков!",
-  "Player.Hide.Disabled": "{orange}[Hide]{default} Вы {lightred}выключили{default} скрытие игроков!",
-  "Player.SaveFailed": "{orange}[Hide]{default} Настройка изменена, но пока не сохранена. Повторяем сохранение, пока вы подключены."
+  "hide.players.enabled": "{blue}Hide {grey}» Вы {orange}включили{grey} скрытие игроков!",
+  "hide.players.disabled": "{blue}Hide {grey}» Вы {orange}выключили{grey} скрытие игроков!",
+  "hide.preferences.save_failed": "{red}Hide {grey}» Настройка изменена, но {red}пока не сохранена{grey}. {white}Повторяем сохранение, пока вы подключены.{grey}"
 }

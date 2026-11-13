@@ -1,3 +1,5 @@
+import { phrase } from "./messages.ts";
+import { reply as replyMessage } from "@edgegamers/jailbreak-shared";
 /**
  * `sm_debug <subcommand>` (Jailbreak.Debug, root only) — the subcommands core owns:
  * markrebel, pardon, endround, settime, testnearopen, color. LR / last guard / ST / RTD debug
@@ -20,7 +22,7 @@ function targets(cmd: CommandInvocation, n: number): Player[] | null {
   const pattern = cmd.arg(n);
   const found = Player.target(pattern, cmd.callerSlot, true);
   if (found.length === 0) {
-    cmd.reply(msg.playerNotFound(pattern));
+    replyMessage(cmd, msg.playerNotFound(pattern));
     return null;
   }
   return found;
@@ -33,25 +35,25 @@ function label(cmd: CommandInvocation, n: number, found: Player[]): string {
 const subs: Record<string, Sub> = {
   // css_debug markrebel <target> [seconds]
   markrebel(cmd) {
-    if (cmd.argCount < 2) return cmd.reply("Specify target?");
+    if (cmd.argCount < 2) return replyMessage(cmd, phrase("jailbreak.core.debug_rebel_target_required"));
     const found = targets(cmd, 1);
     if (!found) return;
     let duration = -1;
     if (cmd.argCount >= 3) {
       duration = Number.parseInt(cmd.arg(2), 10);
-      if (!Number.isFinite(duration)) return cmd.reply("Invalid duration");
+      if (!Number.isFinite(duration)) return replyMessage(cmd, phrase("jailbreak.core.debug_rebel_duration_invalid"));
     }
     for (const p of found) markRebel(p.slot, duration, "admin");
-    cmd.reply(`Marked ${label(cmd, 1, found)} as rebels for ${duration} seconds.`);
+    replyMessage(cmd, phrase("jailbreak.core.debug_rebel_marked", label(cmd, 1, found), duration));
   },
 
   // css_debug pardon <target>
   pardon(cmd) {
-    if (cmd.argCount < 2) return cmd.reply("Specify target?");
+    if (cmd.argCount < 2) return replyMessage(cmd, phrase("jailbreak.core.debug_pardon_target_required"));
     const found = targets(cmd, 1);
     if (!found) return;
     for (const p of found) unmarkRebel(p.slot, "admin");
-    cmd.reply(`Pardoned ${label(cmd, 1, found)}`);
+    replyMessage(cmd, phrase("jailbreak.core.debug_pardoned", label(cmd, 1, found)));
   },
 
   // css_debug endround
@@ -60,52 +62,52 @@ const subs: Record<string, Sub> = {
     Server.command("mp_ignore_round_win_conditions 0");
     const ok = GameRules.get()?.setTimeRemaining(0) ?? false;
     log(`An admin ended the round.`);
-    cmd.reply(ok ? "Ending the round." : "Failed to get GameRules.");
+    replyMessage(cmd, ok ? phrase("jailbreak.core.debug_round_ended") : phrase("jailbreak.core.debug_round_rules_unavailable"));
   },
 
   // css_debug settime <seconds>
   settime(cmd) {
-    if (cmd.argCount !== 2) return cmd.reply("Specify time?");
+    if (cmd.argCount !== 2) return replyMessage(cmd, phrase("jailbreak.core.debug_time_required"));
     const time = Number.parseInt(cmd.arg(1), 10);
-    if (!Number.isFinite(time)) return cmd.reply("Invalid time");
+    if (!Number.isFinite(time)) return replyMessage(cmd, phrase("jailbreak.core.debug_time_invalid"));
     const ok = GameRules.get()?.setTimeRemaining(time) ?? false;
-    cmd.reply(ok ? `Set time to ${time} seconds.` : "Failed to get GameRules.");
+    replyMessage(cmd, ok ? phrase("jailbreak.core.debug_time_set", time) : phrase("jailbreak.core.debug_time_rules_unavailable"));
   },
 
   // css_debug testnearopen
   testnearopen(cmd) {
     const origin = Player.fromSlot(cmd.callerSlot)?.pawn?.origin;
-    if (!origin) return cmd.reply("You need to be alive to use this.");
+    if (!origin) return replyMessage(cmd, phrase("jailbreak.core.debug_alive_required"));
     const ok = openNearest(toPoint(origin));
     if (ok) log(`${describe(cmd.callerSlot)} test-opened the nearest button.`);
-    cmd.reply("Attempted to open cells using the button nearest to you.");
+    replyMessage(cmd, phrase("jailbreak.core.debug_cells_attempted"));
   },
 
   // css_debug color [<alpha> | [alpha] <red> <green> <blue>]
   color(cmd) {
     const pawn = Player.fromSlot(cmd.callerSlot)?.pawn;
-    if (cmd.argCount < 2 || !pawn) return cmd.reply("css_debug color [<alpha>| [red] [green] [blue]]");
+    if (cmd.argCount < 2 || !pawn) return replyMessage(cmd, phrase("jailbreak.core.debug_color_usage"));
     const nums = cmd.args.slice(1).map((a) => Number.parseInt(a, 10));
-    if (nums.some((v) => !Number.isFinite(v))) return cmd.reply("Invalid number.");
+    if (nums.some((v) => !Number.isFinite(v))) return replyMessage(cmd, phrase("jailbreak.core.debug_color_number_invalid"));
     let [a, r, g, b] = [255, 255, 255, 255];
     if (nums.length === 1) a = nums[0];
     else if (nums.length === 3) [r, g, b] = nums;
     else if (nums.length === 4) [a, r, g, b] = nums;
-    else return cmd.reply("Invalid number of arguments.");
+    else return replyMessage(cmd, phrase("jailbreak.core.debug_color_argument_count_invalid"));
     setPawnColor(pawn, { r, g, b }, a);
-    cmd.reply(`DebugColor set to ${a} ${r} ${g} ${b}`);
+    replyMessage(cmd, phrase("jailbreak.core.debug_color_set", a, r, g, b));
   },
 };
 
 export function debugCommand(cmd: CommandInvocation): HookResultValue {
   const name = cmd.arg(0).toLowerCase();
   if (name === "") {
-    for (const key of Object.keys(subs)) cmd.reply(key);
+    for (const key of Object.keys(subs)) replyMessage(cmd, key);
     return HookResult.Handled;
   }
   const sub = subs[name];
   if (!sub) {
-    cmd.reply("Invalid subcommand");
+    replyMessage(cmd, phrase("jailbreak.core.debug_subcommand_invalid"));
     return HookResult.Handled;
   }
   sub(cmd);

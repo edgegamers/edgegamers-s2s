@@ -1,3 +1,4 @@
+import { renderText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /** The `!sd` day picker (SpecialDayMenuSelector): every day in a random order, built once per load. */
 import { Menu, MenuStyle } from "@s2script/sdk";
 import type { SDType } from "../api";
@@ -6,7 +7,7 @@ import { shuffle } from "./geometry.ts";
 import { msg } from "./messages.ts";
 
 export function buildMenu(onPick: (slot: number, type: SDType) => void): Menu {
-  const menu = new Menu(msg.menuTitle);
+  const menu = new Menu(consoleText(msg.menuTitle));
   menu.style = MenuStyle.Center;
   for (const type of shuffle([...ALL_TYPES])) menu.addItem(type, SD_NAMES[type]);
   menu.onSelect((e) => {

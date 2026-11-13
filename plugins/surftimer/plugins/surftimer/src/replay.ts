@@ -1,3 +1,4 @@
+import { tr, trackFor, styleFor } from "./phrases";
 // Replays: persistence and playback bots (recording buffers live in recorder.ts).
 //
 // Saving a record costs one header write and one native copy into the file job; gzip and disk IO
@@ -12,7 +13,7 @@ import { Files, Server, every, type Timer, type UserCmdView } from "@s2script/sd
 import { Pawn, Player, wrapEntity } from "@s2script/cs2";
 import {
   FRAME_WORDS, HEADER_BYTES, F_X, F_Y, F_Z, F_PITCH, F_YAW, F_VX, F_VY, F_VZ, F_BUTTONS,
-  decodeReplay, replayPath, writeReplayHeader, MOVETYPE_WALK, styleById, formatTicks, trackName,
+  decodeReplay, replayPath, writeReplayHeader, MOVETYPE_WALK, styleById, formatTicks,
   type ReplayHeader,
 } from "@edgegamers/surftimer-shared";
 import type { ReplayBotEvent } from "../api";
@@ -252,10 +253,10 @@ export function requestReplay(track: number, style: number): number {
   return b.slot;
 }
 
-export function describeReplay(track: number, style: number): string | null {
+export function describeReplay(track: number, style: number, slot = -1): string | null {
   const r = store.get(skey(track, style));
   if (!r) return null;
-  return `${trackName(track)} ${styleById(style).name}: ${formatTicks(r.header.runTicks, r.header.tickInterval)} by ${r.header.name}`;
+  return tr(slot, "surftimer.replay.description", trackFor(slot, track), styleFor(slot, style), formatTicks(r.header.runTicks, r.header.tickInterval), r.header.name);
 }
 
 /** Recorded buttons of the frame a bot is showing (for spectator HUDs). */

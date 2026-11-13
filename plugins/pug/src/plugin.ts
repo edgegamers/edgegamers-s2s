@@ -5,16 +5,14 @@
  * The match comes from another plugin (the portal bridge) through `load`, or from a file with
  * `pug_load`. The rules live in match.ts; this file talks to the engine.
  */
-import { ADMFLAG, Admin, after, Chat, Clients, command, config, every, HookResult, publish, Server } from "@s2script/sdk";
-import type { Client, Timer, TypedPublishHandle } from "@s2script/sdk";
-import { ChatColors, Events, Player, Teams } from "@s2script/cs2";
+import { ADMFLAG, Admin, after, Clients, command, config, every, HookResult, publish, Server } from "@s2script/sdk";
+import type { Client, CommandInvocation, Timer, TypedPublishHandle } from "@s2script/sdk";
+import { Events, Player, Teams } from "@s2script/cs2";
 import type { Contract, PlayerStats, PugMatchSpec, PugStatus, Side } from "../api";
 import { CT, makePassword, Match, savedPassword, SPECTATOR, sideTeamNum, specProblem, T, type TeamNo } from "./match.ts";
+import { loadPhrases, phrase, reply, say, tell } from "./phrases.ts";
 
-const PREFIX = ` ${ChatColors.Green}[PUG]${ChatColors.Default} `;
 const log = (m: string): void => console.log(`[pug] ${m}`);
-const say = (m: string): void => Chat.toAll(PREFIX + m);
-const tell = (slot: number, m: string): void => Chat.toSlot(slot, PREFIX + m);
 
 let handle: TypedPublishHandle<Contract> | null = null;
 let match: Match | null = null;
@@ -204,11 +202,16 @@ function stopTimers(): void {
 
 /** `load`, logging anything that goes wrong instead of failing silently across the plugin boundary. */
 function load(spec: PugMatchSpec): boolean {
+  return tryLoad(spec) === "loaded";
+}
+
+/** Keep internal failures separate from invalid input when the command reports its result. */
+function tryLoad(spec: PugMatchSpec): "loaded" | "invalid" | "error" {
   try {
-    return loadMatch(spec);
+    return loadMatch(spec) ? "loaded" : "invalid";
   } catch (e) {
     log(`loading a match failed: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
-    return false;
+    return "error";
   }
 }
 
@@ -220,7 +223,7 @@ function loadMatch(spec: PugMatchSpec): boolean {
     return false;
   }
   if (match && match.id === spec.id && match.phase !== "finished") return true;
-  if (match) clear(`replaced by match #${spec.id}`);
+  if (match) clear(`replaced by match #${spec.id}`, phrase("pug.match.replaced", spec.id));
   match = new Match(spec);
   keepAwake();
   setPassword(match);
@@ -229,7 +232,7 @@ function loadMatch(spec: PugMatchSpec): boolean {
     after(1000, enterWarmup);
     return true;
   }
-  say(`Match #${spec.id} is ready. Changing to ${spec.map}…`);
+  say(phrase("pug.match.changing_map", spec.id, spec.map));
   after(config.getInt("map_change_delay_ms"), () => {
     if (!match || match.id !== spec.id) return;
     log(`match #${spec.id}: changing map to ${spec.map}${spec.workshopId ? ` (workshop ${spec.workshopId})` : ""}`);
@@ -253,7 +256,7 @@ function enterWarmup(): void {
   cmds("mp_autoteambalance 0", "mp_limitteams 0", "mp_warmuptime 99999", "mp_warmup_pausetimer 1", "mp_warmup_start");
   execCfg("warmup_cfg");
   after(500, placeAll);
-  say(`Match #${m.id}: ${m.name(1)} vs ${m.name(2)}. Type ${ChatColors.Green}!ready${ChatColors.Default} when you are set.`);
+  say(phrase("pug.match.warmup", m.id, m.name(1), m.name(2)));
   reminder?.kill();
   reminder = every(30_000, remind);
   log(`match #${m.id}: warmup on ${Server.mapName}`);
@@ -266,9 +269,10 @@ function remind(): void {
   const here = connectedIds();
   const missing = m.rosterSize - here.filter((id) => m.team(id) !== null).length;
   const waiting = m.notReady(here).length;
-  say(
-    `${missing > 0 ? `Waiting for ${missing} player(s) to connect. ` : ""}${waiting > 0 ? `${waiting} not ready: type !ready.` : ""}`,
-  );
+  say(phrase("pug.warmup.reminder",
+    missing > 0 ? phrase("pug.warmup.waiting_connect", missing) : "",
+    waiting > 0 ? phrase("pug.warmup.waiting_ready", waiting) : "",
+  ));
 }
 
 function checkReady(): void {
@@ -305,7 +309,7 @@ function startKnife(): void {
   execCfg("knife_cfg");
   restarting = true;
   Server.command("mp_restartgame 3");
-  say("Everyone is ready. Knife round! The winners pick a side.");
+  say(phrase("pug.knife.start"));
   emitState("knife");
 }
 
@@ -314,7 +318,7 @@ function knifeEnded(winnerTeamNum: number): void {
   if (!m) return;
   const team = m.knifeWon(winnerTeamNum);
   if (team === null) {
-    say("The knife round had no winner. Again!");
+    say(phrase("pug.knife.no_winner"));
     restarting = true;
     Server.command("mp_restartgame 3");
     return;
@@ -322,14 +326,14 @@ function knifeEnded(winnerTeamNum: number): void {
   m.phase = "choosing";
   Server.command("mp_pause_match");
   const seconds = config.getInt("side_choice_seconds");
-  say(`${m.name(team)} won the knife round. Their captain types ${ChatColors.Green}!stay${ChatColors.Default} or ${ChatColors.Green}!switch${ChatColors.Default} (${seconds}s).`);
+  say(phrase("pug.knife.winner", m.name(team), seconds));
   chooseTimer?.kill();
   chooseTimer = after(seconds * 1000, () => {
-    if (match === m && m.phase === "choosing") choose(true, "time ran out");
+    if (match === m && m.phase === "choosing") choose(true, "pug.side.time_ran_out");
   });
 }
 
-function choose(stay: boolean, why: string): void {
+function choose(stay: boolean, why: "pug.side.time_ran_out" | "pug.side.their_choice"): void {
   const m = match;
   if (!m || m.phase !== "choosing") return;
   chooseTimer?.kill();
@@ -337,7 +341,8 @@ function choose(stay: boolean, why: string): void {
   const team = m.knifeWinner;
   if (!stay) for (const h of humans()) if (h.player.teamNum === T || h.player.teamNum === CT) h.player.switchTeam(h.player.teamNum === T ? CT : T);
   const side: Side = m.choose(stay);
-  say(`${team ? m.name(team) : "The knife winners"} ${stay ? "stay" : "switch"} (${why}). ${m.name(1)} start ${side.toUpperCase()}. Going live!`);
+  say(phrase("pug.side.chosen", team ? m.name(team) : phrase("pug.side.winners"),
+    phrase(stay ? "pug.side.stay" : "pug.side.switch"), phrase(why), m.name(1), phrase(`pug.side.${side}`)));
   goLive();
 }
 
@@ -355,7 +360,7 @@ function goLive(): void {
   Server.command("mp_restartgame 5");
   emitState("live");
   after(6000, () => {
-    if (match === m && m.phase === "live") say(`${ChatColors.Green}LIVE!${ChatColors.Default} Good luck, have fun.`);
+    if (match === m && m.phase === "live") say(phrase("pug.live.started"));
   });
 }
 
@@ -376,12 +381,13 @@ function matchEnded(): void {
   m.phase = "finished";
   const winner = m.winner();
   handle?.emit("OnMatchEnd", { match: m.id, winner, score1: m.score1, score2: m.score2, players: stats() });
-  say(`Match over: ${m.name(1)} ${m.score1} - ${m.score2} ${m.name(2)}. GG!`);
+  say(phrase("pug.match.finished", m.name(1), m.score1, m.score2, m.name(2)));
   log(`match #${m.id} finished ${m.score1}-${m.score2}`);
   stopTimers();
 }
 
-function clear(reason: string): void {
+function clear(reason: string, displayReason: string | ReturnType<typeof phrase> = reason === "cancelled on the portal"
+  ? phrase("pug.match.cancelled_portal") : reason): void {
   const m = match;
   if (!m) return;
   stopTimers();
@@ -392,7 +398,7 @@ function clear(reason: string): void {
   restarting = false;
   log(`match #${m.id} stopped: ${reason}`);
   if (m.phase !== "finished") {
-    say(`Match #${m.id} was stopped: ${reason}.`);
+    say(phrase("pug.match.stopped", m.id, displayReason));
     cmds("mp_unpause_match", "mp_warmuptime 60", "mp_warmup_pausetimer 0", "mp_warmup_start");
   }
 }
@@ -413,108 +419,123 @@ function status(): PugStatus {
 // ---------------------------------------------------------------------------------------------
 // Players
 
-function playerCommand(slot: number): { m: Match; steamId: string; team: TeamNo } | null {
+function playerCommand(cmd: CommandInvocation): { m: Match; steamId: string; team: TeamNo } | null {
   const m = match;
   if (!m) return null;
-  const c = Clients.fromSlot(slot);
+  const c = Clients.fromSlot(cmd.callerSlot);
   if (!c || !c.isValid()) return null;
   const team = m.team(c.steamId);
   if (team === null) {
-    tell(slot, "You are not in this match.");
+    reply(cmd, phrase("pug.player.not_in_match"));
     return null;
   }
   return { m, steamId: c.steamId, team };
 }
 
-function setReady(slot: number, ready: boolean): void {
-  const p = playerCommand(slot);
+function setReady(cmd: CommandInvocation, ready: boolean): void {
+  const p = playerCommand(cmd);
   if (!p) return;
-  if (p.m.phase !== "warmup") return tell(slot, "Not in warmup.");
+  if (p.m.phase !== "warmup") return reply(cmd, phrase("pug.ready.not_warmup"));
   if (ready) p.m.ready.add(p.steamId);
   else p.m.ready.delete(p.steamId);
   const here = connectedIds();
   const notReady = p.m.notReady(here).length;
   const absent = p.m.rosterSize - here.filter((id) => p.m.team(id) !== null).length;
-  say(`${Player.fromSlot(slot)?.playerName ?? "Someone"} is ${ready ? "ready" : "not ready"} (${notReady} not ready${absent > 0 ? `, ${absent} not here` : ""}).`);
+  say(phrase("pug.ready.changed", Player.fromSlot(cmd.callerSlot)?.playerName ?? phrase("pug.player.someone"),
+    phrase(ready ? "pug.ready.ready" : "pug.ready.not_ready"), notReady,
+    absent > 0 ? phrase("pug.ready.absent", absent) : ""));
   if (ready) checkReady();
 }
 
-function sideCommand(slot: number, stay: boolean): void {
-  const p = playerCommand(slot);
+function sideCommand(cmd: CommandInvocation, stay: boolean): void {
+  const p = playerCommand(cmd);
   if (!p || p.m.phase !== "choosing") return;
-  if (p.team !== p.m.knifeWinner) return tell(slot, "The knife round's winners choose.");
+  if (p.team !== p.m.knifeWinner) return reply(cmd, phrase("pug.player.knife_winners_choose"));
   const captain = p.m.captain(p.team);
   const captainHere = captain !== null && connectedIds().includes(captain);
-  if (captainHere && p.steamId !== captain && !isAdmin(slot)) return tell(slot, "Your captain chooses.");
-  choose(stay, "their choice");
+  if (captainHere && p.steamId !== captain && !isAdmin(cmd.callerSlot)) return reply(cmd, phrase("pug.player.captain_chooses"));
+  choose(stay, "pug.side.their_choice");
 }
 
-function pause(slot: number, tech: boolean): void {
-  const p = playerCommand(slot);
+function pause(cmd: CommandInvocation, tech: boolean): void {
+  const p = playerCommand(cmd);
   if (!p || p.m.phase !== "live") return;
   p.m.unpauseVotes.clear();
   Server.command("mp_pause_match");
-  say(`${p.m.name(p.team)} called a ${tech ? "technical " : ""}pause. It starts at the next freeze time; both teams type !unpause to resume.`);
+  say(phrase(tech ? "pug.pause.technical_called" : "pug.pause.called", p.m.name(p.team)));
 }
 
-function unpause(slot: number): void {
-  const p = playerCommand(slot);
+function unpause(cmd: CommandInvocation): void {
+  const p = playerCommand(cmd);
   if (!p || p.m.phase !== "live") return;
   p.m.unpauseVotes.add(p.team);
   if (p.m.unpauseVotes.size === 2) {
     p.m.unpauseVotes.clear();
     Server.command("mp_unpause_match");
-    say("Both teams are ready. Unpausing.");
-  } else say(`${p.m.name(p.team)} want to unpause. Waiting for the other team.`);
+    say(phrase("pug.pause.both_ready"));
+  } else say(phrase("pug.pause.waiting_team", p.m.name(p.team)));
 }
 
 // ---------------------------------------------------------------------------------------------
 // Lifecycle
 
 export function OnPluginStart(): void {
+  loadPhrases();
   Server.registerCvar(PW_CVAR, { type: "string", default: "", help: "Set by s2s-pug: <match id>:<password> of the current match." });
   Server.registerCvar(HIBERNATE_CVAR, { type: "string", default: "", help: "Set by s2s-pug: sv_hibernate_when_empty from before the match." });
   Server.registerCvar(PREV_CVAR, { type: "string", default: "", help: "Set by s2s-pug: sv_password from before the match." });
   handle = publish("@edgegamers/s2s-pug", { load, clear, status });
 
-  for (const name of ["sm_ready", "sm_r"]) command(name, (cmd) => (setReady(cmd.callerSlot, true), HookResult.Handled));
-  for (const name of ["sm_unready", "sm_ur", "sm_notready"]) command(name, (cmd) => (setReady(cmd.callerSlot, false), HookResult.Handled));
-  command("sm_stay", (cmd) => (sideCommand(cmd.callerSlot, true), HookResult.Handled));
-  command("sm_switch", (cmd) => (sideCommand(cmd.callerSlot, false), HookResult.Handled));
-  command("sm_pause", (cmd) => (pause(cmd.callerSlot, false), HookResult.Handled));
-  command("sm_tech", (cmd) => (pause(cmd.callerSlot, true), HookResult.Handled));
-  command("sm_unpause", (cmd) => (unpause(cmd.callerSlot), HookResult.Handled));
+  for (const name of ["sm_ready", "sm_r"]) command(name, (cmd) => (setReady(cmd, true), HookResult.Handled));
+  for (const name of ["sm_unready", "sm_ur", "sm_notready"]) command(name, (cmd) => (setReady(cmd, false), HookResult.Handled));
+  command("sm_stay", (cmd) => (sideCommand(cmd, true), HookResult.Handled));
+  command("sm_switch", (cmd) => (sideCommand(cmd, false), HookResult.Handled));
+  command("sm_pause", (cmd) => (pause(cmd, false), HookResult.Handled));
+  command("sm_tech", (cmd) => (pause(cmd, true), HookResult.Handled));
+  command("sm_unpause", (cmd) => (unpause(cmd), HookResult.Handled));
 
   command.admin("pug_forcestart", ADMFLAG.GENERIC, (cmd) => {
-    if (!match || match.phase !== "warmup") return cmd.reply("[PUG] Not in warmup."), HookResult.Handled;
-    say("An admin started the match.");
+    if (!match || match.phase !== "warmup") return reply(cmd, phrase("pug.ready.not_warmup")), HookResult.Handled;
+    say(phrase("pug.admin.started"));
     startKnife();
     return HookResult.Handled;
   });
   command.admin("pug_forceunpause", ADMFLAG.GENERIC, (cmd) => {
     Server.command("mp_unpause_match");
-    cmd.reply("[PUG] Unpaused.");
+    reply(cmd, phrase("pug.admin.unpaused"));
     return HookResult.Handled;
   });
   command.admin("pug_cancel", ADMFLAG.GENERIC, (cmd) => {
-    if (!match) return cmd.reply("[PUG] No match."), HookResult.Handled;
-    clear(cmd.argString.trim() || "cancelled by an admin");
-    cmd.reply("[PUG] Stopped. Cancel it on the portal too, or it is sent again.");
+    if (!match) return reply(cmd, phrase("pug.admin.no_match")), HookResult.Handled;
+    const reason = cmd.argString.trim();
+    clear(reason || "cancelled by an admin", reason || phrase("pug.match.cancelled_admin"));
+    reply(cmd, phrase("pug.admin.cancelled"));
     return HookResult.Handled;
   });
   command.server("pug_status", (cmd) => {
     const s = status();
-    cmd.reply(`[PUG] ${s.matchId === null ? "idle" : `match #${s.matchId} on ${s.map}: ${s.phase}, ${s.score1}-${s.score2}, ${s.ready.length} ready`}`);
+    reply(cmd, s.matchId === null ? phrase("pug.status.idle") : phrase("pug.status.match",
+      s.matchId, s.map ?? "", phrase(`pug.status.${s.phase}`), s.score1, s.score2, s.ready.length));
   });
   command.server("pug_load", (cmd) => {
     const file = cmd.arg(0) || "pug_match.json";
-    const text = config.readFile(file);
-    if (text === null) return cmd.reply(`[PUG] ${file} not found in this plugin's config folder.`);
+    let text: string | null;
     try {
-      cmd.reply(load(JSON.parse(text) as PugMatchSpec) ? `[PUG] Loaded ${file}.` : "[PUG] The match is invalid; see the log.");
+      text = config.readFile(file);
     } catch (e) {
-      cmd.reply(`[PUG] ${file} is not JSON: ${e instanceof Error ? e.message : String(e)}`);
+      log(`reading ${file} failed: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+      return reply(cmd, phrase("pug.load.read_error", file));
     }
+    if (text === null) return reply(cmd, phrase("pug.load.not_found", file));
+    let spec: PugMatchSpec;
+    try {
+      spec = JSON.parse(text) as PugMatchSpec;
+    } catch (e) {
+      return reply(cmd, phrase("pug.load.invalid_json", file, e instanceof Error ? e.message : String(e)));
+    }
+    const result = tryLoad(spec);
+    reply(cmd, result === "loaded" ? phrase("pug.load.loaded", file)
+      : phrase(result === "invalid" ? "pug.load.invalid" : "pug.load.failed"));
   });
 
   // Rostered players can only be on their team; everyone else may only spectate.
@@ -567,7 +588,7 @@ export function OnClientPostAdminCheck(client: Client): void {
   after(1000, () => {
     const p = Player.fromSlot(client.slot);
     if (p && p.steamId === steamId) place(p.slot, steamId, p);
-    if (m.phase === "warmup" && m.team(steamId) !== null) tell(client.slot, "Type !ready when you are set.");
+    if (m.phase === "warmup" && m.team(steamId) !== null) tell(client.slot, phrase("pug.player.ready_hint"));
   });
 }
 

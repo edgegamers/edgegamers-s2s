@@ -8,7 +8,7 @@ const cs2=fileURLToPath(new URL('../src/cs2/',import.meta.url));
 const mocks:Record<string,string>={
  '../core/cvars':'export const cfg=fixture.settings;',
  '../core/registry':'export const roleOf=s=>1,nameOf=s=>"P"+s,setAlive=(s,a)=>{fixture.calls.push("dead");fixture.alive=a;},activeSlots=()=>[1,2],isAlive=()=>fixture.alive,computeAlive=()=>fixture.alive;',
- '../core/msgs':'export const msg=k=>k,msgFor=(s,k)=>k;',
+ '../core/msgs':"export const msg=k=>k,msgFor=(s,k)=>k; export const chatMsgFor = msgFor;",
  '../game/game':'export const checkEndConditions=()=>fixture.calls.push("win"),inProgress=()=>true;',
  '../game/roles':'export const roleName=()=>"Innocent",roleNameFor=()=>"Innocent";',
  '../game/logger':'export const logDamage=()=>{},logDeath=()=>fixture.calls.push("log");',

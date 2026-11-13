@@ -2,7 +2,7 @@
 import type { SpecialDay } from "../day.ts";
 import { baseSettings } from "../settings.ts";
 import { SD_NAMES } from "../sdtype.ts";
-import { DESCRIPTIONS, msg } from "../messages.ts";
+import { DAY_NAMES, DESCRIPTIONS, msg } from "../messages.ts";
 import { onTeam, setArmor, setHealth, setSpeed, Team, toAll } from "../game.ts";
 
 export function wardayDay(): SpecialDay {
@@ -12,7 +12,7 @@ export function wardayDay(): SpecialDay {
     name,
     description: DESCRIPTIONS.warday,
     // AbstractArmoryRestrictedDay with the default restricted team (prisoners).
-    restrict: { kind: "armory", teamNum: Team.Prisoner, reminder: msg.stayInArmory(name) },
+    restrict: { kind: "armory", teamNum: Team.Prisoner, reminder: msg.stayInArmory(DAY_NAMES.warday) },
     settings: baseSettings({
       allowLastGuard: true,
       tTeleport: "armory",

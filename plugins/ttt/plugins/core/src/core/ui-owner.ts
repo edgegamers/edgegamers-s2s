@@ -6,7 +6,8 @@ import type { UiActor, UiReportAction, UiRulingReply, UiShopStamp } from '../../
 import * as reg from './registry';
 import { captureUiActor, matchesUiActor, matchesRegistryUiActor } from './ui-actor';
 import { createUiModels } from './ui-model.ts';
-import { msg, msgFor } from './msgs';
+import { msgFor, chatMsgFor } from './msgs';
+import { plainText } from '../../../../packages/contracts/presentation.ts';
 import { game, inProgress, roundEpoch } from '../game/game';
 import { logCount, logRoundAt, makeLogRows } from '../game/logger';
 import { tellAll } from '../cs2/pawn';
@@ -16,6 +17,8 @@ import {getReportQueue,getReport,reportsBinding,commitReportRuling,reportsAvaila
 import {shopProviderBinding} from './shop-provider';
 import {currentMapEpoch} from './preframe';
 import {isCoreActionAdmissionOpen} from './action-admission';
+
+const plainMsgFor = (slot: number, key: string): string => plainText(msgFor(slot, key));
 
 function shopStamp(slot:number):UiShopStamp {
   return {mapEpoch:currentMapEpoch(),roundEpoch:roundEpoch(),state:game.state,role:reg.roleOf(slot),alive:reg.isAlive(slot),participating:reg.isParticipating(slot),shopBinding:shopProviderBinding()};
@@ -62,7 +65,7 @@ function ruleReport(actor: UiActor, id: number, binding: number, action: UiRepor
         break;
       }
       console.log(`[ttt/rdm] ${admin} BANNED ${ruled.accusedName} (${ruled.accusedSteamId})`);
-      tellAll(`[ttt] ${ruled.accusedName} was banned for RDM.`);
+      tellAll(recipient => chatMsgFor(recipient, "ttt.reports.banned", ruled.accusedName));
       return { status: 'success', title: 'Banned', message: ruled.accusedName, tone: 'bad' };
     } catch (error) {
       console.log(`[ttt/rdm] #${id} ban outcome requires operator review: ${String(error)}`);
@@ -71,7 +74,7 @@ function ruleReport(actor: UiActor, id: number, binding: number, action: UiRepor
   }
   if (action === 'convict') {
     console.log(`[ttt/rdm] ${admin} queued ${ruled.slays} slay(s) for ${ruled.accusedName} (${total} owed, offence #${priors})`);
-    tellAll(`[ttt] ${ruled.accusedName} was found guilty of RDM — ${total} slay(s) queued.`);
+    tellAll(recipient => chatMsgFor(recipient, "ttt.reports.slays_queued", ruled.accusedName, total));
   }
   console.log(`[ttt/rdm] rdm #${id}: ${ruled.reporterName} vs ${ruled.accusedName} -> ` +
     `${action === 'convict' ? `guilty (${ruled.slays} slays)` : 'innocent'} by ${admin}`);
@@ -94,26 +97,26 @@ export const uiModels = createUiModels({
       const gate = item.gate;
       const refusal = gate !== PurchaseResult.Success ? gate : item.price > balance ? PurchaseResult.InsufficientFunds : PurchaseResult.Success;
       return {
-        itemId: item.id, name: msgFor(slot, item.nameKey), description: msgFor(slot, item.descriptionKey),
-        price: item.price, limit: item.limit, refusal: refusal === PurchaseResult.Success ? null : resultMessage(refusal),
+        itemId: item.id, name: plainMsgFor(slot, item.nameKey), description: plainMsgFor(slot, item.descriptionKey),
+        price: item.price, limit: item.limit, refusal: refusal === PurchaseResult.Success ? null : plainText(resultMessage(refusal, slot)),
       };
     });
     return { balance, rows };
   },
   buy: (slot, id) => {
     const item = itemById(id);
-    if (!item) return { status: 'refused', title: 'Cannot buy', message: resultMessage(PurchaseResult.NotFound), tone: 'warn' };
+    if (!item) return { status: 'refused', title: 'Cannot buy', message: plainText(resultMessage(PurchaseResult.NotFound, slot)), tone: 'warn' };
     const gate = canPurchase(slot, item);
     const refusal = gate !== PurchaseResult.Success ? gate : item.price > balanceOf(slot) ? PurchaseResult.InsufficientFunds : PurchaseResult.Success;
-    if (refusal !== PurchaseResult.Success) return { status: 'refused', title: 'Cannot buy', message: resultMessage(refusal), tone: 'warn' };
+    if (refusal !== PurchaseResult.Success) return { status: 'refused', title: 'Cannot buy', message: plainText(resultMessage(refusal, slot)), tone: 'warn' };
     const result = tryPurchase(slot, item);
     const ok = result === PurchaseResult.Success;
-    const name = msgFor(slot, item.nameKey);
-    const desc = ok ? msg(item.descKey) : '';
+    const name = plainMsgFor(slot, item.nameKey);
+    const desc = ok ? plainMsgFor(slot, item.descKey) : '';
     const detail = desc !== '' && desc !== item.descKey ? desc : '';
     return {
       status: ok ? 'success' : 'refused', title: ok ? 'Purchased' : 'Failed',
-      message: ok ? detail === '' ? name : `${name} - ${detail}` : `${name} - ${resultMessage(result)}`,
+      message: ok ? detail === '' ? name : `${name} - ${detail}` : `${name} - ${plainText(resultMessage(result, slot))}`,
       tone: ok ? 'good' : 'bad',
     };
   },

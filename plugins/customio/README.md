@@ -10,7 +10,7 @@ so maps written for CS2Fixes or CounterStrikeSharp's CustomIO work unchanged.
 ## Install
 
 Requires a Linux CS2 server with a current [s2script](https://www.s2script.com/) runtime.
-Built against SDK **0.35.0** and CS2 types **0.22.0**. CounterStrikeSharp is not needed.
+Built with the shared SDK/CS2 versions pinned in the root `package.json`. CounterStrikeSharp is not needed.
 
 1. Run `npm run build -- --filter @edgegamers/s2s-customio` from the repository root.
 2. Copy `dist/_edgegamers_s2s-customio.s2sp` to `addons/s2script/plugins/`.

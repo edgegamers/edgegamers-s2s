@@ -1,7 +1,7 @@
 import { ADMFLAG, HookResult, nextFrame } from "@s2script/sdk";
 import type { Client, EntityRef } from "@s2script/sdk";
 import { Player } from "@s2script/cs2";
-import { connectedPlayer, livePawn, replyFor, sameRef } from "./actions";
+import { activityFor, connectedPlayer, livePawn, replyFor, sameRef } from "./actions";
 import { command } from "./commands";
 
 type Location = { origin: number[]; angles: number[] };
@@ -35,31 +35,31 @@ type OneUp = { player: Player; spawned: EntityRef; origin: number[]; connectionG
 export function registerTeleportCommands(): void {
   command.admin("sm_saveloc", ADMFLAG.CHEATS, cmd => {
     const actor = connectedPlayer(cmd.callerSlot);
-    if (!actor) { cmd.replyT("Save Location Player Only"); return HookResult.Handled; }
+    if (!actor) { cmd.replyT("extracommands.saveloc.player_only"); return HookResult.Handled; }
     const location = locationOf(actor);
-    if (!location) { cmd.replyT("Save Location Unavailable"); return HookResult.Handled; }
+    if (!location) { cmd.replyT("extracommands.saveloc.unavailable"); return HookResult.Handled; }
     saved.set(actor.slot, { owner: actor, location });
-    cmd.replyT("Location Saved");
+    cmd.replyT("extracommands.saveloc.saved");
     return HookResult.Handled;
   });
 
   for (const name of ["sm_tp", "sm_teleport"]) command.admin(name, ADMFLAG.SLAY, cmd => {
-    if (!cmd.arg(0)) { cmd.replyT("Usage Teleport"); return HookResult.Handled; }
+    if (!cmd.arg(0)) { cmd.replyT("extracommands.teleport.usage"); return HookResult.Handled; }
     const selected = Player.target(cmd.arg(0), cmd.callerSlot, true);
-    if (!selected.length) { cmd.replyT("No matching players"); return HookResult.Handled; }
+    if (!selected.length) { cmd.replyT("extracommands.target.no_matching_players"); return HookResult.Handled; }
     let destination: Location | null = null;
     if (cmd.arg(1)) {
       // A destination is read-only; immunity only filters the players being moved.
       const destinations = Player.target(cmd.arg(1), cmd.callerSlot, false);
-      if (destinations.length !== 1) { cmd.replyT("Invalid Teleport Destination"); return HookResult.Handled; }
+      if (destinations.length !== 1) { cmd.replyT("extracommands.teleport.invalid_destination"); return HookResult.Handled; }
       destination = locationOf(destinations[0]);
     } else {
       const actor = connectedPlayer(cmd.callerSlot), entry = saved.get(cmd.callerSlot);
       if (actor && entry?.owner.ref.isValid() && sameRef(actor.ref, entry.owner.ref)) destination = entry.location;
-      if (!destination) { cmd.replyT("No Saved Location"); return HookResult.Handled; }
+      if (!destination) { cmd.replyT("extracommands.teleport.no_saved_location"); return HookResult.Handled; }
     }
-    if (!destination) { cmd.replyT("Invalid Teleport Destination"); return HookResult.Handled; }
-    const reply = replyFor(cmd), mapGeneration = generation;
+    if (!destination) { cmd.replyT("extracommands.teleport.invalid_destination"); return HookResult.Handled; }
+    const reply = activityFor(cmd), mapGeneration = generation;
     let count = 0;
     for (const player of selected) {
       if (generation !== mapGeneration) break;
@@ -67,15 +67,15 @@ export function registerTeleportCommands(): void {
       // Copies per target keep native/reentrant callbacks from changing the next target's transform.
       if (pawn?.ref.teleport([...destination.origin], [...destination.angles], [0, 0, 0])) count++;
     }
-    reply("Teleported Players", count);
+    reply("extracommands.teleport.teleport_players", count);
     return HookResult.Handled;
   });
 
   for (const name of ["sm_1up", "sm_oneup"]) command.admin(name, ADMFLAG.SLAY, cmd => {
-    if (!cmd.arg(0)) { cmd.replyT("Usage Oneup"); return HookResult.Handled; }
+    if (!cmd.arg(0)) { cmd.replyT("extracommands.oneup.usage"); return HookResult.Handled; }
     const selected = Player.target(cmd.arg(0), cmd.callerSlot, true);
-    if (!selected.length) { cmd.replyT("No matching players"); return HookResult.Handled; }
-    const reply = replyFor(cmd), mapGeneration = generation;
+    if (!selected.length) { cmd.replyT("extracommands.target.no_matching_players"); return HookResult.Handled; }
+    const reply = activityFor(cmd), privateReply = replyFor(cmd), mapGeneration = generation;
     const pending: OneUp[] = [];
     for (const player of selected) {
       if (generation !== mapGeneration) break;
@@ -90,7 +90,7 @@ export function registerTeleportCommands(): void {
       const spawned = player.pawn?.ref;
       if (spawned) pending.push({ player, spawned, origin, connectionGeneration });
     }
-    if (!pending.length) { reply("Oneupped Players", 0); return HookResult.Handled; }
+    if (!pending.length) { reply("extracommands.oneup.respawn_at_death_location", 0); return HookResult.Handled; }
     void nextFrame().then(() => {
       if (generation !== mapGeneration) return;
       let count = 0;
@@ -100,9 +100,9 @@ export function registerTeleportCommands(): void {
         const pawn = livePawn(job.player);
         if (pawn && sameRef(pawn.ref, job.spawned) && pawn.ref.teleport([...job.origin], null, [0, 0, 0])) count++;
       }
-      reply("Oneupped Players", count);
+      reply("extracommands.oneup.respawn_at_death_location", count);
     }).catch(() => {
-      if (generation === mapGeneration) reply("Oneup Scheduling Failed");
+      if (generation === mapGeneration) privateReply("extracommands.oneup.scheduling_failed");
     });
     return HookResult.Handled;
   });

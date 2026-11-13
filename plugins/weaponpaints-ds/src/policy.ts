@@ -41,10 +41,6 @@ export const DEFAULT_POLICY: Policy = {
   ],
 };
 
-export function tierName(tier: number): string {
-  return TIER_NAMES[tier] ?? `tier ${String(tier)}`;
-}
-
 /** A tier given as 0-4 or as its name ("Gold", case-insensitive). null if neither. */
 export function parseTier(value: unknown): number | null {
   if (typeof value === "number") return Number.isInteger(value) && value >= 0 && value <= MAX_TIER ? value : null;
@@ -145,13 +141,4 @@ export function requiredTier(policy: Policy, item: ItemRef): number {
 
 export function allows(policy: Policy, tier: number, item: ItemRef): boolean {
   return tier >= requiredTier(policy, item);
-}
-
-/** The refusal line shown when a player picks something above their tier. */
-export function refusal(kind: ItemKind, required: number): string {
-  const what: Record<ItemKind, string> = {
-    skin: "This skin needs", knife: "This knife needs", gloves: "These gloves need", agent: "This agent needs",
-    music: "This music kit needs", pin: "This pin needs", stattrak: "StatTrak needs",
-  };
-  return `${what[kind]} ${tierName(required)} Dedicated Supporter or higher.`;
 }

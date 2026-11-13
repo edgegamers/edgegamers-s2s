@@ -1,3 +1,4 @@
+import { chatText, consoleText, type Text } from "@edgegamers/jailbreak-shared";
 /**
  * The jihad C4 (Jailbreak.Rebel C4Behavior). A random prisoner gets a C4 each round; holding it
  * out and pressing E arms it: the bomber becomes a rebel, shouts, and `c4_delay` seconds later
@@ -93,8 +94,8 @@ export function giveC4(p: Player): boolean {
   if (!w) return false;
   trackBomb(w.ref);
   const c = Clients.fromSlot(p.slot);
-  c?.chat(msg.c4Received());
-  c?.chat(msg.c4Usage());
+  c?.chat(chatText(msg.c4Received(), p.slot));
+  c?.chat(chatText(msg.c4Usage(), p.slot));
   log(`${describe(p.slot)} received a jihad C4.`);
   return true;
 }
