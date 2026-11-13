@@ -1,5 +1,17 @@
 # @edgegamers/s2s-maul
 
+## 0.4.0
+
+### Minor Changes
+
+- 0ae6976: Rename translation keys to owner.feature.function and apply the shared semantic chat colors. Migrate operator phrase overrides to the new keys, including Hide's Russian locale. Preserve per-recipient translations, literal custom prefixes, staff-chat audiences and plain console/menu output.
+
+### Patch Changes
+
+- ce7ad4d: Restore legacy dark-blue parenthesized leadership chat, including separate sender/recipient views, native user IDs for incoming leadership messages and private-message and broadcast wrappers. Retain the dotted phrase keys and existing chat audiences; keep the leadership label editable and player-authored bodies literal.
+- 0ae6976: Use arrow separators for existing system chat prefixes while preserving console output, translated labels, configured prefixes and literal message text.
+- 0ae6976: Move remaining standalone plugin chat wrappers, default formats and command replies into editable translation phrases. Resolve broadcasts per recipient while preserving authored chat, map text, colors and routing.
+
 ## 0.3.0
 
 ### Minor Changes

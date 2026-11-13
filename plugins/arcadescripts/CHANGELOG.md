@@ -1,5 +1,15 @@
 # @edgegamers/s2s-arcadescripts
 
+## 0.2.0
+
+### Minor Changes
+
+- 0ae6976: Rename translation keys to owner.feature.function and apply the shared semantic chat colors. Migrate operator phrase overrides to the new keys, including Hide's Russian locale. Preserve per-recipient translations, literal custom prefixes, staff-chat audiences and plain console/menu output.
+
+### Patch Changes
+
+- 0ae6976: Move remaining standalone plugin chat wrappers, default formats and command replies into editable translation phrases. Resolve broadcasts per recipient while preserving authored chat, map text, colors and routing.
+
 ## 0.1.0
 
 ### Minor Changes

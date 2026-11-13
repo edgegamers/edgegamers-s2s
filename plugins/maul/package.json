@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-maul",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "src/plugin.ts",
   "types": "api.d.ts",
   "publishConfig": {

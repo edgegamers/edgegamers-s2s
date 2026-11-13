@@ -1,5 +1,16 @@
 # @edgegamers/surftimer-core
 
+## 0.2.0
+
+### Minor Changes
+
+- 0ae6976: Rename translation keys to owner.feature.function and apply the shared semantic chat colors. Migrate operator phrase overrides to the new keys, including Hide's Russian locale. Preserve per-recipient translations, literal custom prefixes, staff-chat audiences and plain console/menu output.
+
+### Patch Changes
+
+- 0ae6976: Make SurfTimer and remaining TTT chat messages editable through translation phrases. Resolve broadcasts, nested role and track names, shop reasons and command replies for their recipients while retaining the existing English text and colors.
+- 0ae6976: Use arrow separators for existing system chat prefixes while preserving console output, translated labels, configured prefixes and literal message text.
+
 ## 0.1.2
 
 ### Patch Changes

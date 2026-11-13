@@ -1,5 +1,20 @@
 # @edgegamers/jailbreak-lastrequest
 
+## 1.2.0
+
+### Minor Changes
+
+- 0ae6976: Rename Jailbreak phrases to descriptive jailbreak.member.function keys and apply semantic chat colors. Expand the complete native palette and legacy lightblue alias before nested translation, retain clean menu/HUD text, and preserve external Gangs chat routing. Existing locale overrides must migrate their phrase keys.
+
+### Patch Changes
+
+- 0ae6976: Render existing Jailbreak system prefixes as `Name » message` only in chat, including translated Gangs and Spy labels. Preserve console, HUD, menu and log presentation, player markers, literal message bodies and external Gangs prefix ownership.
+- 0ae6976: Move Jailbreak player chat, command replies, and displayed game metadata into editable phrase files with recipient language resolution and preserved chat colors.
+- Updated dependencies [0ae6976]
+- Updated dependencies [0ae6976]
+- Updated dependencies [0ae6976]
+  - @edgegamers/jailbreak-shared@1.1.0
+
 ## 1.1.2
 
 ### Patch Changes

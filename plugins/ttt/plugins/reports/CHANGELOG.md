@@ -1,5 +1,17 @@
 # @edgegamers/ttt-reports
 
+## 2.1.0
+
+### Minor Changes
+
+- 0ae6976: Rename TTT phrases to descriptive `ttt.feature.function` keys and apply semantic chat colors, including consistent role colors. Keep nested localized phrases colored while stripping chat controls from console, Panorama and HUD text. Existing translation overrides must migrate their keys to the new names.
+
+### Patch Changes
+
+- Updated dependencies [0ae6976]
+- Updated dependencies [0ae6976]
+  - @edgegamers/ttt-contracts@1.1.0
+
 ## 2.0.8
 
 ### Patch Changes

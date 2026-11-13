@@ -1,5 +1,18 @@
 # @edgegamers/s2s-portal
 
+## 0.3.0
+
+### Minor Changes
+
+- 78f0de2: Record a 3D replay of every Jailbreak and TTT round (every player, every tick, via s2script 0.39's OnPlayerRunCmdPost) with shots, bullet impacts, damage, deaths and crosshair share codes; gzip it off-thread in segments and upload it at round end to the portal's `PUT /api/v1/replays/{round}`, held on disk until it succeeds. New config `replays`, `replay_max_backlog`, `replay_crosshair`.
+
+### Patch Changes
+
+- 8c01ff7: Loading a PUG match no longer fails silently: the PUG plugin logs when it gets a match and any error while loading it, and the bridge awaits the call and logs a refusal or an error. The PUG plugin also keeps an empty server awake during a match (`keep_awake`, on by default; `sv_hibernate_when_empty 0`, set back afterwards), so the map change and warmup happen without anyone connected, and falls back to `Math.random` when Web Crypto is unusable.
+- Updated dependencies [069067d]
+- Updated dependencies [78f0de2]
+  - @edgegamers/round-replay@0.2.0
+
 ## 0.2.1
 
 ### Patch Changes

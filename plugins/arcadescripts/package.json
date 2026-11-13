@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/s2s-arcadescripts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An s2script port of ArcadeScripts-CSS: TypeScript replacements for the VScripts that run jb_arcade_b6's minigames.",
   "license": "GPL-3.0-only",
   "type": "module",
