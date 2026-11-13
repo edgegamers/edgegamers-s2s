@@ -59,6 +59,8 @@ export interface StateEvent {
   match: number;
   status: "warmup" | "knife" | "live";
   team1Side: Side | null;
+  /** The server's password for this match (sv_password), or null when the plugin does not set one. */
+  password: string | null;
 }
 
 export interface RoundEndEvent {

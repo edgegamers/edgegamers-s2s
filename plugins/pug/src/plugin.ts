@@ -9,7 +9,7 @@ import { ADMFLAG, Admin, after, Chat, Clients, command, config, every, HookResul
 import type { Client, Timer, TypedPublishHandle } from "@s2script/sdk";
 import { ChatColors, Events, Player, Teams } from "@s2script/cs2";
 import type { Contract, PlayerStats, PugMatchSpec, PugStatus, Side } from "../api";
-import { CT, Match, SPECTATOR, sideTeamNum, specProblem, T, type TeamNo } from "./match.ts";
+import { CT, makePassword, Match, savedPassword, SPECTATOR, sideTeamNum, specProblem, T, type TeamNo } from "./match.ts";
 
 const PREFIX = ` ${ChatColors.Green}[PUG]${ChatColors.Default} `;
 const log = (m: string): void => console.log(`[pug] ${m}`);
@@ -50,6 +50,41 @@ function execCfg(key: string): void {
 }
 
 const isAdmin = (slot: number): boolean => Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) ?? false;
+
+// ---------------------------------------------------------------------------------------------
+// Server password: one per match, sent to the portal so players can copy the join command.
+
+/** `"<match id>:<password>"` of the match's password, and the sv_password from before it. Cvars, so a plugin reload keeps them. */
+const PW_CVAR = "pug_match_password";
+const PREV_CVAR = "pug_previous_password";
+
+function random(): number {
+  const c = (globalThis as { crypto?: { getRandomValues?(a: Uint32Array): Uint32Array } }).crypto;
+  if (c?.getRandomValues) return c.getRandomValues(new Uint32Array(1))[0]! / 2 ** 32;
+  return Math.random();
+}
+
+/** The match's password, set on the server; null when the plugin does not set one. */
+let password: string | null = null;
+
+function setPassword(m: Match): void {
+  password = null;
+  if (!config.getBool("set_password")) return;
+  const saved = savedPassword(Server.getCvar(PW_CVAR), m.id);
+  if (saved === null && Server.getCvar(PW_CVAR) === "") Server.setCvar(PREV_CVAR, Server.getCvar("sv_password"));
+  password = saved ?? makePassword(random);
+  Server.setCvar(PW_CVAR, `${m.id}:${password}`);
+  Server.setCvar("sv_password", password);
+}
+
+/** Put back the password the server had before the match. */
+function restorePassword(): void {
+  password = null;
+  if (Server.getCvar(PW_CVAR) === "") return;
+  Server.setCvar("sv_password", Server.getCvar(PREV_CVAR));
+  Server.setCvar(PW_CVAR, "");
+  Server.setCvar(PREV_CVAR, "");
+}
 
 /** In-game names players had before a match renamed them, to give back when it is cleared. */
 const originalNames = new Map<string, string>();
@@ -116,7 +151,7 @@ function stats(): PlayerStats[] {
 function emitState(status: "warmup" | "knife" | "live"): void {
   const m = match;
   if (!m) return;
-  handle?.emit("OnStateChanged", { match: m.id, status, team1Side: status === "live" ? m.team1StartSide : null });
+  handle?.emit("OnStateChanged", { match: m.id, status, team1Side: status === "live" ? m.team1StartSide : null, password });
 }
 
 function stopTimers(): void {
@@ -138,6 +173,7 @@ function load(spec: PugMatchSpec): boolean {
   if (match && match.id === spec.id && match.phase !== "finished") return true;
   if (match) clear(`replaced by match #${spec.id}`);
   match = new Match(spec);
+  setPassword(match);
   log(`match #${spec.id} on ${spec.map}: ${spec.teams.map((t) => `${t.name} (${t.players.length})`).join(" vs ")}`);
   if (Server.mapName === spec.map) {
     after(1000, enterWarmup);
@@ -298,6 +334,7 @@ function clear(reason: string): void {
   if (!m) return;
   stopTimers();
   restoreNames();
+  restorePassword();
   match = null;
   restarting = false;
   log(`match #${m.id} stopped: ${reason}`);
@@ -382,6 +419,8 @@ function unpause(slot: number): void {
 // Lifecycle
 
 export function OnPluginStart(): void {
+  Server.registerCvar(PW_CVAR, { type: "string", default: "", help: "Set by s2s-pug: <match id>:<password> of the current match." });
+  Server.registerCvar(PREV_CVAR, { type: "string", default: "", help: "Set by s2s-pug: sv_password from before the match." });
   handle = publish("@edgegamers/s2s-pug", { load, clear, status });
 
   for (const name of ["sm_ready", "sm_r"]) command(name, (cmd) => (setReady(cmd.callerSlot, true), HookResult.Handled));
@@ -456,6 +495,7 @@ export function OnMapStart(): void {
   if (!m) return;
   if (m.phase === "finished") {
     restoreNames();
+    restorePassword();
     match = null;
     return;
   }

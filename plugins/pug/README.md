@@ -13,7 +13,10 @@ score back. This plugin never talks to the portal itself, and works without it f
 ## A match
 
 1. **Load**: the server changes to the match map (`host_workshop_map` when the map has a workshop
-   id, else `changelevel`) unless it is already on it.
+   id, else `changelevel`) unless it is already on it. The server gets a new password for the
+   match (`sv_password`, 8 easy-to-type characters), sent to the portal with every state change so
+   the match page can show its players `connect <address>; password <password>`. A plugin reload
+   keeps the same password; the server's previous password comes back when the match is cleared.
 2. **Warmup**: endless warmup. Team 1 (the captain who picked first) is put on CT, team 2 on T;
    rostered players cannot change team. Players not in the match are kicked (admins with the
    generic flag may stay and spectate; `kick_unrostered = false` keeps everyone on spectator).
@@ -54,6 +57,7 @@ nothing, so the bridge can resend it freely.
 | Key | Default | What |
 | --- | --- | --- |
 | `use_portal_names` | `true` | Show rostered players under their MAUL name from the portal (re-applied every round and when they rename); their own name comes back when the match is cleared |
+| `set_password` | `true` | Give each match its own server password and report it to the portal |
 | `kick_unrostered` | `true` | Kick players who are not in the match (admins excepted) |
 | `side_choice_seconds` | `60` | Time for `!stay` / `!switch` |
 | `map_change_delay_ms` | `5000` | Wait before changing to the match map |

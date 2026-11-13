@@ -14,6 +14,24 @@ const MAP_RE = /^[A-Za-z0-9_./-]{1,64}$/;
 
 export type TeamNo = 1 | 2;
 
+/** Letters and digits that read the same in any font (no 0/O, 1/l/I). */
+const PASSWORD_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/** A server password: `length` characters from `rand` (0 ≤ rand() < 1). Never holds `;` or a space. */
+export function makePassword(rand: () => number, length = 8): string {
+  let out = "";
+  for (let i = 0; i < length; i++) out += PASSWORD_CHARS[Math.floor(rand() * PASSWORD_CHARS.length) % PASSWORD_CHARS.length];
+  return out;
+}
+
+/** `"<match id>:<password>"`, as kept across plugin reloads; null when it is for another match. */
+export function savedPassword(saved: string, matchId: number): string | null {
+  const i = saved.indexOf(":");
+  if (i <= 0 || saved.slice(0, i) !== String(matchId)) return null;
+  const pw = saved.slice(i + 1);
+  return /^[a-z0-9]{4,32}$/.test(pw) ? pw : null;
+}
+
 /** Check a spec from another plugin or a file. Returns why it is unusable, or null. */
 export function specProblem(spec: unknown): string | null {
   if (typeof spec !== "object" || spec === null) return "not an object";
