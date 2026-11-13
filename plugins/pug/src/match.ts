@@ -57,10 +57,21 @@ export class Match {
   /** The team that won the knife round, while it chooses. */
   knifeWinner: TeamNo | null = null;
   private readonly teamOf = new Map<string, TeamNo>();
+  private readonly names = new Map<string, string>();
 
   constructor(spec: PugMatchSpec) {
     this.spec = spec;
-    for (const t of spec.teams) for (const p of t.players) this.teamOf.set(p.steamId, t.team);
+    for (const t of spec.teams)
+      for (const p of t.players) {
+        this.teamOf.set(p.steamId, t.team);
+        const name = typeof p.name === "string" ? p.name.trim() : "";
+        if (name !== "") this.names.set(p.steamId, name.slice(0, 64));
+      }
+  }
+
+  /** The name the portal knows a rostered player by (their MAUL name), or null. */
+  nameOf(steamId: string): string | null {
+    return this.names.get(steamId) ?? null;
   }
 
   get id(): number {

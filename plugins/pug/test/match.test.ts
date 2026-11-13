@@ -61,3 +61,16 @@ test("sides: team 1 starts CT; knife winners switch; halftime is learned", () =>
   m.goLive();
   assert.deepEqual([m.score1, m.score2, m.rounds], [0, 0, 0]);
 });
+
+test("names: the portal's (MAUL) name per rostered player, trimmed; null otherwise", () => {
+  const s = spec();
+  s.teams[0].players[1].name = "  Bee  ";
+  s.teams[1].players[0].name = "   ";
+  const m = new Match(s);
+  assert.equal(m.nameOf(id(1)), "A");
+  assert.equal(m.nameOf(id(2)), "Bee");
+  assert.equal(m.nameOf(id(3)), null);
+  assert.equal(m.nameOf(id(9)), null);
+  s.teams[1].players[1].name = "x".repeat(100);
+  assert.equal(new Match(s).nameOf(id(4))?.length, 64);
+});

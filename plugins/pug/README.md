@@ -53,6 +53,7 @@ nothing, so the bridge can resend it freely.
 
 | Key | Default | What |
 | --- | --- | --- |
+| `use_portal_names` | `true` | Show rostered players under their MAUL name from the portal (re-applied every round and when they rename); their own name comes back when the match is cleared |
 | `kick_unrostered` | `true` | Kick players who are not in the match (admins excepted) |
 | `side_choice_seconds` | `60` | Time for `!stay` / `!switch` |
 | `map_change_delay_ms` | `5000` | Wait before changing to the match map |
