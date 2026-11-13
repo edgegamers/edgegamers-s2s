@@ -69,7 +69,7 @@ plugin loads, on every live-channel connect and on `pug.match.changed`, retrying
 being played means it was cancelled on the portal, and the PUG plugin's `clear` stops it.
 
 The PUG plugin's forwards go back as mode `pug` events, `round` = the match id:
-`pug.match.state` (warmup, knife, live), `pug.round.end` (score per portal team and player
+`pug.match.state` (warmup, knife, live, and the match's server password), `pug.round.end` (score per portal team and player
 stats) and `pug.match.end`. They are sent at once rather than on the next batch tick, so the
 match page's score is near-live. The server must be allowed the PUG mode in the portal.
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CT, Match, specProblem, T } from "../src/match.ts";
+import { CT, makePassword, Match, savedPassword, specProblem, T } from "../src/match.ts";
 import type { PugMatchSpec } from "../api";
 
 const id = (n: number) => `765611980000000${String(n).padStart(2, "0")}`;
@@ -73,4 +73,17 @@ test("names: the portal's (MAUL) name per rostered player, trimmed; null otherwi
   assert.equal(m.nameOf(id(9)), null);
   s.teams[1].players[1].name = "x".repeat(100);
   assert.equal(new Match(s).nameOf(id(4))?.length, 64);
+});
+
+test("passwords: easy to type, kept per match across a reload", () => {
+  let i = 0;
+  const seq = [0, 0.5, 0.999999, 0.25];
+  const pw = makePassword(() => seq[i++ % seq.length]!);
+  assert.match(pw, /^[a-z2-9]{8}$/);
+  assert.doesNotMatch(pw, /[01ilo ;]/);
+  assert.equal(makePassword(Math.random, 12).length, 12);
+  assert.equal(savedPassword("7:abcd2345", 7), "abcd2345");
+  assert.equal(savedPassword("7:abcd2345", 8), null);
+  assert.equal(savedPassword("", 7), null);
+  assert.equal(savedPassword("7:bad pw;x", 7), null);
 });

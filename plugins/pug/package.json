@@ -18,6 +18,11 @@
     "interfaceProtocol": 2,
     "publishes": "self",
     "config": {
+      "set_password": {
+        "type": "bool",
+        "default": true,
+        "description": "Give each match its own server password (sv_password) and report it to the portal, which shows it to the match's players in the join command. The previous password comes back when the match is cleared."
+      },
       "use_portal_names": {
         "type": "bool",
         "default": true,
