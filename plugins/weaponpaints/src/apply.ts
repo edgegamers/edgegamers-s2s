@@ -1,6 +1,6 @@
 // Applying cosmetics to entities, ported from WeaponPaints 3.3a (WeaponAction.cs, Events.cs).
 // GPL-3.0-only. See LICENSE and NOTICE.
-import { after, Clients, nextFrame, SDKHook, SDKHookType, SDKUnhook, Server } from '@s2script/sdk';
+import { after, Clients, nextFrame, SDKHook, SDKHookType, SDKUnhook, Server, Transmit } from '@s2script/sdk';
 import type { EntityRef } from '@s2script/sdk';
 import { Engine, Ptr } from '@s2script/sdk/unsafe';
 import { CenterHtml, Player, Weapon } from '@s2script/cs2';
@@ -331,14 +331,26 @@ export function applyWeaponSkin(
  * right behind it (same tick, same queue, so it runs next) is the signal, and the input hook paints
  * from there, before the tick's snapshot. FireUser4 is dropped once used, so no OnUser4 output fires.
  */
-const pendingSubclass = new Map<string, { slot: number; userId: number; className: string | null; tick: number }>();
+const pendingSubclass = new Map<string, {
+  slot: number; userId: number; className: string | null; tick: number; hidden: boolean;
+}>();
 const SUBCLASS_SIGNAL = 'FireUser4';
 /** Ticks to wait for the signal before painting anyway (the queue refused it, or the knife moved on). */
 const SUBCLASS_TIMEOUT_TICKS = 8;
 
 function queueSubclass(player: Player, weapon: Weapon, className: string | null, def: number): void {
   const key = refKey(weapon.ref);
-  pendingSubclass.set(key, { slot: player.slot, userId: player.userId, className, tick: Server.tickCount });
+  // Hidden from every client until the model change has run and the finish is on. The queued change
+  // runs the next tick (the debug log showed that even for gives from a timer), so without this the
+  // client draws the stock knife first and keeps its stock finish under the new model. Hidden, the
+  // client's first sight of the knife is the finished one.
+  let hidden = false;
+  try {
+    hidden = Transmit.setVisibleTo(weapon.ref, []);
+  } catch {
+    hidden = false;
+  }
+  pendingSubclass.set(key, { slot: player.slot, userId: player.userId, className, tick: Server.tickCount, hidden });
   weapon.ref.acceptInput('ChangeSubclass', String(def));
   weapon.ref.acceptInput(SUBCLASS_SIGNAL);
 }
@@ -349,16 +361,20 @@ function finishSubclass(key: string, ref: EntityRef, why: string): void {
   pendingSubclass.delete(key);
   const player = Player.fromSlot(entry.slot);
   const weapon = Weapon.fromEntity(ref);
-  if (!player || player.userId !== entry.userId || !weapon?.isValid()) return;
+  if (!player || player.userId !== entry.userId || !weapon?.isValid()) {
+    if (entry.hidden) Transmit.reset(ref);
+    return;
+  }
   const late = Server.tickCount - entry.tick;
-  debug(`knife slot ${entry.slot}: model change landed (${why}, ${late} tick(s) after queuing), ` +
-    `defindex ${weaponDefindex(weapon)}; painting`);
-  applyWeaponSkin(player, weapon, entry.className, late === 0, true);
-  if (late === 0) return;
-  // The change ran a tick after the give, so the client had already drawn the stock knife and keeps
-  // its stock finish under the new model (the round-start spawn gives after the tick's I/O has run).
-  // Swap it from a timer, the way a reload gives knives, so the give, the model change and the paint
-  // all land in one tick.
+  // Unseen if it landed in the give's tick, or if it was hidden until now.
+  const unseen = late === 0 || entry.hidden;
+  debug(`knife slot ${entry.slot}: model change landed (${why}, ${late} tick(s) after queuing, ` +
+    `${entry.hidden ? 'hidden until now' : 'not hidden'}), defindex ${weaponDefindex(weapon)}; painting`);
+  applyWeaponSkin(player, weapon, entry.className, unseen, true);
+  // Shown again: the paint is on before this tick's snapshot, so the client's first look is the skin.
+  if (entry.hidden) Transmit.reset(ref);
+  if (unseen) return;
+  // Not hidden (Transmit unavailable) and late: the client drew the stock knife first. Swap it.
   const slot = entry.slot, userId = entry.userId, weaponRef = ref;
   after(50, () => {
     const current = Player.fromSlot(slot);
@@ -373,7 +389,7 @@ export function onSubclassSignal(entity: EntityRef | null): boolean {
   if (!entity) return false;
   const key = refKey(entity);
   if (!pendingSubclass.has(key)) return false;
-  finishSubclass(key, entity, 'same tick');
+  finishSubclass(key, entity, 'signal');
   return true;
 }
 
