@@ -50,6 +50,8 @@ export function resetMapState(): void {
   freshKnives.clear();
   knifeReplaced.clear();
   pendingSubclass.clear();
+  writtenIds.clear();
+  repaint = [];
 }
 
 // ---- painted-on-give bookkeeping -----------------------------------------------------------
@@ -151,10 +153,21 @@ export function accountIdOf(steamId: string): number {
 }
 
 /** Give the item a fresh fake item id so clients rebuild its look (UpdatePlayerEconItemId). */
+/** The fake item id last written on each entity, to tell later whether the engine put another back. */
+const writtenIds = new Map<string, { low: number; high: number }>();
+
+/** True while `weapon` still carries the item id this plugin last gave it. */
+function keepsOurId(weapon: Weapon): boolean {
+  const written = writtenIds.get(refKey(weapon.ref));
+  const item = weapon.attributeManager.item;
+  return !!written && item.itemIDLow === written.low && item.itemIDHigh === written.high;
+}
+
 function freshItemId(ref: EntityRef, itemBase: number): void {
   if (itemBase < 0) return;
   const id = nextItemId++;
   const { low, high } = itemIdHalves(id);
+  writtenIds.set(refKey(ref), { low, high });
   const idOff = sum(itemBase, off('CEconItemView', 'm_iItemID'));
   // m_iItemID is not networked (its Low/High halves are), so it is written but not notified: the
   // engine cannot resolve a change on it and logs "Couldn't resolve offset".
@@ -414,6 +427,29 @@ function onWeaponEquipped(pawnRef: EntityRef, weaponRef: EntityRef | null): void
   painted.add(key);
   if (weaponIsKnife(weapon, entry.className)) debug(`knife equipped: ${entry.className} on slot ${player.slot}, painting now`);
   applyWeaponSkin(player, weapon, entry.className, true);
+  // Paint again at the end of this tick: a spawn's own loadout code can still write the player's real
+  // item over this paint after the equip (a reload's give showed the skin, the round-start spawn lost it).
+  repaint.push({ ref: weaponRef, className: entry.className, slot: player.slot, userId: player.userId, tick: entry.tick });
+}
+
+/** Weapons painted inside an equip this tick, painted once more in the post-simulation frame hook. */
+let repaint: { ref: EntityRef; className: string; slot: number; userId: number; tick: number }[] = [];
+
+function repaintEquipped(): void {
+  if (repaint.length === 0) return;
+  const batch = repaint;
+  repaint = [];
+  const tick = Server.tickCount;
+  for (const entry of batch) {
+    // Seen by the client already: leave it to the spawn check, which replaces what did not take.
+    if (entry.tick !== tick || pendingSubclass.has(refKey(entry.ref))) continue;
+    const weapon = Weapon.fromEntity(entry.ref);
+    const player = Player.fromSlot(entry.slot);
+    if (!weapon?.isValid() || !player || player.userId !== entry.userId) continue;
+    if (keepsOurId(weapon)) continue; // nothing wrote over it
+    debug(`slot ${entry.slot}: ${entry.className} lost its paint after the equip; painting again`);
+    applyWeaponSkin(player, weapon, entry.className, true);
+  }
 }
 
 function pawnPlayer(pawnRef: EntityRef): Player | null {
@@ -492,6 +528,7 @@ function replaceKnife(player: Player, weapon: Weapon, why: string): void {
  */
 export function paintSpawnedWeapons(): void {
   flushStaleSubclasses();
+  repaintEquipped();
   if (spawned.length === 0) {
     painted.clear();
     return;
@@ -530,12 +567,29 @@ export function paintSpawnedWeapons(): void {
 export function checkSpawnKnife(player: Player): void {
   const pawn = player.pawn;
   if (!settings.skinEnabled || !pawn?.isValid || !isAlive(player)) return;
+  const loadout = getLoadout(player.slot);
+  const team = asTeam(player.teamNum);
+  // A gun with a chosen finish that no longer carries our item id was written over (the player's real
+  // item came back): give the guns and knife again, the path a reload takes, which paints in the give.
+  const lostGun = pawn.weapons.find(w => {
+    if (!w.isValid() || isKnifeDefindex(weaponDefindex(w))) return false;
+    const gear = w.data?.gearSlot;
+    if (gear !== GEAR_SLOT_RIFLE && gear !== GEAR_SLOT_PISTOL) return false;
+    return !!changedPaint(loadout, team, weaponDefindex(w)) && !keepsOurId(w);
+  });
+  if (lostGun) {
+    debug(`slot ${player.slot}: defindex ${weaponDefindex(lostGun)} lost its skin after spawning; giving the weapons again`);
+    refreshWeapons(player);
+    return;
+  }
   const def = wantedKnife(player);
   if (def === 0) return;
   const knife = pawn.weapons.find(w => w.isValid() && isKnifeDefindex(weaponDefindex(w)));
   if (!knife) return;
-  if (weaponDefindex(knife) === def && freshKnives.has(refKey(knife.ref))) return;
-  replaceKnife(player, knife, weaponDefindex(knife) === def ? 'held knife was painted late' : 'held knife has the stock model');
+  const key = refKey(knife.ref);
+  if (weaponDefindex(knife) === def && freshKnives.has(key) && keepsOurId(knife)) return;
+  replaceKnife(player, knife, weaponDefindex(knife) !== def ? 'held knife has the stock model'
+    : keepsOurId(knife) ? 'held knife was painted late' : 'held knife lost its skin after spawning');
 }
 
 function isAlive(player: Player): boolean {
