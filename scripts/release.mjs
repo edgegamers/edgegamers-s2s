@@ -9,7 +9,8 @@
 // When nothing is new it exits without building at all.
 //
 //   node scripts/release.mjs            build, test and deploy what is unpublished
-//   node scripts/release.mjs --check    build and test it only (the version PR)
+//   node scripts/release.mjs --check    build and test it, plus plugins with uncommitted
+//                                       changes from `s2s version` (the version PR)
 //   node scripts/release.mjs --plan     print the plan only
 //
 // A bundle's version only publishes when every member is in the deploy run, so
@@ -90,10 +91,30 @@ const selected = new Set();
 plugins.forEach((p, i) => pluginState[i] === "PUBLISH" && selected.add(p.dir));
 bundles.forEach((b, i) => bundleState[i] === "PUBLISH" && b.members.forEach((m) => selected.add(m.dir)));
 
+// `s2s version` can rewrite a consumer's pluginDependencies range without
+// bumping its version (weaponpaints-ds when weaponpaints moves), so the version
+// PR step also checks every plugin the versioning left uncommitted changes in.
+const edited = new Set();
+if (mode === "check") {
+  const out = execFileSync("git", ["status", "--porcelain", "--", ...plugins.map((p) => p.dir)], { cwd: root, encoding: "utf8" });
+  const files = out.split("\n").filter(Boolean).map((line) => line.slice(3));
+  for (const p of plugins) {
+    if (!selected.has(p.dir) && files.some((f) => f.startsWith(`${p.dir}/`))) edited.add(p.dir);
+  }
+  for (const b of bundles) {
+    if (b.members.some((m) => edited.has(m.dir))) b.members.forEach((m) => selected.has(m.dir) || edited.add(m.dir));
+  }
+  edited.forEach((dir) => selected.add(dir));
+}
+
 const pad = Math.max(...[...plugins, ...bundles].map((x) => x.pkg.name.length));
 console.log("release plan:");
 plugins.forEach((p, i) => {
-  const note = pluginState[i] !== "PUBLISH" && selected.has(p.dir) ? "published (built for its bundle)" : pluginState[i];
+  const note = edited.has(p.dir)
+    ? "published (changed by versioning, checked)"
+    : pluginState[i] !== "PUBLISH" && selected.has(p.dir)
+      ? "published (built for its bundle)"
+      : pluginState[i];
   console.log(`    ${p.pkg.name.padEnd(pad)} ${p.pkg.version.padEnd(8)} ${note}`);
 });
 bundles.forEach((b, i) => console.log(`    ${b.pkg.name.padEnd(pad)} ${b.pkg.version.padEnd(8)} ${bundleState[i]} (bundle)`));
