@@ -49,6 +49,7 @@ export function resetMapState(): void {
   spawned = [];
   freshKnives.clear();
   knifeReplaced.clear();
+  pendingSubclass.clear();
 }
 
 // ---- painted-on-give bookkeeping -----------------------------------------------------------
@@ -222,7 +223,9 @@ function applyKeyChain(player: Player, team: number, weapon: Weapon, info: Weapo
  * upstream does from its GiveNamedItem hook. Changing the model of a knife the client already has
  * draws it invisible or backwards, so a stale knife keeps its model and finish.
  */
-export function applyWeaponSkin(player: Player, weapon: Weapon, className: string | null, fresh = true): void {
+export function applyWeaponSkin(
+  player: Player, weapon: Weapon, className: string | null, fresh = true, subclassChanged = false,
+): void {
   if (!settings.skinEnabled || !weapon.isValid()) return;
   const loadout = getLoadout(player.slot);
   if (!loadout || loadout.userId !== player.userId) {
@@ -242,13 +245,14 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     if (!knife || def === 0) return;
     // Vetoed: the stock knife stays, unpainted (a knife paint is keyed to the knife's own defindex).
     if (!allowed) return;
-    if (weaponDefindex(weapon) !== def) {
+    if (weaponDefindex(weapon) !== def && !subclassChanged) {
       if (!fresh) {
         debug(`knife slot ${player.slot}: already sent to the client, model left as is`);
         return;
       }
-      weapon.ref.acceptInput('ChangeSubclass', String(def));
-      debug(`knife slot ${player.slot}: model changed to ${knife}, now defindex ${weaponDefindex(weapon)}`);
+      queueSubclass(player, weapon, className, def);
+      debug(`knife slot ${player.slot}: model change to ${knife} queued; the finish goes on once it lands`);
+      return;
     }
     item.itemDefinitionIndex = def;
     item.entityQuality = 3;
@@ -264,7 +268,10 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
 
   let info = changedPaint(loadout, team, defindex);
   // Vetoed: the stock finish this time. The saved row is kept, so it comes back once allowed.
-  if (info && !mayApply(player, team ?? 0, 'skin', { defindex, paint: info.paint })) return;
+  if (info && !mayApply(player, team ?? 0, 'skin', { defindex, paint: info.paint })) {
+    debug(`slot ${player.slot}: finish ${info.paint} on defindex ${defindex} not applied (refused by a gate)`);
+    return;
+  }
   if (settings.giveRandomSkin && !info) {
     const paint = randomPaint(catalog, defindex);
     if (paint === 0) return;
@@ -297,6 +304,64 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
   applyKeyChain(player, team ?? 0, weapon, info);
   if (info.stickers.length > 0) applyStickers(player, team ?? 0, weapon, info, loadout, defindex);
   setLegacyModel(weapon, isLegacyModel(catalog, defindex, info.paint));
+}
+
+// ---- knife model changes ---------------------------------------------------------------------
+
+/**
+ * Knives whose ChangeSubclass is queued, painted once it has run.
+ *
+ * s2script's acceptInput queues the input on the engine's I/O queue (AddEntityIOEvent): it runs later
+ * in the tick, not inside the call. Upstream fires ChangeSubclass synchronously and paints after it.
+ * Here the paint ran first and the queued subclass change landed on top of it, which left the right
+ * model with the stock finish, hit or miss. So the paint waits for the change: a FireUser4 queued
+ * right behind it (same tick, same queue, so it runs next) is the signal, and the input hook paints
+ * from there, before the tick's snapshot. FireUser4 is dropped once used, so no OnUser4 output fires.
+ */
+const pendingSubclass = new Map<string, { slot: number; userId: number; className: string | null; tick: number }>();
+const SUBCLASS_SIGNAL = 'FireUser4';
+/** Ticks to wait for the signal before painting anyway (the queue refused it, or the knife moved on). */
+const SUBCLASS_TIMEOUT_TICKS = 8;
+
+function queueSubclass(player: Player, weapon: Weapon, className: string | null, def: number): void {
+  const key = refKey(weapon.ref);
+  pendingSubclass.set(key, { slot: player.slot, userId: player.userId, className, tick: Server.tickCount });
+  weapon.ref.acceptInput('ChangeSubclass', String(def));
+  weapon.ref.acceptInput(SUBCLASS_SIGNAL);
+}
+
+function finishSubclass(key: string, ref: EntityRef, why: string): void {
+  const entry = pendingSubclass.get(key);
+  if (!entry) return;
+  pendingSubclass.delete(key);
+  const player = Player.fromSlot(entry.slot);
+  const weapon = Weapon.fromEntity(ref);
+  if (!player || player.userId !== entry.userId || !weapon?.isValid()) return;
+  debug(`knife slot ${entry.slot}: model change landed (${why}), defindex ${weaponDefindex(weapon)}; painting`);
+  applyWeaponSkin(player, weapon, entry.className, true, true);
+}
+
+/** onInput pre-hook for {@link SUBCLASS_SIGNAL} on any entity. Returns true to drop the input. */
+export function onSubclassSignal(entity: EntityRef | null): boolean {
+  if (!entity) return false;
+  const key = refKey(entity);
+  if (!pendingSubclass.has(key)) return false;
+  finishSubclass(key, entity, 'same tick');
+  return true;
+}
+
+export const subclassSignal = SUBCLASS_SIGNAL;
+
+/** Paint knives whose signal never came (called from the frame hook). */
+function flushStaleSubclasses(): void {
+  if (pendingSubclass.size === 0) return;
+  const tick = Server.tickCount;
+  for (const [key, entry] of [...pendingSubclass]) {
+    if (tick - entry.tick < SUBCLASS_TIMEOUT_TICKS) continue;
+    const weapon = Player.fromSlot(entry.slot)?.pawn?.weapons.find(w => refKey(w.ref) === key);
+    if (weapon) finishSubclass(key, weapon.ref, `no signal after ${tick - entry.tick} ticks`);
+    else pendingSubclass.delete(key);
+  }
 }
 
 /** Who a freshly spawned weapon belongs to: its original owner's account, else its holder. */
@@ -426,6 +491,7 @@ function replaceKnife(player: Player, weapon: Weapon, why: string): void {
  * (upstream's fallback), and a knife that needs a skin is replaced, since a seen knife cannot take one.
  */
 export function paintSpawnedWeapons(): void {
+  flushStaleSubclasses();
   if (spawned.length === 0) {
     painted.clear();
     return;

@@ -1,6 +1,6 @@
 // WeaponPaints 3.3a by Nereziel & daffyy, ported to s2script 2026-11-09.
 // GPL-3.0-only. See LICENSE and NOTICE for upstream attribution.
-import { after, Clients, command, createScope, Entity, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
+import { after, Clients, command, createScope, Entity, Files, HookResult, nextFrame, onInput, publish } from '@s2script/sdk';
 import type { Client, CommandInvocation, EntityRef, HookResultValue } from '@s2script/sdk';
 import { Events, Player } from '@s2script/cs2';
 import skinsEn from '../data/skins_en.json';
@@ -13,7 +13,7 @@ import {
 } from './catalog';
 import { readSettings, type Settings } from './config';
 import {
-  checkSpawnKnife, configureApply, countStatTrakKill, giveAgent, hookPawn, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
+  checkSpawnKnife, configureApply, onSubclassSignal, subclassSignal, countStatTrakKill, giveAgent, hookPawn, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
   refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
 } from './apply';
 import {
@@ -79,8 +79,16 @@ function loadClient(client: Client): Promise<boolean> {
   const { slot, userId, steamId } = client;
   return loadPlayer(slot, steamId, userId, settings).then(loadout => {
     if (!client.isValid()) return false;
-    carryStatTrak(getLoadout(slot), loadout);
+    const previous = getLoadout(slot);
+    carryStatTrak(previous, loadout);
     setLoadout(slot, loadout);
+    // Loaded after this player already spawned (a map change, a slow portal): their weapons went
+    // out without it, so put it on now instead of waiting for the next spawn.
+    const player = Player.fromSlot(slot);
+    if ((!previous || previous.userId !== userId) && player && player.userId === userId && player.pawn?.isValid) {
+      if (settings.debug) log(`loaded ${steamId} after spawning; re-applying`);
+      reapply(player);
+    }
     if (settings.debug) {
       const knives = [...loadout.knife].map(([team, cls]) => `${team}=${cls}`).join(' ') || 'none';
       log(`loaded ${steamId} (slot ${slot}): knives ${knives}`);
@@ -317,6 +325,8 @@ export function OnPluginStart(): void {
   registerEvents();
   // After simulation, before the snapshot: new weapons reach the client already painted.
   createScope().server.onGameFrame(paintSpawnedWeapons, { phase: 'post' });
+  // A knife's finish goes on right after its queued model change runs (see queueSubclass).
+  onInput('*', subclassSignal, ev => (onSubclassSignal(ev.entity) ? HookResult.Handled : HookResult.Continue));
   // Paint gives inside the give itself (WeaponEquipPost), for pawns that exist already and new ones.
   for (const pawn of Entity.findByClass('player')) hookPawn(pawn);
   void loadLanguage(settings.skinsLanguage);
