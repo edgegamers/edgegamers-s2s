@@ -9,6 +9,7 @@ import {
   DEFINDEX_CLASS, defindexOf, isKnifeClass, isKnifeDefindex, isLegacyModel, randomPaint, type Catalog,
 } from './catalog';
 import { mayApply } from './gate';
+import { firstItemId, itemIdHalves } from './itemid';
 import type { WeaponInfo } from './rows';
 import type { Settings } from './config';
 import {
@@ -17,14 +18,14 @@ import {
 
 declare const __s2_schema_offset: ((className: string, field: string) => number) | undefined;
 
-const MINIMUM_CUSTOM_ITEM_ID = 65578;
 const LIFE_ALIVE = 0;
 const GEAR_SLOT_RIFLE = 0, GEAR_SLOT_PISTOL = 1, GEAR_SLOT_KNIFE = 2;
 const CUSTOM_NAME_LENGTH = 161;
 
 let settings!: Settings;
 let catalog!: Catalog;
-let nextItemId = MINIMUM_CUSTOM_ITEM_ID;
+/** Never reset: ids must not repeat while clients stay connected (see firstItemId). */
+let nextItemId = firstItemId(Date.now());
 let fadeSeed = 0;
 /** False between round_end and round_start (upstream _gBCommandsAllowed). */
 export let commandsAllowed = true;
@@ -43,7 +44,6 @@ function debug(message: string): void {
 }
 
 export function resetMapState(): void {
-  nextItemId = MINIMUM_CUSTOM_ITEM_ID;
   fadeSeed = 0;
   painted.clear();
   spawned = [];
@@ -112,6 +112,26 @@ function weaponAttribute(weapon: Weapon, name: string, value: number): void {
   listAttribute(weapon.ref, sum(weaponItemBase(), off('CEconItemView', 'm_AttributeList')), name, value);
 }
 
+/**
+ * Empty both of a weapon's attribute lists (upstream's `Attributes.RemoveAll()` on each), before the
+ * player's own attributes go on. A weapon from the player's real inventory arrives with that item's
+ * attributes: its StatTrak counter, pattern seed, stickers and their placement. Left in place they
+ * show through: StatTrak the portal turned off, the real item's seed, stickers in the wrong spots.
+ * A CUtlVector keeps its count at +0, so a count of 0 is RemoveAll (the attributes own no memory).
+ */
+function clearAttributes(weapon: Weapon): void {
+  clearItemAttributes(weapon.ref, weaponItemBase());
+}
+
+/** Both attribute lists of the item view at `itemBase` in `ref` (a weapon's item, or a pawn's gloves). */
+function clearItemAttributes(ref: EntityRef, itemBase: number): void {
+  const vector = off('CAttributeList', 'm_Attributes');
+  for (const list of ['m_NetworkedDynamicAttributes', 'm_AttributeList']) {
+    const o = sum(itemBase, off('CEconItemView', list), vector);
+    if (o >= 0 && ref.writeInt32(o, 0)) ref.notifyStateChanged(o);
+  }
+}
+
 /** Gloves live on the pawn, not an entity of their own, so both lists go through the declared call. */
 function gloveAttribute(pawn: Pawn, name: string, value: number): void {
   const base = gloveItemBase();
@@ -133,7 +153,7 @@ export function accountIdOf(steamId: string): number {
 function freshItemId(ref: EntityRef, itemBase: number): void {
   if (itemBase < 0) return;
   const id = nextItemId++;
-  const low = id >>> 0, high = Math.floor(id / 0x1_0000_0000) >>> 0;
+  const { low, high } = itemIdHalves(id);
   const idOff = sum(itemBase, off('CEconItemView', 'm_iItemID'));
   // m_iItemID is not networked (its Low/High halves are), so it is written but not notified: the
   // engine cannot resolve a change on it and logs "Couldn't resolve offset".
@@ -170,13 +190,13 @@ function applyStickers(player: Player, team: number, weapon: Weapon, info: Weapo
   info.stickers.forEach((sticker, slot) => {
     // Vetoed: the slot stays empty this time; the saved sticker is kept.
     const id = sticker.id !== 0 && !mayApply(player, team, 'sticker', { defindex: sticker.id }) ? 0 : sticker.id;
-    weapon.setAttribute(`sticker slot ${slot} id`, bitsAsFloat(id));
-    if (sticker.offsetX !== 0 || sticker.offsetY !== 0) weapon.setAttribute(`sticker slot ${slot} schema`, 0);
-    weapon.setAttribute(`sticker slot ${slot} offset x`, sticker.offsetX);
-    weapon.setAttribute(`sticker slot ${slot} offset y`, sticker.offsetY);
-    weapon.setAttribute(`sticker slot ${slot} wear`, sticker.wear);
-    weapon.setAttribute(`sticker slot ${slot} scale`, sticker.scale);
-    weapon.setAttribute(`sticker slot ${slot} rotation`, sticker.rotation);
+    weaponAttribute(weapon, `sticker slot ${slot} id`, bitsAsFloat(id));
+    if (sticker.offsetX !== 0 || sticker.offsetY !== 0) weaponAttribute(weapon, `sticker slot ${slot} schema`, 0);
+    weaponAttribute(weapon, `sticker slot ${slot} offset x`, sticker.offsetX);
+    weaponAttribute(weapon, `sticker slot ${slot} offset y`, sticker.offsetY);
+    weaponAttribute(weapon, `sticker slot ${slot} wear`, sticker.wear);
+    weaponAttribute(weapon, `sticker slot ${slot} scale`, sticker.scale);
+    weaponAttribute(weapon, `sticker slot ${slot} rotation`, sticker.rotation);
   });
   const wear = loadout.tempWear.get(defindex);
   if (wear !== undefined) weapon.fallbackWear = wear;
@@ -230,6 +250,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     }
     item.itemDefinitionIndex = def;
     item.entityQuality = 3;
+    clearAttributes(weapon);
     if (fresh) freshKnives.add(refKey(weapon.ref));
   } else {
     item.entityQuality = 0;
@@ -245,6 +266,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
   if (settings.giveRandomSkin && !info) {
     const paint = randomPaint(catalog, defindex);
     if (paint === 0) return;
+    clearAttributes(weapon);
     weapon.fallbackPaintKit = paint;
     weapon.fallbackSeed = 0;
     weapon.fallbackWear = 0.01;
@@ -256,6 +278,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
   }
   if (!info) return;
 
+  clearAttributes(weapon);
   freshItemId(weapon.ref, itemBase);
   setCustomName(weapon.ref, itemBase, info.nametag);
   weapon.fallbackPaintKit = info.paint;
@@ -570,6 +593,7 @@ export function giveGloves(player: Player): void {
     if (!info || !mayApply(current, team ?? 0, 'gloves', { defindex: gloveId, paint: info.paint })) return;
     const item = pawn.econGloves;
     item.itemDefinitionIndex = gloveId;
+    clearItemAttributes(pawn.ref, gloveItemBase());
     freshItemId(pawn.ref, gloveItemBase());
     gloveAttribute(pawn, 'set item texture prefab', info.paint);
     gloveAttribute(pawn, 'set item texture seed', info.seed);
