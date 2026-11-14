@@ -1,5 +1,12 @@
 # @edgegamers/s2s-weaponpaints
 
+## 0.6.3
+
+### Patch Changes
+
+- edd1b39: A knife whose model is being changed is hidden from every client until the change has run and the finish is on. The queued ChangeSubclass always runs a tick after the give (server debug log), so clients drew the stock knife first and kept its stock finish under the new model, at random. Now a client's first sight of the knife is the finished one.
+- ed54945: Switch a weapon to its legacy model in the same tick as the paint. The queued body group change landed a tick late, so legacy finishes such as AWP | Dragon Lore and AK-47 | Case Hardened could render scrambled.
+
 ## 0.6.2
 
 ### Patch Changes
