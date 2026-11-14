@@ -202,10 +202,12 @@ function applyStickers(player: Player, team: number, weapon: Weapon, info: Weapo
   if (wear !== undefined) weapon.fallbackWear = wear;
 }
 
-function applyKeyChain(weapon: Weapon, info: WeaponInfo): void {
+function applyKeyChain(player: Player, team: number, weapon: Weapon, info: WeaponInfo): void {
   const k = info.keyChain;
   if (!k) return;
-  weapon.setAttribute('keychain slot 0 id', bitsAsFloat(k.id));
+  // Vetoed: no charm this time; the saved one is kept.
+  const id = k.id !== 0 && !mayApply(player, team, 'keychain', { defindex: k.id }) ? 0 : k.id;
+  weapon.setAttribute('keychain slot 0 id', bitsAsFloat(id));
   weapon.setAttribute('keychain slot 0 offset x', k.offsetX);
   weapon.setAttribute('keychain slot 0 offset y', k.offsetY);
   weapon.setAttribute('keychain slot 0 offset z', k.offsetZ);
@@ -292,7 +294,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     weaponAttribute(weapon, 'kill eater', bitsAsFloat(info.statTrakCount));
     weaponAttribute(weapon, 'kill eater score type', 0);
   }
-  applyKeyChain(weapon, info);
+  applyKeyChain(player, team ?? 0, weapon, info);
   if (info.stickers.length > 0) applyStickers(player, team ?? 0, weapon, info, loadout, defindex);
   setLegacyModel(weapon, isLegacyModel(catalog, defindex, info.paint));
 }

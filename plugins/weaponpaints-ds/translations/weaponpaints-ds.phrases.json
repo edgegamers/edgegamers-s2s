@@ -8,6 +8,7 @@
   "weaponpaints_ds.selection.pin_requires_tier": "{red}This pin needs {green}{1} Dedicated Supporter{red} or higher.",
   "weaponpaints_ds.selection.stattrak_requires_tier": "{red}StatTrak needs {green}{1} Dedicated Supporter{red} or higher.",
   "weaponpaints_ds.selection.sticker_requires_tier": "{red}Stickers need {green}{1} Dedicated Supporter{red} or higher.",
+  "weaponpaints_ds.selection.keychain_requires_tier": "{red}Charms need {green}{1} Dedicated Supporter{red} or higher.",
   "weaponpaints_ds.tier.none": "None",
   "weaponpaints_ds.tier.silver": "Silver",
   "weaponpaints_ds.tier.gold": "Gold",

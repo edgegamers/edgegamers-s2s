@@ -113,7 +113,8 @@ decide who may use what without WeaponPaints knowing about it:
 - `OnApplyRequested` runs just before a saved item is put on the player. Handled or Stop applies
   the default this time; the saved row is left alone, so the item returns when it is allowed again.
   It is also asked once per saved sticker (kind `sticker`, `defindex` = sticker kit id); a refused
-  sticker is left off the gun this time.
+  sticker is left off the gun this time. The charm is asked the same way (kind `keychain`,
+  `defindex` = keychain definition id).
 - `refresh(slot)` re-applies a player's loaded selections without a database reload.
 - `reload(slot)` reads the player's selections from storage again and applies them, like
   `!wp`. The portal bridge calls it when a player saves a skin on the website.

@@ -55,8 +55,9 @@ the error is logged and the last good policy stays in force. The portal serves t
 }
 ```
 
-- `kind`: `skin`, `knife`, `gloves`, `agent`, `music`, `pin`, `stattrak` or `sticker` (`defindex`
-  is the sticker kit id; a locked sticker is left off the gun, the saved one is kept).
+- `kind`: `skin`, `knife`, `gloves`, `agent`, `music`, `pin`, `stattrak`, `sticker` (`defindex`
+  is the sticker kit id; a locked sticker is left off the gun, the saved one is kept) or `keychain`
+  (a charm; `defindex` is the keychain definition id, and a locked charm is left off the same way).
 - `minTier`: `0`-`4` or `None`, `Silver`, `Gold`, `Platinum`, `Royal`.
 - Optional `defindex`, `paint` and `model` narrow a rule to one weapon, finish, knife class or
   agent model (as described in WeaponPaints' `api.d.ts`). The most specific matching rule wins;
@@ -64,5 +65,5 @@ the error is logged and the last good policy stays in force. The portal serves t
 - `defaultTier` covers anything no rule matches.
 
 The shipped default reads every open cell of the design review's tier matrix as locked: skins
-Silver, knives Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal. The portal
+Silver, knives Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal; stickers and charms are Gold. The portal
 starts from the same values until an admin changes them.
