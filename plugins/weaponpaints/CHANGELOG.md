@@ -1,5 +1,16 @@
 # @edgegamers/s2s-weaponpaints
 
+## 0.7.0
+
+### Minor Changes
+
+- f409fd7: With `storage = "plugin"` (the CS portal), skins are chosen on the website only. `!skins`, `!knife`, `!gloves`, `!agents`, `!music`, `!pin`, `!stattrak` and their aliases no longer open menus or change anything; they reply with the `website` link. `!wp`, `!ws`, `!kill` and `wp_refresh` stay. The in-game menus let players pick items their Dedicated Supporter tier does not cover, and those choices were saved to the portal. A reload now takes the StatTrak switch from the portal (the website's per-weapon toggle) and keeps only the session's kill counts.
+
+### Patch Changes
+
+- 71429ac: Legacy-model finishes (AWP | Dragon Lore, AK-47 | Case Hardened) no longer render grey: the instant body group call is dropped, and the gun is instead hidden from clients until the queued body group change has landed, so clients draw it fresh on the right mesh.
+- af719ca: Moved stickers now count their offset from their own sticker slot (slot 0 for slot 4) instead of always from slot 0, so they land where the portal's 3D view shows them rather than spread apart along the gun.
+
 ## 0.6.3
 
 ### Patch Changes
