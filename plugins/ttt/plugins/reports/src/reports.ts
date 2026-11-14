@@ -150,6 +150,24 @@ export function rule(id: number, verdict: Verdict, slays: number, admin: string)
   return r;
 }
 
+/** Every report still held (the newest {@link MAX_REPORTS}), oldest first. */
+export function all(): readonly RdmReport[] {
+  return reports;
+}
+
+/**
+ * Reverse a guilty ruling made in error: the report reads as cleared, with the reversal on its audit
+ * line. Only a Guilty report can be overturned, and only once.
+ */
+export function overturn(id: number, admin: string): RdmReport | undefined {
+  const r = byId(id);
+  if (!r || r.verdict !== Verdict.Guilty) return undefined;
+  r.verdict = Verdict.Innocent;
+  r.slays = 0;
+  r.ruledBy = `${admin} (overturned; ruled guilty by ${r.ruledBy})`;
+  return r;
+}
+
 /** Round boundary: clear the per-round rate limit. Reports themselves survive — an admin may still
  *  be working through last round's queue. */
 export function newRound(): void {

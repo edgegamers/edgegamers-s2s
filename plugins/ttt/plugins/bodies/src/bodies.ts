@@ -19,6 +19,7 @@ import { MoveType, RoleId } from "./runtime";
 import { pawnOf, appliedModelOf } from "./runtime";
 import { roleModel } from "../../../packages/contracts/role-model.ts";
 import { wrapEntity } from "@s2script/cs2";
+import { pickAlongRay, type Point } from "./aim";
 
 /**
  * A corpse wears the uniform its owner was wearing.
@@ -320,34 +321,28 @@ export function clearBodies(removeEntities: boolean): void {
   byOwner.clear();
 }
 
+
+
 /**
- * The nearest un-identified body within `maxDistSq` of `slot`, or undefined.
+ * The body the player is AIMING at: the one nearest their line of sight, within `reach` along it and
+ * `radius` either side of it.
  *
- * This is the fallback for body identification when an aim trace does not resolve to the ragdoll
- * (a corpse whose model failed to load has no collision to hit). Distances are compared squared —
- * no `sqrt` — against the body's cached spawn position.
+ * This replaced "nearest to the player's feet" (the old `nearestBody`) as the fallback when the aim
+ * trace does not land on a ragdoll. That rule ignored where the player was looking, so with two
+ * corpses side by side the closer one always won, and anything within reach counted even behind
+ * them — which players described as bodies having huge hitboxes. Positions are read live from the
+ * ragdoll, falling back to where it was spawned, so a body that was carried or slid is still found.
+ *
+ * `eye` and `forward` describe the aim ray (`aimTrace`'s: origin + a standing view offset, along
+ * `eyeAngles`).
  */
-export function nearestBody(slot: number, maxDistSq: number): Body | undefined {
-  const pawn = pawnOf(slot);
-  if (pawn === null) return undefined;
-  const o = pawn.origin;
-  if (o === null) return undefined;
-
-  let best: Body | undefined;
-  let bestDist = maxDistSq;
-  for (let i = 0; i < bodies.length; i++) {
-    const b = bodies[i]!;
-    const dx = o.x - b.x;
-    const dy = o.y - b.y;
-    const dz = o.z - b.z;
-    const d = dx * dx + dy * dy + dz * dz;
-    if (d < bestDist) {
-      bestDist = d;
-      best = b;
-    }
-  }
-  return best;
+export function aimedBody(eye: Point, forward: Point, reach: number, radius: number): Body | undefined {
+  const at = bodies.map((b): Point => {
+    const live = b.ref.isValid() ? b.ref.origin : null;
+    return live ?? { x: b.x, y: b.y, z: b.z };
+  });
+  const i = pickAlongRay(eye, forward, reach, radius, at);
+  return i < 0 ? undefined : bodies[i];
 }
-
 
 export function canonical(body:Body):boolean{return byIndex.get(body.index)===body;}

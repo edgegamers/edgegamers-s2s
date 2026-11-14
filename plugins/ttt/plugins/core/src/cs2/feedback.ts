@@ -75,10 +75,26 @@ function flashRoleColor(slot: number, role: RoleId): void {
   });
 }
 
+/**
+ * The pawn to put a context input on, or null if there is none.
+ *
+ * LIVENESS ONLY, never `pawn.isValid`. That getter also requires the pawn to be out of the engine's
+ * staging list, and the pawn is staged exactly when this runs: the context lands the frame after the
+ * deal, which is the frame World re-dresses every dealt pawn, and `setModel` puts it back in
+ * staging. Behind `isValid` the context was dropped silently, the Traitor never carried TRAITOR:1, and
+ * the map's `filter_activator_context` kept the traitor room shut. Context inputs only queue
+ * (`AddEntityIOEvent`) and are serviced during simulation, so a staged pawn is a safe target — the
+ * C# fires them with no such gate.
+ */
+function contextPawn(slot: number): ReturnType<typeof pawnOf> {
+  const pawn = pawnOf(slot);
+  return pawn !== null && pawn.ref.isValid() ? pawn : null;
+}
+
 /** Strip every role context from a pawn. */
 export function clearMapContexts(slot: number): void {
-  const pawn = pawnOf(slot);
-  if (pawn === null || !pawn.isValid) return;
+  const pawn = contextPawn(slot);
+  if (pawn === null) return;
   for (let i = 0; i < ALL_CONTEXTS.length; i++) {
     pawn.ref.acceptInput("RemoveContext", ALL_CONTEXTS[i]!);
   }
@@ -93,8 +109,8 @@ export function clearMapContexts(slot: number): void {
 export function applyMapContext(slot: number, role: RoleId): string {
   const keyword = contextFor(role);
   if (keyword === "") return "";
-  const pawn = pawnOf(slot);
-  if (pawn === null || !pawn.isValid) return "";
+  const pawn = contextPawn(slot);
+  if (pawn === null) return "";
   // CLEAR BEFORE ADDING. Contexts are keyed, so `AddContext INNOCENT:1` does not displace a
   // `TRAITOR:1` already standing — the pawn simply holds both, and a map filter testing TRAITOR
   // still waves the player into the traitor room. That happens whenever a role is rewritten on a
@@ -122,20 +138,17 @@ export function applyMapContext(slot: number, role: RoleId): string {
  * re-reads `player.Pawn.Value` AFTER the switch and lands on the new pawn. This port hoisted the
  * switch out of the dispatch, which silently inverted that order. Deferring restores it.
  *
- * `retries` covers a respawn that has not finished landing by the next frame — the same discipline
- * `applyRoleVisuals` uses for the model swap, which parents entities to the pawn at this same point.
+ * `retries` covers a respawn that has not handed the controller a pawn yet by the next frame. Giving
+ * up is logged: a missing context is invisible in play until someone finds a traitor door shut.
  */
 function scheduleMapContext(slot: number, role: RoleId, retries: number): void {
   if (contextFor(role) === "") return;
   nextPreFrame(() => {
     // The role may have been re-dealt (or the player cut) while we waited.
     if (reg.roleOf(slot) !== role) return;
-    const pawn = pawnOf(slot);
-    if (pawn === null || !pawn.isValid) {
-      if (retries > 0) scheduleMapContext(slot, role, retries - 1);
-      return;
-    }
-    applyMapContext(slot, role);
+    if (applyMapContext(slot, role) !== "") return;
+    if (retries > 0) scheduleMapContext(slot, role, retries - 1);
+    else console.log(`[ttt] WARN: no pawn to tag with the role's map context slot=${slot} role=${role}`);
   }, { slot });
 }
 
@@ -146,7 +159,7 @@ export function installFeedback(bus: EventBus<TttEvents>): void {
     (ev) => {
       if (ev.role === RoleId.Spectator) return;
       flashRoleColor(ev.slot, ev.role);
-      scheduleMapContext(ev.slot, ev.role, 1);
+      scheduleMapContext(ev.slot, ev.role, 3);
     },
     // MONITOR so the context reflects the role karma may have rewritten, not the one first dealt.
     { priority: Priority.MONITOR },

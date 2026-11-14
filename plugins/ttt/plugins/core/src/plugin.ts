@@ -62,7 +62,7 @@ import { Clients } from "@s2script/sdk/clients";
 import { bindTttHudProvider, getTttHud } from "./cs2/ttthud";
 import { uiModels } from "./core/ui-owner";
 import { Server } from "@s2script/sdk/server";
-import { bindPreFrameIdentity, drainPreFrame } from "./core/preframe";
+import { bindPreFrameIdentity, drainPreFrame, nextPreFrame } from "./core/preframe";
 import { retireBoundRoundOwners, teardownWorld } from "./core/teardown";
 import { restoreReloadState, snapshotReloadState } from "./core/reload-state";
 import { HookResult, type HookResultValue } from "@s2script/sdk/events";
@@ -75,6 +75,7 @@ import { config } from "@s2script/sdk/config";
 import { installPhrases, msg, msgFor, chatMsgFor } from "./core/msgs";
 import * as reg from "./core/registry";
 import { bindForwards, forwardKill, unbindForwards } from "./core/forwards";
+import { bindKillLedger } from "./core/kill-ledger";
 
 import {
   checkEndConditions, game, initGame, inWarmup, onEngineRoundEnd, onEngineRoundStart,
@@ -223,6 +224,11 @@ export function OnPluginStart(): void {
   setRoundSanctions(serveQueuedSlays);
   restoreReloadState(previous());
   bindPreFrameIdentity((slot) => ({ steamId: reg.steamIdOf(slot), gen: reg.generationOf(slot) }));
+  bindKillLedger({
+    now: () => Server.gameTime,
+    identity: (slot) => ({ steamId: reg.steamIdOf(slot), gen: reg.generationOf(slot) }),
+    windowSeconds: () => cfg.rdmReportWindow,
+  });
   watchOptional('@edgegamers/ttt-bodies',(provider,scope)=>{
     scope.own(bindBodySettingsProvider(provider));
     scope.own(bindBodiesProvider(provider));
@@ -527,11 +533,20 @@ export function OnPluginStart(): void {
   // so `item_purchase` above remains the strip fallback.
   items.onCanAcquire(onCanAcquire);
 
-  // A weapon inspect identifies a corpse too, alongside USE — the C# routes both buttons into the
-  // one `onStartUse` trace (`PropMover.cs:53`). Driven off the event rather than the button bit
-  // because `PlayerButtons.Inspect` is `1 << 35` and will not survive a JS bitwise test; see
-  // `inspectIdentify`.
-  scope.events.on("inspect_weapon", (ev) => inspectIdentify(ev.getPlayerSlot("userid")));
+  // A weapon inspect (+inspect / +lookatweapon) identifies a corpse too, alongside USE — the C#
+  // routes both buttons into the one `onStartUse` trace (`PropMover.cs:53`). Driven off the event
+  // rather than the button bit because `PlayerButtons.Inspect` is `1 << 35`, and `pawn.buttons` is
+  // only the low 32 bits; see `inspectIdentify`.
+  //
+  // `onPre`, observing only (it never changes or suppresses the event), not `on`. A post listener
+  // registered while plugins load at startup is wiped when CS2's event manager initialises and is
+  // not re-added on the current runtime (s2script #274), so inspecting did nothing at all. A pre-hook
+  // is dispatched from the runtime's own FireEvent hook and is unaffected. The identification runs on
+  // the next PRE frame, outside the engine's FireEvent call, like the rest of the body work.
+  scope.events.onPre("inspect_weapon", (ev) => {
+    const slot = ev.getPlayerSlot("userid");
+    if (slot >= 0) nextPreFrame(() => inspectIdentify(slot), { slot });
+  });
 
   // ── entity + damage ───────────────────────────────────────────────────────
   // Per-PAWN, not a global mux: the damage hook is an `SDKHook` on each `player` entity now.

@@ -9,13 +9,15 @@ import type { UiModelMethods } from '../../../packages/contracts/ui-types.ts';
 const sourceDir = fileURLToPath(new URL('../src/', import.meta.url));
 const mocks: Record<string, string> = {
   '@s2script/sdk/plugin':'export const use=()=>fixture.core,publish=(name,methods)=>{fixture.reports=methods;};',
-  '@s2script/sdk/admin': 'export const ADMFLAG={GENERIC:1}; export const Admin={forSlot:s=>({hasFlags:()=>fixture.admin})};',
+  '@s2script/sdk/admin': 'export const ADMFLAG={GENERIC:1}; export const Admin={forSlot:s=>({hasFlags:()=>fixture.admin,immunity:fixture.immunity?.[s]??0}),get:id=>fixture.admins?.[id]??null};',
   '@s2script/sdk/bans': 'export const Bans={add:(id,m,r)=>{fixture.banCalls.push(id); fixture.onBan?.(); if(fixture.banThrows)throw Error("ban failed"); fixture.bans.set(id,{until:0,reason:r});},get:id=>fixture.bans.get(id)??null};',
   '@s2script/sdk/clients': 'export const Clients={fromSlot:s=>{if(!fixture.connected.has(s))return null;const id=fixture.userIds.get(s);const valid=()=>fixture.connected.has(s)&&fixture.userIds.get(s)===id;return {slot:s,isValid:valid,get steamId(){return valid()?fixture.engineIds.get(s):"0"},kickWithReason:r=>{if(valid()){fixture.kicks.push(s);fixture.onKick?.();}}};}};',
   '@s2script/cs2': 'export const Pawn={forSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{}:null};export const Player={fromSlot:s=>fixture.connected.has(s)&&fixture.engineIds.has(s)?{steamId:fixture.engineIds.get(s),playerName:"Admin"}:null};',
   './registry': 'export const isConnected=s=>fixture.connected.has(s), steamIdOf=s=>fixture.ids.get(s)??"", generationOf=s=>fixture.generations.get(s)??0, activeSlots=()=>[...fixture.connected], isParticipating=s=>fixture.live, isAlive=s=>fixture.alive,roleOf=s=>2,nameOf=s=>s===2?"Admin":"Accused";',
   '../game/game': 'export const roundEpoch=()=>fixture.epoch, inProgress=()=>fixture.live,game={get state(){return fixture.live?2:0;}};',
   '../game/logger': 'export const logCount=()=>1, logRoundAt=()=>3, makeLogRows=()=>[{a:"private log"}];',
+  './kill-ledger': 'const k=()=>fixture.killers??[3];export const reportableKillers=s=>k(),mayReport=(r,a)=>k().includes(a),reportWindowSeconds=()=>60;',
+  '../cs2/sanction': 'export const killDespiteProtection=(s,kill)=>{kill();return !fixture.alive;};',
   '../cs2/pawn': 'export const tellAll=s=>fixture.announcements.push(s),tell=(s,t)=>fixture.announcements.push(t),pawnOf=()=>{fixture.onPawn?.();return fixture.pawn;};',
   './msgs': "export const msg=(k,...a)=>k, msgFor=(s,k,...a)=>fixture.phrases[k]??k; export const chatMsgFor = msgFor;",
   '../shop/shop': 'export const PurchaseResult={Success:0,InsufficientFunds:1,NotFound:2,NotPurchasable:3,WrongRole:4}; const item={id:"armor",nameKey:"armor",descKey:"description",price:10,limit:1}; export const getShopView=()=>({balance:fixture.balance,rows:fixture.shopRows??[{...item,descriptionKey:item.descKey,gate:fixture.gate}]}),balanceOf=()=>fixture.balance,canPurchase=()=>fixture.gate,itemById=id=>id===item.id?item:undefined,resultMessage=r=>fixture.refusal??("refused "+r),tryPurchase=()=>{fixture.purchases++;return 0};',
@@ -64,6 +66,23 @@ test('conviction commits one verdict, one escalation and one queued sanction', (
   assert.equal(f.api.owedBy('accused'), 2); assert.equal(f.api.guiltyCount('accused'), 1);
   assert.equal(f.api.uiModels.ruleUiReport(f.actor, id, f.api.reportsBinding(), 'convict', 2).status, 'refused');
   assert.equal(f.api.owedBy('accused'), 2); assert.equal(f.api.guiltyCount('accused'), 1);
+});
+test('an admin cannot convict or ban an accused admin with higher immunity', () => {
+  const f = fixture(), id = f.fileReport();
+  f.state.immunity = { 2: 10 }; f.state.admins = { accused: { immunity: 50 } };
+  const convict = f.api.uiModels.ruleUiReport(f.actor, id, f.api.reportsBinding(), 'convict', 2);
+  assert.equal(convict.status, 'refused'); assert.match(convict.message, /higher immunity/);
+  assert.equal(f.api.uiModels.ruleUiReport(f.actor, id, f.api.reportsBinding(), 'ban', 0).status, 'refused');
+  assert.equal(f.api.owedBy('accused'), 0); assert.equal(f.api.guiltyCount('accused'), 0);
+  assert.deepEqual(f.state.banCalls, []);
+});
+test('equal or lower immunity can still be convicted, and anyone can be acquitted', () => {
+  const f = fixture(), id = f.fileReport();
+  f.state.immunity = { 2: 50 }; f.state.admins = { accused: { immunity: 50 } };
+  assert.equal(f.api.uiModels.ruleUiReport(f.actor, id, f.api.reportsBinding(), 'convict', 2).status, 'success');
+  const g = fixture(), other = g.fileReport();
+  g.state.admins = { accused: { immunity: 99 } };
+  assert.equal(g.api.uiModels.ruleUiReport(g.actor, other, g.api.reportsBinding(), 'acquit', 0).status, 'success');
 });
 test('a second admin click or synchronous kick reentry cannot ban the same report twice', () => {
   const f = fixture(), id = f.fileReport();
@@ -140,10 +159,14 @@ test('Reports replacement during ban acknowledgement never pardons the replaceme
 });
 
 test('native report slay is admitted only for current positive debt, alive actor and pawn',()=>{
- const f=fixture();let slays=0;f.state.pawn={slay:()=>slays++};const accused={slot:3,steamId:'accused',generation:1,roundEpoch:8};
+ const f=fixture();let slays=0;f.state.pawn={slay:()=>{slays++;f.state.alive=false;}};const accused={slot:3,steamId:'accused',generation:1,roundEpoch:8};
  assert.equal((f.api.reportCoreMethods as any).slayReportDebtor(accused),false);const id=f.fileReport();f.api.uiModels.ruleUiReport(f.actor,id,f.api.reportsBinding(),'convict',2);
  assert.equal((f.api.reportCoreMethods as any).slayReportDebtor(accused),true);assert.equal(slays,1);assert.equal(f.api.owedBy('accused'),2);
  f.state.alive=false;assert.equal((f.api.reportCoreMethods as any).slayReportDebtor(accused),false);assert.equal(slays,1);
+});
+test('a slay that leaves the debtor alive is not reported as served',()=>{
+ const f=fixture();f.state.pawn={slay:()=>{}};const id=f.fileReport();f.api.uiModels.ruleUiReport(f.actor,id,f.api.reportsBinding(),'convict',2);
+ assert.equal((f.api.reportCoreMethods as any).slayReportDebtor({slot:3,steamId:'accused',generation:1,roundEpoch:8}),false);
 });
 test('report attachment retirement during pawn lookup cannot use a previously read debt',()=>{
  const f=fixture();let slays=0;f.state.pawn={slay:()=>slays++};const id=f.fileReport();f.api.uiModels.ruleUiReport(f.actor,id,f.api.reportsBinding(),'convict',2);
@@ -177,6 +200,13 @@ test('when the HUD cannot present a report step Reports tells the player in chat
   const target = f.api.uiModels.getUiReportTargets(f.actor)![0]!.target;
   assert.equal(f.api.uiModels.beginUiReport(f.actor, target), true);
   assert.deepEqual([...f.state.announcements], ['ttt.reports.prompt_context']);
+});
+test('only a player who killed you is offered or accepted as a report target', () => {
+  const f = fixture(); reportHud(f);
+  const target = f.api.uiModels.getUiReportTargets(f.actor)![0]!.target;
+  f.state.killers = [];
+  assert.deepEqual(f.api.uiModels.getUiReportTargets(f.actor), []);
+  assert.equal(f.api.uiModels.beginUiReport(f.actor, target), false);
 });
 test('a retired target or a missing Reports owner cannot start a report', () => {
   const f = fixture(); reportHud(f);

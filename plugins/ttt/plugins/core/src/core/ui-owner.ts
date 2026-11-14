@@ -4,6 +4,7 @@ import { Clients } from '@s2script/sdk/clients';
 import { Player } from '@s2script/cs2';
 import type { UiActor, UiReportAction, UiRulingReply, UiShopStamp } from '../../../../packages/contracts/ui-types.ts';
 import * as reg from './registry';
+import {reportableKillers} from './kill-ledger';
 import { captureUiActor, matchesUiActor, matchesRegistryUiActor } from './ui-actor';
 import { createUiModels } from './ui-model.ts';
 import { msgFor, chatMsgFor } from './msgs';
@@ -33,6 +34,13 @@ function matchesShopStamp(actor:UiActor,stamp:UiShopStamp):boolean {
     stamp.mapEpoch===currentMapEpoch()&&stamp.roundEpoch===actor.roundEpoch&&stamp.roundEpoch===roundEpoch()&&stamp.state===game.state&&
     stamp.role===reg.roleOf(actor.slot)&&stamp.alive===reg.isAlive(actor.slot)&&stamp.participating===reg.isParticipating(actor.slot)&&stamp.shopBinding===shopProviderBinding();
 }
+/** May the admin in `slot` act on `accusedSteamId`? Only a target with higher immunity is out of reach. */
+export function outranks(slot: number, accusedSteamId: string): boolean {
+  if (accusedSteamId === '') return true;
+  const accused = Admin.get(accusedSteamId);
+  if (accused === null) return true;
+  return accused.immunity <= (Admin.forSlot(slot)?.immunity ?? 0);
+}
 /** Verdict and sanction are one server decision; a replay cannot ban or queue twice. */
 function ruleReport(actor: UiActor, id: number, binding: number, action: UiReportAction, slays: number): UiRulingReply {
   const slot = actor.slot;
@@ -44,6 +52,12 @@ function ruleReport(actor: UiActor, id: number, binding: number, action: UiRepor
   const admin = Player.fromSlot(slot)?.playerName ?? `slot ${slot}`;
   if (!matchesUiActor(actor) || Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) !== true || !matchesUiActor(actor)) {
     return { status: 'refused', title: 'Cannot rule', message: 'Your access is no longer available', tone: 'warn' };
+  }
+  // Admin immunity, as SourceMod applies it to every command that acts on a player: a convict or a ban
+  // is refused when the accused is an admin with HIGHER immunity than the one ruling. Checked by
+  // SteamID, so it holds whether or not the accused is still on the server; an acquittal harms no one.
+  if (action !== 'acquit' && !outranks(slot, report.accusedSteamId)) {
+    return { status: 'refused', title: 'Cannot rule', message: `${report.accusedName} has higher immunity than you`, tone: 'warn' };
   }
   let decision:ReturnType<typeof commitReportRuling>;
   try { decision=commitReportRuling(actor,id,binding,action,slays); }
@@ -136,7 +150,8 @@ export const uiModels = createUiModels({
   reportsAvailable,
   answerPrompt: answerPending,
   // Names only: the picker must not reveal who is dead, their role, or whether they are a bot.
-  reportTargets: (slot) => reg.activeSlots().flatMap((other) => {
+  // Only the players who killed you within the report window — see kill-ledger.ts.
+  reportTargets: (slot) => reportableKillers(slot).flatMap((other) => {
     if (other === slot) return [];
     const target = captureUiActor(other);
     return target === null ? [] : [{ target, name: reg.nameOf(other) }];

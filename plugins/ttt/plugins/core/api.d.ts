@@ -397,6 +397,8 @@ export interface ReportQueueRow extends ReportView { priorGuilty:number;suggeste
 export interface ReportQueue { baseSlays:2;maxQueued:10;rows:ReportQueueRow[]; }
 export interface ReportRuling { report:ReportView;action:'acquit'|'convict'|'ban';priorGuilty:number;totalOwed:number; }
 export interface ServedSlay { actor:ReportActor;steamId:string;remaining:number; }
+export interface ReportConviction { id:number;round:number;accusedName:string;accusedSteamId:string;slays:number;ruledBy:string;owed:number; }
+export interface ReportOverturn { report:ReportView;slaysRemoved:number;owedNow:number; }
 export type ReportPhrase='ttt.reports.prompt_title'|'ttt.reports.prompt_yes'|'ttt.reports.prompt_no'|'ttt.reports.prompt_dismissed'|'ttt.reports.prompt_context'|'ttt.reports.prompt_expired'|'ttt.reports.rate_limited'|'ttt.reports.duplicate'|'ttt.reports.file_failed'|'ttt.reports.filed_against'|'ttt.reports.admin_new';
 export interface ReportsMethods {
  fileReport(reporter:ReportActor,accused:ReportActor,reason:string):ReportFiled;
@@ -413,6 +415,8 @@ export interface ReportsMethods {
  commitRuling(actor:ReportActor,id:number,action:'acquit'|'convict'|'ban',slays:number):ReportRuling|null;
  pardon(steamId:string):number;
  serveRoundStart():ServedSlay[];
+ listConvictions():ReportConviction[];
+ overturnRuling(id:number,admin:string):ReportOverturn|null;
 }
 export interface CoreReportsMethods {
  getReportPlayers():ReportPlayer[];

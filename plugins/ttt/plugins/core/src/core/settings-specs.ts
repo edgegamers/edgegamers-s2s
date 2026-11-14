@@ -158,6 +158,15 @@ export const SPECS: readonly AliasSpec[] = [
     "max": 600
   },
   {
+    "name": "sm_ttt_rdm_report_window",
+    "path": "rdm.reportWindowSeconds",
+    "type": "int",
+    "default": 60,
+    "help": "Seconds after being killed during which a player may report their killer for RDM",
+    "min": 1,
+    "max": 3600
+  },
+  {
     "name": "sm_ttt_show_names",
     "path": "feedback.showNames",
     "type": "bool",

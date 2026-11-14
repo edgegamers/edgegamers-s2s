@@ -8,7 +8,7 @@ const code=execFileSync('unzip',['-p',archive,'plugin.js'],{encoding:'utf8'});
 // Expose existing bundle-local functions only in the VM test, without replacing
 // their implementation or adding a production export/publication.
 const internal=()=>{const f=fixture(code+"\nrequire('@s2script/sdk/plugin').use('@edgegamers/ttt-core').testRuntime={pawnOf,withActor,unbindCore,bindCore};");return [f,f.core.testRuntime];};
-const heldCarry=slot=>{const f=fixture(code);for(let i=3;i<8;i++)f.connect(i,2);f.roster.find(p=>p.actor.slot===slot).role=2;const body=f.spawn(slot===0?1:0);f.core.hasBodyGloves=()=>true;f.core.spendBodyGlove=()=>true;f.players.get(slot).pawn.buttons=32;f.methods.tickInteract(.01);f.ops.length=0;return {f,body};};
+const heldCarry=slot=>{const f=fixture(code);for(let i=3;i<8;i++)f.connect(i,2);f.roster.find(p=>p.actor.slot===slot).role=2;const body=f.spawn(slot===0?1:0);f.core.hasBodyGloves=()=>true;f.core.spendBodyGlove=()=>true;f.players.get(slot).pawn.buttons=32;f.methods.tickInteract(.01);f.players.get(slot).pawn.eyeAngles=new f.Vector(0,0,0);f.ops.length=0;return {f,body};};
 for(const slot of [0,7])test(`steady eight-player carry slot ${slot} keeps effects with nine actor crossings`,()=>{
  const {f,body}=heldCarry(slot);let matches=0,rows=0,hints=0;const match=f.core.matchesActor,players=f.core.getBodyPlayers,slots=f.core.activeSlots;
  f.core.matchesActor=a=>{matches++;return match(a);};f.core.getBodyPlayers=()=>{rows++;return players();};f.core.activeSlots=()=>{hints++;return slots();};

@@ -24,15 +24,17 @@ import {reg,actorOf,matchesActor,bodyPlayers,someActiveInputSlot,withActor,actio
 import type {BodyActor} from "../../../packages/contracts/body-types.ts";
 import type { DomainBus } from "../../../packages/contracts/ordered.ts";
 import { pawnOf } from "./runtime";
-import { bodyByEntity, nearestBody, canonical, type Body } from "./bodies";
+import { aimedBody, allBodies, bodyByEntity, canonical, type Body } from "./bodies";
 import {
   hasBodyPaint, spendBodyPaint, spendGlove, hasGloves, tryDefuseTripwire, tryPlaceHeldTripwire,
 } from "./runtime";
 import { readDna } from "./runtime";
 import { inProgress } from "./runtime";
 
-/** How far a player can reach to identify a body, squared. */
-const REACH_SQ = 120 * 120;
+/** How far along the line of sight a body can be identified, scanned or picked up from the eye. */
+const AIM_REACH = 130;
+/** How far a body may sit to either side of the line of sight and still be the one aimed at. */
+const AIM_RADIUS = 32;
 /** Carrying distance limits, matching the C# `PropMover` constants. */
 const MIN_HOLD = 80;
 const MAX_HOLD = 150;
@@ -219,7 +221,35 @@ export function tickInteract(dt:number):void {
 
 
 
-/** The corpse the player is looking at (or standing over), if any. */
+/**
+ * The corpse a trace hit selects: the ragdoll itself, or its owner's hidden pawn.
+ *
+ * A dead player's pawn is made invisible (alpha 0) but keeps its full player-sized collision box,
+ * standing where they died — usually right over the corpse. The aim trace stops on that invisible
+ * box far more often than on the ragdoll, so a hit on it is taken to mean that player's body.
+ */
+function bodyForHit(entity: EntityRef): Body | undefined {
+  const direct = bodyByEntity(entity);
+  if (direct !== undefined) return direct;
+  const list = allBodies();
+  for (let i = 0; i < list.length; i++) {
+    const b = list[i]!;
+    if (reg.isAlive(b.owner)) continue;
+    const p = Pawn.forSlot(b.owner);
+    if (p !== null && p.ref.index === entity.index && p.ref.id === entity.id) return b;
+  }
+  return undefined;
+}
+
+/** The corpse along `slot`'s line of sight, when the trace itself did not land on one. */
+function aimedBodyOf(slot: number): Body | undefined {
+  const pawn = pawnOf(slot);
+  const o = pawn?.origin ?? null, angles = pawn?.eyeAngles ?? null;
+  if (o === null || angles === null) return undefined;
+  return aimedBody({ x: o.x, y: o.y, z: o.z + EYE_HEIGHT }, forwardVector(angles), AIM_REACH, AIM_RADIUS);
+}
+
+/** The corpse the player is looking at, if any. */
 function bodyInReach(slot: number): Body | undefined {
   const pawn = pawnOf(slot);
   if (pawn === null) return undefined;
@@ -228,10 +258,11 @@ function bodyInReach(slot: number): Body | undefined {
   let body: Body | undefined;
 
   if (hit !== null && hit.didHit && hit.entity !== null) {
-    body = bodyByEntity(hit.entity);
+    body = bodyForHit(hit.entity);
   }
-  // Fall back to proximity: a corpse whose model failed to load has nothing to trace against.
-  return body ?? nearestBody(slot, REACH_SQ);
+  // Fall back to the line of sight: the trace can stop short (another prop, a pawn) or find nothing
+  // (a corpse whose model failed to load), and the player still means the body they are looking at.
+  return body ?? aimedBodyOf(slot);
 }
 
 /** Resolve what the player is looking at and act on it once. */
@@ -351,7 +382,15 @@ function tryPickup(slot: number): void {
     // The body tracker is the real "is this a prop_ragdoll?" test — every corpse in the mode is one
     // it spawned — and {@link physicsProps} stands in for the second designer-name lookup.
     const index = hit.entity.index;
-    if (bodyByEntity(hit.entity) !== undefined || physicsProps.get(index)?.id===hit.entity.id) {
+    const corpse = bodyForHit(hit.entity);
+    if (corpse !== undefined && corpse.ref.index !== index && corpse.ref.isValid()) {
+      // The trace stopped on a dead player's invisible pawn: carry their corpse, not the pawn.
+      const at = corpse.ref.origin ?? new Vector(corpse.x, corpse.y, corpse.z);
+      const dx = at.x - origin.x, dy = at.y - origin.y, dz = at.z - origin.z;
+      beginCarry(slot, corpse.ref, Math.min(MAX_HOLD, Math.max(MIN_HOLD, Math.sqrt(dx * dx + dy * dy + dz * dz))), at);
+      return;
+    }
+    if (corpse !== undefined || physicsProps.get(index)?.id===hit.entity.id) {
       const dx = hit.endPos.x - origin.x;
       const dy = hit.endPos.y - origin.y;
       const dz = hit.endPos.z - origin.z;
@@ -362,27 +401,21 @@ function tryPickup(slot: number): void {
     }
   }
 
-  // Fall back to proximity, exactly as identification does.
-  //
-  // A dead player's pawn is hidden (alpha 0) but KEEPS ITS COLLISION, and it sits right where the
-  // corpse is. So the aim trace often stops on an invisible obstacle instead of the ragdoll behind
-  // it, and this returned with no target — which reads in game as "some bodies can be picked up and
-  // some cannot", varying with how the ragdoll happened to come to rest against its own pawn.
-  //
-  // Identification never showed the bug because it already had this fallback; pickup did not. The
-  // trace cannot simply skip the pawns either: `ignoreEntity` takes a single entity, and there is
-  // one hidden pawn per corpse.
-  const body = nearestBody(slot, REACH_SQ);
+  // Fall back to the line of sight, exactly as identification does. (This used to be "nearest to the
+  // player's feet within 120u", which ignored where they were looking: with bodies close together the
+  // nearest one was always taken, which is what made picking a specific one impossible.)
+  const body = aimedBodyOf(slot);
   if (body === undefined || !body.ref.isValid()) return;
-  const bx = body.x - origin.x;
-  const by = body.y - origin.y;
-  const bz = body.z - origin.z;
+  const at = body.ref.origin ?? new Vector(body.x, body.y, body.z);
+  const bx = at.x - origin.x;
+  const by = at.y - origin.y;
+  const bz = at.z - origin.z;
   const bodyDist = Math.sqrt(bx * bx + by * by + bz * bz);
   beginCarry(
     slot,
     body.ref,
     Math.min(MAX_HOLD, Math.max(MIN_HOLD, bodyDist)),
-    new Vector(body.x, body.y, body.z),
+    at,
   );
 }
 

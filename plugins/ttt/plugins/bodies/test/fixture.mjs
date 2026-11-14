@@ -25,7 +25,7 @@ export function fixture(code,existingConfig=null){
  const wire=v=>JSON.parse(JSON.stringify(v,(_k,x)=>x instanceof EntityRef?{$ref:[x.index,x.id]}:x),(_k,x)=>x?.$ref?new EntityRef(...x.$ref):x);
  function ref(index=serial++,id=index+1000){native.set(index,{id,valid:true});return new EntityRef(index,id);}
  class Vector{constructor(x,y,z){this.x=x;this.y=y;this.z=z;}}
- function connect(slot,role=1,generation=1){const client={steamId:`7656119800000000${slot}`,valid:true,isValid(){return this.valid;}};const pawnRef=ref();const pawn={ref:pawnRef,isValid:true,origin:new Vector(0,0,0),angles:new Vector(0,30,0),eyeAngles:new Vector(0,0,0),buttons:0,hit:null,aimTrace(){return this.hit;}};players.set(slot,{ref:ref(),steamId:client.steamId,pawn});clients.set(slot,client);const entry={actor:{slot,steamId:client.steamId,generation,roundEpoch:game.epoch},name:`Person${slot}`,role,alive:true,participating:true,pawn:pawnRef};const old=roster.findIndex(p=>p.actor.slot===slot);if(old<0)roster.push(entry);else roster[old]=entry;return entry;}
+ function connect(slot,role=1,generation=1){const client={steamId:`7656119800000000${slot}`,valid:true,isValid(){return this.valid;}};const pawnRef=ref();const pawn={ref:pawnRef,isValid:true,origin:new Vector(0,0,0),angles:new Vector(0,30,0),eyeAngles:new Vector(89,0,0)/* looking down at the body at their feet; carry tests level the view after the grab */,buttons:0,hit:null,aimTrace(){return this.hit;}};players.set(slot,{ref:ref(),steamId:client.steamId,pawn});clients.set(slot,client);const entry={actor:{slot,steamId:client.steamId,generation,roundEpoch:game.epoch},name:`Person${slot}`,role,alive:true,participating:true,pawn:pawnRef};const old=roster.findIndex(p=>p.actor.slot===slot);if(old<0)roster.push(entry);else roster[old]=entry;return entry;}
  connect(0);connect(1);connect(2,2);
  const nativeSlotReads=[],playerSlotReads=[],pawnSlotReads=[];const sdkPlayer={fromSlot:s=>{playerSlotReads.push(s);nativeSlotReads.push(s);faults.onInputSlot?.(s);faults.onFromSlot?.(s);return players.get(s)??null;}};sdkPlayer.all=new Function('Player','MAX_PLAYERS','return '+allRecipe)(sdkPlayer,64);
  // Execute the actual public SDK resolver against native boundary observations.
@@ -49,7 +49,7 @@ export function fixture(code,existingConfig=null){
  if(name==='@s2script/sdk/server')return {Server:server};
  if(name==='@s2script/sdk/entity')return {EntityRef,Entity:{findByClass:()=>props.slice()},createEntity:classname=>{if(faults.create)return null;const e=ref();entities.push(e);ops.push(['create',e.index,classname]);faults.onCreate?.(e);return e;}};
  if(name==='@s2script/sdk/trace')return {Trace:{line:()=>trace},TraceMask:{ShotPhysics:3,WorldOnly:1}};
- if(name==='@s2script/sdk/math')return {Vector,forwardVector:()=>new Vector(1,0,0)};
+ if(name==='@s2script/sdk/math')return {Vector,forwardVector:a=>{const p=a.x*Math.PI/180,y=a.y*Math.PI/180;return new Vector(Math.cos(p)*Math.cos(y),Math.cos(p)*Math.sin(y),-Math.sin(p));}};
  if(name==='@s2script/cs2')return {Player:sdkPlayer,Pawn:sdkPawn,wrapEntity:(kind,e)=>{ops.push(['wrap',kind,e.index]);return native.get(e.index).fields??={collision:{collisionAttribute:{}}};},Beam:{draw:(start,end,opts)=>{ops.push(['beam',copy(start),copy(end),copy(opts)]);return {update:(a,b)=>ops.push(['beamUpdate',copy(a),copy(b)]),remove:()=>ops.push(['beamRemove'])};}}};
  throw Error(`unexpected dependency ${name}`);
  }});vm.runInContext(code,context);context.module.exports.OnPluginStart();
