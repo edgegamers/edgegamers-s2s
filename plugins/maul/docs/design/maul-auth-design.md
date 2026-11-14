@@ -120,12 +120,17 @@ one: `setName`, which writes `m_iszPlayerName` and notifies state change. That i
 display-name field and is what actain relies on as well, so the rename itself is covered; the
 client-side userinfo convar has no typed equivalent.
 
-The clan tag is NOT a divergence on this engine: SM's `CS_SetClientClanTag(client, "")` is guarded
-by `GetEngineVersion() == Engine_CSGO || Engine_CSS`, so it never runs on CS2 either.
+The Steam group clan tag is cleared for players whose name carries a MAUL rank tag
+(`strip_clan_tag`, default on). SM's `CS_SetClientClanTag(client, "")` is CSGO/CSS-gated and never
+runs on CS2, so this goes beyond SM. The client's `cl_clanid` userinfo convar lands on the
+controller as `m_unClanId32bit` and `m_szClan`. Neither has a typed accessor, so `src/clan.ts`
+writes both by schema offset (a null `CUtlSymbolLarge` reads as `""`) and notifies the change. It
+runs on every name write and again a frame after `OnClientSettingsChanged`, since the engine
+rewrites the tag when userinfo changes. Turning the option off stops the writes but does not
+restore a cleared tag until the client's userinfo changes again.
 
-Neither gap is strictly impossible — `EntityRef.writeString(offset, maxLen, value)` can reach
-`m_szNetname` / `clanTeamname` via a schema offset. We do not, deliberately: an unsafe raw write is
-not worth it for a cosmetic the SM plugin does not perform on CS2.
+The userinfo `name` convar is still not written: `EntityRef.writeString` could reach `m_szNetname`
+by offset, but `setName` already covers the visible name.
 
 Enforcement is event-driven, via an `onPre` hook on `player_changename` (fields: `userid`,
 `oldname`, `newname`) — the same hook and phase SM's autotagger uses (`maul_autotagger.sp:78`,
@@ -208,7 +213,8 @@ registration. SDK-touching modules are verified by inspection plus a live server
 ## Known divergences from SM
 
 - The client-side userinfo `name` convar is not written (`SetClientInfo` has no typed equivalent);
-  `setName` writes the controller's `m_iszPlayerName` instead. The clan tag is not cleared, but
-  neither does SM on CS2 — that call is CSGO/CSS-gated.
+  `setName` writes the controller's `m_iszPlayerName` instead.
+- The Steam clan tag IS cleared for rank-tagged players (`strip_clan_tag`), which SM does not do
+  on CS2.
 - `connect_message` / `connect_style` (the "player joined" broadcast) are not ported — out of scope.
 - The `special` gate ignores `division`, matching SM. `maul-actain` also compares the division tag.

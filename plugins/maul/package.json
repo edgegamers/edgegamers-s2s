@@ -71,6 +71,11 @@
         "default": true,
         "description": "Rename players to \"<rank tag> <MAUL name>\"."
       },
+      "strip_clan_tag": {
+        "type": "bool",
+        "default": true,
+        "description": "Clear the Steam group clan tag from players who carry a MAUL rank tag, so only the MAUL tag shows."
+      },
       "join_message": {
         "type": "bool",
         "default": true,

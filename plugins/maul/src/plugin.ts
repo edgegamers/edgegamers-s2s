@@ -34,6 +34,7 @@ import { loadRankTable, readConfig } from "./config.ts";
 import { dsTierOf } from "./ds-tier.ts";
 import { createLogger } from "./log.ts";
 import { NameManager } from "./names.ts";
+import { clearClanTag } from "./clan.ts";
 import { cleanChatText, isLeadership, literalChatText, receives, routeStaffChat } from "./staff-chat.ts";
 import { loadStaffChatPhrases, staffChatPhraseFor } from "./staff-chat-phrases.ts";
 import type { MaulConfig } from "./config.ts";
@@ -95,7 +96,12 @@ export function OnPluginStart(): void {
   // Constructed here rather than further down because presence reports MAUL names and calls into
   // this from its very first snapshot — which `presence.start()` below can reach before the rest of
   // OnPluginStart has run.
-  const names = new NameManager(log, (slot, desired) => decluttrCall(desired, provider => provider.sanitizeName(slot, desired)));
+  const names = new NameManager(
+    log,
+    (slot, desired) => decluttrCall(desired, provider => provider.sanitizeName(slot, desired)),
+    // Read live, so turning strip_clan_tag off stops the writes from the next reapply.
+    (player) => cfg.stripClanTag && clearClanTag(player),
+  );
   watchDecluttr(() => names.reapplyAll());
 
   // Presence is a v2-only push channel: it needs the JWT the v2 client already manages, and v1 has
@@ -366,6 +372,16 @@ function staffChat(
   }
   log.info(`${route.channel} chat from ${steamId}: ${route.body}`);
   return HookResult.Handled;
+}
+
+// A userinfo change (a new cl_clanid among them) lets the engine write the Steam group tag back.
+// Deferred a frame so the engine has finished its own write before ours lands.
+export function OnClientSettingsChanged(client: Client): void {
+  if (maul === null || client.isBot || client.steamId === "0") return;
+  const names = maul.names;
+  const { slot, steamId, userId } = client;
+  if (!names.has(steamId)) return;
+  after(1, () => { names.enforce(slot, steamId, userId); });
 }
 
 // `client` is a read-only identity snapshot, valid only synchronously — everything below reads it

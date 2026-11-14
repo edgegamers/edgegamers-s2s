@@ -150,7 +150,7 @@ export function registerCommands(deps: CommandDeps): void {
     cmd.replyToConsole(`  API key    : ${cfg.maulKey.length > 0 ? "set (" + String(cfg.maulKey.length) + " chars)" : "NOT SET — authentication disabled"}`);
     cmd.replyToConsole(`  Ready      : ${api.isReady() ? "yes" : "NO — see Backend above"}`);
     cmd.replyToConsole(`  Ranks      : ${String(Object.keys(getRankTable().ranks).length)} loaded`);
-    cmd.replyToConsole(`  Eventserver: ${String(cfg.eventserver)}   Autotag: ${String(cfg.autotag)}   Debug: ${String(cfg.debug)}`);
+    cmd.replyToConsole(`  Eventserver: ${String(cfg.eventserver)}   Autotag: ${String(cfg.autotag)}   Strip clan: ${String(cfg.stripClanTag)}   Debug: ${String(cfg.debug)}`);
 
     const players = Player.allConnected().filter((p) => p.steamId !== "0");
     const verified = players.filter((p) => auth.isVerified(p.steamId)).length;

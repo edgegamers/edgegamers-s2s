@@ -10,7 +10,7 @@ import { Chat } from "@s2script/sdk/chat";
 import { Clients } from "@s2script/sdk/clients";
 import { Player } from "@s2script/cs2";
 import { delay } from "@s2script/sdk/timers";
-import { computeGrant, shouldRegisterAdmin, taggedName } from "./grant.ts";
+import { computeGrant, shouldRegisterAdmin, tagForRank, taggedName } from "./grant.ts";
 import { stripPort } from "./encoding.ts";
 import { staffChatPhraseFor } from "./staff-chat-phrases.ts";
 import { banKickMessage } from "./bans.ts";
@@ -217,7 +217,8 @@ export class Authenticator {
       return;
     }
 
-    this.deps.names.apply(slot, steamId, name);
+    const rankTagged = tagForRank(info.primaryRank, this.deps.getRankTable()) !== null;
+    this.deps.names.apply(slot, steamId, name, rankTagged);
   }
 
   /**

@@ -9,8 +9,14 @@ import type { Logger } from "./log.ts";
 export class NameManager {
   private readonly desired = new Map<string, string>();
   private readonly effective = new Map<string, string>();
+  /** SteamIDs whose MAUL name carries a rank tag: their Steam group tag is cleared on every write. */
+  private readonly tagged = new Set<string>();
 
-  constructor(private readonly log: Logger, private readonly sanitize: (slot: number, desired: string) => string = (_slot, desired) => desired) {}
+  constructor(
+    private readonly log: Logger,
+    private readonly sanitize: (slot: number, desired: string) => string = (_slot, desired) => desired,
+    private readonly clearClan: (player: Player) => boolean = () => false,
+  ) {}
 
   /** True once this SteamID has a verified name on file. */
   has(steamId: string): boolean {
@@ -29,9 +35,14 @@ export class NameManager {
     return this.effective.get(steamId) ?? null;
   }
 
-  /** Cache `name` for `steamId` and write it to the player now. */
-  apply(slot: number, steamId: string, name: string): void {
+  /**
+   * Cache `name` for `steamId` and write it to the player now. `rankTagged` marks a name that
+   * carries a MAUL rank tag, so the player's Steam group tag is cleared alongside it.
+   */
+  apply(slot: number, steamId: string, name: string, rankTagged = false): void {
     this.desired.set(steamId, name);
+    if (rankTagged) this.tagged.add(steamId);
+    else this.tagged.delete(steamId);
     this.effective.set(steamId, name);
     this.write(slot, steamId);
   }
@@ -74,6 +85,7 @@ export class NameManager {
   forget(steamId: string): void {
     this.desired.delete(steamId);
     this.effective.delete(steamId);
+    this.tagged.delete(steamId);
   }
 
   private write(slot: number, steamId: string, expectedUserId?: number): void {
@@ -94,6 +106,7 @@ export class NameManager {
     if (current === null || current.steamId !== steamId || current.userId !== userId || this.desired.get(steamId) !== desired) return;
     // Publish before setName: the echo of our own corrective event must already be accepted.
     this.effective.set(steamId, name);
+    if (this.tagged.has(steamId) && this.clearClan(current)) this.log.debug(`cleared Steam group tag for ${steamId}`);
     if (current.playerName === name) return;
 
     if (current.setName(name)) this.log.debug(`set name for ${steamId} to "${name}"`);

@@ -49,6 +49,7 @@ defaults). The ones that matter:
 | `api_version` | `v1` | `v1` or `v2`. **Changing it requires a plugin reload**, not just a config re-read. |
 | `eventserver` | `false` | Grant the event-gated ranks (`special` in the ranks table). |
 | `autotag` | `true` | Rename players to `<tag> <MAUL name>`. |
+| `strip_clan_tag` | `true` | Clear the Steam group clan tag from players who carry a MAUL rank tag, so only the MAUL tag shows. |
 | `join_message` | `true` | Broadcast a Dedicated Supporter's join message on first join. |
 | `ds_chat` | `true` | `$message` in team chat goes to every Dedicated Supporter. |
 | `leadership_chat` | `true` | Enables `%` contact/broadcast messages and leaders' `%%target message` private messages. |
