@@ -149,7 +149,7 @@ A player on the wire is `{ steamId, name, team }` (`team` at that moment: `priso
 
 | Type | From | `data` |
 | --- | --- | --- |
-| `jb.round.start` | core OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans), `bots`, `warmup`, `roster` (players on a team) |
+| `jb.round.start` | core OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans), `bots`, `warmup`, `roster` (players on a team), `armory: true` (this bridge reports `jb.armory`) |
 | `jb.round.live` | core OnRoundLive | (none) |
 | `jb.round.end` | core OnRoundEnd | `number`, `winner` (`prisoner`, `guard`, `none`), `mode` (`normal`, `lastrequest`, `lastguard`, `specialday`), `players`, `bots`, `adminEnded`, `roster`, `durationMs` (start to end), `liveMs` (freeze time end to end, or null) |
 | `jb.mode` | core OnModeChanged | `mode`, `previous` |
@@ -167,6 +167,7 @@ A player on the wire is `{ steamId, name, team }` (`team` at that moment: `priso
 | `jb.specialday.start` / `.end` | specialdays forwards | `type`, `name`, `starterSteamId` |
 | `jb.death` | `player_death` (pre hook) | `victim`, `attacker` (null for the world or a suicide), `assister`, `weapon`, `headshot`, `victimRebel`, `attackerRebel` |
 | `jb.hurt` | `player_hurt` | prisoner on guard only: `attacker`, `victim`, `damage` (health), `weapon`, `attackerRebel` |
+| `jb.armory` | position check every 250 ms while the round is live | a prisoner reached the armory (CT spawn), once per prisoner per round and only in normal mode (not special days, LR or last guard): `player`, `rebel`. The armory is the `armory`-tagged zones from `@s2script/zones` when the map has them, else the CT spawn points' outline widened by 128 units at spawn height |
 
 Deaths are read in the pre hook because core clears the victim's rebel mark in its own handler.
 A round end with no start seen (the plugin or core loaded mid-round, or a map change) is not sent.

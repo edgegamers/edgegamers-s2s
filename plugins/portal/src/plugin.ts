@@ -7,7 +7,7 @@
  *
  * Wiring only; the logic lives in the other files.
  */
-import { after, Clients, command, config, createScope, Database, every, fetch, Files, nextFrame, Server, watchOptional } from "@s2script/sdk";
+import { after, Clients, command, config, createScope, Database, Entity, every, fetch, Files, nextFrame, Server, watchOptional } from "@s2script/sdk";
 import type { Client, Timer } from "@s2script/sdk";
 import { WebSocket } from "@s2script/sdk/ws";
 import { Events, Pawn, Player } from "@s2script/cs2";
@@ -16,6 +16,7 @@ import { weaponByDefIndex } from "./weapons.ts";
 import { EventBuilder, type Clock, type PortalEvent } from "./envelope.ts";
 import type { Fetch } from "./http.ts";
 import { JbEvents } from "./jb.ts";
+import { armoryFromSpawns, armoryFromZones, type ArmoryArea, type Vec3 } from "./armory.ts";
 import { LiveClient } from "./live.ts";
 import { PugEvents, PugSync, type PugApi } from "./pug.ts";
 import { Outbox, OutboxWriter } from "./outbox.ts";
@@ -389,6 +390,55 @@ function applySettings(): void {
 const jbBuilder = new EventBuilder("jb", ulid, clock, () => Server.mapName);
 /** Set while `@edgegamers/jailbreak-core` is loaded. */
 let jbEvents: JbEvents | null = null;
+/** The optional `@s2script/zones` plugin, for maps with `armory`-tagged zones. */
+let zones: { getZonesByTag(tag: string): { min: Vec3; max: Vec3 }[] } | null = null;
+/** How often prisoners' positions are checked against the armory while a JB round is live. */
+const ARMORY_CHECK_MS = 250;
+/** How far outside the CT spawn points' outline still counts as the armory (maps without zones). */
+const ARMORY_RADIUS = 128;
+let armoryTimer: Timer | null = null;
+
+function armoryArea(): ArmoryArea | null {
+  let tagged: { min: Vec3; max: Vec3 }[] = [];
+  try {
+    tagged = zones?.getZonesByTag("armory") ?? [];
+  } catch {
+    tagged = []; // zones went away mid-call
+  }
+  const fromZones = armoryFromZones(tagged);
+  if (fromZones) return fromZones;
+  const spawns: Vec3[] = [];
+  for (const ref of Entity.findByClass("info_player_counterterrorist")) {
+    const o = ref.origin;
+    if (o) spawns.push({ x: o.x, y: o.y, z: o.z });
+  }
+  return armoryFromSpawns(spawns, ARMORY_RADIUS);
+}
+
+/** Start checking who reaches the armory this round (from round live to round end). */
+function startArmoryWatch(jb: JbEvents, core: { getTeam(slot: number): string }): void {
+  stopArmoryWatch();
+  const area = armoryArea();
+  if (!area) return;
+  armoryTimer = every(ARMORY_CHECK_MS, () =>
+    guard("armory check", () => {
+      if (!jb.watchesArmory) return;
+      for (const c of Clients.all()) {
+        if (!c.isValid() || core.getTeam(c.slot) !== "prisoner") continue;
+        const p = Player.fromSlot(c.slot);
+        if (!p || p.pawnIsAlive !== true) continue;
+        const o = p.pawn?.origin;
+        if (o && area.contains({ x: o.x, y: o.y, z: o.z })) jb.onArmory(c.slot);
+      }
+    }),
+  );
+}
+
+function stopArmoryWatch(): void {
+  armoryTimer?.kill();
+  armoryTimer = null;
+}
+
 const pugEvents = new PugEvents(ulid, clock, () => Server.mapName);
 const tttBuilder = new EventBuilder("ttt", ulid, clock, () => Server.mapName);
 const ttt = new TttEvents(tttBuilder, clock, emit);
@@ -409,10 +459,18 @@ export function OnPluginStart(): void {
         }),
       ),
     );
-    scope.own(core.on("OnRoundLive", () => guard("OnRoundLive", () => jb.onRoundLive())));
+    scope.own(
+      core.on("OnRoundLive", () =>
+        guard("OnRoundLive", () => {
+          jb.onRoundLive();
+          startArmoryWatch(jb, core);
+        }),
+      ),
+    );
     scope.own(
       core.on("OnRoundEnd", (ev) =>
         guard("OnRoundEnd", () => {
+          stopArmoryWatch();
           jb.onRoundEnd(ev);
           if (replays.recording !== null && replays.recording === jbBuilder.roundId) endReplay();
         }),
@@ -427,10 +485,16 @@ export function OnPluginStart(): void {
     scope.own({
       dispose: () => {
         if (replays.recording !== null && replays.recording === jbBuilder.roundId) replays.discard();
+        stopArmoryWatch();
         jbEvents = null;
         jbBuilder.reset();
       },
     });
+  });
+
+  watchOptional("@s2script/zones", (z, scope) => {
+    zones = z;
+    scope.own({ dispose: () => (zones = null) });
   });
 
   watchOptional("@edgegamers/jailbreak-warden", (warden, scope) => {
@@ -692,6 +756,7 @@ export function OnPluginEnd(): void {
 export function OnMapStart(): void {
   // The round in progress when the map changed never ends: keep what was recorded.
   if (replays.recording !== null) endReplay();
+  stopArmoryWatch();
   jbBuilder.reset();
   ttt.reset();
 }

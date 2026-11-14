@@ -28,7 +28,8 @@
       "@edgegamers/ttt-special": "^2.0.0",
       "@edgegamers/s2s-weaponpaints": "^0.2.0",
       "@edgegamers/s2s-weaponpaints-ds": "^0.0.0",
-      "@edgegamers/s2s-pug": "^0.0.0"
+      "@edgegamers/s2s-pug": "^0.0.0",
+      "@s2script/zones": "^1.0.0"
     },
     "config": {
       "portal_url": {
