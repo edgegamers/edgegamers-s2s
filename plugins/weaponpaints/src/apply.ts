@@ -1,6 +1,6 @@
 // Applying cosmetics to entities, ported from WeaponPaints 3.3a (WeaponAction.cs, Events.cs).
 // GPL-3.0-only. See LICENSE and NOTICE.
-import { after, Clients, nextFrame } from '@s2script/sdk';
+import { after, Clients, nextFrame, SDKHook, SDKHookType, SDKUnhook, Server } from '@s2script/sdk';
 import type { EntityRef } from '@s2script/sdk';
 import { Engine, Ptr } from '@s2script/sdk/unsafe';
 import { CenterHtml, Player, Weapon } from '@s2script/cs2';
@@ -47,11 +47,16 @@ export function resetMapState(): void {
   fadeSeed = 0;
   painted.clear();
   spawned = [];
+  freshKnives.clear();
+  knifeReplaced.clear();
 }
 
 // ---- painted-on-give bookkeeping -----------------------------------------------------------
 
-/** Weapons already painted on creation, so their own spawn apply skips them. */
+/**
+ * Weapons painted in the same call that created them (a give or an equip), so the frame hook's
+ * spawn apply skips them. Cleared by every frame hook run once its batch is handled.
+ */
 const painted = new Set<string>();
 const refKey = (ref: EntityRef): string => `${ref.index}:${ref.id}`;
 
@@ -225,6 +230,7 @@ export function applyWeaponSkin(player: Player, weapon: Weapon, className: strin
     }
     item.itemDefinitionIndex = def;
     item.entityQuality = 3;
+    if (fresh) freshKnives.add(refKey(weapon.ref));
   } else {
     item.entityQuality = 0;
   }
@@ -277,47 +283,168 @@ function weaponPlayer(weapon: Weapon): Player | null {
       const player = Player.fromSlot(slot);
       if (player && player.userId === loadout.userId) return player;
     }
-    return null;
   }
+  // No loaded player with that account (a bot, or not loaded yet): fall back to whoever holds it.
   return weapon.owner?.controller ?? null;
 }
 
-/** Weapons spawned this frame, painted in the post-simulation frame hook. */
-let spawned: { ref: EntityRef; className: string; retried: boolean }[] = [];
+/** Weapons spawned and not painted yet, with the tick they spawned on. */
+let spawned: { ref: EntityRef; className: string; tick: number; retried: boolean }[] = [];
 
 /**
- * OnEntitySpawned for weapon_* classes. The owner is not set yet at spawn, so the weapon is queued
- * and painted by {@link paintSpawnedWeapons} at the end of this frame.
+ * OnEntitySpawned for weapon_* classes. The owner is not set yet at spawn, so the weapon is queued.
+ * A give equips it a moment later in the same call, and {@link onWeaponEquipped} paints it there;
+ * anything else is painted by {@link paintSpawnedWeapons} at the end of the frame.
  */
 export function onWeaponSpawned(ref: EntityRef, className: string): void {
   if (!settings.skinEnabled) return;
-  spawned.push({ ref, className, retried: false });
+  spawned.push({ ref, className, tick: Server.tickCount, retried: false });
 }
 
 /**
- * Post-simulation game frame: paint the weapons spawned this frame. This runs before the frame's
- * snapshot goes out, so the client's first sight of the weapon already has its paint, name and
- * model. Upstream does the same from a GiveNamedItem post hook. Painting a frame later is too late:
- * the client has built the weapon's look by then and keeps the old finish (a new name tag still
- * shows), and a knife changed then is drawn backwards or not at all.
+ * WeaponEquipPost on a pawn: a weapon spawned this tick was just handed to its player. Paint it now,
+ * inside the give, so the client's first sight of it is already painted.
+ *
+ * Painting from the frame hook alone was hit or miss for knives: a give made from a timer (the
+ * Jailbreak spawn knife, a respawn, another plugin's loadout) can run after this tick's frame hook,
+ * so the snapshot went out with the stock knife and the next frame's paint came too late. The
+ * client then kept the stock look, or the old finish on the new model.
+ */
+function onWeaponEquipped(pawnRef: EntityRef, weaponRef: EntityRef | null): void {
+  if (!weaponRef || !settings.skinEnabled) return;
+  const key = refKey(weaponRef);
+  const at = spawned.findIndex(e => refKey(e.ref) === key);
+  if (at < 0) return; // an older weapon picked up from the ground: upstream leaves those as they are
+  const entry = spawned[at]!;
+  if (entry.tick !== Server.tickCount || painted.has(key)) return;
+  const weapon = Weapon.fromEntity(weaponRef);
+  const player = weapon?.isValid() ? weaponPlayer(weapon) ?? pawnPlayer(pawnRef) : null;
+  if (!weapon || !player) return;
+  spawned.splice(at, 1);
+  painted.add(key);
+  if (weaponIsKnife(weapon, entry.className)) debug(`knife equipped: ${entry.className} on slot ${player.slot}, painting now`);
+  applyWeaponSkin(player, weapon, entry.className, true);
+}
+
+function pawnPlayer(pawnRef: EntityRef): Player | null {
+  for (const player of Player.all()) {
+    const pawn = player.pawn;
+    if (pawn && pawn.ref.index === pawnRef.index && pawn.ref.id === pawnRef.id) return player;
+  }
+  return null;
+}
+
+/** Watch a player pawn's equips (OnEntitySpawned "player", player_spawn, plugin start). Never doubles. */
+export function hookPawn(pawn: EntityRef): void {
+  SDKUnhook(pawn, SDKHookType.WeaponEquipPost, onWeaponEquipped);
+  if (!SDKHook(pawn, SDKHookType.WeaponEquipPost, onWeaponEquipped) && !equipWarned) {
+    equipWarned = true;
+    console.log('[WeaponPaints] WeaponEquipPost is unavailable: weapons are painted from the frame hook only');
+  }
+}
+let equipWarned = false;
+
+/** The knife `player` should hold on their team: chosen, not the default, and allowed. */
+function wantedKnife(player: Player): number {
+  const loadout = getLoadout(player.slot);
+  if (!loadout || loadout.userId !== player.userId) return 0;
+  const team = asTeam(player.teamNum);
+  const knife = changedKnife(loadout, team);
+  const def = knife ? defindexOf(knife) : 0;
+  return def !== 0 && mayApply(player, team ?? 0, 'knife', { defindex: def, model: knife }) ? def : 0;
+}
+
+/** Knives painted before the client saw them. Any other knife of a player with a chosen knife is replaced. */
+const freshKnives = new Set<string>();
+/** Per slot: when its knife was last replaced, so a refused or bounced give cannot loop. */
+const knifeReplaced = new Map<number, number>();
+const KNIFE_REPLACE_COOLDOWN_MS = 2000;
+
+/**
+ * Swap a knife the client has already seen for a new one painted at the give. A seen knife cannot
+ * be fixed in place: changing its model draws it invisible or backwards, and a new finish does not
+ * show. The give goes through the pickup gates, so a mode that refuses knives keeps refusing it.
+ */
+function replaceKnife(player: Player, weapon: Weapon, why: string): void {
+  const pawn = player.pawn;
+  if (!pawn?.isValid || !isAlive(player)) return;
+  const owner = weapon.owner;
+  if (!owner || owner.ref.index !== pawn.ref.index || owner.ref.id !== pawn.ref.id) return;
+  const now = Date.now();
+  if (now < (knifeReplaced.get(player.slot) ?? 0) + KNIFE_REPLACE_COOLDOWN_MS) {
+    debug(`knife slot ${player.slot}: ${why}, but it was replaced moments ago; left as is`);
+    return;
+  }
+  knifeReplaced.set(player.slot, now);
+  const wasActive = pawn.activeWeapon?.ref.index === weapon.ref.index;
+  freshKnives.delete(refKey(weapon.ref));
+  pawn.removeWeapon(weapon);
+  const knife = pawn.giveNamedItem('weapon_knife');
+  if (!knife?.isValid()) {
+    debug(`knife slot ${player.slot}: ${why}; the replacement give was refused`);
+    return;
+  }
+  const key = refKey(knife.ref);
+  // Usually the equip hook has painted it already; if not, paint it here, still inside the give.
+  if (!painted.has(key)) {
+    painted.add(key);
+    applyWeaponSkin(player, knife, null, true);
+  }
+  debug(`knife slot ${player.slot}: ${why}; replaced with a freshly painted knife`);
+  if (wasActive) Clients.fromSlot(player.slot)?.command('slot3');
+}
+
+/**
+ * Post-simulation game frame: paint the weapons spawned this tick that no equip painted. This runs
+ * before the tick's snapshot goes out, so the client's first sight of the weapon already has its
+ * paint, name and model. A weapon from an earlier tick has been seen: a gun gets its paint anyway
+ * (upstream's fallback), and a knife that needs a skin is replaced, since a seen knife cannot take one.
  */
 export function paintSpawnedWeapons(): void {
-  if (spawned.length === 0) return;
+  if (spawned.length === 0) {
+    painted.clear();
+    return;
+  }
   const batch = spawned;
   spawned = [];
+  const tick = Server.tickCount;
   for (const entry of batch) {
-    if (painted.delete(refKey(entry.ref))) continue;
+    if (painted.has(refKey(entry.ref))) continue;
     const weapon = Weapon.fromEntity(entry.ref);
     if (!weapon?.isValid()) continue;
     const player = weaponPlayer(weapon);
-    if (weaponIsKnife(weapon, entry.className)) {
+    const fresh = entry.tick === tick;
+    const knife = weaponIsKnife(weapon, entry.className);
+    if (knife) {
       debug(`knife spawned: ${entry.className} defindex ${weaponDefindex(weapon)}, original owner ` +
-        `${weapon.originalOwnerXuidLow ?? 0}, player ${player ? `slot ${player.slot}` : 'not found'}`);
+        `${weapon.originalOwnerXuidLow ?? 0}, player ${player ? `slot ${player.slot}` : 'not found'}, ` +
+        `${fresh ? 'this tick' : `${tick - entry.tick} tick(s) late`}`);
     }
-    if (player) applyWeaponSkin(player, weapon, entry.className, !entry.retried);
-    // Not owned yet (spawned outside a give): look once more next frame, as upstream's fallback does.
-    else if (!entry.retried) spawned.push({ ...entry, retried: true });
+    if (!player) {
+      // Not owned yet (spawned outside a give): look once more next frame, as upstream's fallback does.
+      if (!entry.retried) spawned.push({ ...entry, retried: true });
+      continue;
+    }
+    if (knife && !fresh && wantedKnife(player) !== 0) replaceKnife(player, weapon, 'knife reached the client unpainted');
+    else applyWeaponSkin(player, weapon, entry.className, fresh);
   }
+  painted.clear();
+}
+
+/**
+ * player_spawn, once every spawn give has landed (the Jailbreak spawn knife comes 500 ms in): if the
+ * knife the player holds was not painted before the client saw it, replace it. This also covers a
+ * knife carried over from the last round that lost its look.
+ */
+export function checkSpawnKnife(player: Player): void {
+  const pawn = player.pawn;
+  if (!settings.skinEnabled || !pawn?.isValid || !isAlive(player)) return;
+  const def = wantedKnife(player);
+  if (def === 0) return;
+  const knife = pawn.weapons.find(w => w.isValid() && isKnifeDefindex(weaponDefindex(w)));
+  if (!knife) return;
+  if (weaponDefindex(knife) === def && freshKnives.has(refKey(knife.ref))) return;
+  replaceKnife(player, knife, weaponDefindex(knife) === def ? 'held knife was painted late' : 'held knife has the stock model');
 }
 
 function isAlive(player: Player): boolean {
@@ -377,9 +504,10 @@ export function refreshWeapons(player: Player): void {
       // The engine refuses knife subclasses by name: give the stock knife and change its model
       // now, in the same call, before the client sees it.
       const knife = body.giveNamedItem('weapon_knife');
-      if (knife?.isValid()) {
-        applyWeaponSkin(current, knife, null);
+      // Usually painted by the equip hook inside the give; otherwise here, still in the same call.
+      if (knife?.isValid() && !painted.has(refKey(knife.ref))) {
         painted.add(refKey(knife.ref));
+        applyWeaponSkin(current, knife, null);
       }
       Clients.fromSlot(slot)?.command('slot3');
     }
@@ -387,9 +515,9 @@ export function refreshWeapons(player: Player): void {
       const weapon = body.giveNamedItem(gun.className);
       if (!weapon) continue;
       // Painted now, in the same call as the give, before the client sees it.
-      if (weapon.isValid()) {
-        applyWeaponSkin(current, weapon, null);
+      if (weapon.isValid() && !painted.has(refKey(weapon.ref))) {
         painted.add(refKey(weapon.ref));
+        applyWeaponSkin(current, weapon, null);
       }
       nextFrame().then(() => {
         if (!weapon.isValid()) return;

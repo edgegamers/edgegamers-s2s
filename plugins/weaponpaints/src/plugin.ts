@@ -1,6 +1,6 @@
 // WeaponPaints 3.3a by Nereziel & daffyy, ported to s2script 2026-11-09.
 // GPL-3.0-only. See LICENSE and NOTICE for upstream attribution.
-import { after, Clients, command, createScope, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
+import { after, Clients, command, createScope, Entity, Files, HookResult, nextFrame, publish } from '@s2script/sdk';
 import type { Client, CommandInvocation, EntityRef, HookResultValue } from '@s2script/sdk';
 import { Events, Player } from '@s2script/cs2';
 import skinsEn from '../data/skins_en.json';
@@ -13,7 +13,7 @@ import {
 } from './catalog';
 import { readSettings, type Settings } from './config';
 import {
-  configureApply, countStatTrakKill, giveAgent, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
+  checkSpawnKnife, configureApply, countStatTrakKill, giveAgent, hookPawn, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
   refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
 } from './apply';
 import {
@@ -32,6 +32,8 @@ const catalog: Catalog = {
 const cooldowns = new Map<number, number>();
 let mvpPlayed = false;
 const log = (m: string): void => console.log(`[WeaponPaints] ${m}`);
+/** After player_spawn, once spawn gives have landed (Jailbreak gives a missing knife at 500 ms). */
+const KNIFE_CHECK_MS = 800;
 
 /**
  * Item names in another language: drop upstream's `<kind>_<lang>.json` files into this plugin's
@@ -243,7 +245,13 @@ function registerCommands(): void {
 function registerEvents(): void {
   Events.on('player_spawn', ev => {
     const player = Player.fromSlot(ev.getPlayerSlot('userid'));
+    if (player?.pawn) hookPawn(player.pawn.ref);
     if (!player?.pawn || !getLoadout(player.slot)) return;
+    const knifeSlot = player.slot, knifeUser = player.userId;
+    after(KNIFE_CHECK_MS, () => {
+      const current = Player.fromSlot(knifeSlot);
+      if (current && current.userId === knifeUser) checkSpawnKnife(current);
+    });
     giveMusicKit(player);
     giveAgent(player);
     const slot = player.slot, userId = player.userId;
@@ -309,6 +317,8 @@ export function OnPluginStart(): void {
   registerEvents();
   // After simulation, before the snapshot: new weapons reach the client already painted.
   createScope().server.onGameFrame(paintSpawnedWeapons, { phase: 'post' });
+  // Paint gives inside the give itself (WeaponEquipPost), for pawns that exist already and new ones.
+  for (const pawn of Entity.findByClass('player')) hookPawn(pawn);
   void loadLanguage(settings.skinsLanguage);
   openStore(loadConnected);
 }
@@ -339,5 +349,7 @@ export function OnClientDisconnect(client: Client): void {
 }
 
 export function OnEntitySpawned(entity: EntityRef | null, className: string): void {
-  if (entity && className.startsWith('weapon_')) onWeaponSpawned(entity, className);
+  if (!entity) return;
+  if (className.startsWith('weapon_')) onWeaponSpawned(entity, className);
+  else if (className === 'player') hookPawn(entity);
 }
