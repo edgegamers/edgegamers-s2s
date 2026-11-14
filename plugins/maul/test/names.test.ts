@@ -38,3 +38,16 @@ describe("managed names with optional Decluttr", () => {
     names.enforce(0, "id", 1); expect(next.writes).toEqual([]);
   });
 });
+describe("Steam group tag", () => {
+  it("is cleared on every write for a rank-tagged name only", () => {
+    const p = player(); players = [p]; const cleared: number[] = [];
+    const names = new NameManager(log, undefined, (pl) => { cleared.push(pl.slot); return true; });
+    names.apply(0, "id", "Plain");
+    expect(cleared).toEqual([]);
+    names.apply(0, "id", "[TAG] Plain", true);
+    names.reapplyAll(); // name already matches; the engine may still have restored the clan tag
+    expect(cleared).toEqual([0, 0]);
+    names.forget("id"); names.reapplyAll();
+    expect(cleared).toEqual([0, 0]);
+  });
+});

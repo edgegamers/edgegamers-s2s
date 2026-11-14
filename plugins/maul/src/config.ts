@@ -34,6 +34,8 @@ export interface MaulConfig {
   userAgent: string;
   eventserver: boolean;
   autotag: boolean;
+  /** Clear the Steam group clan tag from players who carry a MAUL rank tag. */
+  stripClanTag: boolean;
   joinMessage: boolean;
   /** `$` in team chat goes to every Dedicated Supporter. */
   dsChat: boolean;
@@ -66,6 +68,7 @@ export function readConfig(): MaulConfig {
     userAgent: config.getString("user_agent").trim(),
     eventserver: config.getBool("eventserver"),
     autotag: config.getBool("autotag"),
+    stripClanTag: config.getBool("strip_clan_tag"),
     joinMessage: config.getBool("join_message"),
     dsChat: config.getBool("ds_chat"),
     leadershipChat: config.getBool("leadership_chat"),
