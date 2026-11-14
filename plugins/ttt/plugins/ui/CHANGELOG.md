@@ -1,5 +1,11 @@
 # @edgegamers/ttt-ui
 
+## 2.0.10
+
+### Patch Changes
+
+- f773a42: Rebuild Bodies and UI against Core 2.2.0. Their 2.0.9 versions were already on the registry from an older build, so the last release skipped them and the server refused them for contract drift. No gameplay change.
+
 ## 2.0.9
 
 ### Patch Changes
