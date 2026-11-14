@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-special",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "type": "module",
   "description": "The existing port's seven special rounds, with owned state and cleanup",
   "main": "src/plugin.ts",
@@ -18,7 +18,7 @@
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
-      "@edgegamers/ttt-core": "^2.2.0"
+      "@edgegamers/ttt-core": "^2.3.0"
     },
     "config": {
       "selection": {
@@ -117,6 +117,6 @@
     "directory": "plugins/ttt/plugins/special"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.1.0"
+    "@edgegamers/ttt-contracts": "1.2.0"
   }
 }

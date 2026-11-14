@@ -1,6 +1,6 @@
 {
   "name": "@edgegamers/ttt-core",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "main": "src/plugin.ts",
   "scripts": {
     "test": "node --test test/*.test.ts",
@@ -198,6 +198,6 @@
     "directory": "plugins/ttt/plugins/core"
   },
   "dependencies": {
-    "@edgegamers/ttt-contracts": "1.1.0"
+    "@edgegamers/ttt-contracts": "1.2.0"
   }
 }
