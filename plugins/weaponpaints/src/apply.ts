@@ -350,8 +350,22 @@ function finishSubclass(key: string, ref: EntityRef, why: string): void {
   const player = Player.fromSlot(entry.slot);
   const weapon = Weapon.fromEntity(ref);
   if (!player || player.userId !== entry.userId || !weapon?.isValid()) return;
-  debug(`knife slot ${entry.slot}: model change landed (${why}), defindex ${weaponDefindex(weapon)}; painting`);
-  applyWeaponSkin(player, weapon, entry.className, true, true);
+  const late = Server.tickCount - entry.tick;
+  debug(`knife slot ${entry.slot}: model change landed (${why}, ${late} tick(s) after queuing), ` +
+    `defindex ${weaponDefindex(weapon)}; painting`);
+  applyWeaponSkin(player, weapon, entry.className, late === 0, true);
+  if (late === 0) return;
+  // The change ran a tick after the give, so the client had already drawn the stock knife and keeps
+  // its stock finish under the new model (the round-start spawn gives after the tick's I/O has run).
+  // Swap it from a timer, the way a reload gives knives, so the give, the model change and the paint
+  // all land in one tick.
+  const slot = entry.slot, userId = entry.userId, weaponRef = ref;
+  after(50, () => {
+    const current = Player.fromSlot(slot);
+    const held = Weapon.fromEntity(weaponRef);
+    if (!current || current.userId !== userId || !held?.isValid()) return;
+    replaceKnife(current, held, 'model change landed after the client saw the knife');
+  });
 }
 
 /** onInput pre-hook for {@link SUBCLASS_SIGNAL} on any entity. Returns true to drop the input. */
