@@ -60,8 +60,9 @@
     "check": "npm run build && npm test",
     "changeset": "changeset",
     "version": "s2s version && npm install --package-lock-only --ignore-scripts",
-    "version-packages": "npm run version && npm run check",
-    "release": "npm run check && npm run deploy",
+    "version-packages": "npm run version && node scripts/release.mjs --check",
+    "release": "node scripts/release.mjs",
+    "release:plan": "node scripts/release.mjs --plan",
     "deploy": "s2s deploy --ci"
   },
   "devDependencies": {

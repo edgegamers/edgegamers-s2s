@@ -65,9 +65,9 @@ Rebuild after editing source JSON to update the embedded English defaults. Nativ
 
 Add a changeset for each changed runtime plugin or shared library. After it reaches `main`, the release workflow creates or updates one **`chore: version packages`** PR from `changeset-release/main`:
 
-1. Applies `s2s version`, refreshes the root lockfile, then builds and tests the resulting versions before updating the PR.
+1. Applies `s2s version`, refreshes the root lockfile, then builds and tests the packages whose new versions are not on the registry yet before updating the PR.
 2. Collects subsequent changesets into the same PR, including generated versions, changelogs and bundle updates.
-3. When you merge the version PR, builds and tests the committed versions, then runs `s2s deploy --ci`, publishing members before their bundles.
+3. When you merge the version PR, builds and tests only the packages whose versions are not on the registry yet, then runs `s2s deploy --ci` on them, publishing members before their bundles. A push with nothing new to publish skips the build entirely.
 
 Leave the version PR open to collect more changes; merge it when the release is ready. Versions are independent. Each bundle advances with its own changed members. Already published versions are skipped, so a failed release can be retried using **Actions → Release → Run workflow** without another version bump. With pending changesets, a manual run updates the version PR instead of publishing.
 
@@ -77,7 +77,7 @@ Add an Actions secret named **`S2SCRIPT_TOKEN`**, using a s2script deploy token 
 
 Enable **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**. The workflow grants the repository token `contents: write` and `pull-requests: write` to maintain the release branch and PR. [PR checks triggered with GitHub's built-in token can require approval](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow), so `version-packages` also runs the build/tests before the bot updates the PR.
 
-For an intentional local release, use `npm run version`, review and commit the generated changes, then `npm run deploy` with your registry credentials. This uploads packages. `npm exec -- s2s deploy --dry-run` inspects the native plan without uploading; registry metadata access may require authentication.
+For an intentional local release, use `npm run version`, review and commit the generated changes, then `npm run deploy` with your registry credentials. This uploads packages. `npm run release:plan` lists what is not on the registry yet without building (set `S2SCRIPT_TOKEN` so restricted packages resolve), and `npm exec -- s2s deploy --dry-run` inspects the native plan without uploading; registry metadata access may require authentication.
 
 Registry releases do not deploy to game servers or publish Workshop content. Follow each product's runtime setup and smoke-test instructions when adopting a new release.
 
