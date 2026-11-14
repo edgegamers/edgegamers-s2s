@@ -1,6 +1,7 @@
 {
   "weaponpaints.chat.prefix": "{blue}WeaponPaints {grey}» ",
   "weaponpaints.info.website": "{grey}Visit {green}{1}{grey} where you can {orange}change skins{grey}",
+  "weaponpaints.web_only": "{grey}Skins are chosen on the website: visit {green}{1}{grey}, then type {blue}!wp{grey} if they do not show",
   "weaponpaints.info.refresh": "{grey}Type {blue}!wp{grey} to {orange}synchronize{grey} chosen skins",
   "weaponpaints.info.knife": "{grey}Type {blue}!knife{grey} to {orange}open{grey} knife menu",
   "weaponpaints.info.glove": "{grey}Type {blue}!gloves{grey} to {orange}open{grey} gloves menu",

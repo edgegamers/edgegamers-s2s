@@ -81,3 +81,20 @@ export function teamWeapons(loadout: Loadout, team: Team): Map<number, WeaponInf
   }
   return weapons;
 }
+
+/**
+ * Keep in-session StatTrak kills a reload would otherwise drop before they reach storage. With
+ * `keepSwitch` (in-game !stattrak) the on/off state carries over too; without it (the portal owns
+ * the switch) the freshly loaded state wins.
+ */
+export function carryStatTrak(from: Loadout | undefined, to: Loadout, keepSwitch: boolean): void {
+  if (!from || from.userId !== to.userId) return;
+  for (const [team, weapons] of from.weapons) {
+    for (const [defindex, old] of weapons) {
+      const next = to.weapons.get(team)?.get(defindex);
+      if (!next) continue;
+      if (old.statTrakCount > next.statTrakCount) next.statTrakCount = old.statTrakCount;
+      if (keepSwitch) next.statTrak = old.statTrak;
+    }
+  }
+}

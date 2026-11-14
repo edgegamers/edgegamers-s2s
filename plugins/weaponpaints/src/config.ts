@@ -72,3 +72,11 @@ export function readSettings(): Settings {
     },
   };
 }
+
+/**
+ * Whether players choose items in game (menus and !stattrak). Off with storage "plugin": the CS
+ * portal is the only place to choose, so everything a player has passed its tier checks.
+ */
+export function inGameSelection(s: Pick<Settings, 'storage'>): boolean {
+  return s.storage !== 'plugin';
+}
