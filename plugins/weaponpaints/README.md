@@ -45,6 +45,14 @@ EdgeGamers servers run this way: the `@edgegamers/s2s-portal` bridge loads and s
 CS portal's HTTPS API with the server's key (edgegamers/s2s-cs-web `docs/skins.md`), so the game
 servers need no database credentials. Look for `[WeaponPaints] storage: plugin` in the log.
 
+With `storage = "plugin"` skins are chosen on the website only. The selection commands (`!skins`,
+`!knife`, `!gloves`, `!agents`, `!music`, `!pin`, `!stattrak` and their aliases) open no menu and
+change nothing: they answer with the `website` link instead, and `!ws` prints only the link and
+`!wp`. `!wp`, `wp_refresh`, `!ws` and `!kill` work as before. A provider therefore only ever
+receives StatTrak kill counts (`OnStoreWrite` kind `stattrak`), and the StatTrak on/off switch is
+whatever the provider supplied: a reload keeps the session's kill counts but takes the loaded
+switch. Set `website` to the portal's skins page (EdgeGamers: `cs.edgegamers.com/skins`).
+
 Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is painted twice.
 
 ## Commands
@@ -57,12 +65,13 @@ Do not run it alongside the CounterStrikeSharp WeaponPaints, or each weapon is p
 | Agent menu | `!agents` | Pick an agent for your current team |
 | Music menu | `!music` | Pick a music kit, or None |
 | Pin menu | `!pin` `!pins` `!coin` `!coins` | Pick a scoreboard pin, or None |
-| StatTrak | `!stattrak` | Toggle StatTrak on the held weapon |
+| StatTrak | `!stattrak` | Toggle StatTrak on the held weapon (database storage only) |
 | Refresh | `!wp` | Reload your selections from storage and re-give your weapons |
 | Info | `!ws` | Print the website and the other commands |
 | Suicide | `!kill` | Kill yourself (to respawn with a new knife) |
 | `wp_refresh <steamid64\|all>` | server console | Refresh one or every player |
 
+The menus and `!stattrak` exist with `storage = "database"` only; see above for `plugin`.
 Selections made while unassigned or spectating apply to both teams; otherwise to your current
 team. Menu commands share a cooldown, and knife, glove, agent, music and pin menus are closed
 between round end and the next round start, as upstream.

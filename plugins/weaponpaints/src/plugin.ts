@@ -11,7 +11,7 @@ import pinsEn from '../data/collectibles_en.json';
 import {
   parseAgents, parseCollectibles, parseGloves, parseSkins, type Catalog,
 } from './catalog';
-import { readSettings, type Settings } from './config';
+import { inGameSelection, readSettings, type Settings } from './config';
 import {
   checkSpawnKnife, configureApply, onSubclassSignal, subclassSignal, countStatTrakKill, giveAgent, hookPawn, giveGloves, giveMusicKit, givePin, onWeaponSpawned, paintSpawnedWeapons,
   refreshWeapons, resetMapState, setCommandsAllowed, statTrakTarget, commandsAllowed,
@@ -21,7 +21,7 @@ import {
 } from './menus';
 import { mayApply, maySelect, setGateHandle } from './gate';
 import { loadPhrases, plainPhrase as phrase, say } from './messages';
-import { asTeam, clearLoadouts, dropLoadout, getLoadout, setLoadout, type Loadout } from './state';
+import { asTeam, carryStatTrak, clearLoadouts, dropLoadout, getLoadout, setLoadout } from './state';
 import { cancelLoad, configureStore, loadPlayer, openStore, saveStatTrak, storeReady, supplyPlayer } from './store';
 
 let settings: Settings;
@@ -62,25 +62,14 @@ async function loadLanguage(language: string): Promise<void> {
 
 // ---- player data -----------------------------------------------------------------------------
 
-/** Keep in-session StatTrak kills a reload would otherwise drop before they reach the database. */
-function carryStatTrak(from: Loadout | undefined, to: Loadout): void {
-  if (!from || from.userId !== to.userId) return;
-  for (const [team, weapons] of from.weapons) {
-    for (const [defindex, old] of weapons) {
-      const next = to.weapons.get(team)?.get(defindex);
-      if (next && old.statTrakCount > next.statTrakCount) next.statTrakCount = old.statTrakCount;
-      if (next) next.statTrak = old.statTrak;
-    }
-  }
-}
-
 function loadClient(client: Client): Promise<boolean> {
   if (client.isBot || client.steamId === '0' || !client.isValid() || !storeReady()) return Promise.resolve(false);
   const { slot, userId, steamId } = client;
   return loadPlayer(slot, steamId, userId, settings).then(loadout => {
     if (!client.isValid()) return false;
     const previous = getLoadout(slot);
-    carryStatTrak(previous, loadout);
+    // With the portal as storage the website owns the StatTrak switch: only kill counts carry over.
+    carryStatTrak(previous, loadout, inGameSelection(settings));
     setLoadout(slot, loadout);
     // Loaded after this player already spawned (a map change, a slow portal): their weapons went
     // out without it, so put it on now instead of waiting for the next spawn.
@@ -177,6 +166,8 @@ function onInfo(cmd: CommandInvocation): HookResultValue {
   const slot = player.slot;
   say(slot, 'weaponpaints.info.website', settings.website);
   say(slot, 'weaponpaints.info.refresh');
+  // Web-only: there are no menus to list.
+  if (!inGameSelection(settings)) return HookResult.Handled;
   if (settings.gloveEnabled) say(slot, 'weaponpaints.info.glove');
   if (settings.agentEnabled) say(slot, 'weaponpaints.info.agent');
   if (settings.musicEnabled) say(slot, 'weaponpaints.info.music');
@@ -196,6 +187,16 @@ function onStatTrak(cmd: CommandInvocation): HookResultValue {
   info.statTrak = !info.statTrak;
   refreshWeapons(player);
   say(player.slot, 'weaponpaints.stattrak.changed');
+  return HookResult.Handled;
+}
+
+/**
+ * A selection command on a server whose skins come from the portal (storage "plugin"): the menus
+ * are off, so nothing chosen in game can get past the website's tier checks. Point to the website.
+ */
+function onWebOnly(cmd: CommandInvocation): HookResultValue {
+  const player = caller(cmd, false, false);
+  if (player) say(player.slot, 'weaponpaints.web_only', settings.website);
   return HookResult.Handled;
 }
 
@@ -235,17 +236,25 @@ function onAdminRefresh(cmd: CommandInvocation): HookResultValue {
 
 function registerCommands(): void {
   const c = settings.commands;
-  for (const name of c.statTrak) command(`sm_${name}`, onStatTrak);
+  const inGame = inGameSelection(settings);
   for (const name of c.skin) command(`sm_${name}`, onInfo);
   for (const name of c.refresh) command(`sm_${name}`, onRefresh);
   if (settings.commandKillEnabled) for (const name of c.kill) command(`sm_${name}`, onKill);
   command.server('wp_refresh', onAdminRefresh);
-  if (settings.knifeEnabled) menuCommand(c.knife, openKnifeMenu);
-  if (settings.skinEnabled) menuCommand(c.skinSelection, openSkinsMenu, false);
-  if (settings.gloveEnabled) menuCommand(c.glove, openGlovesMenu);
-  if (settings.agentEnabled) menuCommand(c.agent, openAgentsMenu);
-  if (settings.musicEnabled) menuCommand(c.music, openMusicMenu);
-  if (settings.pinsEnabled) menuCommand(c.pin, openPinsMenu);
+  const menus: [boolean, string[], (player: Player) => void, boolean][] = [
+    [settings.knifeEnabled, c.knife, openKnifeMenu, true],
+    [settings.skinEnabled, c.skinSelection, openSkinsMenu, false],
+    [settings.gloveEnabled, c.glove, openGlovesMenu, true],
+    [settings.agentEnabled, c.agent, openAgentsMenu, true],
+    [settings.musicEnabled, c.music, openMusicMenu, true],
+    [settings.pinsEnabled, c.pin, openPinsMenu, true],
+  ];
+  for (const [enabled, names, open, needsRoundLive] of menus) {
+    if (!enabled) continue;
+    if (inGame) menuCommand(names, open, needsRoundLive);
+    else for (const name of names) command(`sm_${name}`, onWebOnly);
+  }
+  for (const name of c.statTrak) command(`sm_${name}`, inGame ? onStatTrak : onWebOnly);
 }
 
 // ---- events ----------------------------------------------------------------------------------
