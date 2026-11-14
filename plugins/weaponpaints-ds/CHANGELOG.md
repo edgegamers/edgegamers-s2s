@@ -1,5 +1,11 @@
 # @edgegamers/s2s-weaponpaints-ds
 
+## 0.2.0
+
+### Minor Changes
+
+- 0e7f9a3: Stickers can be gated by tier: WeaponPaints asks `OnApplyRequested` with kind `sticker` for each saved sticker, and weaponpaints-ds gates them (Gold by default). Update weaponpaints-ds before the portal serves a policy with a `sticker` rule: older versions reject the unknown kind and keep their last policy.
+
 ## 0.1.2
 
 ### Patch Changes

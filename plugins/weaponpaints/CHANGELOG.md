@@ -1,5 +1,15 @@
 # @edgegamers/s2s-weaponpaints
 
+## 0.5.0
+
+### Minor Changes
+
+- 0e7f9a3: Stickers can be gated by tier: WeaponPaints asks `OnApplyRequested` with kind `sticker` for each saved sticker, and weaponpaints-ds gates them (Gold by default). Update weaponpaints-ds before the portal serves a policy with a `sticker` rule: older versions reject the unknown kind and keep their last policy.
+
+### Patch Changes
+
+- 2167238: Knife skins apply reliably. A give is now painted inside the give itself (WeaponEquipPost), so a knife handed out from a timer (the Jailbreak spawn knife, a respawn, another plugin's loadout) no longer reaches the client stock. A knife the client saw before it was painted is swapped for a freshly painted one, and shortly after each spawn the held knife is checked and swapped the same way if it was never painted in time. Freshness is now counted in ticks instead of retries.
+
 ## 0.4.0
 
 ### Minor Changes
