@@ -198,17 +198,26 @@ function weaponIsKnife(weapon: Weapon, className: string | null): boolean {
 /**
  * The weapon model the paint needs: legacy skins use body group 1 (UpdateWeaponMeshGroupMask).
  *
- * Set synchronously, in the same tick as the paint. Upstream's AcceptInput("SetBodygroup") runs at
- * once, but s2script's acceptInput is queued and landed a tick later, so the client could build the
- * finish on the wrong mesh first: a legacy skin (Dragon Lore, Case Hardened) then looked scrambled,
- * with the pattern and stickers off. The queued input is only the fallback.
+ * s2script's acceptInput is queued, so the body group lands a tick after the paint (upstream's runs at
+ * once). A client that saw the gun in between built the finish on the wrong mesh and kept it: legacy
+ * skins (Dragon Lore, Case Hardened) came out scrambled. So the gun is hidden from every client until
+ * the input has run; shown again, clients create it afresh with the right mesh and finish.
+ * (The SDK's setBodyGroupByName rendered the finish grey in game, so it is not used.)
  */
 function setLegacyModel(weapon: Weapon, legacy: boolean): void {
-  const group = legacy ? 1 : 0;
-  let done = false;
-  try { done = weapon.ref.setBodyGroupByName('body', group); } catch { done = false; }
-  if (!done) weapon.ref.acceptInput('SetBodygroup', `body,${group}`);
+  const ref = weapon.ref;
+  let hidden = false;
+  try { hidden = Transmit.setVisibleTo(ref, []); } catch { hidden = false; }
+  ref.acceptInput('SetBodygroup', `body,${legacy ? 1 : 0}`);
+  if (!hidden) return;
+  void (async () => {
+    for (let i = 0; i < MODEL_SETTLE_FRAMES; i++) await nextFrame();
+    if (ref.isValid()) Transmit.reset(ref);
+  })();
 }
+
+/** Frames to keep a gun hidden after its queued body group change (it lands one tick later). */
+const MODEL_SETTLE_FRAMES = 3;
 
 function applyStickers(player: Player, team: number, weapon: Weapon, info: WeaponInfo, loadout: Loadout, defindex: number): void {
   info.stickers.forEach((sticker, slot) => {
