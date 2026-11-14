@@ -195,9 +195,19 @@ function weaponIsKnife(weapon: Weapon, className: string | null): boolean {
   return gear === GEAR_SLOT_KNIFE || isKnifeDefindex(weaponDefindex(weapon));
 }
 
-/** The weapon model the paint needs: legacy skins use body group 1 (UpdateWeaponMeshGroupMask). */
+/**
+ * The weapon model the paint needs: legacy skins use body group 1 (UpdateWeaponMeshGroupMask).
+ *
+ * Set synchronously, in the same tick as the paint. Upstream's AcceptInput("SetBodygroup") runs at
+ * once, but s2script's acceptInput is queued and landed a tick later, so the client could build the
+ * finish on the wrong mesh first: a legacy skin (Dragon Lore, Case Hardened) then looked scrambled,
+ * with the pattern and stickers off. The queued input is only the fallback.
+ */
 function setLegacyModel(weapon: Weapon, legacy: boolean): void {
-  weapon.ref.acceptInput('SetBodygroup', `body,${legacy ? 1 : 0}`);
+  const group = legacy ? 1 : 0;
+  let done = false;
+  try { done = weapon.ref.setBodyGroupByName('body', group); } catch { done = false; }
+  if (!done) weapon.ref.acceptInput('SetBodygroup', `body,${group}`);
 }
 
 function applyStickers(player: Player, team: number, weapon: Weapon, info: WeaponInfo, loadout: Loadout, defindex: number): void {
