@@ -167,6 +167,7 @@ A player on the wire is `{ steamId, name, team }` (`team` at that moment: `priso
 | `jb.specialday.start` / `.end` | specialdays forwards | `type`, `name`, `starterSteamId` |
 | `jb.death` | `player_death` (pre hook) | `victim`, `attacker` (null for the world or a suicide), `assister`, `weapon`, `headshot`, `victimRebel`, `attackerRebel` |
 | `jb.hurt` | `player_hurt` | prisoner on guard only: `attacker`, `victim`, `damage` (health), `weapon`, `attackerRebel` |
+| `jb.armory` | position check every 250 ms while the round is live | a prisoner reached the armory (CT spawn), once per prisoner per round and only in normal mode (not special days, LR or last guard): `player`, `rebel`. The armory is the `armory`-tagged zones from `@s2script/zones` when the map has them, else the CT spawn points' outline widened by 128 units at spawn height |
 
 Deaths are read in the pre hook because core clears the victim's rebel mark in its own handler.
 A round end with no start seen (the plugin or core loaded mid-round, or a map change) is not sent.

@@ -95,6 +95,8 @@ export class JbEvents {
   private readonly core: JbCoreView;
   private readonly clients: () => readonly Human[];
   private readonly emit: (event: PortalEvent) => void;
+  /** Prisoners already reported in the armory this round. */
+  private readonly armory = new Set<string>();
 
   constructor(builder: EventBuilder, core: JbCoreView, clients: () => readonly Human[], emit: (event: PortalEvent) => void) {
     this.builder = builder;
@@ -106,6 +108,7 @@ export class JbEvents {
   // ---- core ----
 
   onRoundStart(ev: { round: number }): void {
+    this.armory.clear();
     const all = this.clients();
     this.emit(
       this.builder.startRound("jb.round.start", {
@@ -232,6 +235,25 @@ export class JbEvents {
 
   onMapStart(): void {
     this.builder.reset();
+    this.armory.clear();
+  }
+
+  /**
+   * A prisoner is in the armory (CT spawn). Sent once per prisoner per round, and only in the
+   * normal part of the round: not on a special day, in LR or with a last guard, when prisoners are
+   * put or let in there anyway. The plugin checks positions while the round is live.
+   */
+  onArmory(slot: number): void {
+    if (this.core.getTeam(slot) !== "prisoner" || this.core.getRound().mode !== "normal") return;
+    const player = this.slotPlayer(slot);
+    if (!player || this.armory.has(player.steamId)) return;
+    this.armory.add(player.steamId);
+    this.inRound("jb.armory", { player, rebel: this.rebel(slot) });
+  }
+
+  /** Whether the armory check has anything to do now: a normal-mode round. */
+  get watchesArmory(): boolean {
+    return this.core.getRound().mode === "normal";
   }
 
   // ---- helpers ----

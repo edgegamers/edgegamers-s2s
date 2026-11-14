@@ -131,3 +131,27 @@ test("events after the round end keep its id until the next start; none before t
   jb.onWardenAssigned({ player: ref(3) });
   assert.equal(out.length, 3);
 });
+
+test("jb.armory: once per prisoner per round, only in the normal part of the round", () => {
+  const { clock, jb, out, round, rebels } = setup();
+  jb.onArmory(0); // no round yet: nothing
+  jb.onRoundStart({ round: 1 });
+  clock.mono += 30_000;
+  rebels.add(0);
+  jb.onArmory(0);
+  jb.onArmory(0);
+  jb.onArmory(3); // a guard
+  round.mode = "lastrequest";
+  assert.equal(jb.watchesArmory, false);
+  jb.onArmory(1);
+  const armory = out.filter((e) => e.type === "jb.armory");
+  assert.equal(armory.length, 1);
+  assert.equal(armory[0]!.data.atMs, 30_000);
+  assert.equal(armory[0]!.data.rebel, true);
+  assert.equal((armory[0]!.data.player as { steamId: string }).steamId, "76561198000000000");
+
+  round.mode = "normal";
+  jb.onRoundStart({ round: 2 });
+  jb.onArmory(0);
+  assert.equal(out.filter((e) => e.type === "jb.armory").length, 2);
+});
