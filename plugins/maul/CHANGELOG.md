@@ -1,5 +1,11 @@
 # @edgegamers/s2s-maul
 
+## 0.5.0
+
+### Minor Changes
+
+- 859f3ec: Players with a MAUL rank tag no longer also show their Steam group clan tag. Controlled by the new `strip_clan_tag` option (on by default).
+
 ## 0.4.0
 
 ### Minor Changes
