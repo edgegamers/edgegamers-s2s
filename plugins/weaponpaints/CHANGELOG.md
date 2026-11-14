@@ -1,5 +1,11 @@
 # @edgegamers/s2s-weaponpaints
 
+## 0.6.0
+
+### Minor Changes
+
+- f3bc8ab: Gate weapon charms by tier: WeaponPaints asks `OnApplyRequested` with kind `keychain` before putting a saved charm on a gun, and weaponpaints-ds adds a `keychain` rule (Gold by default).
+
 ## 0.5.1
 
 ### Patch Changes
