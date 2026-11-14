@@ -215,7 +215,11 @@ function applyStickers(player: Player, team: number, weapon: Weapon, info: Weapo
     // Vetoed: the slot stays empty this time; the saved sticker is kept.
     const id = sticker.id !== 0 && !mayApply(player, team, 'sticker', { defindex: sticker.id }) ? 0 : sticker.id;
     weaponAttribute(weapon, `sticker slot ${slot} id`, bitsAsFloat(id));
-    if (sticker.offsetX !== 0 || sticker.offsetY !== 0) weaponAttribute(weapon, `sticker slot ${slot} schema`, 0);
+    // schema picks the StickerMarkup slot whose default spot offset x/y count from, in the
+    // markup's own units. The portal saves offsets from the sticker's own markup slot (slot 0 for
+    // slot 4, as every gun has at least four markup slots), so the same rule here puts the sticker
+    // where its 3D view shows it. Upstream's schema 0 anchored every moved sticker to slot 0.
+    weaponAttribute(weapon, `sticker slot ${slot} schema`, stickerSchema(slot));
     weaponAttribute(weapon, `sticker slot ${slot} offset x`, sticker.offsetX);
     weaponAttribute(weapon, `sticker slot ${slot} offset y`, sticker.offsetY);
     weaponAttribute(weapon, `sticker slot ${slot} wear`, sticker.wear);
@@ -224,6 +228,11 @@ function applyStickers(player: Player, team: number, weapon: Weapon, info: Weapo
   });
   const wear = loadout.tempWear.get(defindex);
   if (wear !== undefined) weapon.fallbackWear = wear;
+}
+
+/** Every gun has at least this many StickerMarkup slots; slot 4 counts from slot 0. */
+export function stickerSchema(slot: number): number {
+  return slot < 4 ? slot : 0;
 }
 
 function applyKeyChain(player: Player, team: number, weapon: Weapon, info: WeaponInfo): void {
