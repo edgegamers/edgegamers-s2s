@@ -149,7 +149,7 @@ A player on the wire is `{ steamId, name, team }` (`team` at that moment: `priso
 
 | Type | From | `data` |
 | --- | --- | --- |
-| `jb.round.start` | core OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans), `bots`, `warmup`, `roster` (players on a team) |
+| `jb.round.start` | core OnRoundStart | `number` (round since map start), `players: { prisoner, guard }` (humans), `bots`, `warmup`, `roster` (players on a team), `armory: true` (this bridge reports `jb.armory`) |
 | `jb.round.live` | core OnRoundLive | (none) |
 | `jb.round.end` | core OnRoundEnd | `number`, `winner` (`prisoner`, `guard`, `none`), `mode` (`normal`, `lastrequest`, `lastguard`, `specialday`), `players`, `bots`, `adminEnded`, `roster`, `durationMs` (start to end), `liveMs` (freeze time end to end, or null) |
 | `jb.mode` | core OnModeChanged | `mode`, `previous` |

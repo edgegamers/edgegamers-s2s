@@ -117,6 +117,8 @@ export class JbEvents {
         bots: this.botCount(all),
         warmup: this.core.getRound().phase === "warmup",
         roster: this.roster(all),
+        // This bridge reports `jb.armory`: the portal tells "nobody reached it" from "not tracked".
+        armory: true,
       }),
     );
   }
