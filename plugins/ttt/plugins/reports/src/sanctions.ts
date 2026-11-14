@@ -21,6 +21,14 @@
 const owed = new Map<string, number>();
 /** Kept only so a queue can be explained in chat/logs after the fact. */
 const names = new Map<string, string>();
+/**
+ * What each conviction still contributes to {@link owed}, oldest first, per SteamID.
+ *
+ * The debt is one pool, but an overturn must take back only ITS conviction's unserved slays. Taking
+ * the report's original count off the pool instead would, once those slays had been served (or cut
+ * by the cap), eat into a later conviction's share. Serving pays off the oldest share first.
+ */
+const shares = new Map<string, { id: number; left: number }[]>();
 
 /** Cap per person. A misclick on the stepper should not exile someone for the map. */
 export const MAX_QUEUED = 10;
@@ -57,13 +65,29 @@ export function guiltyCount(steamId: string): number {
   return guilty.get(steamId) ?? 0;
 }
 
-/** Queue `count` slays. Returns the new total owed. */
-export function queueSlays(steamId: string, name: string, count: number): number {
+/**
+ * Queue `count` slays for conviction `id`. Returns the new total owed. Only what fits under the cap is
+ * recorded as that conviction's share.
+ */
+export function queueSlays(steamId: string, name: string, count: number, id = 0): number {
   if (steamId === "" || count <= 0) return owed.get(steamId) ?? 0;
-  const next = Math.min(MAX_QUEUED, (owed.get(steamId) ?? 0) + count);
+  const prev = owed.get(steamId) ?? 0;
+  const next = Math.min(MAX_QUEUED, prev + count);
   owed.set(steamId, next);
   names.set(steamId, name);
+  if (next > prev) {
+    const list = shares.get(steamId) ?? [];
+    list.push({ id, left: next - prev });
+    shares.set(steamId, list);
+  }
   return next;
+}
+
+/** Drop a whole debt and its shares. */
+function clearDebt(steamId: string): void {
+  owed.delete(steamId);
+  names.delete(steamId);
+  shares.delete(steamId);
 }
 
 export function owedBy(steamId: string): number {
@@ -83,11 +107,34 @@ export function allOwed(): readonly { steamId: string; name: string; slays: numb
   return out;
 }
 
+/**
+ * Take back conviction `id`'s still-unserved share of the debt, and nothing else. Returns how many
+ * slays were removed (a slay already served cannot be undone).
+ */
+export function forgive(steamId: string, id: number): number {
+  const list = shares.get(steamId);
+  const at = list ? list.findIndex((s) => s.id === id) : -1;
+  if (!list || at < 0) return 0;
+  const removed = list[at]!.left;
+  list.splice(at, 1);
+  const left = (owed.get(steamId) ?? 0) - removed;
+  if (left > 0) owed.set(steamId, left);
+  else clearDebt(steamId);
+  return removed;
+}
+
+/** Undo one guilty verdict's step on the escalation ladder (an overturned conviction). */
+export function unrecordGuilty(steamId: string): number {
+  const next = Math.max(0, (guilty.get(steamId) ?? 0) - 1);
+  if (next > 0) guilty.set(steamId, next);
+  else guilty.delete(steamId);
+  return next;
+}
+
 /** Forgive an outstanding sanction. Returns what was cleared. */
 export function pardon(steamId: string): number {
   const had = owed.get(steamId) ?? 0;
-  owed.delete(steamId);
-  names.delete(steamId);
+  clearDebt(steamId);
   return had;
 }
 
@@ -108,8 +155,12 @@ export function serveRoundStart(
     if (debt <= 0) continue;
     if (!slay(slot)) continue;
     const remaining = debt - 1;
-    if (remaining > 0) owed.set(steamId, remaining);
-    else { owed.delete(steamId); names.delete(steamId); }
+    if (remaining > 0) {
+      owed.set(steamId, remaining);
+      // Pay off the oldest conviction's share first.
+      const list = shares.get(steamId);
+      if (list && list.length > 0 && --list[0]!.left <= 0) list.shift();
+    } else clearDebt(steamId);
     served.push({ slot, steamId, remaining });
   }
   return served;
@@ -119,5 +170,6 @@ export function serveRoundStart(
 export function resetSanctions(): void {
   owed.clear();
   names.clear();
+  shares.clear();
   guilty.clear();
 }

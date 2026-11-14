@@ -42,6 +42,7 @@ import { msg, chatMsgFor } from "../core/msgs";
 import { Priority, type EventBus } from "../core/bus";
 import { sharedDamage, type TttEvents } from "../core/events";
 import * as reg from "../core/registry";
+import { noteKill } from "../core/kill-ledger";
 import { checkEndConditions, inProgress } from "../game/game";
 import { roleName, roleNameFor } from "../game/roles";
 import { logDamage, logDeath } from "../game/logger";
@@ -265,11 +266,49 @@ function bump(ms: MatchStats, field: StatField, delta: number): boolean {
  * subtracting a kill the engine never granted would take a real one off the gadget owner's column
  * (the floor in `bumpStat` swallows it) and then hand it back at round end as a kill they never had.
  */
+/** The round-kill counters behind the top-bar kill icons (`player.actionTrackingServices`). */
+interface RoundKillCounters {
+  numRoundKills: number | null;
+  numRoundKillsHeadshots: number | null;
+  notifyChanged(): void;
+}
+
+/**
+ * Take a kill back off the icons under the killer's avatar in the top bar.
+ *
+ * Those icons are `m_iNumRoundKills` / `m_iNumRoundKillsHeadshots`, a separate counter from the
+ * scoreboard columns above, and they told the whole server who had just killed. The C# takes the
+ * kill off the same way (`ActionTrackingServices.NumRoundKills--`, CombatHandler.cs). Nothing is
+ * banked: the engine resets the counter every round, and the scoreboard reveal at round end is
+ * enough. A runtime without `player.actionTrackingServices` (before s2script #325) has no way to
+ * reach the counter, so this does nothing there.
+ */
+function hideRoundKill(killer: number, headshot: boolean): void {
+  const counters = (Player.fromSlot(killer) as { actionTrackingServices?: RoundKillCounters | null } | null)
+    ?.actionTrackingServices;
+  if (!counters) return;
+  let changed = false;
+  const kills = counters.numRoundKills;
+  if (kills !== null && kills > 0) {
+    counters.numRoundKills = kills - 1;
+    changed = true;
+  }
+  if (headshot) {
+    const heads = counters.numRoundKillsHeadshots;
+    if (heads !== null && heads > 0) {
+      counters.numRoundKillsHeadshots = heads - 1;
+      changed = true;
+    }
+  }
+  if (changed) counters.notifyChanged();
+}
+
 function rollbackDeathStats(
   victim: number,
   killer: number,
   assister: number,
   dmgHealth: number,
+  headshot: boolean,
 ): void {
   // Everything below is the raw match-stats path plus the bank that mirrors it. Banking without the
   // matching subtract is worse than doing neither: a probe that only flips to Enabled later in the
@@ -290,6 +329,7 @@ function rollbackDeathStats(
   // happen is one half without the other: gating only the bank quietly destroyed one of the
   // victim's own kills, for good, on every gadget kill and every slay.
   if (killer >= 0 && killer !== victim) {
+    hideRoundKill(killer, headshot);
     bankedKills[killer] = bankedKills[killer]! + 1;
     editStats(killer, (ms) => {
       bump(ms, "kills", -1);
@@ -603,7 +643,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   // UNCONDITIONAL, above the round-state gate — the C# calls `hideAndTrackStats` before its own
   // `State.IN_PROGRESS` early-return because the engine has already written these columns by the
   // time a pre-hook runs, and suppressing the broadcast does not undo them.
-  rollbackDeathStats(victim, engineKiller, assister, ev.getInt("dmg_health"));
+  rollbackDeathStats(victim, engineKiller, assister, ev.getInt("dmg_health"), ev.getBool("headshot"));
 
   // A death OUTSIDE a live round is still a death, and it was leaking the whole feed.
   //
@@ -784,7 +824,9 @@ function handleDeath(
         // turning corpses off entirely removed all three of the ragdoll, the settle and the hide, so
         // it never isolated which one.
         if (cfg.bodySettle) settleBody(corpse);
-        if (cfg.bodyHidePawn) setPawnAlpha(victimSlot, 0);
+        // Never hide a pawn that has already respawned: the reset on spawn ran first and would be
+        // undone, leaving a live player invisible for the rest of the round.
+        if (cfg.bodyHidePawn && !reg.isAlive(victimSlot)) setPawnAlpha(victimSlot, 0);
       }, { slot: victimSlot });
       // Exactly ONE pass, matching the C#'s single `NextWorldUpdate(correctRagdoll)`. Extra passes
       // at +250ms/+700ms were tried and make the corpse convulse: by then the ragdoll is simulating,
@@ -801,6 +843,8 @@ function handleDeath(
     }
   }
 
+  // Before the dispatch: the victim's RDM prompt (Reports) runs inside it and may file at once.
+  noteKill(victim, killer);
   bus.emit("death", { slot: victim, killer, assister, weapon, headshot });
   forwardKill(victim, killer, weapon, headshot);
   checkEndConditions();
@@ -906,8 +950,14 @@ export function onSpawn(slot: number): void {
   clearGadgetKill(slot);
   clearAttributedKills();
   refreshInvulnerability(slot);
-  // A fresh pawn starts opaque — clears the death-hide and any camouflage from last round.
+  // A fresh pawn starts opaque — clears the death-hide and any camouflage from last round. CS2
+  // keeps the same pawn across a respawn, so nothing else undoes an alpha written last round.
+  // Asserted again next PRE frame, once the pawn has left the staging list, in case the engine
+  // drops an input queued on a staged pawn.
   resetPawnColor(slot);
+  nextPreFrame(() => {
+    if (reg.isAlive(slot)) resetPawnColor(slot);
+  }, { slot });
   reg.setAlive(slot, reg.computeAlive(slot));
   // A respawn ends any lingering illusion — they really are alive now. `clearSpoof`, NOT
   // `unspoofAlive`: the latter writes real DEAD state, which on a freshly spawned pawn kills it.

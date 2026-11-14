@@ -11,17 +11,18 @@
  */
 
 import { command } from "@s2script/sdk/commands";
-import { fileReport, pendingReports, reportsAvailable } from "./core/reports-provider";
+import { fileReport, getReport, listConvictions, overturnRuling, pardonSlays, pendingReports, reportsAvailable } from "./core/reports-provider";
 const FileResult={Ok:0,RateLimited:1,SelfReport:2,Duplicate:3,EmptyReason:4} as const;
 const REPORTS_PER_ROUND=3;
 import { answerPending } from "./core/reports-provider";
 import type { CommandInvocation } from "@s2script/sdk/commands";
 import { ADMFLAG, Admin } from "@s2script/sdk/admin";
-import { ChatColors } from "@s2script/cs2";
+import { ChatColors, Player } from "@s2script/cs2";
 import { GameState, MAX_SLOTS, RoleId } from "./core/enums";
 import { cfg } from "./core/cvars";
 import { msg, msgFor, chatMsgFor, replyPhraseFor } from "./core/msgs";
 import * as reg from "./core/registry";
+import { mayReport, reportWindowSeconds } from "./core/kill-ledger";
 import { getHealth, setHealth, teamOf, tell, tellAll } from "./cs2/pawn";
 import { game, inWarmup, startGame, endGame } from "./game/game";
 import { reserveRole, roleName, roleNameFor } from "./game/roles";
@@ -289,7 +290,7 @@ export function registerCommands(): void {
     for (let i = 0; i < active.length; i++) {
       const slot = active[i]!;
       cmd.reply(
-        ((replyPhraseFor(cmd, "ttt.diagnostics.player_role", slot, reg.nameOf(slot), roleNameFor(cmd.callerSlot, reg.roleOf(slot)) || msgFor(cmd.callerSlot, "ttt.common.none")) + replyPhraseFor(cmd, "ttt.diagnostics.player_alive", String(reg.isAlive(slot)), String(reg.computeAlive(slot)))) + replyPhraseFor(cmd, "ttt.diagnostics.player_stats", getHealth(slot), teamOf(slot), balanceOf(slot), karmaOf(slot))),
+        ((replyPhraseFor(cmd, "ttt.diagnostics.player_role", userIdTag(slot), reg.nameOf(slot), roleNameFor(cmd.callerSlot, reg.roleOf(slot)) || msgFor(cmd.callerSlot, "ttt.common.none")) + replyPhraseFor(cmd, "ttt.diagnostics.player_alive", String(reg.isAlive(slot)), String(reg.computeAlive(slot)))) + replyPhraseFor(cmd, "ttt.diagnostics.player_stats", getHealth(slot), teamOf(slot), balanceOf(slot), karmaOf(slot))),
       );
     }
   });
@@ -416,8 +417,14 @@ export function registerCommands(): void {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(slot, "ttt.commands.report_arguments")));
       return;
     }
-    const accused = resolveTarget(targetQuery);
-    if (accused < 0) { cmd.reply(replyPhraseFor(cmd, "ttt.commands.no_target", targetQuery)); return; }
+    const accused = oneTarget(cmd, targetQuery, false);
+    if (accused < 0) return;
+    if (accused === slot) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.self_report")); return; }
+    // RDM reports are the victim's, against whoever killed them, shortly after (kill-ledger.ts).
+    if (!mayReport(slot, accused)) {
+      cmd.reply(replyPhraseFor(cmd, "ttt.reports.killer_only", reportWindowSeconds()));
+      return;
+    }
 
     if(!reportsAvailable()){cmd.reply(replyPhraseFor(cmd, "ttt.reports.unavailable"));return;}
     const { result, report, unavailable } = fileReport(slot, accused, reason);
@@ -460,6 +467,68 @@ export function registerCommands(): void {
     const hud = getTttHud();
     if (!hud) { cmd.reply(replyPhraseFor(cmd, "ttt.hud.unavailable")); return; }
     hud.openRdm(slot);
+  });
+
+  // ── undoing RDM punishments ─────────────────────────────────────────────────
+  // A conviction pressed by mistake, or found wrong later, must be undoable without a map change.
+
+  /** `sm_rdm_convictions` — this map's convictions, newest first, with the report # to overturn. */
+  command.admin("sm_rdm_convictions", ADMFLAG.GENERIC, (cmd) => {
+    if (!reportsAvailable()) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.unavailable")); return; }
+    const rows = listConvictions();
+    if (rows.length === 0) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.no_convictions")); return; }
+    cmd.reply(replyPhraseFor(cmd, "ttt.reports.convictions_header", rows.length));
+    for (const r of rows) {
+      cmd.reply(replyPhraseFor(cmd, "ttt.reports.conviction_entry", r.id, r.accusedName, r.accusedSteamId || msgFor(cmd.callerSlot, "ttt.reports.no_steamid"), r.slays, r.round, r.ruledBy, r.owed));
+    }
+  });
+
+  /**
+   * `sm_rdm_overturn <report#>` — undo one conviction given in error: its slays not yet served are
+   * removed, its step on the escalation ladder is taken back, and the report reads as overturned.
+   */
+  command.admin("sm_rdm_overturn", ADMFLAG.GENERIC, (cmd) => {
+    if (!reportsAvailable()) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.unavailable")); return; }
+    const id = Number.parseInt(cmd.arg(0).replace(/^#/, ""), 10);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.overturn_arguments")));
+      return;
+    }
+    const admin = cmd.callerSlot < 0 ? "Console" : reg.nameOf(cmd.callerSlot);
+    const result = overturnRuling(id, admin);
+    if (result === null) {
+      const report = getReport(id);
+      cmd.reply(report !== null && report.verdict === 1 && report.slays === 0
+        ? replyPhraseFor(cmd, "ttt.reports.overturn_ban", id, report.accusedSteamId)
+        : replyPhraseFor(cmd, "ttt.reports.overturn_not_found", id));
+      return;
+    }
+    const r = result.report;
+    console.log(`[ttt/rdm] #${id} conviction of ${r.accusedName} (${r.accusedSteamId}) overturned by ${admin}; ${result.slaysRemoved} slay(s) removed, ${result.owedNow} still owed`);
+    cmd.reply(replyPhraseFor(cmd, "ttt.reports.overturned", id, result.slaysRemoved, r.accusedName, result.owedNow));
+    tellSanctioned(r.accusedSteamId, "ttt.reports.overturned_notice", result.slaysRemoved);
+  });
+
+  /** `sm_rdm_pardon <target|SteamID64>` — clear every slay a player still owes, online or not. */
+  command.admin("sm_rdm_pardon", ADMFLAG.GENERIC, (cmd) => {
+    if (!reportsAvailable()) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.unavailable")); return; }
+    const arg = cmd.arg(0);
+    if (arg === "") {
+      cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.pardon_arguments")));
+      return;
+    }
+    // A SteamID64 reaches a player who has left; their debt is kept for the rest of the map.
+    const people = /^\d{17}$/.test(arg)
+      ? [{ steamId: arg, name: arg }]
+      : targets(cmd, arg, false).map((slot) => ({ steamId: reg.steamIdOf(slot), name: reg.nameOf(slot) }));
+    const admin = cmd.callerSlot < 0 ? "Console" : reg.nameOf(cmd.callerSlot);
+    for (const p of people) {
+      const removed = pardonSlays(p.steamId);
+      if (removed === 0) { cmd.reply(replyPhraseFor(cmd, "ttt.reports.pardon_none", p.name)); continue; }
+      console.log(`[ttt/rdm] ${removed} pending slay(s) of ${p.name} (${p.steamId}) pardoned by ${admin}`);
+      cmd.reply(replyPhraseFor(cmd, "ttt.reports.pardoned", removed, p.name));
+      tellSanctioned(p.steamId, "ttt.reports.pardoned_notice", removed);
+    }
   });
 
   command("sm_balance", balance);
@@ -567,23 +636,20 @@ export function registerCommands(): void {
         const slot = active[i]!;
         const out = timeoutRemaining(slot);
         cmd.reply(
-          (replyPhraseFor(cmd, "ttt.karma.player_entry", slot, reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
+          (replyPhraseFor(cmd, "ttt.karma.player_entry", userIdTag(slot), reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
         );
       }
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.karma_usage"));
       return;
     }
 
-    const slot = resolveTarget(cmd.arg(0));
-    if (slot < 0) {
-      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
-      return;
-    }
     if (cmd.argCount < 2) {
-      const out = timeoutRemaining(slot);
-      cmd.reply(
-        (replyPhraseFor(cmd, "ttt.karma.player_balance", reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
-      );
+      for (const slot of targets(cmd, cmd.arg(0), false)) {
+        const out = timeoutRemaining(slot);
+        cmd.reply(
+          (replyPhraseFor(cmd, "ttt.karma.player_balance", reg.nameOf(slot), karmaOf(slot)) + (out > 0 ? replyPhraseFor(cmd, "ttt.karma.benched_rounds", out, out === 1 ? "" : msgFor(cmd.callerSlot, "ttt.grammar.plural_suffix")) : "")),
+        );
+      }
       return;
     }
 
@@ -592,10 +658,12 @@ export function registerCommands(): void {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.karma_arguments")));
       return;
     }
-    adminSetKarma(slot, value);
-    cmd.reply(
-      (replyPhraseFor(cmd, "ttt.karma.admin_set", reg.nameOf(slot), karmaOf(slot)) + (timeoutRemaining(slot) === 0 ? replyPhraseFor(cmd, "ttt.karma.timeout_cleared") : "")),
-    );
+    for (const slot of targets(cmd, cmd.arg(0), true)) {
+      adminSetKarma(slot, value);
+      cmd.reply(
+        (replyPhraseFor(cmd, "ttt.karma.admin_set", reg.nameOf(slot), karmaOf(slot)) + (timeoutRemaining(slot) === 0 ? replyPhraseFor(cmd, "ttt.karma.timeout_cleared") : "")),
+      );
+    }
   });
 
   /** `ttt_give <target> <item>` — grant a shop item for free (port of the C# `GiveItemCommand`). */
@@ -605,20 +673,17 @@ export function registerCommands(): void {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.give_usage"));
       return;
     }
-    const slot = resolveTarget(cmd.arg(0));
-    if (slot < 0) {
-      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
-      return;
-    }
     const item = itemById(cmd.arg(1).toLowerCase());
     if (item === undefined) {
       cmd.reply(replyPhraseFor(cmd, "ttt.shop.unknown_item", cmd.arg(1)));
       return;
     }
-    grantShopItem(slot,item.id);
-    cmd.reply(
-      replyPhraseFor(cmd, "ttt.shop.item_given", msgFor(cmd.callerSlot, item.nameKey), reg.nameOf(slot)),
-    );
+    for (const slot of targets(cmd, cmd.arg(0), true)) {
+      grantShopItem(slot,item.id);
+      cmd.reply(
+        replyPhraseFor(cmd, "ttt.shop.item_given", msgFor(cmd.callerSlot, item.nameKey), reg.nameOf(slot)),
+      );
+    }
   });
 
   /**
@@ -694,18 +759,15 @@ export function registerCommands(): void {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.credits_usage"));
       return;
     }
-    const slot = resolveTarget(cmd.arg(0));
-    if (slot < 0) {
-      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
-      return;
-    }
     const want = Number.parseInt(cmd.arg(1), 10);
     if (!Number.isFinite(want) || want < 0) {
       cmd.reply(replyPhraseFor(cmd, "ttt.shop.invalid_credit_amount", cmd.arg(1)));
       return;
     }
-    addBalance(slot, want - balanceOf(slot), "Admin", false);
-    cmd.reply(replyPhraseFor(cmd, "ttt.shop.admin_balance", reg.nameOf(slot), String(balanceOf(slot))));
+    for (const slot of targets(cmd, cmd.arg(0), true)) {
+      addBalance(slot, want - balanceOf(slot), "Admin", false);
+      cmd.reply(replyPhraseFor(cmd, "ttt.shop.admin_balance", reg.nameOf(slot), String(balanceOf(slot))));
+    }
   });
 
   command.admin("sm_ttt_testkill", ADMFLAG.ROOT, (cmd) => {
@@ -713,11 +775,8 @@ export function registerCommands(): void {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.testkill_usage"));
       return;
     }
-    const victim = resolveTarget(cmd.arg(0));
-    if (victim < 0) {
-      cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(0)));
-      return;
-    }
+    const victim = oneTarget(cmd, cmd.arg(0), true);
+    if (victim < 0) return;
     if (!reg.isAlive(victim)) {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.target_already_dead", reg.nameOf(victim)));
       return;
@@ -725,11 +784,8 @@ export function registerCommands(): void {
 
     let killer = -1;
     if (cmd.arg(1) !== "") {
-      killer = resolveTarget(cmd.arg(1));
-      if (killer < 0) {
-        cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", cmd.arg(1)));
-        return;
-      }
+      killer = oneTarget(cmd, cmd.arg(1), false);
+      if (killer < 0) return;
     } else {
       const active = reg.activeSlots();
       for (let i = 0; i < active.length; i++) {
@@ -828,19 +884,20 @@ export function registerCommands(): void {
   // misleading for anything else, which is not a footgun to leave on a generic admin flag. Use
   // `ttt_context` to test map integrations and `ttt_myrole` to reserve a real role for the next deal.
   command.admin("sm_ttt_setrole", ADMFLAG.ROOT, (cmd) => {
-    const slot = cmd.argInt(0, -1);
     const roleName_ = cmd.arg(1).toLowerCase();
     const role =
       roleName_ === "traitor" ? RoleId.Traitor
       : roleName_ === "detective" ? RoleId.Detective
       : roleName_ === "innocent" ? RoleId.Innocent
       : RoleId.None;
-    if (slot < 0 || !reg.isConnected(slot) || role === RoleId.None) {
+    if (cmd.arg(0) === "" || role === RoleId.None) {
       cmd.reply(replyPhraseFor(cmd, "ttt.commands.usage", msgFor(cmd.callerSlot, "ttt.commands.setrole_arguments")));
       return;
     }
-    reg.setRole(slot, role);
-    cmd.reply(replyPhraseFor(cmd, "ttt.role.admin_set", slot, roleNameFor(cmd.callerSlot, role)));
+    for (const slot of targets(cmd, cmd.arg(0), true)) {
+      reg.setRole(slot, role);
+      cmd.reply(replyPhraseFor(cmd, "ttt.role.admin_set", reg.nameOf(slot), roleNameFor(cmd.callerSlot, role)));
+    }
   });
 }
 
@@ -851,28 +908,40 @@ function isAdmin(slot: number): boolean {
 }
 
 /**
- * Resolve an admin command target: a slot number, an exact name, or a unique partial name.
- * Returns -1 when nothing (or more than one thing) matches.
+ * Resolve a SourceMod target string with the runtime's own `Player.target` — `#userid`, an exact
+ * name (else every partial match), `@all`, `@me` — the same resolution the base plugins use. Only
+ * players TTT tracks are kept. With `filterImmunity`, players the caller's admin immunity does not
+ * cover are dropped, as SourceMod does for commands that act on someone. Replies when nothing is left.
  */
-function resolveTarget(query: string): number {
-  if (query === "") return -1;
+function targets(cmd: CommandInvocation, pattern: string, filterImmunity: boolean): number[] {
+  const slots = Player.target(pattern, cmd.callerSlot, filterImmunity)
+    .map((p) => p.slot)
+    .filter((slot) => reg.isConnected(slot));
+  if (slots.length === 0) cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_not_found", pattern));
+  return slots;
+}
 
-  const asSlot = parseInt(query, 10);
-  if (String(asSlot) === query && reg.isConnected(asSlot)) return asSlot;
+/** Tell the player with this SteamID, if they are on the server. */
+function tellSanctioned(steamId: string, key: string, ...args: (string | number)[]): void {
+  if (steamId === "") return;
+  for (const slot of reg.activeSlots()) if (reg.steamIdOf(slot) === steamId) tell(slot, chatMsgFor(slot, key, ...args));
+}
 
-  const active = reg.activeSlots();
-  const lower = query.toLowerCase();
-  for (let i = 0; i < active.length; i++) {
-    if (reg.nameOf(active[i]!).toLowerCase() === lower) return active[i]!;
+/** `#<userid>` for a listing — the form an admin can type straight back into a target argument. */
+function userIdTag(slot: number): string {
+  const id = Player.fromSlot(slot)?.userId;
+  return id === undefined ? `[${slot}]` : `#${id}`;
+}
+
+/** {@link targets} for commands that act on one player: more than one match is refused, not guessed. */
+function oneTarget(cmd: CommandInvocation, pattern: string, filterImmunity: boolean): number {
+  const slots = targets(cmd, pattern, filterImmunity);
+  if (slots.length === 0) return -1;
+  if (slots.length > 1) {
+    cmd.reply(replyPhraseFor(cmd, "ttt.commands.player_ambiguous", pattern, slots.length));
+    return -1;
   }
-  let found = -1;
-  for (let i = 0; i < active.length; i++) {
-    if (reg.nameOf(active[i]!).toLowerCase().includes(lower)) {
-      if (found >= 0) return -1; // ambiguous
-      found = active[i]!;
-    }
-  }
-  return found;
+  return slots[0]!;
 }
 
 /** Find an item by list index, exact name, partial name, then description. */

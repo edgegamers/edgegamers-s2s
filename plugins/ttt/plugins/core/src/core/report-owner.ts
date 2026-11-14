@@ -10,6 +10,7 @@ import {chatMsgFor} from './msgs';
 import {didStrikeFirst} from '../karma/karma';
 import {pawnOf,tell} from '../cs2/pawn';
 import {getTttHud} from '../cs2/ttthud';
+import {killDespiteProtection} from '../cs2/sanction';
 import * as reg from './registry';
 const phrases:readonly ReportPhrase[]=['ttt.reports.prompt_title','ttt.reports.prompt_yes','ttt.reports.prompt_no','ttt.reports.prompt_dismissed','ttt.reports.prompt_context','ttt.reports.prompt_expired','ttt.reports.rate_limited','ttt.reports.duplicate','ttt.reports.file_failed','ttt.reports.filed_against','ttt.reports.admin_new'];
 /** The HUD wording for each chat phrase the player-side report flow can present. */
@@ -49,7 +50,8 @@ export const reportCoreMethods:CoreReportsMethods={
   const binding=reportsBinding();
   if(!binding||!matchesUiActor(actor)||owedBy(actor.steamId)<=0||!matchesUiActor(actor)||!reg.isAlive(actor.slot)||reportsBinding()!==binding)return false;
   const pawn=pawnOf(actor.slot);if(!pawn||!matchesUiActor(actor)||!reg.isAlive(actor.slot)||reportsBinding()!==binding)return false;
-  pawn.slay();return true;
+  // Served during the countdown, when pawns are damage-immune; only a death counts as served.
+  return killDespiteProtection(actor.slot,()=>pawn.slay());
  },
  formatReportPhrase(actor,key,args){return matchesUiActor(actor)&&phrases.includes(key)?chatMsgFor(actor.slot,key,...args):'';},
  tellReportPlayer(actor,text){if(matchesUiActor(actor))tell(actor.slot,text);},

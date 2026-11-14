@@ -1,8 +1,9 @@
 /** Reports owns prompts, verdicts and debt. Core keeps only attachment/capture fences. */
 import type {TypedInterfaceHandle} from '@s2script/sdk/interfaces';
 import type {Contract} from '../../../reports/api.d.ts';
-import type {ReportActor,ReportQueue,ReportView,ReportRuling,ServedSlay} from '../../../../packages/contracts/report-types.ts';
+import type {ReportActor,ReportQueue,ReportView,ReportRuling,ServedSlay,ReportConviction,ReportOverturn} from '../../../../packages/contracts/report-types.ts';
 import {captureUiActor,matchesUiActor} from './ui-actor';
+import {mayReport} from './kill-ledger';
 
 type Attachment={provider:TypedInterfaceHandle<Contract>;binding:number};
 let attachment:Attachment|null=null,nextBinding=0;
@@ -27,6 +28,12 @@ export function getReport(id:number):ReportView|null{
  return attachment===current&&current.binding===binding&&row?copyReport(row):null;
 }
 export function pendingReports():ReportView[]{return getReportQueue().rows.map(copyReport);}
+/** This map's convictions on record, newest first. Empty without a Reports owner. */
+export function listConvictions():ReportConviction[]{const current=attachment;if(!current)return [];const rows=current.provider.listConvictions();return attachment===current?rows.map(row=>({...row})):[];}
+/** Undo a conviction given in error (caller has authorized the admin). Null if there is no such conviction. */
+export function overturnRuling(id:number,admin:string):ReportOverturn|null{const current=attachment;if(!current)return null;const result=current.provider.overturnRuling(id,admin);return attachment===current&&result?{...result,report:copyReport(result.report)}:null;}
+/** Clear every slay `steamId` still owes. Returns how many were removed. */
+export function pardonSlays(steamId:string):number{const current=attachment;if(!current)return 0;const removed=current.provider.pardon(steamId);return attachment===current?removed:0;}
 export function owedBy(steamId:string):number{const current=attachment;if(!current)return 0;const value=current.provider.owedBy(steamId);return attachment===current?value:0;}
 export function fileReport(reporterSlot:number,accusedSlot:number,reason:string){
  const current=attachment,reporter=captureUiActor(reporterSlot),accused=captureUiActor(accusedSlot);
@@ -61,6 +68,8 @@ export function answerPending(slot:number,yes:boolean):boolean{
 export function beginReport(reporterSlot:number,accusedSlot:number):boolean{
  const reporter=captureUiActor(reporterSlot),accused=captureUiActor(accusedSlot),current=attachment;
  if(!reporter||!accused||!current||reporterSlot===accusedSlot)return false;
+ // A report is the victim's, against their killer, within the window (kill-ledger.ts).
+ if(!mayReport(reporterSlot,accusedSlot))return false;
  captureFences.set(reporterSlot,{actor:{...reporter},attachment:current,until:Date.now()/1000+120});
  try{
   const receipt=current.provider.beginReport(reporter,accused);

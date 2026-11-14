@@ -31,6 +31,7 @@ import { AcquireMethod, AcquireResult, type CanAcquireView } from "./acquire";
 import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, wouldRefuseTeam } from "../game/teams";
 import { ROLE_COLORS, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
+import { bindSanctionProtection, isSanctionVictim } from "./sanction";
 import { unspoofAlive } from "./spoof";
 import { game, inProgress, inWarmup } from "../game/game";
 import { roleNameFor } from "../game/roles";
@@ -622,6 +623,12 @@ export function setSelfSpectateHandler(fn: (slot: number) => void): void {
 
 /** Register the body-identification announcement and the round-boundary resets. */
 export function installHandlers(bus: EventBus<TttEvents>): void {
+  bindSanctionProtection({
+    lift: (slot) => setTakesDamage(slot, true),
+    restore: refreshInvulnerability,
+    isAlive: (slot) => reg.computeAlive(slot),
+  });
+
   /**
    * No combat outside a live round — the port of `OutOfRoundCanceler`.
    *
@@ -636,6 +643,8 @@ export function installHandlers(bus: EventBus<TttEvents>): void {
     "damage",
     (ev) => {
       if (inWarmup()) return;
+      // A sanction is a punishment, not combat: it must land during the countdown it is served in.
+      if (isSanctionVictim(ev.slot)) return;
       if (game.state !== GameState.InProgress && game.state !== GameState.Finished) {
         ev.canceled = true;
       }

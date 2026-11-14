@@ -60,10 +60,21 @@ export function setPawnAlpha(slot: number, alpha: number): boolean {
   return setEntityAlpha(pawn.ref, alpha);
 }
 
-/** Restore a pawn to opaque white (round start, respawn). */
+/**
+ * Restore a pawn to opaque white (round start, respawn).
+ *
+ * Gated on liveness only, NOT on `pawn.isValid`. That getter also requires the pawn to be out of
+ * the engine's staging list, and `player_spawn` — this function's main caller — fires while the
+ * respawned pawn is still staged. Behind `setPawnAlpha`'s `isValid` test the restore silently did
+ * nothing: a player hidden at death (`sm_ttt_body_hidepawn`) kept alpha 0 on the same pawn into
+ * every later round, so all anyone saw of them was their gun. The inputs are only queued here (the
+ * engine services them during simulation), so a staged pawn is a safe target.
+ */
 export function resetPawnColor(slot: number): void {
-  setPawnColor(slot, WHITE);
-  setPawnAlpha(slot, 255);
+  const pawn = pawnOf(slot);
+  if (pawn === null || !pawn.ref.isValid()) return;
+  setEntityColor(pawn.ref, WHITE);
+  setEntityAlpha(pawn.ref, 255);
 }
 
 /**

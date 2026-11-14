@@ -46,7 +46,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
   const cf = configFixture([...SPECS, ...CANONICAL_FIELDS]);
   const calls: { operation: string; phase: string }[] = [], logs: string[] = [];
   const frames: { callback(): void; phase: string }[] = [], attachments: { name: string; callback(provider: any, scope: any): void }[] = [];
-  const clients = new Map<number, any>(), players = new Map<number, any>(), eventHandlers = new Map<string, Function[]>();
+  const clients = new Map<number, any>(), players = new Map<number, any>(), eventHandlers = new Map<string, Function[]>(), preHandlers = new Map<string, Function[]>();
   let nativeLookups=0; const mapCallbacks:Function[]=[];
   let phase = 'LOAD', published: any, now = 10, phrases: Record<string, string> = {};
   const translation={onRead:null as ((slot:number,key:string)=>void)|null};
@@ -103,7 +103,7 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
   const noRegistration = () => ({ dispose() {} });
   const eventRegistration = (name: string, callback: Function) => { const handlers = eventHandlers.get(name) ?? []; handlers.push(callback); eventHandlers.set(name, handlers); };
   const scope = {
-    events: { on: eventRegistration, onPre: noRegistration },
+    events: { on: eventRegistration, onPre(name: string, callback: Function) { const handlers = preHandlers.get(name) ?? []; handlers.push(callback); preHandlers.set(name, handlers); return { dispose() {} }; } },
     clients: new Proxy({}, { get: () => noRegistration }), entities: { onCreate: noRegistration },
     server: { onPrecache: noRegistration, onMapStart(callback:Function) {mapCallbacks.push(callback);}, onGameFrame(callback: () => void, opts?: { phase: string }) { frames.push({ callback, phase: opts?.phase ?? 'PRE' }); } },
   };
@@ -144,7 +144,8 @@ function startup({ missing = false, fail = false, handoff = null, actualShop = f
   return { read, calls, logs, retained, world, items, bodies, players, clients, shop, translation, cf, frames, frame, oldWorldEntities, oldItemEntities, oldBodyEntities, published, get nativeLookups(){return nativeLookups;}, map(){for(const callback of mapCallbacks)callback();},
     // Exercise the actual private binder without duplicating the ordered attachment scope.
     rebindShop() { context.testShop=services.shop; return read('bindShopProvider(testShop)'); },
-    event(name: string) { phase = 'EVENT'; for (const handler of eventHandlers.get(name) ?? []) handler({}); } };
+    event(name: string) { phase = 'EVENT'; for (const handler of eventHandlers.get(name) ?? []) handler({}); },
+    preEvent(name: string, ev: any) { phase = 'EVENT'; for (const handler of preHandlers.get(name) ?? []) handler(ev); } };
 }
 
 test('actual Core first PRE retires retained native owners before queued work and preserves map records', () => {
@@ -390,4 +391,17 @@ test('actual generic and stamped native identity callbacks seal same-Steam and b
   client.isValid=function(){const result=valid.call(this);if(!changed){changed=true;f.read(`removePlayer(1);addPlayer(1,${JSON.stringify(actor.steamId)},'Player1');setRole(1,2);setParticipating(1,true);setAlive(1,true);`);}return result;};
   assert.equal(f.published.matchesUiActor(actor,stamped?view.stamp:undefined),false,`${steamId}/${stamped}`);assert.equal(changed,true);
  }
+});
+
+test('actual Core identifies through the inspect_weapon pre-hook on the next PRE frame', () => {
+  const f = startup();
+  f.read('game.state = 2;');
+  f.preEvent('inspect_weapon', { getPlayerSlot: (key: string) => key === 'userid' ? 1 : -1 });
+  assert.ok(!f.calls.some(row => row.operation === 'bodies.inspectIdentify'), 'identification never runs inside the engine FireEvent call');
+  f.read('drainPreFrame()');
+  assert.ok(f.calls.some(row => row.operation === 'bodies.inspectIdentify'), 'the queued inspect reaches the Bodies provider');
+  f.calls.length = 0;
+  f.preEvent('inspect_weapon', { getPlayerSlot: () => -1 });
+  f.read('drainPreFrame()');
+  assert.ok(!f.calls.some(row => row.operation === 'bodies.inspectIdentify'), 'an unresolved inspector queues nothing');
 });

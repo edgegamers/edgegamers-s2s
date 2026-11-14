@@ -76,6 +76,7 @@ export const cfg = {
   roundPerPlayer: 15,
   roundMax: 300,
   afkSeconds: 180,
+  rdmReportWindow: 60,
   showNames: true,
   stripOnAssign: true,
   bodiesEnabled: true,
@@ -102,6 +103,7 @@ function rebuild(): void {
   cfg.roundPerPlayer = n("sm_ttt_round_duration_per_player");
   cfg.roundMax = n("sm_ttt_round_duration_max");
   cfg.afkSeconds = n("sm_ttt_afk_seconds");
+  cfg.rdmReportWindow = n("sm_ttt_rdm_report_window");
   cfg.showNames = b("sm_ttt_show_names");
   cfg.stripOnAssign = b("sm_ttt_strip_on_assign");
   cfg.bodiesEnabled = b("sm_ttt_bodies_enabled");

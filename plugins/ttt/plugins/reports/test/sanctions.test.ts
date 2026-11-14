@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   queueSlays, owedBy, serveRoundStart, pardon, allOwed, resetSanctions, MAX_QUEUED,
-  nextSlays, recordGuilty, guiltyCount,
+  nextSlays, recordGuilty, guiltyCount, forgive, unrecordGuilty,
 } from "../src/sanctions.ts";
 
 const alwaysLands = (): boolean => true;
@@ -116,4 +116,48 @@ test("resetSanctions clears the ladder too", () => {
   resetSanctions();
   assert.equal(guiltyCount(id), 0);
   assert.equal(nextSlays(id), 2);
+});
+
+test("forgive takes back only that conviction's unserved share", () => {
+  resetSanctions();
+  queueSlays("a", "A", 2, 1);
+  queueSlays("a", "A", 4, 2);
+  assert.equal(owedBy("a"), 6);
+  serveRoundStart([{ slot: 0, steamId: "a" }], alwaysLands);
+  assert.equal(owedBy("a"), 5, "the oldest conviction pays first");
+  assert.equal(forgive("a", 1), 1, "conviction 1 had one slay left");
+  assert.equal(owedBy("a"), 4, "conviction 2's four are untouched");
+  assert.equal(forgive("a", 1), 0, "only once");
+  assert.equal(forgive("a", 2), 4);
+  assert.deepEqual(allOwed(), [], "a cleared debt leaves the readout");
+});
+
+test("a fully served conviction forgives nothing, even with a later one queued", () => {
+  resetSanctions();
+  queueSlays("a", "A", 2, 1);
+  serveRoundStart([{ slot: 0, steamId: "a" }], alwaysLands);
+  serveRoundStart([{ slot: 0, steamId: "a" }], alwaysLands);
+  queueSlays("a", "A", 4, 2);
+  assert.equal(forgive("a", 1), 0);
+  assert.equal(owedBy("a"), 4);
+});
+
+test("a conviction cut by the cap only owns what it actually added", () => {
+  resetSanctions();
+  queueSlays("a", "A", MAX_QUEUED - 1, 1);
+  queueSlays("a", "A", 4, 2);
+  assert.equal(owedBy("a"), MAX_QUEUED);
+  assert.equal(forgive("a", 2), 1);
+  assert.equal(owedBy("a"), MAX_QUEUED - 1);
+});
+
+test("unrecordGuilty takes one step back down the escalation ladder, floored at zero", () => {
+  resetSanctions();
+  recordGuilty("a"); recordGuilty("a");
+  assert.equal(nextSlays("a"), 6);
+  assert.equal(unrecordGuilty("a"), 1);
+  assert.equal(nextSlays("a"), 4);
+  assert.equal(unrecordGuilty("a"), 0);
+  assert.equal(unrecordGuilty("a"), 0);
+  assert.equal(guiltyCount("a"), 0);
 });
