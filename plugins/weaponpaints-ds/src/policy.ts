@@ -7,7 +7,7 @@ import type { ItemKind, ItemRef } from "@edgegamers/s2s-weaponpaints";
 export const TIER_NAMES = ["None", "Silver", "Gold", "Platinum", "Royal"] as const;
 export const MAX_TIER = TIER_NAMES.length - 1;
 
-const KINDS: readonly ItemKind[] = ["skin", "knife", "gloves", "agent", "music", "pin", "stattrak", "sticker"];
+const KINDS: readonly ItemKind[] = ["skin", "knife", "gloves", "agent", "music", "pin", "stattrak", "sticker", "keychain"];
 
 /**
  * One rule. `kind` alone covers a whole feature; adding `defindex`, `paint` or `model` narrows it
@@ -39,6 +39,7 @@ export const DEFAULT_POLICY: Policy = {
     { kind: "pin", minTier: 4 },
     { kind: "stattrak", minTier: 4 },
     { kind: "sticker", minTier: 2 },
+    { kind: "keychain", minTier: 2 },
   ],
 };
 
