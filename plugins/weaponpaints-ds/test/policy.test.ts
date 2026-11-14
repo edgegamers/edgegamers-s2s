@@ -115,3 +115,34 @@ test("a knife finish needs the knife tier too, as on the CS portal", () => {
   assert.equal(requiredTier(p, item("stattrak", { defindex: 505 })), 2);
   assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 38 })), 1);
 });
+
+test("knife_finish rules set the finish tier apart from the knife model tier", () => {
+  const p = parsed(JSON.stringify({ rules: [
+    { kind: "skin", minTier: 1 },
+    { kind: "knife", minTier: 1 },
+    { kind: "knife_finish", minTier: 2 },
+    { kind: "knife_finish", defindex: 515, minTier: 3 },
+    { kind: "knife_finish", defindex: 515, paint: 418, minTier: 4 },
+  ] }));
+  // Silver carries a vanilla Butterfly; finishes on knives need Gold, on the Butterfly Platinum.
+  assert.equal(requiredTier(p, item("knife", { defindex: 515, model: "weapon_knife_butterfly" })), 1);
+  assert.equal(requiredTier(p, item("skin", { defindex: 505, paint: 38 })), 2);
+  assert.equal(requiredTier(p, item("skin", { defindex: 515, paint: 38 })), 3);
+  assert.equal(requiredTier(p, item("skin", { defindex: 515, paint: 418 })), 4);
+  // Guns and StatTrak are untouched by knife_finish.
+  assert.equal(requiredTier(p, item("skin", { defindex: 7, paint: 38 })), 1);
+  assert.equal(requiredTier(p, item("stattrak", { defindex: 505 })), 1);
+});
+
+test("a knife finish still needs the knife model, even when the finish tier is lower", () => {
+  const p = parsed(JSON.stringify({ rules: [
+    { kind: "knife", minTier: 3 },
+    { kind: "knife_finish", minTier: 1 },
+  ] }));
+  assert.equal(requiredTier(p, item("skin", { defindex: 507, paint: 38 })), 3);
+});
+
+test("a knife_finish rule may not name a model", () => {
+  const r = parsePolicy(JSON.stringify({ rules: [{ kind: "knife_finish", model: "weapon_knife_flip", minTier: 2 }] }));
+  assert.equal(r.ok, false);
+});

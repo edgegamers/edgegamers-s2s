@@ -48,22 +48,28 @@ the error is logged and the last good policy stays in force. The portal serves t
   "defaultTier": 0,
   "rules": [
     { "kind": "skin", "minTier": "Silver" },
-    { "kind": "knife", "minTier": "Gold" },
+    { "kind": "knife", "minTier": "Silver" },
+    { "kind": "knife_finish", "minTier": "Gold" },
     { "kind": "gloves", "minTier": "Platinum" },
     { "kind": "skin", "defindex": 9, "paint": 344, "minTier": "Royal" }
   ]
 }
 ```
 
-- `kind`: `skin`, `knife`, `gloves`, `agent`, `music`, `pin`, `stattrak`, `sticker` (`defindex`
+- `kind`: `skin`, `knife` (carrying a knife model in its default finish), `knife_finish` (a finish
+  on a knife; optional `defindex` = knife, `paint` = finish, no `model`), `gloves`, `agent`, `music`, `pin`, `stattrak`, `sticker` (`defindex`
   is the sticker kit id; a locked sticker is left off the gun, the saved one is kept) or `keychain`
   (a charm; `defindex` is the keychain definition id, and a locked charm is left off the same way).
 - `minTier`: `0`-`4` or `None`, `Silver`, `Gold`, `Platinum`, `Royal`.
 - Optional `defindex`, `paint` and `model` narrow a rule to one weapon, finish, knife class or
   agent model (as described in WeaponPaints' `api.d.ts`). The most specific matching rule wins;
-  equally specific rules take the highest tier.
+  equally specific rules take the highest tier. A `knife_finish` rule counts as one step more
+  specific than the same rule as `skin`, so it beats the catch-all `skin` rule for knives.
+- A finish or StatTrak on a knife also needs the knife model's tier: it takes the higher of its own
+  rule and the `knife` rule for that model. With the example above, Silver can carry a vanilla
+  Butterfly and Gold can put a finish on it.
 - `defaultTier` covers anything no rule matches.
 
 The shipped default reads every open cell of the design review's tier matrix as locked: skins
-Silver, knives Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal; stickers and charms are Gold. The portal
+Silver, knives and knife finishes Gold, gloves Platinum, and agents, music kits, pins and StatTrak Royal; stickers and charms are Gold. The portal
 starts from the same values until an admin changes them.

@@ -7,14 +7,24 @@ import type { ItemKind, ItemRef } from "@edgegamers/s2s-weaponpaints";
 export const TIER_NAMES = ["None", "Silver", "Gold", "Platinum", "Royal"] as const;
 export const MAX_TIER = TIER_NAMES.length - 1;
 
-const KINDS: readonly ItemKind[] = ["skin", "knife", "gloves", "agent", "music", "pin", "stattrak", "sticker", "keychain"];
+const ITEM_KINDS: readonly ItemKind[] = ["skin", "knife", "gloves", "agent", "music", "pin", "stattrak", "sticker", "keychain"];
+
+/**
+ * What a rule can cover: every WeaponPaints item kind, plus `knife_finish`. WeaponPaints asks
+ * about a finish on a knife as a `skin` on the knife's defindex; a `knife_finish` rule (optionally
+ * narrowed by `defindex` = knife and `paint` = finish) matches only those, so finishes on knives
+ * get their own tier apart from the `knife` rule, which covers carrying the knife model in its
+ * default (vanilla) finish.
+ */
+export type RuleKind = ItemKind | "knife_finish";
+const KINDS: readonly RuleKind[] = [...ITEM_KINDS, "knife_finish"];
 
 /**
  * One rule. `kind` alone covers a whole feature; adding `defindex`, `paint` or `model` narrows it
  * to one weapon, one finish or one model. The most specific matching rule wins.
  */
 export interface Rule {
-  kind: ItemKind;
+  kind: RuleKind;
   defindex?: number;
   paint?: number;
   model?: string;
@@ -33,6 +43,7 @@ export const DEFAULT_POLICY: Policy = {
   rules: [
     { kind: "skin", minTier: 1 },
     { kind: "knife", minTier: 2 },
+    { kind: "knife_finish", minTier: 2 },
     { kind: "gloves", minTier: 3 },
     { kind: "agent", minTier: 4 },
     { kind: "music", minTier: 4 },
@@ -73,12 +84,12 @@ export function parsePolicy(text: string): { ok: true; policy: Policy } | { ok: 
   for (const [i, r] of raw.rules.entries()) {
     const where = `rules[${String(i)}]`;
     if (!isObject(r)) return { ok: false, error: `${where} must be an object` };
-    if (!KINDS.includes(r.kind as ItemKind)) {
+    if (!KINDS.includes(r.kind as RuleKind)) {
       return { ok: false, error: `${where}.kind ${JSON.stringify(r.kind)} is not one of ${KINDS.join(", ")}` };
     }
     const minTier = parseTier(r.minTier);
     if (minTier === null) return { ok: false, error: `${where}.minTier ${JSON.stringify(r.minTier)} is not a tier` };
-    const rule: Rule = { kind: r.kind as ItemKind, minTier };
+    const rule: Rule = { kind: r.kind as RuleKind, minTier };
     for (const key of ["defindex", "paint"] as const) {
       if (r[key] === undefined) continue;
       const n = r[key];
@@ -88,6 +99,7 @@ export function parsePolicy(text: string): { ok: true; policy: Policy } | { ok: 
       rule[key] = n;
     }
     if (r.model !== undefined) {
+      if (rule.kind === "knife_finish") return { ok: false, error: `${where}.model: a knife_finish rule names its knife by defindex` };
       if (typeof r.model !== "string" || r.model === "") return { ok: false, error: `${where}.model must be a non-empty string` };
       rule.model = r.model;
     }
@@ -95,16 +107,6 @@ export function parsePolicy(text: string): { ok: true; policy: Policy } | { ok: 
   }
   return { ok: true, policy: { defaultTier, rules } };
 }
-
-function matches(rule: Rule, item: ItemRef): boolean {
-  return rule.kind === item.kind &&
-    (rule.defindex === undefined || rule.defindex === item.defindex) &&
-    (rule.paint === undefined || rule.paint === item.paint) &&
-    (rule.model === undefined || rule.model === item.model);
-}
-
-const specificity = (rule: Rule): number =>
-  (rule.defindex === undefined ? 0 : 1) + (rule.paint === undefined ? 0 : 1) + (rule.model === undefined ? 0 : 1);
 
 /** Knife definition index -> weapon class (WeaponPaints' knife model names). */
 const KNIFE_CLASSES: ReadonlyMap<number, string> = new Map([
@@ -115,6 +117,21 @@ const KNIFE_CLASSES: ReadonlyMap<number, string> = new Map([
   [520, "weapon_knife_gypsy_jackknife"], [521, "weapon_knife_outdoor"], [522, "weapon_knife_stiletto"],
   [523, "weapon_knife_widowmaker"], [525, "weapon_knife_skeleton"], [526, "weapon_knife_kukri"],
 ]);
+
+function matches(rule: Rule, item: ItemRef): boolean {
+  const kind = rule.kind === "knife_finish"
+    ? item.kind === "skin" && KNIFE_CLASSES.has(item.defindex)
+    : rule.kind === item.kind;
+  return kind &&
+    (rule.defindex === undefined || rule.defindex === item.defindex) &&
+    (rule.paint === undefined || rule.paint === item.paint) &&
+    (rule.model === undefined || rule.model === item.model);
+}
+
+// A knife_finish rule counts one extra: it is a skin rule already narrowed to knives, so it beats
+// the catch-all skin rule.
+const specificity = (rule: Rule): number =>
+  (rule.kind === "knife_finish" ? 1 : 0) + (rule.defindex === undefined ? 0 : 1) + (rule.paint === undefined ? 0 : 1) + (rule.model === undefined ? 0 : 1);
 
 /** The best rule for `item` alone: most specific, then strictest; `defaultTier` when none match. */
 function ruleTier(policy: Policy, item: ItemRef): number {
@@ -130,8 +147,9 @@ function ruleTier(policy: Policy, item: ItemRef): number {
 
 /**
  * The tier that unlocks `item`: the most specific matching rule; among equally specific ones, the
- * strictest. No match uses `defaultTier`. A knife's finish or StatTrak also needs the knife itself
- * (the higher of the two), as the tier matrix puts knives above weapon skins. The CS portal
+ * strictest. No match uses `defaultTier`. A finish on a knife is matched by `knife_finish` rules
+ * (more specific than the catch-all `skin` rule). A knife's finish or StatTrak also needs the knife
+ * model itself (the higher of the two): a finish is useless without the knife. The CS portal
  * (edgegamers/s2s-cs-web src/lib/skins/policy.ts) decides the same way.
  */
 export function requiredTier(policy: Policy, item: ItemRef): number {
