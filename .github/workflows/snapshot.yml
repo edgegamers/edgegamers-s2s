@@ -1,0 +1,51 @@
+name: Snapshot
+
+# Every push to a pull request publishes a development snapshot of the packages
+# it changes, as 0.0.0-dev.<run>.pr<number>.g<sha>. Stable versions always sort
+# above those, so they never become latest, never match a ^ range and are never
+# auto-updated to. Install one by exact version to test it. Stable releases stay
+# with release.yml on main.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snapshot-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    # Forks get no registry token, and the version PR only carries stable versions.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm install --global npm@11.19.0
+      - run: npm ci
+      # The snapshot edits stay in this checkout and are never committed.
+      - name: Version snapshot
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          since=$(git merge-base "$BASE_SHA" HEAD)
+          npx s2s version --snapshot "dev.${GITHUB_RUN_NUMBER}.pr${PR}.g${HEAD_SHA:0:12}" \
+            --since "$since" --output "$RUNNER_TEMP/snapshot.json"
+      - name: Build and publish
+        run: node scripts/snapshot.mjs "$RUNNER_TEMP/snapshot.json"
+        env:
+          S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
