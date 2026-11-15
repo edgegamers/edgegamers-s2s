@@ -47,7 +47,7 @@ export function fixture(code,existingConfig=null){
  if(name==='@s2script/sdk/plugin')return {use:()=>core,publish:(id,m)=>{assert.equal(id,'@edgegamers/ttt-bodies');methods=m;}};
  if(name==='@s2script/sdk/clients')return {Clients:{fromSlot:s=>clients.get(s)??null}};
  if(name==='@s2script/sdk/server')return {Server:server};
- if(name==='@s2script/sdk/entity')return {EntityRef,Entity:{findByClass:()=>props.slice()},createEntity:classname=>{if(faults.create)return null;const e=ref();entities.push(e);ops.push(['create',e.index,classname]);faults.onCreate?.(e);return e;}};
+ if(name==='@s2script/sdk/entity')return {EntityRef,Entity:{findByClass:c=>props.filter(p=>(p.cls??'prop_physics_multiplayer')===c)},createEntity:classname=>{if(faults.create)return null;const e=ref();entities.push(e);ops.push(['create',e.index,classname]);faults.onCreate?.(e);return e;}};
  if(name==='@s2script/sdk/trace')return {Trace:{line:()=>trace},TraceMask:{ShotPhysics:3,WorldOnly:1}};
  if(name==='@s2script/sdk/math')return {Vector,forwardVector:a=>{const p=a.x*Math.PI/180,y=a.y*Math.PI/180;return new Vector(Math.cos(p)*Math.cos(y),Math.cos(p)*Math.sin(y),-Math.sin(p));}};
  if(name==='@s2script/cs2')return {Player:sdkPlayer,Pawn:sdkPawn,wrapEntity:(kind,e)=>{ops.push(['wrap',kind,e.index]);return native.get(e.index).fields??={collision:{collisionAttribute:{}}};},Beam:{draw:(start,end,opts)=>{ops.push(['beam',copy(start),copy(end),copy(opts)]);return {update:(a,b)=>ops.push(['beamUpdate',copy(a),copy(b)]),remove:()=>ops.push(['beamRemove'])};}}};
