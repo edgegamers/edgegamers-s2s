@@ -76,15 +76,35 @@ const holdDistance = new Float32Array(MAX_SLOTS);
 const usePressed = new Uint8Array(MAX_SLOTS);
 
 /**
- * Entity indices of this round's `prop_physics_multiplayer` props — the port of `onStartUse`'s
- * `TryGetHitEntityByDesignerName("prop_physics_multiplayer")` test.
+ * Entity indices of this round's carryable physics props — the port of `onStartUse`'s
+ * `TryGetHitEntityByDesignerName("prop_physics_multiplayer")` test, widened to every physics prop
+ * class a CS2 map places.
+ *
+ * The C# only took `prop_physics_multiplayer`, the class CS:GO maps used for loose props. CS2 maps
+ * place most of theirs as `prop_physics` (or `prop_physics_override`), so the C# filter alone leaves
+ * almost nothing to pick up. Static props are not entities at all and `prop_dynamic` has no physics
+ * to hand back, so neither is listed.
  *
  * `EntityRef` exposes no classname, so the designer-name filter has to be turned inside out: the
- * class is resolved once, in bulk, and the trace hit is then a set membership test. Rebuilt at the
- * IN_PROGRESS transition rather than on map start because the engine's round restart re-creates
- * map-placed entities, and never per trace — `tryPickup` runs every frame a player holds USE.
+ * classes are resolved in bulk, and the trace hit is then a set membership test. Built at the
+ * IN_PROGRESS transition because the engine's round restart re-creates map-placed entities, and
+ * rebuilt (throttled) when a trace lands on an entity it does not know — a prop the map spawns
+ * mid-round, or one created after the snapshot. Never per trace: `tryPickup` runs every frame a
+ * player holds USE.
  */
 const physicsProps = new Map<number,EntityRef>();
+/** Every physics prop class a player may carry. */
+const PHYSICS_PROP_CLASSES = ["prop_physics_multiplayer", "prop_physics", "prop_physics_override"];
+/**
+ * Targetname prefix of the entities TTT spawns itself. A health station is a
+ * `prop_physics_override` whose position the station logic caches, so carrying it would split the
+ * prop from its own heal radius and hit box.
+ */
+const OWN_ENTITY_PREFIX = "ttt_";
+/** Minimum game-time seconds between two rebuilds of {@link physicsProps} on a trace miss. */
+const REINDEX_INTERVAL = 1;
+/** Game time of the last rebuild, or -Infinity when none has run this round. */
+let indexedAt = -Infinity;
 
 let bus: DomainBus;
 
@@ -125,8 +145,24 @@ export function initInteract(eventBus: DomainBus): void {
 /** Snapshot the round's carryable physics props. See {@link physicsProps}. */
 function indexPhysicsProps(): void {
   physicsProps.clear();
-  const props = Entity.findByClass("prop_physics_multiplayer");
-  for (let i = 0; i < props.length; i++) physicsProps.set(props[i]!.index,props[i]!);
+  indexedAt = Server.gameTime;
+  for (const cls of PHYSICS_PROP_CLASSES) {
+    const props = Entity.findByClass(cls);
+    for (let i = 0; i < props.length; i++) {
+      const prop = props[i]!;
+      if (prop.name?.startsWith(OWN_ENTITY_PREFIX)) continue;
+      physicsProps.set(prop.index, prop);
+    }
+  }
+}
+
+/** Whether `entity` is one of the round's carryable physics props. */
+function isPhysicsProp(entity: EntityRef): boolean {
+  if (physicsProps.get(entity.index)?.id === entity.id) return true;
+  // Index 0 is the world: looking at a wall is the common case and never a prop.
+  if (entity.index === 0 || Server.gameTime - indexedAt < REINDEX_INTERVAL) return false;
+  indexPhysicsProps();
+  return physicsProps.get(entity.index)?.id === entity.id;
 }
 
 /**
@@ -366,7 +402,8 @@ function identify(slot: number, body: Body, canCarry: boolean): void {
  *
  * `onStartUse` resolved its trace hit through `TryGetHitEntityByDesignerName("prop_ragdoll")` and
  * then `("prop_physics_multiplayer")` and bailed on `hitEntity == null` — nothing else in the world
- * was ever pickable. That filter is reproduced here rather than trusting the trace: without it,
+ * was ever pickable. That filter is reproduced here (widened to CS2's physics prop classes, see
+ * {@link physicsProps}) rather than trusting the trace: without it,
  * standing within 200u of another player with USE held DisableMotion's their pawn, strings a beam to
  * it and teleports them in front of you every frame, and the same goes for a func_ brush, a dropped
  * weapon or a hostage.
@@ -390,7 +427,7 @@ function tryPickup(slot: number): void {
       beginCarry(slot, corpse.ref, Math.min(MAX_HOLD, Math.max(MIN_HOLD, Math.sqrt(dx * dx + dy * dy + dz * dz))), at);
       return;
     }
-    if (corpse !== undefined || physicsProps.get(index)?.id===hit.entity.id) {
+    if (corpse !== undefined || isPhysicsProp(hit.entity)) {
       const dx = hit.endPos.x - origin.x;
       const dy = hit.endPos.y - origin.y;
       const dz = hit.endPos.z - origin.z;
@@ -607,4 +644,5 @@ export function resetInteract(): void {
   // Entity indices are recycled, so a snapshot must not outlive the round it was taken in — it is
   // rebuilt at the next IN_PROGRESS transition, which is the only state `tryPickup` reads it from.
   physicsProps.clear();
+  indexedAt = -Infinity;
 }
