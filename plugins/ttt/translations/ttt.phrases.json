@@ -163,6 +163,7 @@
   "ttt.special.rich_description": "{green} RICH{grey}: All players start with extra credits!{grey}",
   "ttt.special.low_gravity_description": "{green} LOW GRAVITY{grey}: Players can jump higher and fall slower!{grey}",
   "ttt.special.vanilla_reminder": "{blue}SHOP {grey}» {grey}{red}This is a {green}Vanilla{red} round. The shop is disabled.{grey}",
+  "ttt.special.pistol_reminder": "{blue}SHOP {grey}» {grey}{red}This is a {green}Pistol{red} round. Only pistols are allowed.{grey}",
   "ttt.diagnostics.game_state": "{darkred}T{red}T{lightred}T {grey}» {grey}state={green}{1}{grey} players={yellow}{2}{grey}/{yellow}{3}{grey} {grey}",
   "ttt.diagnostics.round_counts": "{grey}warmup={green}{1}{grey} participants={yellow}{2}{grey} roundsThisMap={yellow}{3}{grey}",
   "ttt.diagnostics.innocent_count": "{darkred}T{red}T{lightred}T {grey}» {grey}alive: {green}innocent{grey}={yellow}{1}{grey} {grey}",
