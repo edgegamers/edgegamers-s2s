@@ -72,7 +72,39 @@ export const RIFLES: ReadonlySet<string> = new Set([
   ...ASSAULT, ...SNIPERS, ...SHOTGUNS, ...SMGS, ...HEAVY,
 ]);
 
-/** Gear slot indices, matching the C# `gear_slot_t` mapping. */
+/**
+ * Item-definition indices of every primary weapon: rifles, snipers, SMGs, shotguns and heavies.
+ *
+ * This is what the Pistol round refuses. It is an explicit list rather than "not a pistol" so the
+ * taser, healthshot, shield and other gear stay allowed, as they were under the C# `CanAcquire` hook.
+ */
+const PRIMARY_DEFS: ReadonlySet<number> = new Set([
+  7, 8, 9, 10, 11, 13, 14, 16, 17, 19, 23, 24, 25, 26, 27, 28, 29, 33, 34, 35, 38, 39, 40, 60,
+]);
+
+/** Is this item-definition index a primary weapon? */
+export function isPrimaryDef(def: number): boolean {
+  return PRIMARY_DEFS.has(def);
+}
+
+/**
+ * Remove every primary weapon this player holds, by definition index. Returns how many went.
+ *
+ * Used by the Pistol round instead of {@link clearSlot}, whose by-index classification treats any
+ * unlisted definition (the taser, the healthshot) as a primary.
+ */
+export function removePrimaries(slot: number): number {
+  const pawn = pawnOf(slot);
+  if (pawn === null || !pawn.isValid) return 0;
+  let removed = 0;
+  const held = pawn.weapons as HeldWeapon[];
+  for (let i = 0; i < held.length; i++) {
+    const w = held[i]!;
+    if (PRIMARY_DEFS.has(weaponDef(w)) && pawn.removeWeapon(w)) removed++;
+  }
+  return removed;
+}
+
 /**
  * INTERNAL classification only — these are NOT the game's `gear_slot_t` values.
  *

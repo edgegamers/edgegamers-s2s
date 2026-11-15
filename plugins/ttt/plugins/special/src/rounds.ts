@@ -7,18 +7,21 @@
  * with `apply`/`clear` callbacks and a weight; the picker walks a small static array.
  *
  * Two rounds needed engine hooks the C# reached through CounterStrikeSharp internals:
- *   - **Pistol** hooked `CCSPlayer_ItemServices::CanAcquire` to refuse rifles. There is no vfunc
- *     hooking here, so it strips rifles on purchase/pickup instead — same outcome, one frame later.
+ *   - **Pistol** hooked `CCSPlayer_ItemServices::CanAcquire` to refuse rifles. The same gate is
+ *     registered here (`items.onCanAcquire`, which also covers `giveNamedItem`), plus
+ *     `weapons.onCanUse` for guns lying on the ground, primary shop items are refused before they are
+ *     charged, and a per-tick sweep removes anything that still got through.
  *   - **Suppressed** hooked user message 452 to drop pistol fire sounds. `UserMessages.onPre` does
  *     exactly this, by name.
  */
 
 import { Server } from "@s2script/sdk/server";
-import { GameRules } from "@s2script/cs2";
+import { GameRules, items, weapons } from "@s2script/cs2";
+import { HookResult } from "@s2script/sdk";
 import type { DomainBus } from "../../../packages/contracts/ordered.ts";
 import { GameState, RoleId, Priority, n, msg, msgFor, reg, tell, tellAll, game,
   setRoundDeadline, addBalance, balanceOf, setSuppressPistols, chatMsgFor, forwardSpecialRoundStarted } from "./runtime";
-import { clearSlot, GearSlot, RIFLES, heldWeapons, weaponClass } from "./inventory";
+import { RIFLES, heldWeapons, isPrimaryDef, removePrimaries, weaponDef } from "./inventory";
 
 /** A special round definition. */
 interface SpecialRound {
@@ -102,7 +105,7 @@ const ROUNDS: readonly SpecialRound[] = [
     weight: 0.75,
     apply() {
       const active = reg.activeSlots();
-      for (let i = 0; i < active.length; i++) clearSlot(active[i]!, GearSlot.Rifle);
+      for (let i = 0; i < active.length; i++) removePrimaries(active[i]!);
     },
   },
   {
@@ -166,6 +169,42 @@ const ROUNDS: readonly SpecialRound[] = [
 ];
 
 const RICH_BONUS = "Rich Round Bonus";
+
+/** Shop items that hand out a primary weapon, refused during a Pistol round before they are charged. */
+const PRIMARY_SHOP_ITEMS: ReadonlySet<string> = new Set(["m4a1", "silentawp"]);
+
+/** Is this weapon definition refused right now? */
+function refusesWeapon(def: number): boolean {
+  return isActive("pistol") && isPrimaryDef(def);
+}
+
+/** `AcquireResult.NotAllowedByProhibited`. `@s2script/cs2` declares the enum but does not export it at runtime. */
+const ACQUIRE_PROHIBITED = 7;
+
+/**
+ * Register the engine weapon gates that enforce the Pistol round. Load window only.
+ *
+ * `CanAcquire` covers buying, picking up and every `giveNamedItem` (spawn loadouts, shop gives,
+ * admin commands). `CanUse` is asked before a pawn touches a weapon on the ground, which is how a
+ * map-placed or dropped gun is picked up; gating only `CanAcquire` let players walk over them.
+ */
+export function installWeaponGates(): void {
+  items.onCanAcquire((view) => {
+    if (!refusesWeapon(view.defIndex)) return HookResult.Continue;
+    view.result = ACQUIRE_PROHIBITED as typeof view.result;
+    return HookResult.Handled;
+  });
+  if (typeof weapons?.onCanUse !== "function") {
+    console.log("[ttt] WARN: weapons.onCanUse unavailable; Pistol round ground pickups rely on CanAcquire and the tick sweep");
+    return;
+  }
+  weapons.onCanUse((view) => {
+    const weapon = view.weapon;
+    if (weapon === null || !refusesWeapon(weaponDef(weapon))) return HookResult.Continue;
+    view.allowed = false;
+    return HookResult.Handled;
+  });
+}
 
 /** Reusable buffer for the weighted pick. */
 const candidates: SpecialRound[] = [];
@@ -291,11 +330,17 @@ export function installSpecialRounds(bus: DomainBus): void {
     startSpecialRounds();
   }, { ignoreCanceled: true });
 
-  // Vanilla: refuse every purchase.
+  // Vanilla: refuse every purchase. Pistol: refuse shop items that hand out a primary.
   bus.on("purchase", (ev) => {
-    if (!isActive("vanilla")) return;
-    ev.canceled = true;
-    tell(ev.slot, chatMsgFor(ev.slot, "ttt.special.vanilla_reminder"));
+    if (isActive("vanilla")) {
+      ev.canceled = true;
+      tell(ev.slot, chatMsgFor(ev.slot, "ttt.special.vanilla_reminder"));
+      return;
+    }
+    if (isActive("pistol") && PRIMARY_SHOP_ITEMS.has(ev.itemId)) {
+      ev.canceled = true;
+      tell(ev.slot, chatMsgFor(ev.slot, "ttt.special.pistol_reminder"));
+    }
   }, { priority: Priority.HIGH });
 
   // Rich: multiply in-round gains.
@@ -319,7 +364,12 @@ export function installSpecialRounds(bus: DomainBus): void {
   }, { priority: Priority.HIGHEST });
 }
 
-/** Strip any rifle a player has picked up during a Pistol round. Driven by the shared tick. */
+/**
+ * Strip any primary a player still holds during a Pistol round. Driven by the shared tick.
+ *
+ * The backstop behind the engine gates. Classifies by definition index: the class name is not
+ * readable on this runtime (see `weaponClass`), which is why this sweep used to match nothing.
+ */
 export function tickSpecialRounds(): void {
   if (!isActive("pistol")) return;
   const active = reg.activeSlots();
@@ -328,9 +378,8 @@ export function tickSpecialRounds(): void {
     if (!reg.isAlive(slot)) continue;
     const held = heldWeapons(slot);
     for (let j = 0; j < held.length; j++) {
-      const cls = weaponClass(held[j]!);
-      if (cls !== "" && RIFLES.has(cls)) {
-        clearSlot(slot, GearSlot.Rifle);
+      if (isPrimaryDef(weaponDef(held[j]!))) {
+        removePrimaries(slot);
         break;
       }
     }
