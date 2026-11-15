@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
+import {gameHudDouble} from './gamehud-double.mjs';
 const archive=new URL('../dist/_edgegamers_ttt-ui.s2sp',import.meta.url).pathname;
 const members=JSON.parse(execFileSync('python3',['-c','import zipfile,json,sys; z=zipfile.ZipFile(sys.argv[1]); print(json.dumps({n:z.read(n).decode() for n in z.namelist()}))',archive],{encoding:'utf8'}));
 function fixture(){
@@ -13,7 +14,8 @@ function fixture(){
  const ui={ensure:()=>f.available?null:'not ready',budget:()=>({panelIds:1,variables:2,classNames:3,cap:100}),badge:()=>({show:(s,v)=>badges.push([s,v]),hide:s=>badges.push([s,null])}),hideAll:s=>hidden.push(s),forget:s=>forgotten.push(s),toast:(s,v)=>{toasts.push([s,v]);return null;},forSlot:s=>({tryOwnCallout:v=>{const c={slot:s,spec:v,live:true};callouts.push(c);return {ok:true,value:{isValid:()=>c.live,dispose:()=>{c.live=false;}}};}}),modal:s=>{
   if(!f.pool)return null;const opened=new Set(),cursors=new Map(),pending=new Set();const m={spec:s,open:slot=>{opened.add(slot);m.refresh(slot);},tryOpen:slot=>{m.open(slot);return {ok:true,view:null};},close:slot=>{opened.delete(slot);pending.delete(slot);},isOpen:slot=>opened.has(slot),cursor:slot=>cursors.get(slot)??0,select:(slot,c)=>cursors.set(slot,c),forget:slot=>{opened.delete(slot);pending.delete(slot);},refresh:slot=>{if(slot!==undefined){pending.delete(slot);const rows=s.rows(slot);s.detail?.(slot,rows[cursors.get(slot)??0],cursors.get(slot)??0);s.subtitle?.(slot);}},invalidate:slot=>{if(opened.has(slot))pending.add(slot);},frame:()=>{for(const slot of [...pending]){if(opened.has(slot))m.refresh(slot);}},release:()=>{}};modals.push(m);return m;
  }};
- const mods={'@s2script/sdk/plugin':{use:()=>core,publish:(_,m)=>published=m},'@s2script/cs2':{CustomHudLayout:{components:s=>{assert.deepEqual(JSON.parse(JSON.stringify(s)),{...spec,observable:false});return ui;}},hudkit:{spec}},'@s2script/sdk/server':{Server:{get gameTime(){return f.time;}}}};
+ const gh=gameHudDouble();
+ const mods={...gh.mods,'@s2script/sdk/plugin':{use:()=>core,publish:(_,m)=>published=m},'@s2script/cs2':{...gh.cs2,CustomHudLayout:{components:s=>{assert.deepEqual(JSON.parse(JSON.stringify(s)),{...spec,observable:false});return ui;}},hudkit:{spec}},'@s2script/sdk/server':{Server:{get gameTime(){return f.time;}}}};
  const context=vm.createContext({module:{exports:{}},console:{log:()=>{}},require:n=>{assert.ok(n in mods,n);return mods[n];}});vm.runInContext(members['plugin.js'],context);context.module.exports.OnPluginStart();assert.ok(published,'UI publication missing');
  return Object.assign(f,{actors,core,calls,toasts,hidden,forgotten,badges,modals,callouts,api:published,actor:s=>actors.get(s),modal:title=>modals.find(m=>(typeof m.spec.title==='function'?m.spec.title(1):m.spec.title)===title)??modals.find(m=>typeof m.spec.title==='function'&&[1,2].some(s=>m.spec.title(s)===title)),frame:()=>modals.forEach(m=>m.frame()),end:()=>context.module.exports.OnPluginEnd()});
 }

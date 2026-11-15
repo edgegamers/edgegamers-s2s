@@ -1,0 +1,15 @@
+{
+  "name": "@edgegamers/gamehud",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared helpers for painting the s2script GameHud (rail, status card, feed, toast) from any gamemode: per-player change tracking, chat-tag tones, clock and bar formatting.",
+  "license": "GPL-3.0-or-later",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "node --test test/*.test.ts"
+  }
+}

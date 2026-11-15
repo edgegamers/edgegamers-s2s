@@ -137,3 +137,15 @@ export function replyPhraseFor(command: Pick<CommandInvocation, "callerSlot" | "
 export function plainPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
   return plainText(renderTemplateFor(slot, key, args, plainTemplate));
 }
+
+/**
+ * Keep the recipient's language AND the chat tags, for GameHud labels: the HUD takes chat tags
+ * itself and lets a leading one colour the label. Inserted arguments lose their braces, so player
+ * data can never smuggle a tag in.
+ */
+export function hudPhraseFor(slot: number, key: string, ...args: (string | number)[]): string {
+  const text = Translations.translate(slot, key, ...args.map((_, i) => `\uFFF0${i}\uFFF1`));
+  return text.replace(/\uFFF0(\d+)\uFFF1/g, (_, i: string) =>
+    String(formatArg(args[Number(i)] ?? "")).replace(/[{}]/g, ""),
+  );
+}

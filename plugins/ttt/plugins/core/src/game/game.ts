@@ -55,6 +55,13 @@ let bus: EventBus<TttEvents>;
 let epoch = 0;
 /** Replacing the deadline cancels its timer without retiring the current round's work. */
 let deadlineEpoch = 0;
+/** `Server.gameTime` the visible clock (countdown or round deadline) reaches zero at. */
+let clockEndsAt = 0;
+
+/** Seconds left on the countdown or the round, as the HUD clock shows them. */
+export function clockRemaining(): number {
+  return Math.max(0, clockEndsAt - Server.gameTime);
+}
 
 /**
  * One-shot: set when the ENGINE ended (or restarted) the round instead of TTT. Consumed by the next
@@ -216,6 +223,7 @@ export function startGame(quiet = false): void {
   // reaches zero — `mp_ignore_round_win_conditions 1` is set on the very next line — and `beginRound`
   // re-arms the clock with the round length in the same instant the countdown expires.
   GameRules.get()?.setTimeRemaining(cfg.countdownSeconds);
+  clockEndsAt = Server.gameTime + cfg.countdownSeconds;
   Server.setCvar("mp_ignore_round_win_conditions", "1");
 
   // Put everyone back on T as the countdown OPENS, not just from the 1 Hz countdown ticker: last
@@ -394,6 +402,7 @@ function beginRound(attempt = 0): void {
  */
 export function setRoundDeadline(seconds: number): void {
   GameRules.get()?.setTimeRemaining(Math.ceil(seconds));
+  clockEndsAt = Server.gameTime + seconds;
   const round = epoch;
   const mine = ++deadlineEpoch;
   void delay(seconds * 1000).then(() => {

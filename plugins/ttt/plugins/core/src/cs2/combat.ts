@@ -201,6 +201,11 @@ const bankedAssists = new Int16Array(MAX_SLOTS);
 /** Whether this slot's death has already been added back (corpse identified). */
 const deathRevealed = new Uint8Array(MAX_SLOTS);
 
+/** Whether everyone has been told this slot died this round (body identified, or round over). */
+export function isDeathRevealed(slot: number): boolean {
+  return slot >= 0 && slot < MAX_SLOTS && deathRevealed[slot] === 1;
+}
+
 /** The four columns TTT rewrites. Named so a caller cannot pass an arbitrary field. */
 type StatField = "kills" | "deaths" | "assists" | "damage" | "utilityDamage";
 

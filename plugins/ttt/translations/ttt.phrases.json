@@ -286,5 +286,21 @@
   "ttt.reports.pardoned": "{darkred}T{red}T{lightred}T {grey}» {grey}{orange}Removed{grey} {yellow}{1}{grey} pending slay(s) from {lightred}{2}{grey}.",
   "ttt.reports.pardoned_notice": "{darkred}T{red}T{lightred}T {grey}» {grey}An admin {orange}removed{grey} your {yellow}{1}{grey} pending RDM slay(s).",
   "ttt.commands.overturn_arguments": "{blue}sm_rdm_overturn <report#>{grey} (see {blue}sm_rdm_convictions{grey})",
-  "ttt.commands.pardon_arguments": "{blue}sm_rdm_pardon <target|SteamID64>{grey}"
+  "ttt.commands.pardon_arguments": "{blue}sm_rdm_pardon <target|SteamID64>{grey}",
+  "ttt.hud.rail_alive": "{green}Alive",
+  "ttt.hud.rail_bodies": "{red}Bodies",
+  "ttt.hud.sub_countdown": "{grey}Round {yellow}{1}{grey} starting",
+  "ttt.hud.sub_live": "{grey}Round {yellow}{1}",
+  "ttt.hud.sub_finished": "{grey}Round over",
+  "ttt.hud.role_waiting": "{grey}Waiting",
+  "ttt.hud.role_dead": "{grey}Dead",
+  "ttt.hud.hint_waiting": "{grey}The next round starts once enough players have joined.",
+  "ttt.hud.hint_countdown": "{grey}Roles are dealt when the countdown ends.",
+  "ttt.hud.hint_innocent": "{grey}Find the {red}Traitors{grey}. Trust the {darkblue}Detective{grey}.",
+  "ttt.hud.hint_traitor": "{grey}Kill the {green}Innocents{grey}. Your partners are marked red.",
+  "ttt.hud.hint_detective": "{grey}Search bodies and protect the {green}Innocents{grey}.",
+  "ttt.hud.hint_dead": "{grey}Your death stays hidden until your body is found.",
+  "ttt.hud.hint_spectator": "{grey}You are sitting this round out.",
+  "ttt.hud.bar_health": "{grey}HP",
+  "ttt.hud.bar_karma": "{grey}Karma"
 }

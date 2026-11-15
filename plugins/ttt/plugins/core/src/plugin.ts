@@ -116,6 +116,7 @@ import {
 } from "./shop/weaponfx";
 
 import { tickHud } from "./cs2/hud";
+import { tickRoundHud, toastRole } from "./cs2/round-hud";
 import { onPlayerPing, registerCommands, resetShopMenus } from "./commands";
 
 /**
@@ -336,6 +337,7 @@ export function OnPluginStart(): void {
     "roleAssigned",
     (ev) => {
       logRoleAssigned(ev.slot, ev.role, roleName(ev.role));
+      toastRole(ev.slot, ev.role);
     },
     { priority: Priority.MONITOR },
   );
@@ -633,6 +635,9 @@ export function OnPluginStart(): void {
     // ALSO above the early return. A victim is asked about a kill that may have ended the round, so
     // their prompt has to be able to expire in a state the round is no longer running in.
     tickRdmFlow();
+    // Above the early return too: the rail counts the countdown down and the status card says
+    // what the player is waiting for.
+    tickRoundHud(dt);
     if (game.state !== GameState.InProgress) return;
 
     tickInteract(dt);

@@ -1,5 +1,5 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiLogRow, UiMethods, UiReportNotice } from '../../../../packages/contracts/ui-types.ts';
+import type { UiLogRow, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
 import { captureRegistryUiActor, captureUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
@@ -8,6 +8,14 @@ function invoke<T>(run: () => T, fallback: T): T {
   catch (error) { console.log(`[ttt/ui] provider unavailable: ${String(error)}`); return fallback; }
 }
 function facade(provider: UiMethods) {
+  // The round HUD is sent several times a second, and a UI provider older than it has no such
+  // method: say so once instead of on every call.
+  let roundHudMissing = false;
+  const roundHud = (run: () => void): void => {
+    if (roundHudMissing) return;
+    if (typeof provider.paintRoundHud !== 'function') { roundHudMissing = true; console.log('[ttt/ui] UI provider has no round HUD; update ttt-ui'); return; }
+    invoke(run, undefined);
+  };
   const withActor = <T>(slot: number, fallback: T, run: (actor: NonNullable<ReturnType<typeof captureUiActor>>) => T): T => {
     const actor = captureUiActor(slot);
     return actor === null ? fallback : invoke(() => run(actor), fallback);
@@ -33,6 +41,16 @@ function facade(provider: UiMethods) {
     reportNotice: (slot: number, notice: UiReportNotice) => withActor(slot, false, (a) => provider.reportNotice(a, { ...notice })),
     hideAll: (slot: number) => withActor(slot, undefined, (a) => provider.hideAll(a)),
     resetAll: () => invoke(() => provider.resetAll(), undefined),
+    paintRoundHud: (views: readonly { slot: number; hud: UiRoundHud }[]) => roundHud(() => {
+      const rows: UiRoundHudRow[] = [];
+      for (const view of views) {
+        const actor = captureUiActor(view.slot);
+        if (actor !== null) rows.push({ actor, hud: { ...view.hud } });
+      }
+      provider.paintRoundHud(rows);
+    }),
+    roleToast: (slot: number, role: UiRoundRole) => roundHud(() => withActor(slot, undefined, (a) => provider.roleToast(a, role))),
+    hideRoundHud: () => roundHud(() => provider.hideRoundHud()),
     forget: (slot: number) => {
       const actor = captureRegistryUiActor(slot);
       if (actor) invoke(() => provider.forget(actor), undefined);
