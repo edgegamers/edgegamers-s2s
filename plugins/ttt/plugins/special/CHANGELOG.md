@@ -1,5 +1,11 @@
 # @edgegamers/ttt-special
 
+## 2.2.2
+
+### Patch Changes
+
+- 8f41ced: Pistol rounds now refuse primary weapons from every source: ground pickups, buying, gives and primary shop items. The per-tick sweep removes any primary that still gets through.
+
 ## 2.2.1
 
 ### Patch Changes
