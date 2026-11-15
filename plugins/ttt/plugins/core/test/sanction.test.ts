@@ -9,6 +9,7 @@ function bind(alive:Map<number,boolean>,log:string[]){
   lift:s=>log.push(`lift ${s}`),
   restore:s=>log.push(`restore ${s}`),
   isAlive:s=>alive.get(s)??false,
+  hideBody:s=>log.push(`hide ${s}`),
  });
 }
 
@@ -19,7 +20,7 @@ test('the victim is exempt only while the kill runs, and a death counts as serve
  assert.equal(served,true);
  assert.equal(exemptDuringKill,true);
  assert.equal(sanction.isSanctionVictim(3),false,'the exemption ends with the kill');
- assert.deepEqual(log,['lift 3'],'a dead player is not put back under protection');
+ assert.deepEqual(log,['lift 3','hide 3'],'a dead player is not put back under protection, and their body is hidden');
 });
 
 test('a kill that does not land is not served and the protection comes back', () => {

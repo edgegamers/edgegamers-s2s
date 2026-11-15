@@ -15,6 +15,8 @@ interface Protection {
   restore(slot: number): void;
   /** Is `slot` alive, per the engine? */
   isAlive(slot: number): boolean;
+  /** Hide `slot`'s dead pawn, which is the only body a slay leaves. */
+  hideBody(slot: number): void;
 }
 
 let protection: Protection | null = null;
@@ -50,5 +52,9 @@ export function killDespiteProtection(slot: number, kill: () => void): boolean {
     // Still alive (the kill did not land): back under the round's protection.
     if (p.isAlive(slot)) p.restore(slot);
   }
-  return !p.isAlive(slot);
+  const served = !p.isAlive(slot);
+  // A slay lands during the countdown, so the death pre-hook spawns no TTT corpse and the only body
+  // left is the dead pawn: one nobody can identify. Hide it, as every corpse-backed death does.
+  if (served) p.hideBody(slot);
+  return served;
 }
