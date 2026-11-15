@@ -29,7 +29,7 @@ import { type HeldWeapon } from "./inventory";
 import { nextPreFrame } from "../core/preframe";
 import { AcquireMethod, AcquireResult, type CanAcquireView } from "./acquire";
 import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, wouldRefuseTeam } from "../game/teams";
-import { ROLE_COLORS, setPawnColor } from "./color";
+import { ROLE_COLORS, setPawnAlpha, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
 import { bindSanctionProtection, isSanctionVictim } from "./sanction";
 import { unspoofAlive } from "./spoof";
@@ -627,6 +627,12 @@ export function installHandlers(bus: EventBus<TttEvents>): void {
     lift: (slot) => setTakesDamage(slot, true),
     restore: refreshInvulnerability,
     isAlive: (slot) => reg.computeAlive(slot),
+    // Next PRE frame, like the corpse-backed hide in combat.ts; a respawn resets the alpha.
+    hideBody: (slot) => {
+      nextPreFrame(() => {
+        if (cfg.bodyHidePawn && !reg.computeAlive(slot)) setPawnAlpha(slot, 0);
+      }, { slot });
+    },
   });
 
   /**
