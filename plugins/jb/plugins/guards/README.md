@@ -92,7 +92,9 @@ must set it to `2` to use 2:1; a configured value overrides the default.
   the front and may be skipped by Dedicated Supporters with a chance based on their priority. Players
   pushed back are told why.
 - **Round start**: CT-banned guards go to T; guards below `min_priority_for_ct` (rank under eG) go to
-  T; then CT is filled from the queue to `floor((T + CT) / (ratio + 1))` (at least one guard when CT is empty).
+  T; then CT is trimmed (as at round end) or filled from the queue to `floor((T + CT) / (ratio + 1))`
+  (at least one guard when CT is empty). The trim catches prisoners who left after the last round end
+  or during a special day.
   With the default ratio of 2 that is one guard per two prisoners after the moves (9 players: 6 T, 3 CT).
   Every playing human on T counts, including clients whose SteamID is not verified yet.
 - **Round end**: CT-banned guards go to T. Unless this round was a special day, guards are moved
