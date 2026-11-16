@@ -13,6 +13,7 @@ import type { CommandInvocation } from "@s2script/sdk";
 import { config } from "@s2script/sdk/config";
 import { Entity } from "@s2script/sdk/entity";
 import { every, after } from "@s2script/sdk/timers";
+import { Hud } from "@s2script/sdk/hud";
 import type { Timer } from "@s2script/sdk/timers";
 import { ChatColors, CustomCameraMode, Events, hudkit, Pawn, Player } from "@s2script/cs2";
 import type { CustomPlayerCamera, Modal, Row } from "@s2script/cs2";
@@ -310,7 +311,7 @@ function hubProbe(cmd: CommandInvocation) {
   const pawn = p.pawn ?? Pawn.forSlot(slot);
   const cam = pawn?.getCustomCamera() ?? null;
   const target = p.observerTarget?.controller?.slot ?? -1;
-  cmd.reply(`[spectatehub] team=${p.teamNum} alive=${p.pawnIsAlive} pawn=${pawn ? "yes" : "no"} camera=${cam ? "yes" : "no"} observerMode=${p.observerMode} observerTarget=${target} shots=${shots.length} cameraWorks=${cameraWorks}`);
+  cmd.reply(`[spectatehub] team=${p.teamNum} alive=${p.pawnIsAlive} pawn=${pawn ? "yes" : "no"} camera=${cam ? "yes" : "no"} observerMode=${p.observerMode} observerTarget=${target} shots=${shots.length} cameraWorks=${cameraWorks} hideHud(all plugins)=${Hud.hiddenByAll(slot)}`);
   const arg = cmd.arg(0);
   if (arg === "cam" && cam && shots[0]) {
     const s = shots[0];
