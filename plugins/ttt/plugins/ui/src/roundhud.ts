@@ -43,7 +43,9 @@ export class RoundHud {
       this.rail = GameHud.rail();
       this.status = GameHud.status();
     } catch (error) {
-      this.log(`GameHud unavailable: ${String(error)}`);
+      this.log(`GameHud unavailable (does the s2script runtime ship it?): ${String(error)}`);
+      this.rail = this.status = null;
+      return;
     }
     if (this.rail === null) this.log('GameHud rail is held by another plugin; the round rail is off');
     if (this.status === null) this.log('GameHud status card is held by another plugin; the status card is off');
@@ -53,6 +55,8 @@ export class RoundHud {
 
   paint(rows: readonly UiRoundHudRow[]): void {
     this.claim();
+    // Nothing claimed (a host without GameHud, or both regions held elsewhere): already logged once.
+    if (this.railPaint === null && this.statusPaint === null) return;
     const seen = new Set<number>();
     for (const row of rows) {
       const slot = row.actor.slot;
@@ -101,6 +105,8 @@ export class RoundHud {
   /** "You are a Traitor" as the round goes live. */
   roleToast(actor: UiActor, role: UiRoundRole): void {
     if (role === 'none' || role === 'spectator') return;
+    this.claim();
+    if (this.railPaint === null && this.statusPaint === null) return;
     const slot = actor.slot;
     const title = hudPhraseFor(slot, ROLE_KEYS[role]);
     GameHud.toast(slot, { title, sub: hudPhraseFor(slot, HINT_KEYS[role]), tone: leadingTone(title) ?? 'accent', seconds: 4 });
