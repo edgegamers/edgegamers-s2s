@@ -114,8 +114,9 @@ export class RoundHud {
 
   /** The stock round timer duplicates the rail clock while the rail is up. */
   private hideTimer(slot: number): void {
-    if (this.timerHidden.has(slot)) return;
-    Hud.hide(slot, HideHud.RoundTimer);
+    // Ask the host every paint instead of trusting a cache: it drops a slot's bits on disconnect
+    // and a map change, and a stale cache left the stock timer up for the rest of the session.
+    if ((Hud.hidden(slot) & HideHud.RoundTimer) === 0) Hud.hide(slot, HideHud.RoundTimer);
     this.timerHidden.add(slot);
   }
 

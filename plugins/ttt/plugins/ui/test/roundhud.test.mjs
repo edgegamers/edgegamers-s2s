@@ -14,7 +14,7 @@ function load(){
  const mods={...gh.mods,'@s2script/sdk/plugin':{use:()=>({}),publish:(_,m)=>{published=m;}},'@s2script/cs2':{...gh.cs2,CustomHudLayout:{components:()=>ui},hudkit:{spec:{}}},'@s2script/sdk/server':{Server:{gameTime:0}}};
  const context=vm.createContext({module:{exports:{}},console:{log:()=>{}},require:n=>{assert.ok(n in mods,n);return mods[n];}});
  vm.runInContext(plugin,context);context.module.exports.OnPluginStart();
- return {log:gh.log,api:published,end:()=>context.module.exports.OnPluginEnd()};
+ return {log:gh.log,bits:gh.bits,api:published,end:()=>context.module.exports.OnPluginEnd()};
 }
 const actor=slot=>({slot,steamId:'u'+slot,generation:1,roundEpoch:1});
 const hud=(over={})=>({phase:'live',clock:95,round:4,alive:7,participants:9,bodies:2,role:'traitor',living:true,health:84,maxHealth:100,karma:60,maxKarma:100,...over});
@@ -73,4 +73,13 @@ test('the role toast takes the role colour', () => {
  assert.equal(toast[2].tone,'red');
  t.api.roleToast(actor(1),'spectator');
  assert.equal(t.log.filter(e=>e[0]==='toast').length,1);
+});
+
+test('the stock timer is hidden again after the host drops the bits (reconnect, map change)', () => {
+ const t=load();
+ t.api.paintRoundHud([{actor:actor(1),hud:hud()}]);
+ t.bits.clear();
+ t.log.length=0;
+ t.api.paintRoundHud([{actor:actor(1),hud:hud({clock:94})}]);
+ assert.ok(t.log.some(e=>e[0]==='hud'&&e[1]==='hide'&&e[2]===1&&e[3]===32));
 });

@@ -12,13 +12,19 @@ export function gameHudDouble(phrases = {}) {
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
   };
-  const Hud = { hide: (slot, bits) => log.push(['hud', 'hide', slot, bits]), show: (slot, bits) => log.push(['hud', 'show', slot, bits]) };
+  const bitsOf = new Map();
+  const Hud = {
+    hide: (slot, bits) => { log.push(['hud', 'hide', slot, bits]); bitsOf.set(slot, (bitsOf.get(slot) ?? 0) | bits); return bitsOf.get(slot); },
+    show: (slot, bits) => { log.push(['hud', 'show', slot, bits]); bitsOf.set(slot, (bitsOf.get(slot) ?? 0) & ~bits); return bitsOf.get(slot); },
+    hidden: (slot) => bitsOf.get(slot) ?? 0,
+  };
   const Translations = {
     load: () => {},
     translate: (_slot, key, ...args) => (phrases[key] ?? key).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i) - 1] ?? '')),
   };
   return {
     log,
+    bits: bitsOf,
     cs2: { GameHud, HideHud: { RoundTimer: 32 } },
     mods: { '@s2script/sdk/hud': { Hud }, '@s2script/sdk/translations': { Translations } },
   };
