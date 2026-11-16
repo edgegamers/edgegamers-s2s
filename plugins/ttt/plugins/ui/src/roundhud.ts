@@ -69,7 +69,7 @@ export class RoundHud {
     this.claim();
     // Nothing claimed (a host without GameHud, or both regions held elsewhere): already logged once.
     if (this.railPaint === null && this.statusPaint === null) return;
-    if (!this.announced) {
+    if (!this.announced && rows.length > 0) {
       this.announced = true;
       this.log(`round HUD painting ${rows.length} viewer(s); rail ${this.railPaint ? "claimed" : "unavailable"}, status card ${this.statusPaint ? "claimed" : "unavailable"}`);
     }
