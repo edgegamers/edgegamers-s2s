@@ -53,11 +53,14 @@ jobs:
           state=.snapshot-state/state.json
           prev=""
           if [ -f "$state" ]; then prev=$(jq -r .source "$state"); fi
-          if [ -n "$prev" ] && git merge-base --is-ancestor "$prev" HEAD; then
-            echo "Since the last snapshot of this PR ($prev)"
-            npx s2s version --snapshot "$id" --since "$prev" --snapshot-state "$state" --output "$RUNNER_TEMP/snapshot.json"
+          # The checkpoint can be refused, for example when a package was removed since it, so a
+          # refused incremental snapshot falls back to a full one from the base.
+          if [ -n "$prev" ] && git merge-base --is-ancestor "$prev" HEAD \
+            && npx s2s version --snapshot "$id" --since "$prev" --snapshot-state "$state" --output "$RUNNER_TEMP/snapshot.json"; then
+            echo "Snapshotted since the last snapshot of this PR ($prev)"
           else
-            echo "First snapshot of this PR (or its history was rewritten): since the base"
+            echo "Snapshotting since the base (first snapshot, rewritten history, or a refused checkpoint)"
+            git checkout -- .
             npx s2s version --snapshot "$id" --since "$(git merge-base "$BASE_SHA" HEAD)" --output "$RUNNER_TEMP/snapshot.json"
           fi
       - name: Build and publish
