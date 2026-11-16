@@ -1,14 +1,15 @@
 /** Doubles for the engine-injected GameHud, Hud mask and translations modules. */
 export function gameHudDouble(phrases = {}) {
   const log = [];
-  const region = (name) => ({
+  let generation = 0;
+  const region = (name, born = generation) => ({
     set: (audience, spec) => log.push([name, 'set', audience, JSON.parse(JSON.stringify(spec))]),
     hide: (audience) => log.push([name, 'hide', audience]),
     release: () => log.push([name, 'release']),
-    isValid: () => true,
+    isValid: () => born === generation,
   });
   const GameHud = {
-    rail: () => region('rail'), status: () => region('status'), feed: () => region('feed'),
+    rail: () => { log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => region('feed'),
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
   };
@@ -25,6 +26,7 @@ export function gameHudDouble(phrases = {}) {
   return {
     log,
     bits: bitsOf,
+    rebuild: () => { generation++; },
     cs2: { GameHud, HideHud: { RoundTimer: 32 } },
     mods: { '@s2script/sdk/hud': { Hud }, '@s2script/sdk/translations': { Translations } },
   };

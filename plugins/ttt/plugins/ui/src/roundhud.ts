@@ -32,11 +32,22 @@ export class RoundHud {
   private readonly themed = new Set<number>();
   private readonly timerHidden = new Set<number>();
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
+  private warned = false;
+  private warnOnce(line: string): void { if (!this.warned) { this.warned = true; this.log(line); } }
 
   constructor() { loadPhrases(); }
 
   /** Claim the rail and status card once. A region another plugin holds stays theirs. */
   private claim(): void {
+    // A claim goes stale when the host rebuilds its HUD entity (a map change or restart). Painting a
+    // stale claim draws nothing, so drop it and claim again.
+    if (this.claimed && ((this.rail !== null && !this.rail.isValid()) || (this.status !== null && !this.status.isValid()))) {
+      this.log('GameHud claim went stale; claiming again');
+      this.railPaint = this.statusPaint = null;
+      this.rail = this.status = null;
+      this.themed.clear();
+      this.claimed = false;
+    }
     if (this.claimed) return;
     this.claimed = true;
     try {
@@ -62,8 +73,12 @@ export class RoundHud {
       const slot = row.actor.slot;
       seen.add(slot);
       if (!this.themed.has(slot)) { GameHud.theme(slot, THEME); this.themed.add(slot); }
-      this.paintRail(slot, row.hud);
-      this.paintStatus(slot, row.hud);
+      try {
+        this.paintRail(slot, row.hud);
+        this.paintStatus(slot, row.hud);
+      } catch (error) {
+        this.warnOnce(`paint failed: ${String(error)}`);
+      }
     }
     for (const painter of [this.railPaint, this.statusPaint]) {
       for (const slot of painter?.shownSlots() ?? []) if (!seen.has(slot)) this.hideSlot(slot);
@@ -77,13 +92,14 @@ export class RoundHud {
     const sub = hud.phase === 'countdown' ? hudPhraseFor(slot, 'ttt.hud.sub_countdown', hud.round)
       : hud.phase === 'live' ? hudPhraseFor(slot, 'ttt.hud.sub_live', hud.round)
       : hudPhraseFor(slot, 'ttt.hud.sub_finished');
+    // Before the paint, so a failed paint still never leaves two clocks on screen.
+    this.hideTimer(slot);
     painter.paint(slot, {
       left: { score: hud.alive, label: hudPhraseFor(slot, 'ttt.hud.rail_alive'), tone: 'green', ...pips(hud.alive, hud.participants) },
       right: { score: hud.bodies, label: hudPhraseFor(slot, 'ttt.hud.rail_bodies'), tone: 'red' },
       clock: clock(hud.clock),
       sub,
     });
-    this.hideTimer(slot);
   }
 
   private paintStatus(slot: number, hud: UiRoundHud): void {
@@ -150,8 +166,8 @@ export class RoundHud {
 
   dispose(): void {
     this.hideAll();
-    this.rail?.release();
-    this.status?.release();
+    if (this.rail?.isValid()) this.rail.release();
+    if (this.status?.isValid()) this.status.release();
     this.rail = this.status = null;
     this.railPaint = this.statusPaint = null;
     this.claimed = false;
