@@ -15,7 +15,7 @@ import { Entity } from "@s2script/sdk/entity";
 import { every, after } from "@s2script/sdk/timers";
 import { Hud } from "@s2script/sdk/hud";
 import type { Timer } from "@s2script/sdk/timers";
-import { ChatColors, CustomCameraMode, Events, hudkit, Pawn, Player } from "@s2script/cs2";
+import { ChatColors, CustomCameraMode, Events, HideHud, hudkit, Pawn, Player } from "@s2script/cs2";
 import type { CustomPlayerCamera, Modal, Row } from "@s2script/cs2";
 import english from "../translations/spectatehub.phrases.json";
 import { nextShot, parseShotFile, shotsFromSpawns } from "./director";
@@ -304,14 +304,28 @@ function hubShot(cmd: CommandInvocation) {
   return HookResult.Handled;
 }
 
-/** Toggle HideHud bits (default 32, the round timer) for the caller, to test what CS2 honours. */
+const HUD_PARTS: Record<string, number> = {
+  radar: HideHud.Radar, health: HideHud.Health, crosshair: HideHud.Crosshair,
+  money: HideHud.Money, roundtimer: HideHud.RoundTimer, chat: HideHud.Chat,
+};
+
+/** Test-only: `sm_hidehud radar roundtimer …` toggles those stock HUD parts for the caller. */
 function hideHudToggle(cmd: CommandInvocation) {
   const slot = cmd.callerSlot;
   if (slot < 0) return HookResult.Handled;
-  const bits = cmd.argCount > 0 ? Number(cmd.arg(0)) >>> 0 : 32;
-  if (!bits) { cmd.reply("[spectatehub] usage: sm_hidehud <bits>  (2 radar, 4 health, 8 crosshair, 16 money, 32 round timer, 64 chat)"); return HookResult.Handled; }
-  const mine = (Hud.hidden(slot) & bits) === bits ? Hud.show(slot, bits) : Hud.hide(slot, bits);
-  cmd.reply(`[spectatehub] spectatehub now hides ${mine}; all plugins ${Hud.hiddenByAll(slot)}`);
+  const names = Array.from({ length: cmd.argCount }, (_, i) => cmd.arg(i).toLowerCase().replace(/[{}]/g, "")).filter(Boolean);
+  const unknown = names.filter((n) => !(n in HUD_PARTS));
+  if (names.length === 0 || unknown.length > 0) {
+    cmd.reply(`[spectatehub] usage: sm_hidehud <${Object.keys(HUD_PARTS).join("|")}> ...${unknown.length ? ` (unknown: ${unknown.join(", ")})` : ""}`);
+    return HookResult.Handled;
+  }
+  for (const n of names) {
+    const bit = HUD_PARTS[n]!;
+    if (Hud.hidden(slot) & bit) Hud.show(slot, bit); else Hud.hide(slot, bit);
+  }
+  const all = Hud.hiddenByAll(slot);
+  const hidden = Object.entries(HUD_PARTS).filter(([, bit]) => all & bit).map(([n]) => n);
+  cmd.reply(`[spectatehub] hidden now: ${hidden.length ? hidden.join(", ") : "nothing"}`);
   return HookResult.Handled;
 }
 
@@ -323,7 +337,7 @@ function hubProbe(cmd: CommandInvocation) {
   const pawn = p.pawn ?? Pawn.forSlot(slot);
   const cam = pawn?.getCustomCamera() ?? null;
   const target = p.observerTarget?.controller?.slot ?? -1;
-  cmd.reply(`[spectatehub] team=${p.teamNum} alive=${p.pawnIsAlive} pawn=${pawn ? "yes" : "no"} camera=${cam ? "yes" : "no"} observerMode=${p.observerMode} observerTarget=${target} shots=${shots.length} cameraWorks=${cameraWorks} hideHud(all plugins)=${Hud.hiddenByAll(slot)}`);
+  cmd.reply(`[spectatehub] team=${p.teamNum} alive=${p.pawnIsAlive} pawn=${pawn ? "yes" : "no"} camera=${cam ? "yes" : "no"} observerMode=${p.observerMode} observerTarget=${target} shots=${shots.length} cameraWorks=${cameraWorks} hidden=${Object.entries(HUD_PARTS).filter(([, bit]) => Hud.hiddenByAll(slot) & bit).map(([n]) => n).join(",") || "none"}`);
   const arg = cmd.arg(0);
   if (arg === "cam" && cam && shots[0]) {
     const s = shots[0];
