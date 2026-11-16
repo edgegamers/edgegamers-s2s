@@ -57,15 +57,20 @@ const workspacePlugins = expand(JSON.parse(readFileSync(join(root, "package.json
 function pinSnapshot() {
   const read = (dir) => JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
   const write = (dir, pkg) => writeFileSync(join(root, dir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
-  const snapshotPlugins = new Map(report.packages.filter((p) => p.kind === "plugin").map((p) => [p.path, p.version]));
+  // Effective versions, so a member left unchanged since the last snapshot keeps the snapshot
+  // version (and interface version) it was published with.
+  const effective = (dir) => {
+    const version = report.versions?.[read(dir).name];
+    return typeof version === "string" && version.startsWith("0.0.0-") ? version : undefined;
+  };
   let moved = 0, pinned = 0;
   for (const bundle of report.packages.filter((p) => p.kind === "bundle")) {
     const prefix = bundle.path === "." ? "" : `${bundle.path}/`;
-    const members = workspacePlugins.filter((dir) => dir.startsWith(prefix) && snapshotPlugins.has(dir));
+    const members = workspacePlugins.filter((dir) => dir.startsWith(prefix) && effective(dir) !== undefined);
     const interfaces = new Map();
     for (const dir of members) {
       const pkg = read(dir);
-      const version = snapshotPlugins.get(dir);
+      const version = effective(dir);
       let publishes = pkg.s2script?.publishes;
       if (publishes === undefined || publishes === null) continue;
       if (publishes === "self") publishes = { [pkg.name]: version };
@@ -113,9 +118,22 @@ if (dirs.length === 0) {
   console.log(`moved ${interfaces} interface(s) and ${pinned} dependency range(s) onto the snapshot version inside bundles`);
   const filters = dirs.flatMap((dir) => ["--filter", dir]);
   const s2s = join(root, "node_modules", ".bin", "s2s");
-  for (const argv of buildOnly ? [["build", ...filters]] : [["build", ...filters], ["deploy", "--ci", ...filters]]) {
+  const run = (argv) => {
     console.log(`\n$ s2s ${argv.join(" ")}`);
     execFileSync(s2s, argv, { cwd: root, stdio: "inherit" });
+  };
+  run(["build", ...filters]);
+  if (!buildOnly) {
+    // The registry rate-limits deploys. A retry only sends what is still missing: versions that
+    // already went up are skipped.
+    for (let attempt = 1; ; attempt++) {
+      try { run(["deploy", "--ci", ...filters]); break; }
+      catch (error) {
+        if (attempt >= 3) throw error;
+        console.log(`deploy failed (attempt ${attempt}); retrying in 70s`);
+        execFileSync("sleep", ["70"]);
+      }
+    }
   }
 }
 

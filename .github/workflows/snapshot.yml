@@ -35,6 +35,13 @@ jobs:
           cache: npm
       - run: npm install --global npm@11.19.0
       - run: npm ci
+      # The last successful snapshot of this PR, so a push only publishes what changed since.
+      - name: Restore snapshot checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: .snapshot-state
+          key: snapshot-pr${{ github.event.pull_request.number }}-${{ github.run_id }}
+          restore-keys: snapshot-pr${{ github.event.pull_request.number }}-
       # The snapshot edits stay in this checkout and are never committed.
       - name: Version snapshot
         env:
@@ -42,10 +49,25 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          since=$(git merge-base "$BASE_SHA" HEAD)
-          npx s2s version --snapshot "dev.${GITHUB_RUN_NUMBER}.pr${PR}.g${HEAD_SHA:0:12}" \
-            --since "$since" --output "$RUNNER_TEMP/snapshot.json"
+          id="dev.${GITHUB_RUN_NUMBER}.pr${PR}.g${HEAD_SHA:0:12}"
+          state=.snapshot-state/state.json
+          prev=""
+          if [ -f "$state" ]; then prev=$(jq -r .source "$state"); fi
+          if [ -n "$prev" ] && git merge-base --is-ancestor "$prev" HEAD; then
+            echo "Since the last snapshot of this PR ($prev)"
+            npx s2s version --snapshot "$id" --since "$prev" --snapshot-state "$state" --output "$RUNNER_TEMP/snapshot.json"
+          else
+            echo "First snapshot of this PR (or its history was rewritten): since the base"
+            npx s2s version --snapshot "$id" --since "$(git merge-base "$BASE_SHA" HEAD)" --output "$RUNNER_TEMP/snapshot.json"
+          fi
       - name: Build and publish
         run: node scripts/snapshot.mjs "$RUNNER_TEMP/snapshot.json"
         env:
           S2SCRIPT_TOKEN: ${{ secrets.S2SCRIPT_TOKEN }}
+      # Only after a successful publish, so a failed run is retried from the same checkpoint.
+      - name: Keep snapshot checkpoint
+        run: mkdir -p .snapshot-state && cp "$RUNNER_TEMP/snapshot.json" .snapshot-state/state.json
+      - uses: actions/cache/save@v4
+        with:
+          path: .snapshot-state
+          key: snapshot-pr${{ github.event.pull_request.number }}-${{ github.run_id }}
