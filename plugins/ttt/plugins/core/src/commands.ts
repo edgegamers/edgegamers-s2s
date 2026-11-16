@@ -11,6 +11,7 @@
  */
 
 import { command } from "@s2script/sdk/commands";
+import { Hud } from "@s2script/sdk/hud";
 import { fileReport, getReport, listConvictions, overturnRuling, pardonSlays, pendingReports, reportsAvailable } from "./core/reports-provider";
 const FileResult={Ok:0,RateLimited:1,SelfReport:2,Duplicate:3,EmptyReason:4} as const;
 const REPORTS_PER_ROUND=3;
@@ -450,6 +451,18 @@ export function registerCommands(): void {
     if (!hud) { cmd.reply(replyPhraseFor(cmd, "ttt.hud.unavailable")); return; }
     const why = hud.ensure();
     cmd.reply(why === null ? replyPhraseFor(cmd, "ttt.hud.spawned") : replyPhraseFor(cmd, "ttt.hud.not_ready", why === "UI provider ended" ? msgFor(cmd.callerSlot, "ttt.hud.provider_ended") : why === "UI provider unavailable" ? msgFor(cmd.callerSlot, "ttt.hud.provider_unavailable") : why));
+  });
+
+  // TEMPORARY: find which hide-HUD flag (if any) hides the stock top bar. Remove once known.
+  command.admin("sm_ttt_hudbit", ADMFLAG.CONFIG, (cmd) => {
+    const slot = cmd.callerSlot;
+    const n = cmd.argInt(0, -1);
+    if (slot < 0) { cmd.reply("[TTT] Run this in game."); return; }
+    if (n < 0 || n > 31) { cmd.reply(`[TTT] Usage: sm_ttt_hudbit <0-31>. Toggles flag 1<<n for you. Now hidden: ${Hud.hidden(slot)}`); return; }
+    const bit = 1 << n;
+    const on = (Hud.hidden(slot) & bit) === 0;
+    if (on) Hud.hide(slot, bit); else Hud.show(slot, bit);
+    cmd.reply(`[TTT] Flag 1<<${n} (${bit}) is now ${on ? "ON (hidden)" : "OFF (shown)"}. All hidden flags: ${Hud.hidden(slot)}`);
   });
 
   command.admin("sm_rdm", ADMFLAG.GENERIC, (cmd) => {
