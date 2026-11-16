@@ -28,7 +28,6 @@
     "plugins/weaponpaints-ds",
     "plugins/pug",
     "plugins/portal",
-    "plugins/spectatehub",
     "packages/*"
   ],
   "s2script": {
@@ -46,8 +45,7 @@
         "plugins/weaponpaints",
         "plugins/weaponpaints-ds",
         "plugins/pug",
-        "plugins/portal",
-        "plugins/spectatehub"
+        "plugins/portal"
       ],
       "bundles": [
         "plugins/ttt",
