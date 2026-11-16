@@ -11,7 +11,7 @@ import type { GameHudBar, GameHudRail, GameHudRailSpec, GameHudStatus, GameHudSt
 import { Hud } from '@s2script/sdk/hud';
 import { RegionPainter, clock, leadingTone, percent, pips } from '@edgegamers/gamehud';
 import { hudPhraseFor, loadPhrases } from '../../../packages/contracts/phrases.ts';
-import type { UiActor, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../api';
+import type { UiActor, UiRoundHud, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 
 const THEME = 'red' as const;
 const ROLE_KEYS: Record<UiRoundRole, string> = {
@@ -31,6 +31,8 @@ export class RoundHud {
   private claimed = false;
   private readonly themed = new Set<number>();
   private readonly timerHidden = new Set<number>();
+  /** A Traitor's partners, shown on their status card. */
+  private readonly mates = new Map<number, string[]>();
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
   private warned = false;
   private announced = false;
@@ -112,8 +114,10 @@ export class RoundHud {
     if (painter === null) return;
     const dead = hud.phase === 'live' && !hud.living && (hud.role === 'innocent' || hud.role === 'traitor' || hud.role === 'detective');
     const role = dead ? hudPhraseFor(slot, 'ttt.hud.role_dead') : hudPhraseFor(slot, ROLE_KEYS[hud.role]);
+    const mates = hud.role === 'traitor' && hud.living ? this.mates.get(slot) : undefined;
     const hint = dead ? hudPhraseFor(slot, 'ttt.hud.hint_dead')
       : hud.phase === 'countdown' && hud.role === 'none' ? hudPhraseFor(slot, 'ttt.hud.hint_countdown')
+      : mates !== undefined ? (mates.length ? hudPhraseFor(slot, 'ttt.hud.hint_mates', mates.join(', ')) : hudPhraseFor(slot, 'ttt.hud.hint_alone'))
       : hudPhraseFor(slot, HINT_KEYS[hud.role]);
     const bars: GameHudBar[] = [];
     if (hud.living) {
@@ -131,6 +135,47 @@ export class RoundHud {
     const slot = actor.slot;
     const title = hudPhraseFor(slot, ROLE_KEYS[role]);
     GameHud.toast(slot, { title, sub: hudPhraseFor(slot, HINT_KEYS[role]), tone: leadingTone(title) ?? 'accent', seconds: 4 });
+  }
+
+  /** A Traitor's partners for their status card, or null to clear. Painted on the next model. */
+  setMates(slot: number, mates: string[] | null): void {
+    if (mates === null) this.mates.delete(slot); else this.mates.set(slot, mates);
+  }
+
+  /** The round-end sheet. It never takes the cursor. */
+  summary(actors: readonly UiActor[], s: UiRoundSummary): void {
+    for (const actor of actors) {
+      const slot = actor.slot;
+      const title = s.winner === 'traitor' ? hudPhraseFor(slot, 'ttt.hud.end_traitors')
+        : s.winner === 'innocent' ? hudPhraseFor(slot, 'ttt.hud.end_innocents')
+        : hudPhraseFor(slot, 'ttt.hud.end_none');
+      const count = (role: UiRoundRole): number => s.players.filter((p) => p.role === role).length;
+      // Traitors first: who they were is what everyone wants to know.
+      const order: UiRoundRole[] = ['traitor', 'detective', 'innocent'];
+      const rows = s.players
+        .filter((p) => order.includes(p.role))
+        .sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))
+        .slice(0, 5)
+        .map((p) => [p.name, hudPhraseFor(slot, ROLE_KEYS[p.role]), p.alive ? hudPhraseFor(slot, 'ttt.hud.end_alive') : hudPhraseFor(slot, 'ttt.hud.role_dead')]);
+      try {
+        GameHud.summary(slot, {
+          eyebrow: hudPhraseFor(slot, 'ttt.hud.end_round', s.round),
+          title,
+          tone: leadingTone(title) ?? 'accent',
+          sub: s.reason ?? undefined,
+          stats: [
+            { key: hudPhraseFor(slot, 'ttt.role.traitor'), value: count('traitor') },
+            { key: hudPhraseFor(slot, 'ttt.role.detective'), value: count('detective') },
+            { key: hudPhraseFor(slot, 'ttt.role.innocent'), value: count('innocent') },
+            { key: hudPhraseFor(slot, 'ttt.hud.end_survivors'), value: s.players.filter((p) => p.alive && order.includes(p.role)).length },
+          ],
+          table: { columns: [hudPhraseFor(slot, 'ttt.hud.end_player'), hudPhraseFor(slot, 'ttt.hud.end_role'), ''], rows },
+          seconds: 8,
+        });
+      } catch (error) {
+        this.warnOnce(`summary failed: ${String(error)}`);
+      }
+    }
   }
 
   /** The stock round timer duplicates the rail clock while the rail is up. */
@@ -160,6 +205,7 @@ export class RoundHud {
     this.statusPaint?.forget(slot);
     this.themed.delete(slot);
     this.timerHidden.delete(slot);
+    this.mates.delete(slot);
   }
 
   hideAll(): void {

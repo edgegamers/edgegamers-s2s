@@ -12,6 +12,10 @@ export function gameHudDouble(phrases = {}) {
     rail: () => { log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => region('feed'),
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
+    drawer: (slot, spec) => panel('drawer', slot, spec),
+    sheet: (slot, spec) => panel('sheet', slot, spec),
+    prompt: (slot, spec) => panel('prompt', slot, spec),
+    summary: (audience, spec) => log.push(['summary', audience, JSON.parse(JSON.stringify(spec))]),
     intro: (slot, spec) => hub('intro', slot, spec),
     spectate: (slot, spec) => hub('spectate', slot, spec),
   };
@@ -27,6 +31,24 @@ export function gameHudDouble(phrases = {}) {
       follow: () => true, shot: () => true, nextShot: () => true,
     };
     hubs.set(slot, handle);
+    return handle;
+  };
+  const panels = new Map();
+  let refusePanel = false;
+  const panel = (kind, slot, spec) => {
+    if (refusePanel) return null;
+    log.push([kind, 'open', slot, JSON.parse(JSON.stringify(spec))]);
+    const handle = {
+      spec, open: true, isOpen: () => handle.open,
+      update: (next) => { handle.last = next; log.push([kind, 'update', slot, JSON.parse(JSON.stringify(next))]); },
+      close: () => {
+        if (!handle.open) return;
+        handle.open = false; log.push([kind, 'close', slot]);
+        if (kind === 'prompt') spec.onAnswer?.({ index: null, id: undefined, reason: 'cancelled' }); else spec.onClose?.(false);
+      },
+      setTab: () => {}, show: () => {}, page: () => {},
+    };
+    panels.set(`${kind}:${slot}`, handle);
     return handle;
   };
   const commands = [];
@@ -49,6 +71,8 @@ export function gameHudDouble(phrases = {}) {
     rebuild: () => { generation++; },
     cs2: { GameHud, HideHud: { RoundTimer: 32 } },
     hubs,
+    panels,
+    refusePanels: (v) => { refusePanel = v; },
     commands,
     refuseHubs: (v) => { refuseHub = v; },
     mods: {

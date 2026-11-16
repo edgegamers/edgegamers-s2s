@@ -116,7 +116,7 @@ import {
 } from "./shop/weaponfx";
 
 import { tickHud } from "./cs2/hud";
-import { tickRoundHud, toastRole } from "./cs2/round-hud";
+import { showRoundSummary, tickRoundHud, toastRole } from "./cs2/round-hud";
 import { onPlayerPing, registerCommands, resetShopMenus } from "./commands";
 
 /**
@@ -347,6 +347,13 @@ export function OnPluginStart(): void {
       const item = itemById(ev.itemId);
       if (item !== undefined) logPurchase(ev.slot, msg(item.nameKey));
     },
+    { priority: Priority.MONITOR, ignoreCanceled: true },
+  );
+
+  // The round-end sheet, once the round has really ended.
+  ordered.forModule("bootstrap").on(
+    "gameState",
+    (ev) => { if (ev.state === GameState.Finished) showRoundSummary(game.winner, game.endReason); },
     { priority: Priority.MONITOR, ignoreCanceled: true },
   );
 

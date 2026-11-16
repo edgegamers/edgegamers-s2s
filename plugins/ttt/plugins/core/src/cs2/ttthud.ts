@@ -1,5 +1,5 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiHub, UiHubRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
+import type { UiActor, UiHub, UiHubRow, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
 import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
@@ -53,6 +53,14 @@ function facade(provider: UiMethods) {
     }),
     roleToast: (slot: number, role: UiRoundRole) => roundHud(() => withActor(slot, undefined, (a) => provider.roleToast(a, role))),
     hideRoundHud: () => roundHud(() => provider.hideRoundHud()),
+    roundSummary: (slots: readonly number[], summary: UiRoundSummary) => {
+      if (typeof provider.roundSummary !== 'function') return;
+      invoke(() => {
+        const actors: UiActor[] = [];
+        for (const slot of slots) { const actor = captureViewerUiActor(slot); if (actor !== null) actors.push(actor); }
+        provider.roundSummary(actors, { ...summary, players: summary.players.map((p) => ({ ...p })) });
+      }, undefined);
+    },
     paintHubs: (views: readonly { slot: number; hub: UiHub }[]) => {
       if (hubMissing) return;
       if (typeof provider.paintHubs !== 'function') { hubMissing = true; console.log('[ttt/ui] UI provider has no spectate hub; update ttt-ui'); return; }

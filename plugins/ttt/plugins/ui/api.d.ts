@@ -22,6 +22,10 @@ export interface UiRoundHudRow { actor: UiActor; hud: UiRoundHud; }
 export interface UiHubPlayer { slot: number; name: string; health: number; detective: boolean; }
 export interface UiHub { intro: boolean; canJoin: boolean; phase: UiRoundPhase; round: number; players: UiHubPlayer[]; }
 export interface UiHubRow { actor: UiActor; hub: UiHub; }
+export type UiRoundWinner = 'traitor' | 'innocent' | 'none';
+export interface UiSummaryPlayer { name: string; role: UiRoundRole; alive: boolean; }
+/** The round-end sheet. Roles are public once a round ends, so every viewer gets the same one. */
+export interface UiRoundSummary { winner: UiRoundWinner; reason: string | null; round: number; players: UiSummaryPlayer[]; }
 export interface UiModelMethods {
   matchesUiActor(actor: UiActor, stamp?: UiShopStamp): boolean;
   getUiShop(actor: UiActor): UiShopView | null;
@@ -60,5 +64,6 @@ export interface UiMethods {
   roleToast(actor: UiActor, role: UiRoundRole): void;
   hideRoundHud(): void;
   paintHubs(rows: UiHubRow[]): void;
+  roundSummary(actors: UiActor[], summary: UiRoundSummary): void;
 }
 export interface Contract { methods: UiMethods; forwards: {}; }

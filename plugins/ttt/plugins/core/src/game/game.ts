@@ -42,6 +42,8 @@ export const game = {
   state: GameState.Waiting as GameState,
   /** Role that won, or {@link RoleId.None} for a draw / non-role end. */
   winner: RoleId.None as RoleId,
+  /** Why a non-role end happened, in the server language, for the round-end sheet. */
+  endReason: null as string | null,
   /** `Server.gameTime` when the round went live. */
   startedAt: 0,
   /** How many players were dealt a playing role. */
@@ -516,6 +518,7 @@ export function endGame(winner: RoleId, reason?: string): void {
   engineEndedRound = false;
 
   game.winner = winner;
+  game.endReason = reason === undefined ? null : plainText(msgFor(-1, reason));
   const ending = epoch;
   epoch++; // invalidate round-owned work and timers
   if (!setState(GameState.Finished)) return;

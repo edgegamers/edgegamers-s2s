@@ -11,7 +11,7 @@
  */
 import { GameState, RoleId, Team } from "../core/enums";
 import * as reg from "../core/registry";
-import type { UiHub, UiRoundHud, UiRoundRole } from "../../../../packages/contracts/ui-types.ts";
+import type { UiHub, UiRoundHud, UiRoundRole, UiRoundSummary } from "../../../../packages/contracts/ui-types.ts";
 import { Clients } from "@s2script/sdk/clients";
 import { clockRemaining, game } from "../game/game";
 import { karmaOf, MAX_KARMA } from "../karma/karma";
@@ -126,4 +126,29 @@ export function tickRoundHud(dt: number): void {
 /** The role toast as a role is dealt. */
 export function toastRole(slot: number, role: RoleId): void {
   if (role === RoleId.Innocent || role === RoleId.Traitor || role === RoleId.Detective) getTttHud()?.roleToast(slot, roleName(role));
+}
+
+/**
+ * The round-end sheet for everyone. Roles are revealed to all once a round ends, so the sheet is
+ * the same for every viewer. Exported for tests.
+ */
+export function roundSummaryFor(winner: RoleId, reason: string | null): UiRoundSummary {
+  const players: UiRoundSummary["players"] = [];
+  for (const slot of reg.activeSlots()) {
+    if (!reg.isParticipating(slot)) continue;
+    players.push({ name: reg.nameOf(slot), role: roleName(reg.roleOf(slot)), alive: reg.isAlive(slot) });
+  }
+  return {
+    winner: winner === RoleId.Traitor ? "traitor" : winner === RoleId.Innocent || winner === RoleId.Detective ? "innocent" : "none",
+    reason,
+    // Called as the round ends, before the round counter moves on.
+    round: game.roundsThisMap + 1,
+    players,
+  };
+}
+
+export function showRoundSummary(winner: RoleId, reason: string | null): void {
+  const hud = getTttHud();
+  if (hud === null) return;
+  hud.roundSummary(reg.activeSlots().slice(), roundSummaryFor(winner, reason));
 }
