@@ -212,9 +212,12 @@ function join(slot: number, team: number): void {
   const client = Clients.fromSlot(slot);
   if (!client?.isValid()) return;
   menu?.close(slot);
-  // jointeam, so each mode's own team rules decide; if it is refused they stay here.
-  client.fakeCommand(`jointeam ${team}`);
-  after(250, () => {
+  // The client's own `jointeam`, so it reaches the engine's team request and each mode's own
+  // team rules decide. A server-side fakeCommand is refused for it (jointeam is handled by the
+  // controller, not a registered console command), which left every join "refused".
+  const sent = client.isBot ? client.fakeCommand(`jointeam ${team}`) : client.command(`jointeam ${team}`);
+  if (!sent) log(`jointeam ${team} could not be sent for slot ${slot}`);
+  after(1500, () => {
     const p = human(slot);
     if (p && isSpectator(p)) { chat(slot, "spectatehub.chat.join_refused"); openHub(slot); }
   });
