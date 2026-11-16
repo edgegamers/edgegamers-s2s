@@ -291,6 +291,7 @@ export function OnPluginStart(): void {
 
   command.admin("sm_hubshot", ADMFLAG.CONFIG, hubShot);
   command.admin("sm_hubprobe", ADMFLAG.CONFIG, hubProbe);
+  command.admin("sm_hidehud", ADMFLAG.CONFIG, hideHudToggle);
 }
 
 /** Print the caller's eye position and angles as a shot entry for spectatehub_shots.json. */
@@ -300,6 +301,17 @@ function hubShot(cmd: CommandInvocation) {
   if (!eye || !ang) { cmd.reply("[spectatehub] stand where the shot should be, alive"); return HookResult.Handled; }
   const r = (n: number) => Math.round(n * 10) / 10;
   cmd.reply(`[spectatehub] "${Server.mapName}": { "origin": [${r(eye.x)}, ${r(eye.y)}, ${r(eye.z)}], "angles": [${r(ang.x)}, ${r(ang.y)}, 0] }`);
+  return HookResult.Handled;
+}
+
+/** Toggle HideHud bits (default 32, the round timer) for the caller, to test what CS2 honours. */
+function hideHudToggle(cmd: CommandInvocation) {
+  const slot = cmd.callerSlot;
+  if (slot < 0) return HookResult.Handled;
+  const bits = cmd.argCount > 0 ? Number(cmd.arg(0)) >>> 0 : 32;
+  if (!bits) { cmd.reply("[spectatehub] usage: sm_hidehud <bits>  (2 radar, 4 health, 8 crosshair, 16 money, 32 round timer, 64 chat)"); return HookResult.Handled; }
+  const mine = (Hud.hidden(slot) & bits) === bits ? Hud.show(slot, bits) : Hud.hide(slot, bits);
+  cmd.reply(`[spectatehub] spectatehub now hides ${mine}; all plugins ${Hud.hiddenByAll(slot)}`);
   return HookResult.Handled;
 }
 
