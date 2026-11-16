@@ -39,7 +39,7 @@ test('the shop opens on the drawer and a purchase takes two clicks on the same r
  assert.equal(f.api.openShop(actor(1)),true);
  const d=f.panel('drawer',1);
  assert.equal(d.spec.right,'5 credits');
- assert.deepEqual(d.spec.rows.map(r=>[r.itemId,r.disabled]),[['knife',false],['c4',true]]);
+ assert.equal(JSON.stringify(d.spec.rows.map(r=>[r.itemId,r.disabled])),'[["knife",false],["c4",true]]');
  d.spec.onSelect(d.spec.rows[0],d);
  assert.deepEqual(f.bought,[],'one click only selects');
  assert.equal(d.last.rows[0].sub,'Click again to buy');
@@ -146,4 +146,15 @@ test('unload closes every open panel', () => {
  f.end();
  assert.equal(f.panel('drawer',1).open,false);
  assert.equal(f.panel('prompt',2).open,false);
+});
+
+test('a long shop pages into tabs of 8, buyable items first', () => {
+ const f=load();
+ const rows=Array.from({length:10},(_,i)=>({itemId:'i'+i,name:'Item '+i,description:'',price:1,limit:0,refusal:i===0?'no':null}));
+ f.core.getUiShop=a=>({balance:5,stamp:{},rows});
+ f.api.openShop(actor(1));
+ const d=f.panel('drawer',1);
+ assert.equal(d.spec.tabs.length,2);
+ assert.equal(d.spec.tabs[0].rows.length,8);
+ assert.equal(d.spec.tabs[1].rows.at(-1).itemId,'i0','a refused item goes last');
 });

@@ -34,6 +34,17 @@ function ago(slot: number, filed: number, now: number): string {
   return s < 10 ? t(slot, 'ttt.panel.just_now') : s < 60 ? t(slot, 'ttt.panel.seconds_ago', s) : t(slot, 'ttt.panel.minutes_ago', Math.floor(s / 60));
 }
 
+/** The drawer shows 8 rows a tab and 5 tabs: longer lists become numbered page tabs. */
+const PAGE_ROWS = 8, MAX_PAGES = 5;
+function paged(slot: number, rows: GameHudDrawerRow[]): { rows?: GameHudDrawerRow[]; tabs?: { id: string; label: string; rows: GameHudDrawerRow[] }[] } {
+  if (rows.length <= PAGE_ROWS) return { rows, tabs: [] };
+  const tabs: { id: string; label: string; rows: GameHudDrawerRow[] }[] = [];
+  for (let i = 0; i < rows.length && tabs.length < MAX_PAGES; i += PAGE_ROWS) {
+    tabs.push({ id: `p${tabs.length}`, label: t(slot, 'ttt.panel.page', tabs.length + 1), rows: rows.slice(i, i + PAGE_ROWS) });
+  }
+  return { tabs };
+}
+
 type DrawerMode =
   | { kind: 'shop'; view: UiShopView; picked: { itemId: string; at: number } | null }
   | { kind: 'pick'; targets: UiReportTarget[] };
@@ -141,13 +152,15 @@ export class TttPanels {
   private drawerSpec(slot: number, mode: DrawerMode) {
     if (mode.kind === 'pick') {
       const rows: GameHudDrawerRow[] = mode.targets.length
-        ? mode.targets.slice(0, 8).map((x, i) => ({ title: x.name, sub: t(slot, 'ttt.panel.report_row'), tone: 'lightred' as const, index: i }))
+        ? mode.targets.map((x, i) => ({ title: x.name, sub: t(slot, 'ttt.panel.report_row'), tone: 'lightred' as const, index: i }))
         : [{ title: t(slot, 'ttt.panel.report_none'), disabled: true }];
-      return { title: t(slot, 'ttt.panel.report_title'), right: t(slot, 'ttt.panel.players', mode.targets.length), footer: t(slot, 'ttt.panel.report_footer'), rows, tabs: undefined };
+      return { title: t(slot, 'ttt.panel.report_title'), right: t(slot, 'ttt.panel.players', mode.targets.length), footer: t(slot, 'ttt.panel.report_footer'), ...paged(slot, rows) };
     }
     const view = mode.view;
-    const rows: GameHudDrawerRow[] = view.rows.length
-      ? view.rows.slice(0, 8).map((item) => {
+    // What you can buy first, then what you can't.
+    const items = [...view.rows.filter((i) => i.refusal === null), ...view.rows.filter((i) => i.refusal !== null)];
+    const rows: GameHudDrawerRow[] = items.length
+      ? items.map((item) => {
         const picked = mode.picked?.itemId === item.itemId;
         return {
           title: item.name,
@@ -160,7 +173,7 @@ export class TttPanels {
         };
       })
       : [{ title: t(slot, 'ttt.panel.shop_empty'), disabled: true }];
-    return { title: t(slot, 'ttt.panel.shop_title'), right: t(slot, 'ttt.panel.credits', view.balance), footer: t(slot, 'ttt.panel.shop_footer'), rows, tabs: undefined };
+    return { title: t(slot, 'ttt.panel.shop_title'), right: t(slot, 'ttt.panel.credits', view.balance), footer: t(slot, 'ttt.panel.shop_footer'), ...paged(slot, rows) };
   }
 
   private drawerSelect(slot: number, row: GameHudDrawerRow): void {

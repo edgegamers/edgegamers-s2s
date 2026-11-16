@@ -367,5 +367,6 @@
   "ttt.panel.rdm_ban": "{darkred}Ban",
   "ttt.panel.rdm_ban_confirm": "{darkred}Confirm ban",
   "ttt.panel.rdm_ban_line": "{grey}Ban the accused",
-  "ttt.panel.rdm_ban_armed": "{red}Click again to ban {lightred}{1}"
+  "ttt.panel.rdm_ban_armed": "{red}Click again to ban {lightred}{1}",
+  "ttt.panel.page": "{grey}Page {yellow}{1}"
 }
