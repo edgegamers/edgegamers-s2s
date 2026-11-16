@@ -350,13 +350,6 @@ export function OnPluginStart(): void {
     { priority: Priority.MONITOR, ignoreCanceled: true },
   );
 
-  // The round-end sheet, once the round has really ended.
-  ordered.forModule("bootstrap").on(
-    "gameState",
-    (ev) => { if (ev.state === GameState.Finished) showRoundSummary(game.winner, game.endReason); },
-    { priority: Priority.MONITOR, ignoreCanceled: true },
-  );
-
   // Refresh the config snapshot once per round rather than per config read.
   ordered.forModule("bootstrap").on(
     "gameState",
@@ -371,6 +364,8 @@ export function OnPluginStart(): void {
         // the old role and balance, so a stale digit would buy something the player never saw.
         if (ev.state === GameState.Finished) {
           resetShopMenus();
+          // The round-end sheet. endGame has set the winner and reason by now.
+          showRoundSummary(game.winner, game.endReason);
           // Drop the traitor badge and any open shop at round end. Leaving the badge up would keep
           // showing a dead round's roster into the next one.
           getTttHud()?.resetAll();
