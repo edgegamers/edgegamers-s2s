@@ -33,6 +33,7 @@ export class RoundHud {
   private readonly timerHidden = new Set<number>();
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
   private warned = false;
+  private announced = false;
   private warnOnce(line: string): void { if (!this.warned) { this.warned = true; this.log(line); } }
 
   constructor() { loadPhrases(); }
@@ -68,6 +69,10 @@ export class RoundHud {
     this.claim();
     // Nothing claimed (a host without GameHud, or both regions held elsewhere): already logged once.
     if (this.railPaint === null && this.statusPaint === null) return;
+    if (!this.announced) {
+      this.announced = true;
+      this.log(`round HUD painting ${rows.length} viewer(s); rail ${this.railPaint ? "claimed" : "unavailable"}, status card ${this.statusPaint ? "claimed" : "unavailable"}`);
+    }
     const seen = new Set<number>();
     for (const row of rows) {
       const slot = row.actor.slot;
@@ -171,6 +176,7 @@ export class RoundHud {
     this.rail = this.status = null;
     this.railPaint = this.statusPaint = null;
     this.claimed = false;
+    this.announced = false;
     this.themed.clear();
   }
 }

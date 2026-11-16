@@ -15,7 +15,7 @@ import { Entity } from "@s2script/sdk/entity";
 import { every, after } from "@s2script/sdk/timers";
 import { Hud } from "@s2script/sdk/hud";
 import type { Timer } from "@s2script/sdk/timers";
-import { ChatColors, CustomCameraMode, Events, HideHud, hudkit, Pawn, Player } from "@s2script/cs2";
+import { ChatColors, CustomCameraMode, Events, GameHud, HideHud, hudkit, Pawn, Player } from "@s2script/cs2";
 import type { CustomPlayerCamera, Modal, Row } from "@s2script/cs2";
 import english from "../translations/spectatehub.phrases.json";
 import { nextShot, parseShotFile, shotsFromSpawns } from "./director";
@@ -292,6 +292,7 @@ export function OnPluginStart(): void {
   command.admin("sm_hubshot", ADMFLAG.CONFIG, hubShot);
   command.admin("sm_hubprobe", ADMFLAG.CONFIG, hubProbe);
   command.admin("sm_hidehud", ADMFLAG.CONFIG, hideHudToggle);
+  command.admin("sm_hudtest", ADMFLAG.CONFIG, hudTest);
 }
 
 /** Print the caller's eye position and angles as a shot entry for spectatehub_shots.json. */
@@ -326,6 +327,26 @@ function hideHudToggle(cmd: CommandInvocation) {
   const all = Hud.hiddenByAll(slot);
   const hidden = Object.entries(HUD_PARTS).filter(([, bit]) => all & bit).map(([n]) => n);
   cmd.reply(`[spectatehub] hidden now: ${hidden.length ? hidden.join(", ") : "nothing"}`);
+  return HookResult.Handled;
+}
+
+/** Test-only: draw a GameHud toast, rail and status card for the caller, straight from the SDK. */
+function hudTest(cmd: CommandInvocation) {
+  const slot = cmd.callerSlot;
+  if (slot < 0) return HookResult.Handled;
+  const step = (name: string, run: () => unknown): string => {
+    try { const r = run(); return `${name}=${r === undefined ? "ok" : String(r)}`; } catch (e) { return `${name}=THREW ${String(e)}`; }
+  };
+  const out: string[] = [];
+  out.push(step("hudkitToast", () => hudkit.toast(slot, { title: "hudkit toast", message: "s2script_lib.xml works" }) ?? "ok"));
+  out.push(step("gamehudToast", () => GameHud.toast(slot, { title: "GameHud toast", sub: "s2script_gamehud.xml works", tone: "green", seconds: 6 })));
+  let rail: ReturnType<typeof GameHud.rail> = null, status: ReturnType<typeof GameHud.status> = null;
+  out.push(step("rail", () => { rail = GameHud.rail(); return rail ? "claimed" : "null (held by another plugin)"; }));
+  out.push(step("status", () => { status = GameHud.status(); return status ? "claimed" : "null (held by another plugin)"; }));
+  if (rail) out.push(step("railSet", () => rail!.set(slot, { left: { score: 7, label: "{green}Alive", alive: 7, total: 9 }, right: { score: 2, label: "{red}Bodies" }, clock: "1:23", sub: "{grey}hud test" })));
+  if (status) out.push(step("statusSet", () => status!.set(slot, { role: "{red}Test", hint: "status card works", bars: [{ label: "HP", value: 80, text: 80, tone: "green" }] })));
+  cmd.reply(`[spectatehub] ${out.join(" | ")} (released in 10s)`);
+  after(10000, () => { try { (rail as { release(): void } | null)?.release(); (status as { release(): void } | null)?.release(); } catch { /* gone */ } });
   return HookResult.Handled;
 }
 
