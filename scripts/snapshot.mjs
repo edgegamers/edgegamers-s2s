@@ -46,33 +46,48 @@ function expand(patterns) {
 }
 const workspacePlugins = expand(JSON.parse(readFileSync(join(root, "package.json"), "utf8")).s2script.workspace.plugins);
 
-// A plugin dependency range is checked against the provider's INTERFACE version at build and
-// load, and `s2s version --snapshot` rightly leaves both alone (core still publishes its 2.3.0
-// interface). The server's install planner resolves the same range against PACKAGE versions,
-// though, so `^2.3.0` can never pick a 0.0.0-dev… core and the plan fails. Widen each range on a
-// snapshotted provider with that exact snapshot: the interface check still matches the authored
-// half, and the planner matches the snapshot. Only the throwaway checkout is edited.
-const snapshotted = new Map(report.packages.map((p) => [p.name, p.version]));
-function pinRanges() {
+// Plugin dependency ranges name a provider's INTERFACE, checked against its `publishes` version
+// at build and load, but the server's install planner also resolves them against PACKAGE versions.
+// `s2s version --snapshot` keeps both as authored (core still publishes 2.3.0 and consumers still
+// ask for ^2.3.0), so the planner can never pick a 0.0.0-dev… core. It does not accept `a || b`
+// ranges either. So move the whole snapshot onto one exact version: every interface a snapshotted
+// plugin publishes takes its snapshot version, and every range on such an interface becomes that
+// exact version. Snapshot selection already includes every consumer of a changed provider, so no
+// stable plugin is left asking for the old interface. Only the throwaway checkout is edited.
+function pinSnapshot() {
+  const read = (dir) => JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
+  const write = (dir, pkg) => writeFileSync(join(root, dir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
+  const interfaces = new Map();
+  for (const p of report.packages.filter((p) => p.kind === "plugin")) {
+    const pkg = read(p.path);
+    let publishes = pkg.s2script?.publishes;
+    if (publishes === undefined || publishes === null) continue;
+    if (publishes === "self") publishes = { [pkg.name]: p.version };
+    for (const name of Object.keys(publishes)) {
+      publishes[name] = p.version;
+      interfaces.set(name, p.version);
+    }
+    pkg.s2script.publishes = publishes;
+    write(p.path, pkg);
+  }
   let pinned = 0;
   for (const dir of workspacePlugins) {
-    const file = join(root, dir, "package.json");
-    const pkg = JSON.parse(readFileSync(file, "utf8"));
+    const pkg = read(dir);
     let changed = false;
     for (const field of ["pluginDependencies", "optionalPluginDependencies"]) {
       const deps = pkg.s2script?.[field];
       if (!deps) continue;
       for (const name of Object.keys(deps)) {
-        const version = snapshotted.get(name);
-        if (version === undefined || deps[name].includes(version)) continue;
-        deps[name] = `${deps[name]} || ${version}`;
+        const version = interfaces.get(name);
+        if (version === undefined || deps[name] === version) continue;
+        deps[name] = version;
         changed = true;
         pinned++;
       }
     }
-    if (changed) writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+    if (changed) write(dir, pkg);
   }
-  return pinned;
+  return { interfaces: interfaces.size, pinned };
 }
 
 const selected = new Set(snaps.filter((p) => p.kind === "plugin").map((p) => p.path));
@@ -87,7 +102,8 @@ const dirs = [...selected].sort();
 if (dirs.length === 0) {
   console.log("nothing to publish: this change touches no published package");
 } else if (!plan) {
-  console.log(`pinned ${pinRanges()} plugin dependency range(s) to accept their snapshots`);
+  const { interfaces, pinned } = pinSnapshot();
+  console.log(`moved ${interfaces} interface(s) and ${pinned} dependency range(s) onto the snapshot version`);
   const filters = dirs.flatMap((dir) => ["--filter", dir]);
   const s2s = join(root, "node_modules", ".bin", "s2s");
   for (const argv of buildOnly ? [["build", ...filters]] : [["build", ...filters], ["deploy", "--ci", ...filters]]) {
