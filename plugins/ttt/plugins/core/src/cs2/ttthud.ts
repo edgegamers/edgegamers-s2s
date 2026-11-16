@@ -1,6 +1,6 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
 import type { UiLogRow, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
-import { captureRegistryUiActor, captureUiActor } from '../core/ui-actor';
+import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
 function invoke<T>(run: () => T, fallback: T): T {
@@ -44,7 +44,8 @@ function facade(provider: UiMethods) {
     paintRoundHud: (views: readonly { slot: number; hud: UiRoundHud }[]) => roundHud(() => {
       const rows: UiRoundHudRow[] = [];
       for (const view of views) {
-        const actor = captureUiActor(view.slot);
+        // Spectators have no pawn and still see the rail.
+        const actor = captureViewerUiActor(view.slot);
         if (actor !== null) rows.push({ actor, hud: { ...view.hud } });
       }
       provider.paintRoundHud(rows);

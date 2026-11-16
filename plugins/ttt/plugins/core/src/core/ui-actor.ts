@@ -12,6 +12,17 @@ export function captureRegistryUiActor(slot: number): UiActor | null {
   return { slot, steamId: reg.steamIdOf(slot), generation: reg.generationOf(slot), roundEpoch: roundEpoch() };
 }
 
+/**
+ * A connected viewer with or without a pawn, for paint-only surfaces such as the round HUD that
+ * spectators must see too. Never use it to authorize an action: that needs {@link captureUiActor}.
+ */
+export function captureViewerUiActor(slot: number): UiActor | null {
+  const actor = captureRegistryUiActor(slot);
+  if (actor === null) return null;
+  const client = Clients.fromSlot(slot);
+  return client !== null && client.isValid() && client.steamId === actor.steamId ? actor : null;
+}
+
 export function captureUiActor(slot: number): UiActor | null {
   const actor = captureRegistryUiActor(slot);
   if (actor === null) return null;
