@@ -50,44 +50,51 @@ const workspacePlugins = expand(JSON.parse(readFileSync(join(root, "package.json
 // at build and load, but the server's install planner also resolves them against PACKAGE versions.
 // `s2s version --snapshot` keeps both as authored (core still publishes 2.3.0 and consumers still
 // ask for ^2.3.0), so the planner can never pick a 0.0.0-dev… core. It does not accept `a || b`
-// ranges either. So move the whole snapshot onto one exact version: every interface a snapshotted
-// plugin publishes takes its snapshot version, and every range on such an interface becomes that
-// exact version. Snapshot selection already includes every consumer of a changed provider, so no
-// stable plugin is left asking for the old interface. Only the throwaway checkout is edited.
+// ranges either. So inside each snapshotted BUNDLE, which installs as one unit, move the members'
+// interfaces onto the snapshot version and pin the members' ranges on each other to it.
+// Ranges on anything outside the bundle (Decluttr, say) stay as authored, so a dev bundle still
+// attaches to the stable plugins next to it. Only the throwaway checkout is edited.
 function pinSnapshot() {
   const read = (dir) => JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
   const write = (dir, pkg) => writeFileSync(join(root, dir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
-  const interfaces = new Map();
-  for (const p of report.packages.filter((p) => p.kind === "plugin")) {
-    const pkg = read(p.path);
-    let publishes = pkg.s2script?.publishes;
-    if (publishes === undefined || publishes === null) continue;
-    if (publishes === "self") publishes = { [pkg.name]: p.version };
-    for (const name of Object.keys(publishes)) {
-      publishes[name] = p.version;
-      interfaces.set(name, p.version);
-    }
-    pkg.s2script.publishes = publishes;
-    write(p.path, pkg);
-  }
-  let pinned = 0;
-  for (const dir of workspacePlugins) {
-    const pkg = read(dir);
-    let changed = false;
-    for (const field of ["pluginDependencies", "optionalPluginDependencies"]) {
-      const deps = pkg.s2script?.[field];
-      if (!deps) continue;
-      for (const name of Object.keys(deps)) {
-        const version = interfaces.get(name);
-        if (version === undefined || deps[name] === version) continue;
-        deps[name] = version;
-        changed = true;
-        pinned++;
+  const snapshotPlugins = new Map(report.packages.filter((p) => p.kind === "plugin").map((p) => [p.path, p.version]));
+  let moved = 0, pinned = 0;
+  for (const bundle of report.packages.filter((p) => p.kind === "bundle")) {
+    const prefix = bundle.path === "." ? "" : `${bundle.path}/`;
+    const members = workspacePlugins.filter((dir) => dir.startsWith(prefix) && snapshotPlugins.has(dir));
+    const interfaces = new Map();
+    for (const dir of members) {
+      const pkg = read(dir);
+      const version = snapshotPlugins.get(dir);
+      let publishes = pkg.s2script?.publishes;
+      if (publishes === undefined || publishes === null) continue;
+      if (publishes === "self") publishes = { [pkg.name]: version };
+      for (const name of Object.keys(publishes)) {
+        publishes[name] = version;
+        interfaces.set(name, version);
+        moved++;
       }
+      pkg.s2script.publishes = publishes;
+      write(dir, pkg);
     }
-    if (changed) write(dir, pkg);
+    for (const dir of members) {
+      const pkg = read(dir);
+      let changed = false;
+      for (const field of ["pluginDependencies", "optionalPluginDependencies"]) {
+        const deps = pkg.s2script?.[field];
+        if (!deps) continue;
+        for (const name of Object.keys(deps)) {
+          const version = interfaces.get(name);
+          if (version === undefined || deps[name] === version) continue;
+          deps[name] = version;
+          changed = true;
+          pinned++;
+        }
+      }
+      if (changed) write(dir, pkg);
+    }
   }
-  return { interfaces: interfaces.size, pinned };
+  return { interfaces: moved, pinned };
 }
 
 const selected = new Set(snaps.filter((p) => p.kind === "plugin").map((p) => p.path));
@@ -103,7 +110,7 @@ if (dirs.length === 0) {
   console.log("nothing to publish: this change touches no published package");
 } else if (!plan) {
   const { interfaces, pinned } = pinSnapshot();
-  console.log(`moved ${interfaces} interface(s) and ${pinned} dependency range(s) onto the snapshot version`);
+  console.log(`moved ${interfaces} interface(s) and ${pinned} dependency range(s) onto the snapshot version inside bundles`);
   const filters = dirs.flatMap((dir) => ["--filter", dir]);
   const s2s = join(root, "node_modules", ".bin", "s2s");
   for (const argv of buildOnly ? [["build", ...filters]] : [["build", ...filters], ["deploy", "--ci", ...filters]]) {
