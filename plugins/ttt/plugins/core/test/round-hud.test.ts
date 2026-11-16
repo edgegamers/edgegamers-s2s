@@ -7,12 +7,13 @@ import {build} from 'esbuild';
 // The actual round HUD model against registry and round doubles: who may see a hidden death.
 const cs2=fileURLToPath(new URL('../src/cs2/',import.meta.url));
 const mocks:Record<string,string>={
- '../core/enums':'export const GameState={Waiting:0,Countdown:1,InProgress:2,Finished:3},RoleId={None:0,Innocent:1,Traitor:2,Detective:3,Spectator:4};',
- '../core/registry':'export const activeSlots=()=>fixture.slots,isParticipating=s=>fixture.playing.has(s),isAlive=s=>fixture.alive.has(s),roleOf=s=>fixture.roles[s]??0;',
+ '../core/enums':'export const GameState={Waiting:0,Countdown:1,InProgress:2,Finished:3},RoleId={None:0,Innocent:1,Traitor:2,Detective:3,Spectator:4},Team={None:0,Spectator:1,Terrorist:2,CounterTerrorist:3};',
+ '../core/registry':'export const activeSlots=()=>fixture.slots,isParticipating=s=>fixture.playing.has(s),isAlive=s=>fixture.alive.has(s),roleOf=s=>fixture.roles[s]??0,nameOf=s=>"p"+s;',
  '../game/game':'export const game=fixture.game;export const clockRemaining=()=>fixture.clock;',
  '../karma/karma':'export const karmaOf=()=>70,MAX_KARMA=100;',
  './combat':'export const isDeathRevealed=s=>fixture.revealed.has(s);',
- './pawn':'export const getHealth=()=>90,pawnOf=()=>({maxHealth:100});',
+ './pawn':'export const getHealth=()=>90,pawnOf=()=>({maxHealth:100}),teamOf=s=>fixture.teams[s]??2;',
+ '@s2script/sdk/clients':'export const Clients={fromSlot:s=>({isBot:fixture.bots.has(s)})};',
  './ttthud':'export const getTttHud=()=>fixture.hud;',
 };
 const code=(await build({stdin:{contents:"export * from './round-hud';",loader:'ts',resolveDir:cs2},bundle:true,write:false,format:'cjs',platform:'node',plugins:[{name:'mocks',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:mocks[a.path]!}));}}]})).outputFiles[0]!.text;
@@ -20,7 +21,7 @@ const code=(await build({stdin:{contents:"export * from './round-hud';",loader:'
 function load(){
  // Slots 0-3 play: 0 traitor alive, 1 innocent alive, 2 innocent dead and found, 3 innocent dead and hidden. 4 sits out.
  const fixture={slots:[0,1,2,3,4],playing:new Set([0,1,2,3]),alive:new Set([0,1]),revealed:new Set([2]),roles:{0:2,1:1,2:1,3:1} as Record<number,number>,
-  game:{state:2,participants:4,roundsThisMap:3},clock:42,hud:null as any};
+  game:{state:2,participants:4,roundsThisMap:3},clock:42,hud:null as any,teams:{4:1} as Record<number,number>,bots:new Set<number>()};
  const module={exports:{} as any};
  runInContext(code,createContext({fixture,module,exports:module.exports}));
  return {fixture,api:module.exports};
@@ -51,11 +52,26 @@ test('roles stay hidden until dealt, and the round end tells everyone', () => {
 test('the paint goes out at most four times a second', () => {
  const {fixture,api}=load();
  const paints:any[]=[];
- fixture.hud={paintRoundHud:(rows:any[])=>paints.push(rows)};
+ fixture.hud={paintRoundHud:(rows:any[])=>paints.push(rows),paintHubs:()=>{}};
  api.tickRoundHud(0.1);
  api.tickRoundHud(0.1);
  assert.equal(paints.length,0);
  api.tickRoundHud(0.1);
  assert.equal(paints.length,1);
  assert.deepEqual(paints[0].map((r:any)=>r.slot),[0,1,2,3,4]);
+});
+
+test('the dead and spectators get a hub listing the living; only a spectator may join', () => {
+ const {api,fixture}=load();
+ fixture.roles[1]=3;
+ assert.equal(api.hubFor(0),null,'the living get no hub');
+ const dead=api.hubFor(3);
+ assert.equal(JSON.stringify(dead.players.map((p:any)=>[p.slot,p.detective])),"[[0,false],[1,true]]");
+ assert.equal(dead.canJoin,false);
+ assert.equal(dead.intro,false);
+ const spec=api.hubFor(4);
+ assert.equal(spec.canJoin,true);
+ assert.equal(spec.intro,true);
+ fixture.bots.add(4);
+ assert.equal(api.hubFor(4),null,'bots get no hub');
 });

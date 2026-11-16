@@ -9,13 +9,14 @@
  * The UI plugin paints the model and sends each player only what changed, so building every
  * connected player's view a few times a second is cheap on the wire.
  */
-import { GameState, RoleId } from "../core/enums";
+import { GameState, RoleId, Team } from "../core/enums";
 import * as reg from "../core/registry";
-import type { UiRoundHud, UiRoundRole } from "../../../../packages/contracts/ui-types.ts";
+import type { UiHub, UiRoundHud, UiRoundRole } from "../../../../packages/contracts/ui-types.ts";
+import { Clients } from "@s2script/sdk/clients";
 import { clockRemaining, game } from "../game/game";
 import { karmaOf, MAX_KARMA } from "../karma/karma";
 import { isDeathRevealed } from "./combat";
-import { getHealth, pawnOf } from "./pawn";
+import { getHealth, pawnOf, teamOf } from "./pawn";
 import { getTttHud } from "./ttthud";
 
 /** Seconds between model builds. The clock only moves once a second, so this is plenty. */
@@ -78,6 +79,33 @@ export function roundHudFor(slot: number): UiRoundHud {
   };
 }
 
+/**
+ * The spectate hub or intro for a viewer who is not alive, or null for the living (and bots).
+ *
+ * Only the dead and spectators get one, and they already see the real alive count, so listing the
+ * living hides nothing. Roles stay hidden apart from the Detective, who is public. Exported for tests.
+ */
+export function hubFor(slot: number): UiHub | null {
+  if (reg.isAlive(slot) || Clients.fromSlot(slot)?.isBot === true) return null;
+  const now = phase();
+  const dealt = now === "live" || now === "finished";
+  const team = teamOf(slot);
+  const canJoin = team === Team.None || team === Team.Spectator;
+  const inRound = dealt && reg.isParticipating(slot);
+  const players: UiHub["players"] = [];
+  for (const other of reg.activeSlots()) {
+    if (other === slot || !reg.isAlive(other)) continue;
+    players.push({ slot: other, name: reg.nameOf(other), health: getHealth(other), detective: dealt && reg.roleOf(other) === RoleId.Detective });
+  }
+  return {
+    intro: canJoin && !inRound,
+    canJoin,
+    phase: now,
+    round: now === "finished" ? game.roundsThisMap : game.roundsThisMap + 1,
+    players,
+  };
+}
+
 /** Rebuild and send every connected player's view. Call every frame; it paces itself. */
 export function tickRoundHud(dt: number): void {
   accum += dt;
@@ -87,6 +115,12 @@ export function tickRoundHud(dt: number): void {
   if (hud === null) return;
   const slots = reg.activeSlots().slice();
   hud.paintRoundHud(slots.map((slot) => ({ slot, hud: roundHudFor(slot) })));
+  const hubs: { slot: number; hub: UiHub }[] = [];
+  for (const slot of slots) {
+    const view = hubFor(slot);
+    if (view !== null) hubs.push({ slot, hub: view });
+  }
+  hud.paintHubs(hubs);
 }
 
 /** The role toast as a role is dealt. */

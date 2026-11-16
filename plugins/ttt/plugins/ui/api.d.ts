@@ -18,6 +18,10 @@ export type UiRoundPhase = 'waiting' | 'countdown' | 'live' | 'finished';
 export type UiRoundRole = 'none' | 'innocent' | 'traitor' | 'detective' | 'spectator';
 export interface UiRoundHud { phase: UiRoundPhase; clock: number; round: number; alive: number; participants: number; bodies: number; role: UiRoundRole; living: boolean; health: number; maxHealth: number; karma: number; maxKarma: number; }
 export interface UiRoundHudRow { actor: UiActor; hud: UiRoundHud; }
+/** One viewer's spectate hub or intro. Core decides who gets one and what they may see; UI only paints it. */
+export interface UiHubPlayer { slot: number; name: string; health: number; detective: boolean; }
+export interface UiHub { intro: boolean; canJoin: boolean; phase: UiRoundPhase; round: number; players: UiHubPlayer[]; }
+export interface UiHubRow { actor: UiActor; hub: UiHub; }
 export interface UiModelMethods {
   matchesUiActor(actor: UiActor, stamp?: UiShopStamp): boolean;
   getUiShop(actor: UiActor): UiShopView | null;
@@ -55,5 +59,6 @@ export interface UiMethods {
   paintRoundHud(rows: UiRoundHudRow[]): void;
   roleToast(actor: UiActor, role: UiRoundRole): void;
   hideRoundHud(): void;
+  paintHubs(rows: UiHubRow[]): void;
 }
 export interface Contract { methods: UiMethods; forwards: {}; }

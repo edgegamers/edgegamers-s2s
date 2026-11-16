@@ -1,5 +1,5 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiLogRow, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
+import type { UiHub, UiHubRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
 import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
@@ -11,6 +11,7 @@ function facade(provider: UiMethods) {
   // The round HUD is sent several times a second, and a UI provider older than it has no such
   // method: say so once instead of on every call.
   let roundHudMissing = false;
+  let hubMissing = false;
   const roundHud = (run: () => void): void => {
     if (roundHudMissing) return;
     if (typeof provider.paintRoundHud !== 'function') { roundHudMissing = true; console.log('[ttt/ui] UI provider has no round HUD; update ttt-ui'); return; }
@@ -52,6 +53,18 @@ function facade(provider: UiMethods) {
     }),
     roleToast: (slot: number, role: UiRoundRole) => roundHud(() => withActor(slot, undefined, (a) => provider.roleToast(a, role))),
     hideRoundHud: () => roundHud(() => provider.hideRoundHud()),
+    paintHubs: (views: readonly { slot: number; hub: UiHub }[]) => {
+      if (hubMissing) return;
+      if (typeof provider.paintHubs !== 'function') { hubMissing = true; console.log('[ttt/ui] UI provider has no spectate hub; update ttt-ui'); return; }
+      invoke(() => {
+        const rows: UiHubRow[] = [];
+        for (const view of views) {
+          const actor = captureViewerUiActor(view.slot);
+          if (actor !== null) rows.push({ actor, hub: { ...view.hub, players: view.hub.players.map((p) => ({ ...p })) } });
+        }
+        provider.paintHubs(rows);
+      }, undefined);
+    },
     forget: (slot: number) => {
       const actor = captureRegistryUiActor(slot);
       if (actor) invoke(() => provider.forget(actor), undefined);

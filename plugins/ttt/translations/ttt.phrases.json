@@ -302,5 +302,18 @@
   "ttt.hud.hint_dead": "{grey}Your death stays hidden until your body is found.",
   "ttt.hud.hint_spectator": "{grey}You are sitting this round out.",
   "ttt.hud.bar_health": "{grey}HP",
-  "ttt.hud.bar_karma": "{grey}Karma"
+  "ttt.hud.bar_karma": "{grey}Karma",
+  "ttt.hub.eyebrow": "{grey}EdgeGamers",
+  "ttt.hub.title": "{red}Trouble in Terrorist Town",
+  "ttt.hub.sub_waiting": "{grey}Waiting for players",
+  "ttt.hub.sub_live": "{grey}Round {yellow}{1}{grey} in progress",
+  "ttt.hub.play": "{green}Play",
+  "ttt.hub.play_next": "{grey}Next round",
+  "ttt.hub.spectate": "{grey}Spectate",
+  "ttt.hub.alive": "{green}{1}{grey} alive",
+  "ttt.hub.health": "{green}{1}{grey} HP",
+  "ttt.hub.watching": "{grey}Watching",
+  "ttt.hub.overview": "{grey}Overview",
+  "ttt.hub.unavailable": "{darkred}T{red}T{lightred}T {grey}» {grey}The spectate menu is unavailable. Type {green}jointeam 2{grey} in console to play.",
+  "ttt.hub.join_failed": "{darkred}T{red}T{lightred}T {grey}» {grey}Could not join. Type {green}jointeam 2{grey} in console to play."
 }

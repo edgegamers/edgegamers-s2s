@@ -1,14 +1,18 @@
 import { publish, use } from '@s2script/sdk/plugin';
-import type { UiActor, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole } from '../api';
+import type { UiActor, UiHubRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole } from '../api';
 import { TttHud } from './ttthud';
 import { RoundHud } from './roundhud';
+import { SpectateHub } from './hub';
 let hud: TttHud | null = null;
 let round: RoundHud | null = null;
+let hubs: SpectateHub | null = null;
 export function OnPluginStart(): void {
  const instance = new TttHud(use('@edgegamers/ttt-core'));
  hud = instance;
  const rounds = new RoundHud();
  round = rounds;
+ const spectate = new SpectateHub();
+ hubs = spectate;
  const methods: UiMethods = {
     ensure: (): string | null => instance.ensure(),
     showTraitor: (actor: UiActor, mates: string[]): void => instance.showTraitor(actor, mates),
@@ -30,14 +34,16 @@ export function OnPluginStart(): void {
     reportNotice: (actor: UiActor, notice: UiReportNotice): boolean => instance.reportNotice(actor, notice),
     hideAll: (actor: UiActor): void => instance.hideAll(actor),
     resetAll: (): void => instance.resetAll(),
-    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); },
+    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); },
     paintRoundHud: (rows: UiRoundHudRow[]): void => rounds.paint(rows),
     roleToast: (actor: UiActor, role: UiRoundRole): void => rounds.roleToast(actor, role),
-    hideRoundHud: (): void => rounds.hideAll(),
+    hideRoundHud: (): void => { rounds.hideAll(); spectate.hideAll(); },
+    paintHubs: (rows: UiHubRow[]): void => spectate.paint(rows),
  };
  publish('@edgegamers/ttt-ui', methods);
 }
 export function OnPluginEnd(): void {
  const prior = hud; hud = null; prior?.dispose();
  const rounds = round; round = null; rounds?.dispose();
+ const prevHubs = hubs; hubs = null; prevHubs?.dispose();
 }
