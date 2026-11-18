@@ -5,7 +5,7 @@ import { watchDecluttr } from '../../../../decluttr/src/owner.ts';
  * @edgegamers/jailbreak-specialdays — special days and the speedrun trail (ported from Jailbreak.SpecialDay + Jailbreak.Trail).
  * Wiring only: commands, engine events → the running day, core/warden/zones hookups.
  */
-import { command, Entity, HookResult, publish, SDKHook, SDKHookType, use, watchOptional } from "@s2script/sdk";
+import { command, createScope, Entity, HookResult, publish, SDKHook, SDKHookType, use, watchOptional } from "@s2script/sdk";
 import type { CommandInvocation, EntityRef, HookResultValue } from "@s2script/sdk";
 import { Events, Player } from "@s2script/cs2";
 import type { SDInfo, SDType } from "../api";
@@ -120,10 +120,8 @@ export function OnPluginStart(): void {
   });
 
   for (const pawn of Entity.findByClass("player")) hookPawn(pawn);
-}
-
-export function OnEntityCreated(entity: EntityRef | null, className: string): void {
-  if (entity && className === "player") hookPawn(entity);
+  // Only player pawns: an OnEntityCreated export would run for every entity the server creates.
+  createScope().entities.onCreate("player", (entity) => { if (entity) hookPawn(entity); });
 }
 
 export function OnGameFrame(): void {
