@@ -368,8 +368,5 @@
   "ttt.panel.rdm_ban_confirm": "{darkred}Confirm ban",
   "ttt.panel.rdm_ban_line": "{grey}Ban the accused",
   "ttt.panel.rdm_ban_armed": "{red}Click again to ban {lightred}{1}",
-  "ttt.panel.page": "{grey}Page {yellow}{1}",
-  "ttt.hud.line_counts": "{grey} · {green}{1}{grey} alive · {red}{2}{grey} bodies",
-  "ttt.hud.line_mates": "{grey} · Partners: {red}{1}",
-  "ttt.hud.mates_none": "{grey}none"
+  "ttt.panel.page": "{grey}Page {yellow}{1}"
 }

@@ -6,7 +6,7 @@ import {gameHudDouble} from './gamehud-double.mjs';
 
 const archive=new URL('../dist/_edgegamers_ttt-ui.s2sp',import.meta.url).pathname;
 const plugin=execFileSync('unzip',['-p',archive,'plugin.js'],{encoding:'utf8'});
-const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_confirm':'Click again to buy','ttt.hud.line_mates':' · Partners: {1}','ttt.hud.line_counts':' · {1} alive','ttt.hud.sub_live':'R','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
+const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_confirm':'Click again to buy','ttt.hud.hint_mates':'Partners: {1}','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
 
 const actor=slot=>({slot,steamId:'u'+slot,generation:1,roundEpoch:1});
 function load(){
@@ -132,7 +132,7 @@ test('Traitor partners go on the status card, and the round end shows the summar
  f.api.showTraitor(actor(1),['Bo']);
  f.api.paintRoundHud([{actor:actor(1),hud:{phase:'live',clock:60,round:2,alive:5,participants:6,bodies:0,role:'traitor',living:true,health:100,maxHealth:100,karma:100,maxKarma:100}}]);
  const status=f.log.find(e=>e[0]==='status'&&e[1]==='set');
- assert.equal(status[3].hint,'R · 5 alive · Partners: Bo');
+ assert.equal(status[3].hint,'Partners: Bo');
  f.api.roundSummary([actor(1)],{winner:'traitor',reason:null,round:2,players:[{name:'Bo',role:'innocent',alive:false},{name:'Ace',role:'traitor',alive:true}]});
  const sum=f.log.find(e=>e[0]==='summary');
  assert.equal(sum[2].title,'{red}Traitors win');

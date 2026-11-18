@@ -24,9 +24,9 @@ test('the weapon card replaces the stock weapons HUD once per player', () => {
  t.api.paintRoundHud([{actor:actor(1),hud},{actor:actor(2),hud}]);
  assert.equal(weaponLog(t),JSON.stringify([['weapon','claim'],['weapon','auto','all'],['hud','hide',1],['hud','hide',2]]));
  t.api.forget(actor(1));
- assert.equal(t.bits.get(1),0,'a leaving player gets the stock HUD back');
+ assert.equal(t.bits.get(1)&64,0,'a leaving player gets the stock weapons HUD back');
  t.end();
- assert.equal(t.bits.get(2),0);
+ assert.equal(t.bits.get(2)&64,0);
  assert.ok(t.log.some(e=>e[0]==='weapon'&&e[1]==='release'));
 });
 
