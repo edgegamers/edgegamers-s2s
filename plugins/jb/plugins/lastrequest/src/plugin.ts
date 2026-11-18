@@ -7,6 +7,7 @@ import {
   ADMFLAG,
   command,
   config,
+  createScope,
   Entity,
   every,
   HookResult,
@@ -134,6 +135,8 @@ export function OnPluginStart(): void {
 
   // Damage rules: every player pawn, now and as they are created.
   for (const pawn of Entity.findByClass("player")) SDKHook(pawn, SDKHookType.OnTakeDamage, lr.onTakeDamage);
+  // Only player pawns: an OnEntityCreated export would run for every entity the server creates.
+  createScope().entities.onCreate("player", (entity) => { if (entity) SDKHook(entity, SDKHookType.OnTakeDamage, lr.onTakeDamage); });
   for (const p of Player.all()) if (p.pawn) hookDrops(p.pawn.ref);
 
   every(100, tickEffects);
@@ -150,11 +153,6 @@ function onDrop(entity: EntityRef, weapon: EntityRef | null): void {
   if (!owner) return;
   lr.onWeaponDrop(owner, weapon);
   if (owner.teamNum === Team.Prisoner) rebel.onWeaponDrop(owner);
-}
-
-export function OnEntityCreated(entity: EntityRef | null, className: string): void {
-  if (!entity || className !== "player") return;
-  SDKHook(entity, SDKHookType.OnTakeDamage, lr.onTakeDamage);
 }
 
 export function OnGameFrame(): void {

@@ -13,6 +13,9 @@ import { WeaponizedRequest } from "./base";
 import { showMenu } from "../menus";
 
 const TICKS_PER_SECOND = 64;
+/** How far ahead the scope is blocked, and how low the block may run before it is rewritten. */
+const BLOCK_TICKS = 500;
+const REFRESH_TICKS = 250;
 
 export class NoScope extends WeaponizedRequest {
   readonly type: LRType = "no_scope";
@@ -49,10 +52,12 @@ export class NoScope extends WeaponizedRequest {
 
   onFrame(): void {
     if (this.state !== "active") return;
-    const blockUntil = Math.floor(Server.gameTime * TICKS_PER_SECOND) + 500;
+    const now = Math.floor(Server.gameTime * TICKS_PER_SECOND);
     for (const p of [this.prisoner, this.guard]) {
       const w = p.pawn?.activeWeapon;
-      if (w && w.isValid()) w.nextSecondaryAttackTick = blockUntil;
+      // Rewrite the block only once it has run down or the engine lowered it (deploy, reload):
+      // each write is a networked state change, and the block already lasts 500 ticks.
+      if (w && w.isValid() && (w.nextSecondaryAttackTick ?? 0) < now + REFRESH_TICKS) w.nextSecondaryAttackTick = now + BLOCK_TICKS;
     }
   }
 

@@ -123,7 +123,7 @@ export function onBombIcon(req: BombIconRequest): { result: typeof HookResult.Ch
 
 // ── special-day gang colours ────────────────────────────────────────────────────────────────────
 
-/** userIds tinted this special day; true = rainbow (re-tinted every frame). */
+/** userIds tinted this special day; true = rainbow (re-tinted every other frame). */
 const sdTinted = new Map<number, boolean>();
 
 /**
@@ -159,8 +159,13 @@ export function onSpecialDayStart(_ev: SDStartEvent): void {
 }
 
 /** Per-frame: keep rainbow gang members cycling. Cheap no-op when nobody is rainbow. */
+let rainbowFrame = 0;
+/** Recolor rainbow pawns every other frame (32 Hz at 64 tick): each write is a networked state change. */
+const RAINBOW_EVERY = 2;
+
 export function tickSpecialDayRainbow(): void {
   if (sdTinted.size === 0) return;
+  if (++rainbowFrame % RAINBOW_EVERY !== 0) return;
   const c = rainbow(Date.now());
   for (const [userId, isRainbow] of sdTinted) {
     if (!isRainbow) continue;
