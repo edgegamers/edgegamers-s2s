@@ -78,7 +78,7 @@ import { bindForwards, forwardKill, unbindForwards } from "./core/forwards";
 import { bindKillLedger } from "./core/kill-ledger";
 
 import {
-  checkEndConditions, game, initGame, inWarmup, onEngineRoundEnd, onEngineRoundStart,
+  checkEndConditions, game, initGame, inWarmup, lastEndReason, onEngineRoundEnd, onEngineRoundStart,
   reconcileRound, roundEpoch, setRoundDeadline, setRoundSanctions, startGame, syncRosterAndAnnounce, tickCountdown, tickWaiting,
 } from "./game/game";
 import { logLines, logPurchase, logRoleAssigned } from "./game/logger";
@@ -116,6 +116,7 @@ import {
 } from "./shop/weaponfx";
 
 import { tickHud } from "./cs2/hud";
+import { showRoundSummary, tickRoundHud, toastRole } from "./cs2/round-hud";
 import { onPlayerPing, registerCommands, resetShopMenus } from "./commands";
 
 /**
@@ -336,6 +337,7 @@ export function OnPluginStart(): void {
     "roleAssigned",
     (ev) => {
       logRoleAssigned(ev.slot, ev.role, roleName(ev.role));
+      toastRole(ev.slot, ev.role);
     },
     { priority: Priority.MONITOR },
   );
@@ -362,6 +364,8 @@ export function OnPluginStart(): void {
         // the old role and balance, so a stale digit would buy something the player never saw.
         if (ev.state === GameState.Finished) {
           resetShopMenus();
+          // The round-end sheet. endGame has set the winner and reason by now.
+          showRoundSummary(game.winner, lastEndReason());
           // Drop the traitor badge and any open shop at round end. Leaving the badge up would keep
           // showing a dead round's roster into the next one.
           getTttHud()?.resetAll();
@@ -633,6 +637,9 @@ export function OnPluginStart(): void {
     // ALSO above the early return. A victim is asked about a kill that may have ended the round, so
     // their prompt has to be able to expire in a state the round is no longer running in.
     tickRdmFlow();
+    // Above the early return too: the rail counts the countdown down and the status card says
+    // what the player is waiting for.
+    tickRoundHud(dt);
     if (game.state !== GameState.InProgress) return;
 
     tickInteract(dt);

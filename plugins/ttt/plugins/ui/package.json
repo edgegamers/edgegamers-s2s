@@ -14,7 +14,7 @@
     "id": "ttt-ui",
     "game": "cs2",
     "publishes": {
-      "@edgegamers/ttt-ui": "2.0.0"
+      "@edgegamers/ttt-ui": "2.1.0"
     },
     "interfaceProtocol": 2,
     "pluginDependencies": {
@@ -30,6 +30,7 @@
     "directory": "plugins/ttt/plugins/ui"
   },
   "dependencies": {
+    "@edgegamers/gamehud": "0.1.0",
     "@edgegamers/ttt-contracts": "1.2.0"
   }
 }

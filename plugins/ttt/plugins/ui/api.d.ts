@@ -13,6 +13,19 @@ export interface UiPurchaseReply { status: 'success' | 'refused' | 'unknown'; ti
 export interface UiRulingReply { status: 'success' | 'refused' | 'unknown'; title: string; message: string; tone: UiTone; }
 export interface UiReportTarget { target: UiActor; name: string; }
 export interface UiReportNotice { kind: 'awaiting' | 'result'; title: string; message: string; tone: UiTone; }
+/** One viewer's in-round HUD. Core decides what this viewer may know; UI only paints it. */
+export type UiRoundPhase = 'waiting' | 'countdown' | 'live' | 'finished';
+export type UiRoundRole = 'none' | 'innocent' | 'traitor' | 'detective' | 'spectator';
+export interface UiRoundHud { phase: UiRoundPhase; clock: number; round: number; alive: number; participants: number; bodies: number; role: UiRoundRole; living: boolean; health: number; maxHealth: number; karma: number; maxKarma: number; }
+export interface UiRoundHudRow { actor: UiActor; hud: UiRoundHud; }
+/** One viewer's spectate hub or intro. Core decides who gets one and what they may see; UI only paints it. */
+export interface UiHubPlayer { slot: number; name: string; health: number; detective: boolean; }
+export interface UiHub { intro: boolean; canJoin: boolean; phase: UiRoundPhase; round: number; players: UiHubPlayer[]; }
+export interface UiHubRow { actor: UiActor; hub: UiHub; }
+export type UiRoundWinner = 'traitor' | 'innocent' | 'none';
+export interface UiSummaryPlayer { name: string; role: UiRoundRole; alive: boolean; }
+/** The round-end sheet. Roles are public once a round ends, so every viewer gets the same one. */
+export interface UiRoundSummary { winner: UiRoundWinner; reason: string | null; round: number; players: UiSummaryPlayer[]; }
 export interface UiModelMethods {
   matchesUiActor(actor: UiActor, stamp?: UiShopStamp): boolean;
   getUiShop(actor: UiActor): UiShopView | null;
@@ -47,5 +60,10 @@ export interface UiMethods {
   hideAll(actor: UiActor): void;
   resetAll(): void;
   forget(actor: UiActor): void;
+  paintRoundHud(rows: UiRoundHudRow[]): void;
+  roleToast(actor: UiActor, role: UiRoundRole): void;
+  hideRoundHud(): void;
+  paintHubs(rows: UiHubRow[]): void;
+  roundSummary(actors: UiActor[], summary: UiRoundSummary): void;
 }
 export interface Contract { methods: UiMethods; forwards: {}; }
