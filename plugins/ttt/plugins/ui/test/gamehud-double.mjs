@@ -18,7 +18,16 @@ export function gameHudDouble(phrases = {}) {
     summary: (audience, spec) => log.push(['summary', audience, JSON.parse(JSON.stringify(spec))]),
     intro: (slot, spec) => hub('intro', slot, spec),
     spectate: (slot, spec) => hub('spectate', slot, spec),
+    weapon: {
+      claim: () => { log.push(['weapon', 'claim']); if (weaponHeld === 'other') return false; weaponHeld = true; return true; },
+      isClaimed: () => weaponHeld === true,
+      release: () => { weaponHeld = false; log.push(['weapon', 'release']); },
+      auto: (audience, options) => log.push(['weapon', 'auto', audience, options ?? null]),
+      set: (audience, spec) => log.push(['weapon', 'set', audience, spec]),
+      hide: (audience) => log.push(['weapon', 'hide', audience]),
+    },
   };
+  let weaponHeld = false;
   const hubs = new Map();
   let refuseHub = false;
   const hub = (kind, slot, spec) => {
@@ -69,7 +78,8 @@ export function gameHudDouble(phrases = {}) {
     log,
     bits: bitsOf,
     rebuild: () => { generation++; },
-    cs2: { GameHud, HideHud: { RoundTimer: 32 } },
+    cs2: { GameHud, HideHud: { RoundTimer: 32, Weapons: 64 } },
+    weaponHeldByOther: () => { weaponHeld = 'other'; },
     hubs,
     panels,
     refusePanels: (v) => { refusePanel = v; },

@@ -3,9 +3,11 @@ import type { UiActor, UiHubRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHud
 import { TttPanels } from './panels';
 import { RoundHud } from './roundhud';
 import { SpectateHub } from './hub';
+import { WeaponCard } from './weapon';
 let hud: TttPanels | null = null;
 let round: RoundHud | null = null;
 let hubs: SpectateHub | null = null;
+let weapons: WeaponCard | null = null;
 export function OnPluginStart(): void {
  const rounds = new RoundHud();
  round = rounds;
@@ -13,6 +15,8 @@ export function OnPluginStart(): void {
  hud = instance;
  const spectate = new SpectateHub();
  hubs = spectate;
+ const card = new WeaponCard();
+ weapons = card;
  const methods: UiMethods = {
     ensure: (): string | null => instance.ensure(),
     showTraitor: (actor: UiActor, mates: string[]): void => instance.showTraitor(actor, mates),
@@ -34,8 +38,8 @@ export function OnPluginStart(): void {
     reportNotice: (actor: UiActor, notice: UiReportNotice): boolean => instance.reportNotice(actor, notice),
     hideAll: (actor: UiActor): void => instance.hideAll(actor),
     resetAll: (): void => instance.resetAll(),
-    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); },
-    paintRoundHud: (rows: UiRoundHudRow[]): void => rounds.paint(rows),
+    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); card.forget(actor); },
+    paintRoundHud: (rows: UiRoundHudRow[]): void => { rounds.paint(rows); card.paint(rows.map((r) => r.actor.slot)); },
     roleToast: (actor: UiActor, role: UiRoundRole): void => rounds.roleToast(actor, role),
     hideRoundHud: (): void => { rounds.hideAll(); spectate.hideAll(); },
     paintHubs: (rows: UiHubRow[]): void => spectate.paint(rows),
@@ -47,4 +51,5 @@ export function OnPluginEnd(): void {
  const prior = hud; hud = null; prior?.dispose();
  const rounds = round; round = null; rounds?.dispose();
  const prevHubs = hubs; hubs = null; prevHubs?.dispose();
+ const prevCard = weapons; weapons = null; prevCard?.dispose();
 }
