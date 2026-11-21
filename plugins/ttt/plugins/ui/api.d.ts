@@ -27,6 +27,11 @@ export interface UiHubRow { actor: UiActor; hub: UiHub; }
 export type UiRoundWinner = 'traitor' | 'innocent' | 'none';
 export interface UiSummaryPlayer { name: string; role: UiRoundRole; alive: boolean; }
 /** The round-end sheet. Roles are public once a round ends, so every viewer gets the same one. */
+/**
+ * One kill feed row. Core picks who sees it, and only fills a role the viewers already know: the
+ * killer's (it is them, or their Traitor partner), a Detective's, or a Traitor's to fellow Traitors.
+ */
+export interface UiKillEntry { attacker: string | null; victim: string; weapon: string | null; headshot: boolean; attackerRole: UiRoundRole | null; victimRole: UiRoundRole | null; attackerSlot: number; victimSlot: number; }
 export interface UiRoundSummary { winner: UiRoundWinner; reason: string | null; round: number; players: UiSummaryPlayer[]; }
 export interface UiModelMethods {
   matchesUiActor(actor: UiActor, stamp?: UiShopStamp): boolean;
@@ -67,5 +72,7 @@ export interface UiMethods {
   hideRoundHud(): void;
   paintHubs(rows: UiHubRow[]): void;
   roundSummary(actors: UiActor[], summary: UiRoundSummary): void;
+  /** Show a kill on the GameHud feed to these viewers. False when the feed is unavailable, so Core keeps the stock feed. */
+  killFeed(viewers: UiActor[], entry: UiKillEntry): boolean;
 }
 export interface Contract { methods: UiMethods; forwards: {}; }

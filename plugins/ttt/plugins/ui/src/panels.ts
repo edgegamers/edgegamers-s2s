@@ -128,34 +128,38 @@ export class TttPanels {
   private shopSpec(slot: number, mode: Extract<SheetMode, { kind: 'shop' }>) {
     const view = mode.view;
     const groupOf = (item: UiShopItem): UiShopGroup => item.group ?? 'shared';
-    const sections: GameHudSheetSection[] = SHOP_GROUPS
-      .map((group) => view.rows.filter((item) => groupOf(item) === group))
-      .filter((items) => items.length > 0)
-      .map((items) => {
-        const group = groupOf(items[0]!);
-        // What you can buy first, then what you can't.
-        const sorted = [...items.filter((i) => i.refusal === null), ...items.filter((i) => i.refusal !== null)];
-        return {
-          id: `shop_${group}`,
-          label: t(slot, GROUP_KEYS[group]),
-          meta: sorted.length,
-          kicker: t(slot, 'ttt.panel.shop_kicker'),
-          body: {
-            kind: 'grid' as const,
-            items: sorted.map((item) => {
-              const picked = mode.picked?.itemId === item.itemId;
-              return {
-                id: item.itemId,
-                title: item.name,
-                price: t(slot, 'ttt.panel.price', item.price),
-                desc: item.refusal ?? (picked ? t(slot, 'ttt.panel.shop_confirm') : item.description),
-                selected: picked,
-                disabled: item.refusal !== null,
-              };
-            }),
-          },
-        };
-      });
+    const section = (id: string, label: string, items: readonly UiShopItem[]): GameHudSheetSection => {
+      // What you can buy first, then what you can't.
+      const sorted = [...items.filter((i) => i.refusal === null), ...items.filter((i) => i.refusal !== null)];
+      return {
+        id,
+        label,
+        meta: sorted.length,
+        kicker: t(slot, 'ttt.panel.shop_kicker'),
+        body: {
+          kind: 'grid',
+          items: sorted.map((item) => {
+            const picked = mode.picked?.itemId === item.itemId;
+            return {
+              id: item.itemId,
+              title: item.name,
+              price: t(slot, 'ttt.panel.price', item.price),
+              desc: item.refusal ?? (picked ? t(slot, 'ttt.panel.shop_confirm') : item.description),
+              selected: picked,
+              disabled: item.refusal !== null,
+            };
+          }),
+        },
+      };
+    };
+    const groups = SHOP_GROUPS
+      .map((group) => ({ group, items: view.rows.filter((item) => groupOf(item) === group) }))
+      .filter((g) => g.items.length > 0);
+    // "All" opens first: every item, in the same group order.
+    const sections: GameHudSheetSection[] = groups.length === 0 ? [] : [
+      section('shop_all', t(slot, 'ttt.panel.shop_all'), groups.flatMap((g) => g.items)),
+      ...groups.map((g) => section(`shop_${g.group}`, t(slot, GROUP_KEYS[g.group]), g.items)),
+    ];
     if (sections.length === 0) {
       sections.push({ id: 'shop_empty', label: t(slot, 'ttt.panel.shop_title'), body: { kind: 'text', paragraphs: [t(slot, 'ttt.panel.shop_empty')] } });
     }

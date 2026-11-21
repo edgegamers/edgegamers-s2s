@@ -1,13 +1,15 @@
 import { publish, use } from '@s2script/sdk/plugin';
-import type { UiActor, UiHubRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
+import type { UiActor, UiHubRow, UiKillEntry, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 import { TttPanels } from './panels';
 import { RoundHud } from './roundhud';
 import { SpectateHub } from './hub';
 import { WeaponCard } from './weapon';
+import { KillFeed } from './feed';
 let hud: TttPanels | null = null;
 let round: RoundHud | null = null;
 let hubs: SpectateHub | null = null;
 let weapons: WeaponCard | null = null;
+let kills: KillFeed | null = null;
 export function OnPluginStart(): void {
  const rounds = new RoundHud();
  round = rounds;
@@ -17,6 +19,8 @@ export function OnPluginStart(): void {
  hubs = spectate;
  const card = new WeaponCard();
  weapons = card;
+ const feed = new KillFeed();
+ kills = feed;
  const methods: UiMethods = {
     ensure: (): string | null => instance.ensure(),
     showTraitor: (actor: UiActor, mates: string[]): void => instance.showTraitor(actor, mates),
@@ -44,6 +48,7 @@ export function OnPluginStart(): void {
     hideRoundHud: (): void => { rounds.hideAll(); spectate.hideAll(); },
     paintHubs: (rows: UiHubRow[]): void => spectate.paint(rows),
     roundSummary: (actors: UiActor[], summary: UiRoundSummary): void => rounds.summary(actors, summary),
+    killFeed: (viewers: UiActor[], entry: UiKillEntry): boolean => feed.push(viewers, entry),
  };
  publish('@edgegamers/ttt-ui', methods);
 }
@@ -52,4 +57,5 @@ export function OnPluginEnd(): void {
  const rounds = round; round = null; rounds?.dispose();
  const prevHubs = hubs; hubs = null; prevHubs?.dispose();
  const prevCard = weapons; weapons = null; prevCard?.dispose();
+ const prevFeed = kills; kills = null; prevFeed?.dispose();
 }

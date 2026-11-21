@@ -6,7 +6,7 @@ import {gameHudDouble} from './gamehud-double.mjs';
 
 const archive=new URL('../dist/_edgegamers_ttt-ui.s2sp',import.meta.url).pathname;
 const plugin=execFileSync('unzip',['-p',archive,'plugin.js'],{encoding:'utf8'});
-const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_confirm':'Click again to buy','ttt.panel.shop_shared':'Shared','ttt.hud.hint_mates':'Partners: {1}','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
+const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_confirm':'Click again to buy','ttt.panel.shop_shared':'Shared','ttt.panel.shop_all':'All','ttt.hud.hint_mates':'Partners: {1}','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
 
 const actor=slot=>({slot,steamId:'u'+slot,generation:1,roundEpoch:1});
 function load(){
@@ -39,9 +39,10 @@ test('the shop opens as a sheet of item cards, one tab per group, role items fir
  assert.equal(f.api.openShop(actor(1)),true);
  const s=f.panel('sheet',1);
  assert.equal(s.spec.right,'5 credits');
- assert.equal(s.spec.sections.map(x=>x.id).join(),'shop_traitor,shop_shared');
- assert.equal(s.spec.sections[1].label,'Shared');
- const grid=s.spec.sections[0].body;
+ assert.equal(s.spec.sections.map(x=>x.id).join(),'shop_all,shop_traitor,shop_shared');
+ assert.equal(s.spec.sections[2].label,'Shared');
+ assert.equal(s.spec.sections[0].body.items.map(i=>i.id).join(),'knife,armor,c4','All lists everything, buyable first');
+ const grid=s.spec.sections[1].body;
  assert.equal(grid.kind,'grid');
  assert.equal(JSON.stringify(grid.items.map(i=>[i.id,i.disabled,i.desc])),'[["knife",false,"Stab"],["c4",true,"Detectives only"]]');
  assert.ok(f.api.isShopOpen(actor(1)));
@@ -55,14 +56,14 @@ test('a purchase takes two clicks on the same card, with no dialog', () => {
  click('knife');
  assert.deepEqual(f.bought,[],'one click only selects');
  assert.equal(f.panel('prompt',1),undefined,'no dialog');
- const card=s.last.sections[0].body.items[0];
+ const card=s.last.sections[1].body.items[0];
  assert.equal(card.selected,true);
  assert.equal(card.desc,'Click again to buy');
  f.time+=1;
  click('knife');
  assert.equal(JSON.stringify(f.bought),'[[1,"knife"]]');
  assert.ok(f.log.some(e=>e[0]==='toast'&&e[2].title==='Bought'&&e[2].tone==='green'));
- assert.equal(s.last.sections[0].body.items[0].selected,false,'the card is unselected after buying');
+ assert.equal(s.last.sections[1].body.items[0].selected,false,'the card is unselected after buying');
  f.time+=0.1;
  click('knife');
  assert.equal(f.bought.length,1,'the next click starts over');
@@ -179,5 +180,5 @@ test('an item with no group goes under Shared', () => {
  const f=load();
  f.core.getUiShop=a=>({balance:5,stamp:{},rows:[{itemId:'x',name:'X',description:'',price:1,limit:0,refusal:null}]});
  f.api.openShop(actor(1));
- assert.equal(f.panel('sheet',1).spec.sections.map(x=>x.id).join(),'shop_shared');
+ assert.equal(f.panel('sheet',1).spec.sections.map(x=>x.id).join(),'shop_all,shop_shared');
 });

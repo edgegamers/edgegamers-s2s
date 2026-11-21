@@ -6,10 +6,12 @@ export function gameHudDouble(phrases = {}) {
     set: (audience, spec) => log.push([name, 'set', audience, JSON.parse(JSON.stringify(spec))]),
     hide: (audience) => log.push([name, 'hide', audience]),
     release: () => log.push([name, 'release']),
+    push: (entry, audience) => log.push([name, 'push', audience, JSON.parse(JSON.stringify(entry))]),
+    clear: (audience) => log.push([name, 'clear', audience]),
     isValid: () => born === generation,
   });
   const GameHud = {
-    rail: () => { log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => region('feed'),
+    rail: () => { log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => refuseFeed ? null : region('feed'),
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
     drawer: (slot, spec) => panel('drawer', slot, spec),
@@ -28,6 +30,7 @@ export function gameHudDouble(phrases = {}) {
     },
   };
   let weaponHeld = false;
+  let refuseFeed = false;
   const hubs = new Map();
   let refuseHub = false;
   const hub = (kind, slot, spec) => {
@@ -80,6 +83,7 @@ export function gameHudDouble(phrases = {}) {
     rebuild: () => { generation++; },
     cs2: { GameHud, HideHud: { RoundTimer: 32, Weapons: 64 } },
     weaponHeldByOther: () => { weaponHeld = 'other'; },
+    refuseFeed: (v) => { refuseFeed = v; },
     hubs,
     panels,
     refusePanels: (v) => { refusePanel = v; },

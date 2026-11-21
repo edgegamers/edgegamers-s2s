@@ -1,5 +1,5 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiActor, UiHub, UiHubRow, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
+import type { UiActor, UiHub, UiHubRow, UiKillEntry, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
 import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
@@ -12,6 +12,7 @@ function facade(provider: UiMethods) {
   // method: say so once instead of on every call.
   let roundHudMissing = false;
   let hubMissing = false;
+  let feedMissing = false;
   const roundHud = (run: () => void): void => {
     if (roundHudMissing) return;
     if (typeof provider.paintRoundHud !== 'function') { roundHudMissing = true; console.log('[ttt/ui] UI provider has no round HUD; update ttt-ui'); return; }
@@ -72,6 +73,16 @@ function facade(provider: UiMethods) {
         }
         provider.paintHubs(rows);
       }, undefined);
+    },
+    /** True when the UI showed the kill on its own feed, so the stock entry must be withheld. */
+    killFeed: (slots: readonly number[], entry: UiKillEntry): boolean => {
+      if (feedMissing) return false;
+      if (typeof provider.killFeed !== 'function') { feedMissing = true; console.log('[ttt/ui] UI provider has no kill feed; keeping the stock one'); return false; }
+      return invoke(() => {
+        const actors: UiActor[] = [];
+        for (const slot of slots) { const actor = captureViewerUiActor(slot); if (actor !== null) actors.push(actor); }
+        return provider.killFeed(actors, { ...entry }) === true;
+      }, false);
     },
     forget: (slot: number) => {
       const actor = captureRegistryUiActor(slot);

@@ -336,6 +336,7 @@
   "ttt.panel.shop_footer": "{grey}Click a tab or an item · or type !buy and a name",
   "ttt.panel.shop_kicker": "{grey}Click an item twice to buy",
   "ttt.panel.shop_shared": "{grey}Shared",
+  "ttt.panel.shop_all": "{grey}All",
   "ttt.panel.shop_confirm": "{green}Click again to buy",
   "ttt.panel.report_title": "{red}Report a player",
   "ttt.panel.report_row": "{grey}Report for RDM",

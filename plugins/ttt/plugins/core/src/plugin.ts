@@ -85,7 +85,7 @@ import { logLines, logPurchase, logRoleAssigned } from "./game/logger";
 import { roleName } from "./game/roles";
 
 import {
-  installDeathFeedSuppressor, installMatchStats, invalidatePawnCache, onDamage, onDeathPre,
+  bindKillFeed, installDeathFeedSuppressor, installMatchStats, invalidatePawnCache, onDamage, onDeathPre,
   onPlayerHurt, onSpawn, setDeathBus,
 } from "./cs2/combat";
 import { precacheBodyModels } from "./cs2/bodies";
@@ -310,6 +310,8 @@ export function OnPluginStart(): void {
   // combat.ts self-installs on the first death, but wiring it here also catches the round-start
   // scoreboard clear that happens before anyone has died.
   installMatchStats(ordered.forModule("stats"));
+  // Deaths go on the UI's GameHud feed when it has one; without it the stock feed stays.
+  bindKillFeed((viewers, entry) => getTttHud()?.killFeed(viewers, entry) ?? false);
   // Installed HERE, in the load window — not lazily from the death hook. A `UserMessages.onPre`
   // subscribe made from inside a game-event dispatch never took effect (measured: 40 death windows,
   // zero invocations), and this is what hides the kill feed.
