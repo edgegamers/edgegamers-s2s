@@ -45,6 +45,7 @@ import * as reg from "../core/registry";
 import { noteKill } from "../core/kill-ledger";
 import { checkEndConditions, inProgress } from "../game/game";
 import { roleName, roleNameFor } from "../game/roles";
+import type { UiKillEntry } from "../../../../packages/contracts/ui-types.ts";
 import { logDamage, logDeath } from "../game/logger";
 import { settleBody, spawnBody, killBodyEntity, isCurrentBody } from "./bodies";
 import { clearAttributedKills, DEFAULT_HEALTH, pawnOf, setArmor, setHealth, takeAttributedKiller, tell } from "./pawn";
@@ -200,6 +201,11 @@ const bankedKills = new Int16Array(MAX_SLOTS);
 const bankedAssists = new Int16Array(MAX_SLOTS);
 /** Whether this slot's death has already been added back (corpse identified). */
 const deathRevealed = new Uint8Array(MAX_SLOTS);
+
+/** Whether everyone has been told this slot died this round (body identified, or round over). */
+export function isDeathRevealed(slot: number): boolean {
+  return slot >= 0 && slot < MAX_SLOTS && deathRevealed[slot] === 1;
+}
 
 /** The four columns TTT rewrites. Named so a caller cannot pass an arbitrary field. */
 type StatField = "kills" | "deaths" | "assists" | "damage" | "utilityDamage";
@@ -586,6 +592,51 @@ function setDeathViewers(viewers: readonly number[], attacker = -1): void {
 }
 
 /**
+ * Show a death to exactly `viewers`: on TTT's own GameHud feed when the UI has one, with the stock
+ * entry then withheld from everyone, or else through the stock event as before. Call it last, right
+ * before the pre-hook returns: it sets the shim's one-shot recipient mask (see `setDeathViewers`).
+ */
+function scopeDeath(viewers: readonly number[], attacker: number, victim: number, weapon: string | null, headshot: boolean, roles: boolean): void {
+  let shown = false;
+  try {
+    const sink = killFeedSink;
+    if (sink !== null) {
+      // Decluttr's per-player kill feed choices apply to our feed too.
+      const audience = killfeedFor(attacker, viewers);
+      const killer = attacker >= 0 && attacker !== victim ? attacker : -1;
+      const victimRole = reg.roleOf(victim);
+      const killerRole = killer >= 0 ? reg.roleOf(killer) : RoleId.None;
+      shown = sink(audience, {
+        attacker: killer >= 0 ? reg.nameOf(killer) : null,
+        victim: reg.nameOf(victim),
+        weapon: weapon !== null && weapon !== "" && weapon !== "world" ? weapon.replace(/^weapon_/, "") : null,
+        headshot,
+        // Only what every viewer already knows: the killer's own role (they are the killer or a
+        // Traitor partner), a Detective, and a Traitor victim when Traitors are the only viewers.
+        attackerRole: roles && killer >= 0 ? feedRole(killerRole) : null,
+        victimRole: !roles ? null
+          : victimRole === RoleId.Detective ? "detective"
+          : victimRole === RoleId.Traitor && killerRole === RoleId.Traitor ? "traitor"
+          : null,
+        attackerSlot: killer,
+        victimSlot: victim,
+      });
+    }
+  } catch (err) {
+    if (!warnedFeed) { warnedFeed = true; console.log(`[ttt] kill feed row failed: ${String(err)}`); }
+    shown = false;
+  }
+  setDeathViewers(shown ? [] : viewers, attacker);
+}
+let warnedFeed = false;
+/** The UI's kill feed, bound by the plugin entry (kept out of this module's imports). */
+let killFeedSink: ((viewers: readonly number[], entry: UiKillEntry) => boolean) | null = null;
+export function bindKillFeed(sink: ((viewers: readonly number[], entry: UiKillEntry) => boolean) | null): void { killFeedSink = sink; }
+function feedRole(role: RoleId): "innocent" | "traitor" | "detective" | null {
+  return role === RoleId.Traitor ? "traitor" : role === RoleId.Detective ? "detective" : role === RoleId.Innocent ? "innocent" : null;
+}
+
+/**
  * Who is allowed to see a kill: the killer, plus their fellow Traitors when the killer is one.
  *
  * Shared by the engine-death path and the gadget hand-off below so the two cannot drift — a gadget
@@ -631,7 +682,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   if (gadgetHandledKiller[victim]! >= 0 || gadgetHandledKiller[victim] === -2) {
     const credited = gadgetHandledKiller[victim]!;
     gadgetHandledKiller[victim] = -1;
-    setDeathViewers(viewersForKill(credited < 0 ? -1 : credited), credited);
+    scopeDeath(viewersForKill(credited < 0 ? -1 : credited), credited, victim, null, false, true);
     return HookResult.Handled;
   }
 
@@ -654,7 +705,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   // their own kill client-side, and nobody else has any business being told.
   if (!inProgress()) {
     const lone = engineKiller >= 0 && engineKiller !== victim ? [engineKiller] : [];
-    setDeathViewers(lone, engineKiller);
+    scopeDeath(lone, engineKiller, victim, ev.getString("weapon"), ev.getBool("headshot"), false);
     return HookResult.Handled;
   }
 
@@ -735,7 +786,7 @@ export function onDeathPre(bus: EventBus<TttEvents>, ev: GameEvent): HookResultV
   // sound, a nested dispatch) would have ITS pre-hook consume our mask, so the death then fanned out
   // unscoped. That is exactly the intermittency observed: suppression worked for some deaths and not
   // others, depending on what `handleDeath` happened to do.
-  setDeathViewers(viewers, killer);
+  scopeDeath(viewers, killer, victim, cause, headshot, true);
 
   // Suppressed for EVERY client by returning Handled: the shim carries that decision through to the
   // `CMsgSource1LegacyGameEvent` post that actually delivers the event, so nobody outside the

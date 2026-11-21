@@ -131,6 +131,8 @@ export function teardownWorld(bus: EventBus<TttEvents>, reason: TeardownReason):
     // Panorama panels persist on the client until told otherwise, so an unload must clear them
     // explicitly — otherwise a reload leaves a stale badge on every traitor's screen.
     getTttHud()?.resetAll();
+    // The same for the round rail: frozen on its last clock it reads as a hung round.
+    getTttHud()?.hideRoundHud();
     providerCleanup("Communication.reset", unmuteAll);
     resetShopMenus();
     clearBenched();

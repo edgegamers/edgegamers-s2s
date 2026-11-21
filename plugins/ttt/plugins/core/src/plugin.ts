@@ -78,24 +78,24 @@ import { bindForwards, forwardKill, unbindForwards } from "./core/forwards";
 import { bindKillLedger } from "./core/kill-ledger";
 
 import {
-  checkEndConditions, game, initGame, inWarmup, onEngineRoundEnd, onEngineRoundStart,
+  checkEndConditions, game, initGame, inWarmup, lastEndReason, onEngineRoundEnd, onEngineRoundStart,
   reconcileRound, roundEpoch, setRoundDeadline, setRoundSanctions, startGame, syncRosterAndAnnounce, tickCountdown, tickWaiting,
 } from "./game/game";
 import { logLines, logPurchase, logRoleAssigned } from "./game/logger";
 import { roleName } from "./game/roles";
 
 import {
-  installDeathFeedSuppressor, installMatchStats, invalidatePawnCache, onDamage, onDeathPre,
+  bindKillFeed, installDeathFeedSuppressor, installMatchStats, invalidatePawnCache, onDamage, onDeathPre,
   onPlayerHurt, onSpawn, setDeathBus,
 } from "./cs2/combat";
 import { precacheBodyModels } from "./cs2/bodies";
 import { inspectIdentify, tickInteract } from "./cs2/interact";
 import { unspoofAlive, reassertSpoof, tickSpoof } from "./cs2/spoof";
 import { installFeedback } from "./cs2/feedback";
-import { wouldRefuseTeam } from "./game/teams";
+import { holdIntroSpectator, setIntroPending, wouldRefuseTeam } from "./game/teams";
 import {
   benchLateJoiner, installBombSuppressor, installHandlers, onCanAcquire, onItemPurchase,
-  onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
+  bindTargetLabel, onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
   tickHandlers,
 } from "./cs2/handlers";
 
@@ -116,6 +116,7 @@ import {
 } from "./shop/weaponfx";
 
 import { tickHud } from "./cs2/hud";
+import { showRoundSummary, tickRoundHud, toastRole } from "./cs2/round-hud";
 import { onPlayerPing, registerCommands, resetShopMenus } from "./commands";
 
 /**
@@ -309,6 +310,9 @@ export function OnPluginStart(): void {
   // combat.ts self-installs on the first death, but wiring it here also catches the round-start
   // scoreboard clear that happens before anyone has died.
   installMatchStats(ordered.forModule("stats"));
+  // Deaths go on the UI's GameHud feed when it has one; without it the stock feed stays.
+  bindTargetLabel((rows) => getTttHud()?.paintTargets(rows) ?? false);
+  bindKillFeed((viewers, entry) => getTttHud()?.killFeed(viewers, entry) ?? false);
   // Installed HERE, in the load window — not lazily from the death hook. A `UserMessages.onPre`
   // subscribe made from inside a game-event dispatch never took effect (measured: 40 death windows,
   // zero invocations), and this is what hides the kill feed.
@@ -336,6 +340,7 @@ export function OnPluginStart(): void {
     "roleAssigned",
     (ev) => {
       logRoleAssigned(ev.slot, ev.role, roleName(ev.role));
+      toastRole(ev.slot, ev.role);
     },
     { priority: Priority.MONITOR },
   );
@@ -362,6 +367,8 @@ export function OnPluginStart(): void {
         // the old role and balance, so a stale digit would buy something the player never saw.
         if (ev.state === GameState.Finished) {
           resetShopMenus();
+          // The round-end sheet. endGame has set the winner and reason by now.
+          showRoundSummary(game.winner, lastEndReason());
           // Drop the traitor badge and any open shop at round end. Leaving the badge up would keep
           // showing a dead round's roster into the next one.
           getTttHud()?.resetAll();
@@ -387,6 +394,9 @@ export function OnPluginStart(): void {
     getTttHud()?.hideAll(client.slot);
     reg.setAlive(client.slot, reg.computeAlive(client.slot));
     bus.emit("join", { slot: client.slot });
+    // A person who just connected gets the intro screen (Play, Spectate, Rules) before anything else.
+    // They watch it from Spectator, with the intro camera, until they press Play.
+    if (!client.isBot) { setIntroPending(client.slot, true, true); holdIntroSpectator(client.slot); }
 
     // Bench a live-round arrival HERE, not only when they pick a team. A freshly connected
     // controller sits on `Team.None` with no pawn, and the engine leaves its alive mirror set — so
@@ -409,6 +419,7 @@ export function OnPluginStart(): void {
   });
 
   scope.clients.onDisconnect((client) => {
+    setIntroPending(client.slot, false);
     getTttHud()?.forget(client.slot);
     forgetReportCapture(client.slot);
     bus.emit("leave", { slot: client.slot });
@@ -633,6 +644,9 @@ export function OnPluginStart(): void {
     // ALSO above the early return. A victim is asked about a kill that may have ended the round, so
     // their prompt has to be able to expire in a state the round is no longer running in.
     tickRdmFlow();
+    // Above the early return too: the rail counts the countdown down and the status card says
+    // what the player is waiting for.
+    tickRoundHud(dt);
     if (game.state !== GameState.InProgress) return;
 
     tickInteract(dt);

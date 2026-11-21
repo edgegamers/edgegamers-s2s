@@ -58,9 +58,48 @@ export function setBenched(slot: number): void {
   if (slot >= 0 && slot < MAX_SLOTS) benched[slot] = 1;
 }
 
+/** Waiting on Spectator to be pulled in at the next countdown (pressed Play mid-round, or a late join). */
+export function isBenched(slot: number): boolean {
+  return slot >= 0 && slot < MAX_SLOTS && benched[slot] === 1;
+}
+
+/** A player who chose to spectate is no longer one TTT parked: the next countdown leaves them be. */
+export function unbench(slot: number): void {
+  if (slot >= 0 && slot < MAX_SLOTS) benched[slot] = 0;
+}
+
 /** Drop every bench mark — map change and unload. */
 export function clearBenched(): void {
   benched.fill(0);
+}
+
+/**
+ * Players still on the intro screen: connected this map, and not yet past Play or Spectate (any
+ * `jointeam`). The countdown leaves them where they are, so the intro is not pulled out from under
+ * them, and the hub shows them the intro instead of the spectate view.
+ */
+const introPending = new Uint8Array(MAX_SLOTS);
+/** Pending from a fresh connect, so the player is also held on Spectator until they choose. */
+const introHeld = new Uint8Array(MAX_SLOTS);
+/** `hold` (a fresh connect) also keeps them on Spectator until they choose; `!intro` only shows it. */
+export function setIntroPending(slot: number, pending: boolean, hold = false): void {
+  if (slot < 0 || slot >= MAX_SLOTS) return;
+  introPending[slot] = pending ? 1 : 0;
+  introHeld[slot] = pending && hold ? 1 : 0;
+}
+export function isIntroPending(slot: number): boolean {
+  return slot >= 0 && slot < MAX_SLOTS && introPending[slot] === 1;
+}
+
+/**
+ * A fresh joiner watches the intro from Spectator. The engine can still drop them onto a team on its
+ * own after they connect (an auto-assign), so this puts them back each paint until they choose.
+ */
+export function holdIntroSpectator(slot: number): void {
+  if (slot < 0 || slot >= MAX_SLOTS || introHeld[slot] === 0) return;
+  const team = teamOf(slot);
+  if (team === Team.Spectator) return;
+  switchTeam(slot, Team.Spectator);
 }
 
 export function resetTeamsToT(): void {
@@ -75,6 +114,8 @@ export function resetTeamsToT(): void {
     // never respawned by the countdown ticker (which only respawns players on a playing team), never
     // eligible, and never dealt a role — they just sat on the unassigned icon watching a round they
     // were not in. Only a deliberate Spectator is left where they are.
+    // Someone still choosing on the intro screen joins when they press Play.
+    if (introPending[slot] === 1) continue;
     const team = teamOf(slot);
     // A spectator TTT benched itself (late join) is pulled back in; one who chose it is not.
     if (team === Team.Spectator && benched[slot] === 0) continue;

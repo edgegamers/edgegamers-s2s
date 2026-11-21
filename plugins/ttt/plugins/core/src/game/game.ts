@@ -55,6 +55,13 @@ let bus: EventBus<TttEvents>;
 let epoch = 0;
 /** Replacing the deadline cancels its timer without retiring the current round's work. */
 let deadlineEpoch = 0;
+/** `Server.gameTime` the visible clock (countdown or round deadline) reaches zero at. */
+let clockEndsAt = 0;
+
+/** Seconds left on the countdown or the round, as the HUD clock shows them. */
+export function clockRemaining(): number {
+  return Math.max(0, clockEndsAt - Server.gameTime);
+}
 
 /**
  * One-shot: set when the ENGINE ended (or restarted) the round instead of TTT. Consumed by the next
@@ -216,6 +223,7 @@ export function startGame(quiet = false): void {
   // reaches zero — `mp_ignore_round_win_conditions 1` is set on the very next line — and `beginRound`
   // re-arms the clock with the round length in the same instant the countdown expires.
   GameRules.get()?.setTimeRemaining(cfg.countdownSeconds);
+  clockEndsAt = Server.gameTime + cfg.countdownSeconds;
   Server.setCvar("mp_ignore_round_win_conditions", "1");
 
   // Put everyone back on T as the countdown OPENS, not just from the 1 Hz countdown ticker: last
@@ -394,6 +402,7 @@ function beginRound(attempt = 0): void {
  */
 export function setRoundDeadline(seconds: number): void {
   GameRules.get()?.setTimeRemaining(Math.ceil(seconds));
+  clockEndsAt = Server.gameTime + seconds;
   const round = epoch;
   const mine = ++deadlineEpoch;
   void delay(seconds * 1000).then(() => {
@@ -496,6 +505,11 @@ export function reconcileRound(): void {
 }
 
 
+// Kept off `game`: `game` is published through getGame, whose shape other plugins validate.
+let lastReason: string | null = null;
+/** Why the last non-role end happened, in the server language, for the round-end sheet. */
+export function lastEndReason(): string | null { return lastReason; }
+
 /** End the round with `winner` (or {@link RoleId.None} plus a `reason` for a non-role end). */
 export function endGame(winner: RoleId, reason?: string): void {
   if (game.state !== GameState.InProgress && game.state !== GameState.Countdown) return;
@@ -507,6 +521,7 @@ export function endGame(winner: RoleId, reason?: string): void {
   engineEndedRound = false;
 
   game.winner = winner;
+  lastReason = reason === undefined ? null : plainText(msgFor(-1, reason));
   const ending = epoch;
   epoch++; // invalidate round-owned work and timers
   if (!setState(GameState.Finished)) return;

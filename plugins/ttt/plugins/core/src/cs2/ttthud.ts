@@ -1,6 +1,6 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiLogRow, UiMethods, UiReportNotice } from '../../../../packages/contracts/ui-types.ts';
-import { captureRegistryUiActor, captureUiActor } from '../core/ui-actor';
+import type { UiActor, UiHub, UiHubRow, UiKillEntry, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole, UiTargetRow } from '../../../../packages/contracts/ui-types.ts';
+import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
 function invoke<T>(run: () => T, fallback: T): T {
@@ -8,6 +8,17 @@ function invoke<T>(run: () => T, fallback: T): T {
   catch (error) { console.log(`[ttt/ui] provider unavailable: ${String(error)}`); return fallback; }
 }
 function facade(provider: UiMethods) {
+  // The round HUD is sent several times a second, and a UI provider older than it has no such
+  // method: say so once instead of on every call.
+  let roundHudMissing = false;
+  let hubMissing = false;
+  let feedMissing = false;
+  let targetMissing = false;
+  const roundHud = (run: () => void): void => {
+    if (roundHudMissing) return;
+    if (typeof provider.paintRoundHud !== 'function') { roundHudMissing = true; console.log('[ttt/ui] UI provider has no round HUD; update ttt-ui'); return; }
+    invoke(run, undefined);
+  };
   const withActor = <T>(slot: number, fallback: T, run: (actor: NonNullable<ReturnType<typeof captureUiActor>>) => T): T => {
     const actor = captureUiActor(slot);
     return actor === null ? fallback : invoke(() => run(actor), fallback);
@@ -33,6 +44,60 @@ function facade(provider: UiMethods) {
     reportNotice: (slot: number, notice: UiReportNotice) => withActor(slot, false, (a) => provider.reportNotice(a, { ...notice })),
     hideAll: (slot: number) => withActor(slot, undefined, (a) => provider.hideAll(a)),
     resetAll: () => invoke(() => provider.resetAll(), undefined),
+    paintRoundHud: (views: readonly { slot: number; hud: UiRoundHud }[]) => roundHud(() => {
+      const rows: UiRoundHudRow[] = [];
+      for (const view of views) {
+        // Spectators have no pawn and still see the rail.
+        const actor = captureViewerUiActor(view.slot);
+        if (actor !== null) rows.push({ actor, hud: { ...view.hud } });
+      }
+      provider.paintRoundHud(rows);
+    }),
+    roleToast: (slot: number, role: UiRoundRole) => roundHud(() => withActor(slot, undefined, (a) => provider.roleToast(a, role))),
+    hideRoundHud: () => roundHud(() => provider.hideRoundHud()),
+    roundSummary: (slots: readonly number[], summary: UiRoundSummary) => {
+      if (typeof provider.roundSummary !== 'function') return;
+      invoke(() => {
+        const actors: UiActor[] = [];
+        for (const slot of slots) { const actor = captureViewerUiActor(slot); if (actor !== null) actors.push(actor); }
+        provider.roundSummary(actors, { ...summary, players: summary.players.map((p) => ({ ...p })) });
+      }, undefined);
+    },
+    paintHubs: (views: readonly { slot: number; hub: UiHub }[]) => {
+      if (hubMissing) return;
+      if (typeof provider.paintHubs !== 'function') { hubMissing = true; console.log('[ttt/ui] UI provider has no spectate hub; update ttt-ui'); return; }
+      invoke(() => {
+        const rows: UiHubRow[] = [];
+        for (const view of views) {
+          const actor = captureViewerUiActor(view.slot);
+          if (actor !== null) rows.push({ actor, hub: { ...view.hub, players: view.hub.players.map((p) => ({ ...p })) } });
+        }
+        provider.paintHubs(rows);
+      }, undefined);
+    },
+    /** True when the UI showed the kill on its own feed, so the stock entry must be withheld. */
+    killFeed: (slots: readonly number[], entry: UiKillEntry): boolean => {
+      if (feedMissing) return false;
+      if (typeof provider.killFeed !== 'function') { feedMissing = true; console.log('[ttt/ui] UI provider has no kill feed; keeping the stock one'); return false; }
+      return invoke(() => {
+        const actors: UiActor[] = [];
+        for (const slot of slots) { const actor = captureViewerUiActor(slot); if (actor !== null) actors.push(actor); }
+        return provider.killFeed(actors, { ...entry }) === true;
+      }, false);
+    },
+    /** The crosshair names, once per name pass. False when ttt-ui has no label, so Core uses the centre text. */
+    paintTargets: (rows: readonly { slot: number; name: string | null; detective: boolean }[]): boolean => {
+      if (targetMissing) return false;
+      if (typeof provider.paintTargets !== 'function') { targetMissing = true; console.log('[ttt/ui] UI provider has no target label; keeping the centre text'); return false; }
+      return invoke(() => {
+        const out: UiTargetRow[] = [];
+        for (const row of rows) {
+          const actor = captureUiActor(row.slot);
+          if (actor !== null) out.push({ actor, name: row.name, detective: row.detective });
+        }
+        return provider.paintTargets(out) === true;
+      }, false);
+    },
     forget: (slot: number) => {
       const actor = captureRegistryUiActor(slot);
       if (actor) invoke(() => provider.forget(actor), undefined);

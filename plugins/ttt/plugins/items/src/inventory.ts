@@ -46,6 +46,38 @@ let classKey: string | null = null;
  * The fix belongs upstream: a `designerName` getter on `EntityRef`. The host can read the symbol;
  * only the JS surface is missing.
  */
+/**
+ * Class names by item definition index. This runtime cannot read a weapon entity's class name, so
+ * every class-based check (knife, pistol, gear slot) goes through the definition index instead.
+ */
+const DEF_CLASS: Readonly<Record<number, string>> = {
+  1: "weapon_deagle", 2: "weapon_elite", 3: "weapon_fiveseven", 4: "weapon_glock", 7: "weapon_ak47",
+  8: "weapon_aug", 9: "weapon_awp", 10: "weapon_famas", 11: "weapon_g3sg1", 13: "weapon_galilar",
+  14: "weapon_m249", 16: "weapon_m4a1", 17: "weapon_mac10", 19: "weapon_p90", 20: "weapon_zone_repulsor",
+  23: "weapon_mp5sd", 24: "weapon_ump45", 25: "weapon_xm1014", 26: "weapon_bizon", 27: "weapon_mag7",
+  28: "weapon_negev", 29: "weapon_sawedoff", 30: "weapon_tec9", 31: "weapon_taser", 32: "weapon_hkp2000",
+  33: "weapon_mp7", 34: "weapon_mp9", 35: "weapon_nova", 36: "weapon_p250", 37: "weapon_shield",
+  38: "weapon_scar20", 39: "weapon_sg556", 40: "weapon_ssg08", 41: "weapon_knifegg", 42: "weapon_knife",
+  43: "weapon_flashbang", 44: "weapon_hegrenade", 45: "weapon_smokegrenade", 46: "weapon_molotov",
+  47: "weapon_decoy", 48: "weapon_incgrenade", 49: "weapon_c4", 57: "weapon_healthshot",
+  59: "weapon_knife_t", 60: "weapon_m4a1_silencer", 61: "weapon_usp_silencer", 63: "weapon_cz75a",
+  64: "weapon_revolver", 68: "weapon_tagrenade", 69: "weapon_fists", 70: "weapon_breachcharge",
+  72: "weapon_tablet", 74: "weapon_melee", 75: "weapon_axe", 76: "weapon_hammer", 78: "weapon_spanner",
+  80: "weapon_knife_ghost", 81: "weapon_firebomb", 82: "weapon_diversion", 83: "weapon_frag_grenade",
+  84: "weapon_snowball", 85: "weapon_bumpmine",
+  500: "weapon_bayonet", 503: "weapon_knife_css", 505: "weapon_knife_flip", 506: "weapon_knife_gut",
+  507: "weapon_knife_karambit", 508: "weapon_knife_m9_bayonet", 509: "weapon_knife_tactical",
+  512: "weapon_knife_falchion", 514: "weapon_knife_survival_bowie", 515: "weapon_knife_butterfly",
+  516: "weapon_knife_push", 517: "weapon_knife_cord", 518: "weapon_knife_canis", 519: "weapon_knife_ursus",
+  520: "weapon_knife_gypsy_jackknife", 521: "weapon_knife_outdoor", 522: "weapon_knife_stiletto",
+  523: "weapon_knife_widowmaker", 525: "weapon_knife_skeleton", 526: "weapon_knife_kukri",
+};
+
+/** The class name for a definition index; any unlisted skin knife (500+) reads as a knife. */
+export function classOfDef(def: number): string {
+  return DEF_CLASS[def] ?? (def >= 500 && def < 600 ? "weapon_knife" : "");
+}
+
 export function weaponClass(w: HeldWeapon | null | undefined): string {
   if (w === null || w === undefined) return "";
   if (classKey === null) {
@@ -57,13 +89,12 @@ export function weaponClass(w: HeldWeapon | null | undefined): string {
       : "";
     if (classKey === "") {
       console.log(
-        "[ttt] WARN: a weapon's class name cannot be read on this runtime — knife/gear-slot/" +
-          "has-weapon/shop-removal checks will not match. Needs an EntityRef designerName getter.",
+        "[ttt] a weapon's class name cannot be read on this runtime; classifying weapons by definition index",
       );
     }
   }
-  if (classKey === "") return "";
-  return ((w as unknown as Record<string, unknown>)[classKey] as string | undefined) ?? "";
+  if (classKey === "") return classOfDef(weaponDef(w));
+  return ((w as unknown as Record<string, unknown>)[classKey] as string | undefined) || classOfDef(weaponDef(w));
 }
 
 /** Weapons that can backstab. */
@@ -74,6 +105,7 @@ export const KNIVES: ReadonlySet<string> = new Set([
   "weapon_knife_m9_bayonet", "weapon_knife_push", "weapon_knife_skeleton",
   "weapon_knife_stiletto", "weapon_knife_survival_bowie", "weapon_knife_tactical",
   "weapon_knife_talon", "weapon_knife_ursus", "weapon_knife_t", "weapon_bayonet",
+  "weapon_knife_outdoor", "weapon_knife_widowmaker", "weapon_knife_kukri",
 ]);
 
 /** Thrown items occupying the grenade slot. */

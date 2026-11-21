@@ -11,6 +11,7 @@
  */
 
 import { command } from "@s2script/sdk/commands";
+import { Hud } from "@s2script/sdk/hud";
 import { fileReport, getReport, listConvictions, overturnRuling, pardonSlays, pendingReports, reportsAvailable } from "./core/reports-provider";
 const FileResult={Ok:0,RateLimited:1,SelfReport:2,Duplicate:3,EmptyReason:4} as const;
 const REPORTS_PER_ROUND=3;
@@ -18,15 +19,16 @@ import { answerPending } from "./core/reports-provider";
 import type { CommandInvocation } from "@s2script/sdk/commands";
 import { ADMFLAG, Admin } from "@s2script/sdk/admin";
 import { ChatColors, Player } from "@s2script/cs2";
-import { GameState, MAX_SLOTS, RoleId } from "./core/enums";
+import { GameState, MAX_SLOTS, RoleId, Team } from "./core/enums";
 import { cfg } from "./core/cvars";
 import { msg, msgFor, chatMsgFor, replyPhraseFor } from "./core/msgs";
 import * as reg from "./core/registry";
 import { mayReport, reportWindowSeconds } from "./core/kill-ledger";
-import { getHealth, setHealth, teamOf, tell, tellAll } from "./cs2/pawn";
+import { getHealth, respawn, setHealth, switchTeam, teamOf, tell, tellAll } from "./cs2/pawn";
 import { game, inWarmup, startGame, endGame } from "./game/game";
 import { reserveRole, roleName, roleNameFor } from "./game/roles";
 import { printLogsTo } from "./game/logger";
+import { setBenched, setIntroPending, unbench } from "./game/teams";
 import { allBodies } from "./cs2/bodies";
 import { Entity } from "@s2script/sdk/entity";
 import { damageDiag, killWithGadget } from "./cs2/combat";
@@ -295,6 +297,33 @@ export function registerCommands(): void {
     }
   });
 
+  // The intro screen (Play, Spectate, Rules) again, for anyone who wants another look.
+  command("sm_intro", (cmd) => {
+    if (cmd.callerSlot < 0) return;
+    setIntroPending(cmd.callerSlot, true);
+  });
+  // The intro and spectate hub buttons, run server-side as the player by ttt-ui: `play` or `spectate`.
+  // TTT moves the team itself, so nothing depends on the client running `jointeam` for us, and a team
+  // change the engine makes on its own (an auto-assign on connect) never ends the intro.
+  command("ttt_intro_done", (cmd) => {
+    const slot = cmd.callerSlot;
+    if (slot < 0) return;
+    setIntroPending(slot, false);
+    const choice = cmd.arg(0);
+    const team = teamOf(slot);
+    if (choice === "spectate") {
+      unbench(slot);
+      if (team !== Team.Spectator) switchTeam(slot, Team.Spectator);
+      return;
+    }
+    if (choice !== "play" || team === Team.Terrorist || team === Team.CounterTerrorist) return;
+    // Mid-round they wait on Spectator, and the next countdown pulls them in.
+    if (game.state === GameState.InProgress) { setBenched(slot); tell(slot, chatMsgFor(slot, "ttt.round.late_join")); return; }
+    switchTeam(slot, Team.Terrorist);
+    // Waiting or counting down: put them in the world now rather than at the next countdown.
+    if (getHealth(slot) <= 0) respawn(slot);
+  });
+
   command("sm_logs", (cmd) => {
     // Admins only — the log names every role, kill and purchase of the round, so a player reading
     // it mid-round has solved the game. `isAdmin` lets the server console through, which is right:
@@ -450,6 +479,18 @@ export function registerCommands(): void {
     if (!hud) { cmd.reply(replyPhraseFor(cmd, "ttt.hud.unavailable")); return; }
     const why = hud.ensure();
     cmd.reply(why === null ? replyPhraseFor(cmd, "ttt.hud.spawned") : replyPhraseFor(cmd, "ttt.hud.not_ready", why === "UI provider ended" ? msgFor(cmd.callerSlot, "ttt.hud.provider_ended") : why === "UI provider unavailable" ? msgFor(cmd.callerSlot, "ttt.hud.provider_unavailable") : why));
+  });
+
+  // TEMPORARY: find which hide-HUD flag (if any) hides the stock top bar. Remove once known.
+  command.admin("sm_ttt_hudbit", ADMFLAG.CONFIG, (cmd) => {
+    const slot = cmd.callerSlot;
+    const n = cmd.argInt(0, -1);
+    if (slot < 0) { cmd.reply("[TTT] Run this in game."); return; }
+    if (n < 0 || n > 31) { cmd.reply(`[TTT] Usage: sm_ttt_hudbit <0-31>. Toggles flag 1<<n for you. Now hidden: ${Hud.hidden(slot)}`); return; }
+    const bit = 1 << n;
+    const on = (Hud.hidden(slot) & bit) === 0;
+    if (on) Hud.hide(slot, bit); else Hud.show(slot, bit);
+    cmd.reply(`[TTT] Flag 1<<${n} (${bit}) is now ${on ? "ON (hidden)" : "OFF (shown)"}. All hidden flags: ${Hud.hidden(slot)}`);
   });
 
   command.admin("sm_rdm", ADMFLAG.GENERIC, (cmd) => {

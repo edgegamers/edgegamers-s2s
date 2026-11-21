@@ -65,7 +65,7 @@ function fixture() {
 const cleanupAttempts = [
   'world.hideIcons', 'items.hideWeaponFx', 'items.hideEffects', 'bodies.clearBodies',
   'items.resetEffects', 'items.resetWeaponFx', 'bodies.resetInteract', 'world.resetIcons',
-  'special.clearSpecialRounds', 'ui.resetAll', 'communication.reset', 'shop.resetShop',
+  'special.clearSpecialRounds', 'ui.resetAll', 'ui.hideRoundHud', 'communication.reset', 'shop.resetShop',
   'reports.resetSanctions', 'reports.resetReports', 'karma.resetRound', 'world.clearAppliedModels',
 ];
 

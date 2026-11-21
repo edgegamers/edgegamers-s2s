@@ -12,12 +12,12 @@ function functions(relative:string,names:string[]):string {
  const path=new URL(relative,import.meta.url),text=readFileSync(path,'utf8');
  const tree=ts.createSourceFile(path.pathname,text,ts.ScriptTarget.Latest,true,ts.ScriptKind.TS);
  return names.map(name=>{
-  const node=tree.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text===name);
+  const node=tree.statements.find(n=>(ts.isFunctionDeclaration(n)&&n.name?.text===name)||(ts.isVariableStatement(n)&&n.declarationList.declarations.some(d=>ts.isIdentifier(d.name)&&d.name.text===name)));
   assert.ok(node,'production function '+name);return node.getText(tree);
  }).join('\n');
 }
 const damageSource=functions('../src/cs2/combat.ts',['slotOfPawn','resolveSlot','onDamage','activeClassOf'])+
- functions('../src/cs2/inventory.ts',['weaponClass','weaponDef']);
+ functions('../src/cs2/inventory.ts',['DEF_CLASS','classOfDef','weaponClass','weaponDef']);
 const damageCode=ts.transpileModule('let classKey:null|string=null;'+damageSource,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText.replace(/\bexport\s+/g,'');
 const ordered=await build({entryPoints:[fileURLToPath(new URL('../src/core/ordered.ts',import.meta.url))],bundle:true,platform:'node',format:'cjs',write:false});
 const orderedCtx=createContext({module:{exports:{}},console});runInContext(ordered.outputFiles[0]!.text,orderedCtx);

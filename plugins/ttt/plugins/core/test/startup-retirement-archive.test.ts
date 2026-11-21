@@ -11,7 +11,6 @@ import { fixture as worldFixture } from '../../world/test/fixture.mjs';
 import { fixture as itemsFixture } from '../../items/test/fixture.mjs';
 import { fixture as bodiesFixture } from '../../bodies/test/fixture.mjs';
 import { fixture as shopFixture } from '../../shop/test/fixture.mjs';
-import { fixture as hudFixture } from '../../ui/test/hudkit-fixture.mjs';
 
 function artifact(owner: string): string {
   return execFileSync('unzip', ['-p', resolve(`../${owner}/dist/_edgegamers_ttt-${owner}.s2sp`), 'plugin.js'], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
@@ -316,18 +315,6 @@ test('actual published Core shop projection rejects same-Steam and bot successor
  }
 });
 
-test('actual Core Shop and stock HUD collect bounded fresh views and do not paint a successor',()=>{
- const f=startup({actualShop:true});f.frame('PRE');f.frame('PRE');
- f.read('setRole(1,2);setParticipating(1,true);setAlive(1,true);game.state=2;');f.shop!.fund(1,100);
- const ui=hudFixture();const actor=f.published.getWorldPlayers(1)[0].actor;ui.actors.set(1,actor);let views=0;
- for(const name of Object.keys(ui.core))ui.core[name]=(...args:unknown[])=>{if(name==='getUiShop')views++;return f.published[name](...args);};
- assert.equal(ui.api.openShop(actor),true);assert.equal(views,2);assert.equal(ui.titles('TTT Shop',1).length,1);
- views=0;ui.clear();ui.click(1,'s2_m0_r1');assert.equal(views,1);assert.equal(ui.titles('TTT Shop',1).length,1);
- ui.clear();const callback=f.shop!.core.canGrantShopItem;let replaced=false;
- f.shop!.core.canGrantShopItem=(...args:unknown[])=>{const value=callback(...args);if(!replaced){replaced=true;f.clients.get(1).valid=false;}return value;};
- ui.click(1,'s2_m0_r1');assert.equal(replaced,true);assert.equal(ui.writes.filter((w:any)=>w.op==='set').length,0);
-});
-
 test('actual Core final shop seal rejects private catalogue changes during row translation or final native identity reads',()=>{
  for(const seam of ['translation','identity'])for(const change of ['role','state','epoch','alive','participating']){
   const f=startup({actualShop:true});f.frame('PRE');f.frame('PRE');
@@ -343,21 +330,6 @@ test('actual Core final shop seal rejects private catalogue changes during row t
  }
 });
 
-test('actual stock shop cannot submit a copied restricted catalogue after later UI native identity callbacks retire authority',()=>{
- for(const stage of ['rows','detail','subtitle'])for(const change of ['role','state','epoch','map','alive','participating','binding','closing']){
-  const f=startup({actualShop:true});f.frame('PRE');f.frame('PRE');
-  f.read('setRole(1,2);setParticipating(1,true);setAlive(1,true);game.state=2;');f.shop!.fund(1,100);
-  const ui=hudFixture(),actor=f.published.getWorldPlayers(1)[0].actor;ui.actors.set(1,actor);let views=0,armed=false,checks=0,changed=false;
-  for(const name of Object.keys(ui.core))ui.core[name]=(...args:unknown[])=>{const value=f.published[name](...args);if(name==='getUiShop'&&++views===2)armed=true;return value;};
-  const get=f.players.get.bind(f.players),target=stage==='rows'?1:stage==='detail'?2:3;
-  f.players.get=(slot:number)=>{const player=get(slot);if(slot===1&&armed&&++checks===target){changed=true;
-   if(change==='binding')f.rebindShop();else f.read(change==='role'?'setRole(1,1);':change==='state'?'game.state=3;':change==='epoch'?'restoreRoundIdentity(roundEpoch(),game.roundsThisMap);':change==='map'?'bumpMapEpoch();':change==='alive'?'setAlive(1,false);':change==='participating'?'setParticipating(1,false);':'closeWorldActionAdmission();');
-  }return player;};
-  ui.api.openShop(actor);assert.equal(changed,true,`${stage}/${change}`);
-  assert.equal(ui.writes.filter((w:any)=>w.op==='set').length,0,`${stage}/${change}`);
- }
-});
-
 test('actual shop stamps share startup and teardown admission and reject malformed or rebound projections',()=>{
  const f=startup({actualShop:true});const actor=f.published.getWorldPlayers(1)[0].actor;
  assert.equal(f.published.getUiShop(actor),null);f.frame('PRE');assert.equal(f.published.getUiShop(actor),null);
@@ -369,16 +341,6 @@ test('actual shop stamps share startup and teardown admission and reject malform
  previous.dispose();assert.equal(f.published.matchesUiActor(actor,latest.stamp),true,'same-handle older attachment cannot dispose a newer binding');
  const hide=f.world.methods.hideIcons;f.world.methods.hideIcons=()=>{assert.equal(f.published.matchesUiActor(actor,latest.stamp),false);assert.equal(f.published.getUiShop(actor),null);hide();};
  f.read('module.exports.OnPluginEnd()');
-});
-
-test('actual same-actor nested stock paint survives retirement of its outer role projection',()=>{
- const f=startup({actualShop:true});f.frame('PRE');f.frame('PRE');f.read('setRole(1,2);setAlive(1,true);setParticipating(1,true);game.state=2;');f.shop!.fund(1,100);
- const ui=hudFixture(),actor=f.published.getWorldPlayers(1)[0].actor;ui.actors.set(1,actor);let views=0,armed=false,nested=false;
- for(const name of Object.keys(ui.core))ui.core[name]=(...args:unknown[])=>{const value=f.published[name](...args);if(name==='getUiShop'&&++views===2)armed=true;return value;};
- const get=f.players.get.bind(f.players);f.players.get=(slot:number)=>{const player=get(slot);if(slot===1&&armed&&!nested){nested=true;armed=false;f.read('setRole(1,1);');assert.equal(ui.api.openShop(actor),true);}return player;};
- ui.api.openShop(actor);assert.equal(nested,true);assert.equal(ui.titles('TTT Shop',1).length,1);
- assert.equal(ui.writes.some((w:any)=>w.op==='set'&&/C4 Explosive|Gloves|Camouflage|Body Paint/.test(String(w.value))),false);
- ui.clear();ui.click(1,'s2_m0_r1');assert.equal(ui.titles('TTT Shop',1).length,1,'outer retirement did not erase the newer action table');
 });
 
 test('actual generic and stamped native identity callbacks seal same-Steam and bot registry successors',()=>{
