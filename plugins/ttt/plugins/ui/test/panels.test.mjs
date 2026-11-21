@@ -6,7 +6,7 @@ import {gameHudDouble} from './gamehud-double.mjs';
 
 const archive=new URL('../dist/_edgegamers_ttt-ui.s2sp',import.meta.url).pathname;
 const plugin=execFileSync('unzip',['-p',archive,'plugin.js'],{encoding:'utf8'});
-const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_ask':'Buy {1} for {2}?','ttt.panel.shop_shared':'Shared','ttt.hud.hint_mates':'Partners: {1}','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
+const phrases={'ttt.panel.credits':'{1} credits','ttt.panel.shop_confirm':'Click again to buy','ttt.panel.shop_shared':'Shared','ttt.hud.hint_mates':'Partners: {1}','ttt.role.traitor':'{red}Traitor','ttt.hud.end_traitors':'{red}Traitors win'};
 
 const actor=slot=>({slot,steamId:'u'+slot,generation:1,roundEpoch:1});
 function load(){
@@ -47,45 +47,46 @@ test('the shop opens as a sheet of item cards, one tab per group, role items fir
  assert.ok(f.api.isShopOpen(actor(1)));
 });
 
-test('clicking an item asks in a dialog, and only Buy spends', () => {
+test('a purchase takes two clicks on the same card, with no dialog', () => {
  const f=load();
  f.api.openShop(actor(1));
  const s=f.panel('sheet',1);
  const click=id=>s.spec.onSelect({section:'shop_traitor',kind:'item',index:0,item:{id}},s);
  click('knife');
- assert.deepEqual(f.bought,[],'a click only asks');
- const ask=f.panel('prompt',1);
- assert.equal(ask.spec.question,'Buy Knife for 2?');
- assert.equal(s.open,true,'the shop stays open under the dialog');
- ask.spec.onAnswer({index:1,id:'cancel',reason:'answer'});
- assert.deepEqual(f.bought,[]);
+ assert.deepEqual(f.bought,[],'one click only selects');
+ assert.equal(f.panel('prompt',1),undefined,'no dialog');
+ const card=s.last.sections[0].body.items[0];
+ assert.equal(card.selected,true);
+ assert.equal(card.desc,'Click again to buy');
+ f.time+=1;
  click('knife');
- f.panel('prompt',1).spec.onAnswer({index:0,id:'buy',reason:'answer'});
  assert.equal(JSON.stringify(f.bought),'[[1,"knife"]]');
  assert.ok(f.log.some(e=>e[0]==='toast'&&e[2].title==='Bought'&&e[2].tone==='green'));
- assert.ok(f.log.some(e=>e[0]==='sheet'&&e[1]==='update'),'the shop repaints after a purchase');
- click('c4');
- assert.equal(f.bought.length,1,'a refused item never asks');
- s.spec.onClose?.(true);
+ assert.equal(s.last.sections[0].body.items[0].selected,false,'the card is unselected after buying');
+ f.time+=0.1;
+ click('knife');
+ assert.equal(f.bought.length,1,'the next click starts over');
 });
 
-test('closing the shop closes its dialog', () => {
+test('a slow second click, or a click on another card, only selects', () => {
  const f=load();
  f.api.openShop(actor(1));
  const s=f.panel('sheet',1);
- s.spec.onSelect({section:'shop_traitor',kind:'item',index:0,item:{id:'knife'}},s);
- f.api.closeShop(actor(1));
- assert.equal(f.panel('prompt',1).open,false);
+ const click=(id,section='shop_traitor')=>s.spec.onSelect({section,kind:'item',index:0,item:{id}},s);
+ click('knife'); f.time+=5; click('knife');
+ assert.deepEqual(f.bought,[],'too slow');
+ click('armor','shop_shared');
+ assert.deepEqual(f.bought,[],'another card');
 });
 
 test('a recycled slot cannot buy from the old shop', () => {
  const f=load();
  f.api.openShop(actor(1));
  const s=f.panel('sheet',1);
- s.spec.onSelect({section:'shop_traitor',kind:'item',index:0,item:{id:'knife'}},s);
- const ask=f.panel('prompt',1);
+ const click=()=>s.spec.onSelect({section:'shop_traitor',kind:'item',index:0,item:{id:'knife'}},s);
+ click();
  f.actors.set(1,{...actor(1),generation:2});
- ask.spec.onAnswer({index:0,id:'buy',reason:'answer'});
+ click();
  assert.deepEqual(f.bought,[]);
 });
 
