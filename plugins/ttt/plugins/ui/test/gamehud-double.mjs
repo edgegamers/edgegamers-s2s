@@ -41,7 +41,7 @@ export function gameHudDouble(phrases = {}) {
       spec, open: true, isOpen: () => handle.open, kind: () => kind,
       update: (next) => log.push([kind, 'update', slot, JSON.parse(JSON.stringify(next))]),
       close: () => { handle.open = false; log.push([kind, 'close', slot]); },
-      follow: () => true, shot: () => true, nextShot: () => true,
+      follow: (p) => { log.push([kind, 'follow', slot, p]); return true; }, shot: () => true, nextShot: () => true,
     };
     hubs.set(slot, handle);
     return handle;

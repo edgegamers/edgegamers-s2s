@@ -34,6 +34,8 @@ export class RoundHud {
   private retryIn = 0;
   private claimState = '';
   private readonly themed = new Set<number>();
+  /** Which connection each slot's painted state belongs to (`steamId:generation`). */
+  private readonly connection = new Map<number, string>();
   private readonly timerHidden = new Set<number>();
   /** A Traitor's partners, shown on their status card. */
   private readonly mates = new Map<number, string[]>();
@@ -95,6 +97,10 @@ export class RoundHud {
     for (const row of rows) {
       const slot = row.actor.slot;
       seen.add(slot);
+      // A new connection in this slot starts with an empty HUD: drop what we think it shows, or the
+      // painter would skip sending anything that has not changed since the last connection.
+      const who = `${row.actor.steamId}:${row.actor.generation}`;
+      if (this.connection.get(slot) !== who) { this.freshSlot(slot); this.connection.set(slot, who); }
       if (!this.themed.has(slot)) { GameHud.theme(slot, THEME); this.themed.add(slot); }
       try {
         this.paintRail(slot, row.hud);
@@ -214,8 +220,17 @@ export class RoundHud {
 
   hide(actor: UiActor): void { this.hideSlot(actor.slot); }
 
+  /** Forget what a slot shows (keeping its Traitor partners, which Core sends separately). */
+  private freshSlot(slot: number): void {
+    this.railPaint?.forget(slot);
+    this.statusPaint?.forget(slot);
+    this.themed.delete(slot);
+    this.timerHidden.delete(slot);
+  }
+
   forget(actor: UiActor): void {
     const slot = actor.slot;
+    this.connection.delete(slot);
     this.railPaint?.forget(slot);
     this.statusPaint?.forget(slot);
     this.themed.delete(slot);
@@ -240,5 +255,6 @@ export class RoundHud {
     this.claimState = '';
     this.announced = false;
     this.themed.clear();
+    this.connection.clear();
   }
 }

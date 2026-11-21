@@ -37,10 +37,13 @@ export class SpectateHub {
   readonly camera = new IntroCamera();
   /** Players who chose Spectate on the intro this connection. */
   private readonly skippedIntro = new Set<number>();
+  /** Which connection each slot's state belongs to (`steamId:generation`). */
+  private readonly connection = new Map<number, string>();
   private readonly told = new Set<number>();
   private overview: GameHudShot[] | null = null;
   private menuOff = false;
   private warned = false;
+  private followWarned = false;
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
 
   paint(rows: readonly UiHubRow[]): void {
@@ -48,10 +51,16 @@ export class SpectateHub {
     for (const row of rows) {
       const slot = row.actor.slot;
       seen.add(slot);
+      // A new connection in this slot (a reconnect can skip the disconnect cleanup): start fresh, or
+      // the old connection's "already open" state would stop the intro from ever being sent.
+      const who = `${row.actor.steamId}:${row.actor.generation}`;
+      if (this.connection.get(slot) !== who) { this.forgetSlot(slot); this.connection.set(slot, who); }
       try { this.paintOne(slot, row.hub); }
       catch (error) { if (!this.warned) { this.warned = true; this.log(`hub paint failed: ${String(error)}`); } }
     }
     for (const slot of [...this.open.keys()]) if (!seen.has(slot)) this.closeSlot(slot);
+    // No hub means Core is not holding the intro (they are alive or gone), so `!intro` may show it again.
+    for (const slot of [...this.skippedIntro]) if (!seen.has(slot)) this.skippedIntro.delete(slot);
   }
 
   private paintOne(slot: number, hub: UiHub): void {
@@ -211,6 +220,12 @@ export class SpectateHub {
     const open = this.open.get(slot);
     if (open === undefined) return;
     open.watching = String(player.slot);
+    // Move the camera too: the picker alone only changed the card.
+    if (open.kind === 'spectate') {
+      let ok = false;
+      try { ok = (open.handle as GameHudSpectate).follow(player.slot); } catch { /* logged below */ }
+      if (!ok && !this.followWarned) { this.followWarned = true; this.log(`spectate: the engine refused to follow slot ${player.slot}`); }
+    }
     // Force the next paint to send the card.
     open.key = '';
   }
@@ -232,8 +247,16 @@ export class SpectateHub {
 
   forget(actor: UiActor): void {
     this.closeSlot(actor.slot);
-    this.skippedIntro.delete(actor.slot);
-    this.told.delete(actor.slot);
+    this.forgetSlot(actor.slot);
+    this.connection.delete(actor.slot);
+  }
+
+  private forgetSlot(slot: number): void {
+    // Drop the handle without closing it: after a reconnect it belongs to a HUD that is gone.
+    this.camera.stop(slot);
+    this.open.delete(slot);
+    this.skippedIntro.delete(slot);
+    this.told.delete(slot);
   }
 
   hideAll(): void {
@@ -247,6 +270,7 @@ export class SpectateHub {
     this.hideAll();
     this.skippedIntro.clear();
     this.told.clear();
+    this.connection.clear();
     this.camera.clear();
     if (this.menuOff) { this.menuOff = false; Server.command('sv_disable_teamselect_menu 0'); }
   }

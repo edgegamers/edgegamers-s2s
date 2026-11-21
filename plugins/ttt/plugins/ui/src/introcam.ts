@@ -18,6 +18,8 @@ const SECONDS_PER_ORBIT = 14;
 const TURN_SECONDS = 40;
 /** CS2 ObserverMode_t roaming (free camera). */
 const OBS_ROAMING = 4;
+/** CS2 ObserverMode_t in-eye, the normal spectating view. */
+const OBS_IN_EYE = 2;
 
 export class IntroCamera {
   private readonly watching = new Map<number, number>();
@@ -26,7 +28,14 @@ export class IntroCamera {
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
 
   start(slot: number): void { if (!this.watching.has(slot)) this.watching.set(slot, Server.gameTime); }
-  stop(slot: number): void { this.watching.delete(slot); }
+  /** Hand the view back: the spectate hub follows players, which roaming mode would block. */
+  stop(slot: number): void {
+    if (!this.watching.delete(slot)) return;
+    try {
+      const player = Player.fromSlot(slot);
+      if (player !== null && player.pawn === null && player.desiredObserverMode === OBS_ROAMING) player.desiredObserverMode = OBS_IN_EYE;
+    } catch { /* gone */ }
+  }
   /** A new map has new spawns. */
   reset(): void { this.orbits = null; }
   clear(): void { this.watching.clear(); this.orbits = null; }

@@ -90,3 +90,28 @@ test('the intro reopens when Core holds it again (sm_intro)', () => {
  t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
  assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='open'),'intro shown again');
 });
+
+test('!intro works after Play, when the player is alive and has no hub in between', () => {
+ const t=load();
+ t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
+ t.hubs.get(1).spec.onSelect({id:'play'},t.hubs.get(1));
+ t.api.paintHubs([]);
+ t.log.length=0;
+ t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
+ assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='open'));
+});
+
+test('a reconnect in the same slot gets the intro again', () => {
+ const t=load();
+ t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
+ t.log.length=0;
+ t.api.paintHubs([{actor:{...actor(1),generation:2},hub:hub({intro:true,canJoin:true})}]);
+ assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='open'),'sent again for the new connection');
+});
+
+test('picking a player in the spectate hub moves the camera to them', () => {
+ const t=load();
+ t.api.paintHubs([{actor:actor(1),hub:hub()}]);
+ t.hubs.get(1).spec.onPick({slot:5},t.hubs.get(1));
+ assert.ok(t.log.some(e=>e[0]==='spectate'&&e[1]==='follow'&&e[3]===5));
+});
