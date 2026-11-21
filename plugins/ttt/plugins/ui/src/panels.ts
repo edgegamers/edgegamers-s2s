@@ -1,6 +1,7 @@
 /**
- * TTT's panels on the GameHud: the shop and the report picker on the drawer, the round log and the
- * admin RDM queue on the sheet, the victim's "were you RDM'd?" on the prompt, and notices on toasts.
+ * TTT's panels on the GameHud: the shop as a centre sheet of item cards with a buy dialog on the
+ * prompt, the report picker on the drawer, the round log and the admin RDM queue on the sheet, the
+ * victim's "were you RDM'd?" on the prompt, and notices on toasts.
  *
  * Core supplies copied models and owns every action. A viewer is a captured {@link UiActor}: every
  * read and every click re-checks it with Core, so a recycled slot, a later round or a revoked admin
@@ -13,12 +14,15 @@ import type {
 import { Server } from '@s2script/sdk/server';
 import { hudPhraseFor } from '../../../packages/contracts/phrases.ts';
 import type {
-  UiActor, UiLogPage, UiLogRow, UiModelMethods, UiReport, UiReportAction, UiReportNotice, UiReportTarget, UiReportsView, UiShopView, UiTone,
+  UiActor, UiLogPage, UiLogRow, UiModelMethods, UiReport, UiReportAction, UiReportNotice, UiReportTarget, UiReportsView, UiShopGroup, UiShopItem, UiShopView, UiTone,
 } from '../api';
 
-/** A second click on the selected shop row within this window buys it. */
-const CONFIRM_SECONDS = 4;
 const BUY_DEBOUNCE = 0.3;
+/** The shop's side tabs: the viewer's role items first, then what every role can buy. */
+const SHOP_GROUPS: readonly UiShopGroup[] = ['traitor', 'detective', 'innocent', 'shared'];
+const GROUP_KEYS: Record<UiShopGroup, string> = {
+  traitor: 'ttt.role.traitor', detective: 'ttt.role.detective', innocent: 'ttt.role.innocent', shared: 'ttt.panel.shop_shared',
+};
 /** Matches Reports' CONTEXT_SECONDS: the reason notice never outlives the chat capture. */
 const REASON_SECONDS = 120;
 /** Rounds of log the sheet shows, newest first. */
@@ -45,10 +49,9 @@ function paged(slot: number, rows: GameHudDrawerRow[]): { rows?: GameHudDrawerRo
   return { tabs };
 }
 
-type DrawerMode =
-  | { kind: 'shop'; view: UiShopView; picked: { itemId: string; at: number } | null }
-  | { kind: 'pick'; targets: UiReportTarget[] };
+type DrawerMode = { kind: 'pick'; targets: UiReportTarget[] };
 type SheetMode =
+  | { kind: 'shop'; view: UiShopView }
   | { kind: 'logs'; pages: UiLogPage[] }
   | { kind: 'rdm'; view: UiReportsView; slays: Map<number, number>; banArmed: { id: number; binding: number } | null };
 
@@ -58,6 +61,8 @@ export class TttPanels {
   private readonly drawers = new Map<number, { handle: GameHudDrawer; mode: DrawerMode }>();
   private readonly sheets = new Map<number, { handle: GameHudSheet; mode: SheetMode }>();
   private readonly prompts = new Map<number, GameHudPrompt>();
+  /** The shop's "Buy X?" dialog, open over the shop sheet. */
+  private readonly confirms = new Map<number, GameHudPrompt>();
   private readonly reasonShown = new Set<number>();
   private readonly lastBuyAt = new Map<number, number>();
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
@@ -109,21 +114,116 @@ export class TttPanels {
     this.refreshRdm();
   }
 
-  // ── drawer: shop and report picker ──────────────────────────────────────────────────────────
+  // ── sheet: shop ─────────────────────────────────────────────────────────────────────────────
 
-  isShopOpen(a: UiActor): boolean { return this.owns(a) && this.drawerMode(a.slot)?.kind === 'shop'; }
-  private drawerMode(slot: number): DrawerMode | null {
-    const d = this.drawers.get(slot);
-    if (!d) return null;
-    if (!d.handle.isOpen()) { this.drawers.delete(slot); return null; }
-    return d.mode;
-  }
+  isShopOpen(a: UiActor): boolean { return this.owns(a) && this.sheetMode(a.slot)?.kind === 'shop'; }
 
   openShop(a: UiActor): boolean {
     if (!this.capture(a)) return false;
     const view = this.core.getUiShop(a);
     if (!view || !this.owns(a)) return false;
-    return this.openDrawer(a, { kind: 'shop', view, picked: null });
+    return this.openSheet(a, { kind: 'shop', view }, this.shopSpec(a.slot, view));
+  }
+
+  private shopSpec(slot: number, view: UiShopView) {
+    const groupOf = (item: UiShopItem): UiShopGroup => item.group ?? 'shared';
+    const sections: GameHudSheetSection[] = SHOP_GROUPS
+      .map((group) => view.rows.filter((item) => groupOf(item) === group))
+      .filter((items) => items.length > 0)
+      .map((items) => {
+        const group = groupOf(items[0]!);
+        // What you can buy first, then what you can't.
+        const sorted = [...items.filter((i) => i.refusal === null), ...items.filter((i) => i.refusal !== null)];
+        return {
+          id: `shop_${group}`,
+          label: t(slot, GROUP_KEYS[group]),
+          meta: sorted.length,
+          kicker: t(slot, 'ttt.panel.shop_kicker'),
+          body: {
+            kind: 'grid' as const,
+            items: sorted.map((item) => ({
+              id: item.itemId,
+              title: item.name,
+              price: t(slot, 'ttt.panel.price', item.price),
+              desc: item.refusal ?? item.description,
+              disabled: item.refusal !== null,
+            })),
+          },
+        };
+      });
+    if (sections.length === 0) {
+      sections.push({ id: 'shop_empty', label: t(slot, 'ttt.panel.shop_title'), body: { kind: 'text', paragraphs: [t(slot, 'ttt.panel.shop_empty')] } });
+    }
+    return { title: t(slot, 'ttt.panel.shop_title'), right: t(slot, 'ttt.panel.credits', view.balance), footer: t(slot, 'ttt.panel.shop_footer'), sections };
+  }
+
+  /** A card click asks first, on the prompt, so a mis-click never spends. */
+  private askBuy(a: UiActor, itemId: string): void {
+    const slot = a.slot;
+    const view = this.core.getUiShop(a);
+    if (!this.owns(a)) return;
+    if (!view) { this.closeSheet(slot); return; }
+    const item = view.rows.find((i) => i.itemId === itemId);
+    if (!item || item.refusal !== null) {
+      if (item) this.toast(slot, t(slot, 'ttt.panel.shop_cannot'), item.refusal ?? '', 'warn');
+      this.repaintShop(a);
+      return;
+    }
+    this.closeConfirm(slot);
+    const confirm = GameHud.prompt(slot, {
+      title: t(slot, 'ttt.panel.shop_title'),
+      question: t(slot, 'ttt.panel.shop_ask', item.name, item.price),
+      why: item.description,
+      answers: [
+        { id: 'buy', label: t(slot, 'ttt.panel.shop_buy'), tone: 'green' },
+        { id: 'cancel', label: t(slot, 'ttt.panel.shop_cancel'), tone: 'grey' },
+      ],
+      footer: t(slot, 'ttt.panel.credits', view.balance),
+      onAnswer: (result) => {
+        if (this.confirms.get(slot) === confirm) this.confirms.delete(slot);
+        if (result.reason !== 'answer' || result.id !== 'buy') return;
+        const owner = this.actor(slot);
+        if (owner && equal(owner, a)) this.buy(a, itemId);
+      },
+    });
+    // No dialog to ask on (the surface was refused): the click itself is the purchase.
+    if (confirm === null) { this.refused('prompt'); this.buy(a, itemId); return; }
+    this.confirms.set(slot, confirm);
+  }
+
+  private buy(a: UiActor, itemId: string): void {
+    const slot = a.slot;
+    const now = Server.gameTime;
+    const last = this.lastBuyAt.get(slot);
+    if (last !== undefined && now - last < BUY_DEBOUNCE) return;
+    this.lastBuyAt.set(slot, now);
+    const result = this.core.buyUiItem(a, itemId);
+    if (!this.owns(a)) return;
+    this.toast(slot, result.title, result.message, result.tone);
+    this.repaintShop(a);
+  }
+
+  private repaintShop(a: UiActor): void {
+    const s = this.sheets.get(a.slot);
+    if (!s || s.mode.kind !== 'shop' || !s.handle.isOpen()) return;
+    const view = this.core.getUiShop(a);
+    if (!this.owns(a)) return;
+    if (!view) { this.closeSheet(a.slot); return; }
+    s.mode.view = view;
+    // Leaving the section out keeps the tab and page the player is on.
+    s.handle.update(this.shopSpec(a.slot, view));
+  }
+
+  closeShop(a: UiActor): void { if (this.owns(a) && this.sheetMode(a.slot)?.kind === 'shop') this.closeSheet(a.slot); }
+  private closeConfirm(slot: number): void { const p = this.confirms.get(slot); this.confirms.delete(slot); if (p?.isOpen()) p.close(); }
+
+  // ── drawer: report picker ───────────────────────────────────────────────────────────────────
+
+  private drawerMode(slot: number): DrawerMode | null {
+    const d = this.drawers.get(slot);
+    if (!d) return null;
+    if (!d.handle.isOpen()) { this.drawers.delete(slot); return null; }
+    return d.mode;
   }
 
   openReportPicker(a: UiActor): boolean {
@@ -150,75 +250,24 @@ export class TttPanels {
   }
 
   private drawerSpec(slot: number, mode: DrawerMode) {
-    if (mode.kind === 'pick') {
-      const rows: GameHudDrawerRow[] = mode.targets.length
-        ? mode.targets.map((x, i) => ({ title: x.name, sub: t(slot, 'ttt.panel.report_row'), tone: 'lightred' as const, index: i }))
-        : [{ title: t(slot, 'ttt.panel.report_none'), disabled: true }];
-      return { title: t(slot, 'ttt.panel.report_title'), right: t(slot, 'ttt.panel.players', mode.targets.length), footer: t(slot, 'ttt.panel.report_footer'), ...paged(slot, rows) };
-    }
-    const view = mode.view;
-    // What you can buy first, then what you can't.
-    const items = [...view.rows.filter((i) => i.refusal === null), ...view.rows.filter((i) => i.refusal !== null)];
-    const rows: GameHudDrawerRow[] = items.length
-      ? items.map((item) => {
-        const picked = mode.picked?.itemId === item.itemId;
-        return {
-          title: item.name,
-          sub: item.refusal ?? (picked ? t(slot, 'ttt.panel.shop_confirm') : item.description),
-          meta: t(slot, 'ttt.panel.price', item.price),
-          tone: item.refusal !== null ? 'grey' as const : picked ? 'green' as const : 'yellow' as const,
-          selected: picked,
-          disabled: item.refusal !== null,
-          itemId: item.itemId,
-        };
-      })
-      : [{ title: t(slot, 'ttt.panel.shop_empty'), disabled: true }];
-    return { title: t(slot, 'ttt.panel.shop_title'), right: t(slot, 'ttt.panel.credits', view.balance), footer: t(slot, 'ttt.panel.shop_footer'), ...paged(slot, rows) };
+    const rows: GameHudDrawerRow[] = mode.targets.length
+      ? mode.targets.map((x, i) => ({ title: x.name, sub: t(slot, 'ttt.panel.report_row'), tone: 'lightred' as const, index: i }))
+      : [{ title: t(slot, 'ttt.panel.report_none'), disabled: true }];
+    return { title: t(slot, 'ttt.panel.report_title'), right: t(slot, 'ttt.panel.players', mode.targets.length), footer: t(slot, 'ttt.panel.report_footer'), ...paged(slot, rows) };
   }
 
   private drawerSelect(slot: number, row: GameHudDrawerRow): void {
     const a = this.actor(slot), mode = this.drawerMode(slot);
     if (!a || !mode) return;
-    if (mode.kind === 'pick') {
-      const target = typeof row.index === 'number' ? mode.targets[row.index] : undefined;
-      if (!target) return;
-      const ok = this.core.beginUiReport(a, target.target);
-      if (!this.owns(a)) return;
-      // On success Reports answers through reportNotice('awaiting').
-      this.closeDrawer(slot);
-      if (!ok) this.toast(slot, t(slot, 'ttt.panel.report_refused'), t(slot, 'ttt.panel.report_gone'), 'warn');
-      return;
-    }
-    const itemId = typeof row.itemId === 'string' ? row.itemId : undefined;
-    if (itemId === undefined) return;
-    const now = Server.gameTime;
-    // The first click selects; a second click on the same row buys. A mis-click never spends.
-    if (mode.picked?.itemId !== itemId || now - mode.picked.at > CONFIRM_SECONDS) {
-      mode.picked = { itemId, at: now };
-      this.repaintShop(a);
-      return;
-    }
-    const last = this.lastBuyAt.get(slot);
-    if (last !== undefined && now - last < BUY_DEBOUNCE) return;
-    this.lastBuyAt.set(slot, now);
-    mode.picked = null;
-    const result = this.core.buyUiItem(a, itemId);
+    const target = typeof row.index === 'number' ? mode.targets[row.index] : undefined;
+    if (!target) return;
+    const ok = this.core.beginUiReport(a, target.target);
     if (!this.owns(a)) return;
-    this.toast(slot, result.title, result.message, result.tone);
-    this.repaintShop(a);
+    // On success Reports answers through reportNotice('awaiting').
+    this.closeDrawer(slot);
+    if (!ok) this.toast(slot, t(slot, 'ttt.panel.report_refused'), t(slot, 'ttt.panel.report_gone'), 'warn');
   }
 
-  private repaintShop(a: UiActor): void {
-    const d = this.drawers.get(a.slot);
-    if (!d || d.mode.kind !== 'shop' || !d.handle.isOpen()) return;
-    const view = this.core.getUiShop(a);
-    if (!this.owns(a)) return;
-    if (!view) { this.closeDrawer(a.slot); return; }
-    d.mode.view = view;
-    d.handle.update(this.drawerSpec(a.slot, d.mode));
-  }
-
-  closeShop(a: UiActor): void { if (this.owns(a) && this.drawerMode(a.slot)?.kind === 'shop') this.closeDrawer(a.slot); }
   private closeDrawer(slot: number): void { const d = this.drawers.get(slot); this.drawers.delete(slot); if (d?.handle.isOpen()) d.handle.close(); }
 
   // ── sheet: round log ────────────────────────────────────────────────────────────────────────
@@ -312,7 +361,12 @@ export class TttPanels {
 
   private sheetSelect(slot: number, event: GameHudSheetEvent): void {
     const a = this.actor(slot), mode = this.sheetMode(slot);
-    if (!a || !mode || mode.kind !== 'rdm' || event.kind !== 'action') return;
+    if (!a || !mode) return;
+    if (mode.kind === 'shop') {
+      if (event.kind === 'item' && typeof event.item.id === 'string') this.askBuy(a, event.item.id);
+      return;
+    }
+    if (mode.kind !== 'rdm' || event.kind !== 'action') return;
     const id = Number(event.section.slice(1));
     // Re-read the queue: the report must still be there, under the same binding, for this admin.
     const view = this.core.getUiReports(a);
@@ -370,7 +424,7 @@ export class TttPanels {
 
   closeRdm(a: UiActor): void { if (this.owns(a) && this.sheetMode(a.slot)?.kind === 'rdm') this.closeSheet(a.slot); }
 
-  private openSheet(a: UiActor, mode: SheetMode, spec: { title: string; right?: string; sections: GameHudSheetSection[]; section?: string }): boolean {
+  private openSheet(a: UiActor, mode: SheetMode, spec: { title: string; right?: string; footer?: string; sections: GameHudSheetSection[]; section?: string }): boolean {
     const slot = a.slot;
     this.closeOthers(slot, 'sheet');
     const existing = this.sheets.get(slot);
@@ -378,13 +432,13 @@ export class TttPanels {
     const handle = GameHud.sheet(slot, {
       ...spec,
       onSelect: (event) => this.sheetSelect(slot, event),
-      onClose: () => { if (this.sheets.get(slot)?.handle === handle) this.sheets.delete(slot); },
+      onClose: () => { if (this.sheets.get(slot)?.handle === handle) { this.sheets.delete(slot); this.closeConfirm(slot); } },
     });
     if (handle === null) { this.refused('sheet'); return false; }
     this.sheets.set(slot, { handle, mode });
     return true;
   }
-  private closeSheet(slot: number): void { const s = this.sheets.get(slot); this.sheets.delete(slot); if (s?.handle.isOpen()) s.handle.close(); }
+  private closeSheet(slot: number): void { const s = this.sheets.get(slot); this.sheets.delete(slot); this.closeConfirm(slot); if (s?.handle.isOpen()) s.handle.close(); }
 
   // ── prompt: the victim's yes/no ─────────────────────────────────────────────────────────────
 
@@ -442,7 +496,7 @@ export class TttPanels {
   }
 
   hideAll(a: UiActor): void { if (this.capture(a)) this.closeAll(a.slot); }
-  private closeAll(slot: number): void { this.closeDrawer(slot); this.closeSheet(slot); this.closePrompt(slot); }
+  private closeAll(slot: number): void { this.closeDrawer(slot); this.closeSheet(slot); this.closePrompt(slot); this.closeConfirm(slot); }
   dispose(): void { this.resetAll(); this.live = false; }
   resetAll(): void { for (const slot of [...this.actors.keys()]) this.forgetLocal(slot); }
   forget(a: UiActor): void { if (equal(this.actors.get(a.slot), a)) this.forgetLocal(a.slot); }

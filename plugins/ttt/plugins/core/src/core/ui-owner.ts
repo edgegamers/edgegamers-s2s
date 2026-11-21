@@ -2,7 +2,7 @@ import { Admin, ADMFLAG } from '@s2script/sdk/admin';
 import { Bans } from '@s2script/sdk/bans';
 import { Clients } from '@s2script/sdk/clients';
 import { Player } from '@s2script/cs2';
-import type { UiActor, UiReportAction, UiRulingReply, UiShopStamp } from '../../../../packages/contracts/ui-types.ts';
+import type { UiActor, UiReportAction, UiRulingReply, UiShopGroup, UiShopStamp } from '../../../../packages/contracts/ui-types.ts';
 import * as reg from './registry';
 import {reportableKillers} from './kill-ledger';
 import { captureUiActor, matchesUiActor, matchesRegistryUiActor } from './ui-actor';
@@ -99,6 +99,9 @@ function ruleReport(actor: UiActor, id: number, binding: number, action: UiRepor
   };
 }
 
+/** Shop item role (RoleId) to its tab: 0 is any role. */
+const SHOP_GROUPS: readonly UiShopGroup[] = ['shared', 'innocent', 'traitor', 'detective', 'shared'];
+
 export const uiModels = createUiModels({
   matchesActor: matchesUiActor,
   isAdmin: (slot) => Admin.forSlot(slot)?.hasFlags(ADMFLAG.GENERIC) === true,
@@ -113,6 +116,7 @@ export const uiModels = createUiModels({
       return {
         itemId: item.id, name: plainMsgFor(slot, item.nameKey), description: plainMsgFor(slot, item.descriptionKey),
         price: item.price, limit: item.limit, refusal: refusal === PurchaseResult.Success ? null : plainText(resultMessage(refusal, slot)),
+        group: SHOP_GROUPS[item.role] ?? 'shared',
       };
     });
     return { balance, rows };

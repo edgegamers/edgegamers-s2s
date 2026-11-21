@@ -3,7 +3,9 @@ export interface UiActor { slot: number; steamId: string; generation: number; ro
 export type UiTone = 'good' | 'warn' | 'bad';
 export interface UiLogRow { a: string; b?: string; c?: string; disabled?: boolean; tone?: UiTone; }
 export interface UiLogPage { rows: UiLogRow[]; round: number; count: number; }
-export interface UiShopItem { itemId: string; name: string; description: string; price: number; limit: number; refusal: string | null; }
+/** Which shop tab an item sits under: its role's own, or shared by every role that can buy. */
+export type UiShopGroup = 'shared' | 'innocent' | 'traitor' | 'detective';
+export interface UiShopItem { itemId: string; name: string; description: string; price: number; limit: number; refusal: string | null; group?: UiShopGroup; }
 export interface UiShopStamp { mapEpoch: number; roundEpoch: number; state: number; role: number; alive: boolean; participating: boolean; shopBinding: number; }
 export interface UiShopView { balance: number; rows: UiShopItem[]; stamp: UiShopStamp; }
 export interface UiReport { binding: number; id: number; reporterName: string; accusedName: string; round: number; filed: number; reason: string; priorGuilty: number; suggestedSlays: number; }
