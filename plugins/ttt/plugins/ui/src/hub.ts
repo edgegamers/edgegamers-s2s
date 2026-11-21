@@ -54,7 +54,12 @@ export class SpectateHub {
   }
 
   private paintOne(slot: number, hub: UiHub): void {
-    const kind = hub.intro && !this.skippedIntro.has(slot) ? 'intro' : 'spectate';
+    // Core stopped holding the intro: a later sm_intro may show it again.
+    if (!hub.intro) this.skippedIntro.delete(slot);
+    // Chosen, and Core has not caught up yet: show nothing for that moment rather than a spectate hub
+    // to a player who may be alive.
+    if (hub.intro && this.skippedIntro.has(slot)) { this.closeSlot(slot); return; }
+    const kind = hub.intro ? 'intro' : 'spectate';
     const current = this.open.get(slot);
     if (current !== undefined && (current.kind !== kind || !current.handle.isOpen())) this.closeSlot(slot);
 
@@ -176,8 +181,14 @@ export class SpectateHub {
     if (item.id === 'spectate') { this.skip(slot); return; }
     if (item.id === 'rules') { this.run(slot, 'sm_rules'); return; }
     if (item.id !== 'play') return;
+    this.endIntro(slot);
     if (!this.run(slot, `jointeam ${TEAM_T}`)) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
+  }
+
+  /** Tell Core the player chose, so it stops holding the intro. Hidden here until Core's next model agrees. */
+  private endIntro(slot: number): void {
     this.skippedIntro.add(slot);
+    this.run(slot, 'ttt_intro_done');
   }
 
   /** Run a command from the player's own console, not a server-side fake: the server refuses `jointeam` from that. */
@@ -188,8 +199,9 @@ export class SpectateHub {
 
   /** Spectate, or closing the intro: a real team choice, so Core stops holding the intro and leaves them spectating. */
   private skip(slot: number): void {
-    if (!this.skippedIntro.has(slot)) this.run(slot, `jointeam ${TEAM_SPECTATOR}`);
-    this.skippedIntro.add(slot);
+    if (this.skippedIntro.has(slot)) { this.closeSlot(slot); return; }
+    this.endIntro(slot);
+    this.run(slot, `jointeam ${TEAM_SPECTATOR}`);
     // The next paint swaps the intro for the spectate hub.
     this.closeSlot(slot);
   }

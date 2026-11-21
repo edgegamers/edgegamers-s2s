@@ -87,7 +87,10 @@ export function roundHudFor(slot: number): UiRoundHud {
  * living hides nothing. Roles stay hidden apart from the Detective, who is public. Exported for tests.
  */
 export function hubFor(slot: number): UiHub | null {
-  if (reg.isAlive(slot) || Clients.fromSlot(slot)?.isBot === true) return null;
+  if (Clients.fromSlot(slot)?.isBot === true) return null;
+  // The intro stays up until the player picks, even if the engine already put them on a team and
+  // spawned them.
+  if (reg.isAlive(slot) && !isIntroPending(slot)) return null;
   const now = phase();
   const dealt = now === "live" || now === "finished";
   const team = teamOf(slot);

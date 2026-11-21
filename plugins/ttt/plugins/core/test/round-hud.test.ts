@@ -77,4 +77,6 @@ test('the dead and spectators get a hub listing the living; only a spectator may
  assert.equal(api.hubFor(4).intro,false,'after Play or Spectate, the spectate hub');
  fixture.bots.add(4);
  assert.equal(api.hubFor(4),null,'bots get no hub');
+ fixture.intro.add(0);
+ assert.equal(api.hubFor(0)?.intro,true,'a living player the engine auto-assigned still gets the intro until they choose');
 });

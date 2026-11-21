@@ -27,7 +27,7 @@ test('a new player gets the intro, Play joins through their own console', () => 
  assert.deepEqual(open[3].items.map(i=>i.id),['play','spectate','rules']);
  assert.deepEqual(t.server,['sv_disable_teamselect_menu 1']);
  t.hubs.get(1).spec.onSelect({id:'play'},t.hubs.get(1));
- assert.deepEqual(t.commands,[[1,'jointeam 2']]);
+ assert.deepEqual(t.commands,[[1,'ttt_intro_done'],[1,'jointeam 2']],'Play tells Core the intro is done, then joins');
  t.end();
  assert.deepEqual(t.server,['sv_disable_teamselect_menu 1','sv_disable_teamselect_menu 0']);
 });
@@ -38,8 +38,11 @@ test('Spectate on the intro swaps to the spectate hub with the living in the pic
  t.api.paintHubs(row);
  t.hubs.get(1).spec.onSelect({id:'spectate'},t.hubs.get(1));
  assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='close'));
- assert.equal(JSON.stringify(t.commands),'[[1,"jointeam 1"]]','Spectate is a real team choice');
+ assert.equal(JSON.stringify(t.commands),'[[1,"ttt_intro_done"],[1,"jointeam 1"]]','Spectate is a real team choice');
  t.api.paintHubs(row);
+ assert.ok(!t.log.some(e=>e[0]==='spectate'&&e[1]==='open'),'nothing opens until Core drops the intro');
+ assert.equal(t.log.filter(e=>e[0]==='intro'&&e[1]==='open').length,1);
+ t.api.paintHubs([{actor:actor(1),hub:hub({canJoin:true})}]);
  const open=t.log.find(e=>e[0]==='spectate'&&e[1]==='open');
  assert.deepEqual(open[3].players.map(p=>[p.slot,p.sub,p.tone]),[[4,'{green}90{grey} HP','grey'],[5,'{green}40{grey} HP','darkblue']]);
  assert.deepEqual(open[3].shots.map(s=>s.target),[4,5]);
@@ -76,4 +79,14 @@ test('Rules on the hub opens the rules from the player\'s own console', () => {
  t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
  t.hubs.get(1).spec.onSelect({id:'rules'},t.hubs.get(1));
  assert.equal(JSON.stringify(t.commands),'[[1,"sm_rules"]]');
+});
+
+test('the intro reopens when Core holds it again (sm_intro)', () => {
+ const t=load();
+ t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
+ t.hubs.get(1).spec.onSelect({id:'play'},t.hubs.get(1));
+ t.api.paintHubs([{actor:actor(1),hub:hub({canJoin:true})}]);
+ t.log.length=0;
+ t.api.paintHubs([{actor:actor(1),hub:hub({intro:true,canJoin:true})}]);
+ assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='open'),'intro shown again');
 });

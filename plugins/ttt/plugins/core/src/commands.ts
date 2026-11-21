@@ -28,6 +28,7 @@ import { getHealth, setHealth, teamOf, tell, tellAll } from "./cs2/pawn";
 import { game, inWarmup, startGame, endGame } from "./game/game";
 import { reserveRole, roleName, roleNameFor } from "./game/roles";
 import { printLogsTo } from "./game/logger";
+import { setIntroPending } from "./game/teams";
 import { allBodies } from "./cs2/bodies";
 import { Entity } from "@s2script/sdk/entity";
 import { damageDiag, killWithGadget } from "./cs2/combat";
@@ -294,6 +295,17 @@ export function registerCommands(): void {
         ((replyPhraseFor(cmd, "ttt.diagnostics.player_role", userIdTag(slot), reg.nameOf(slot), roleNameFor(cmd.callerSlot, reg.roleOf(slot)) || msgFor(cmd.callerSlot, "ttt.common.none")) + replyPhraseFor(cmd, "ttt.diagnostics.player_alive", String(reg.isAlive(slot)), String(reg.computeAlive(slot)))) + replyPhraseFor(cmd, "ttt.diagnostics.player_stats", getHealth(slot), teamOf(slot), balanceOf(slot), karmaOf(slot))),
       );
     }
+  });
+
+  // The intro screen (Play, Spectate, Rules) again, for anyone who wants another look.
+  command("sm_intro", (cmd) => {
+    if (cmd.callerSlot < 0) return;
+    setIntroPending(cmd.callerSlot, true);
+  });
+  // The intro's own buttons end it. Run from the player's console by ttt-ui, so a team change the
+  // engine makes on its own (an auto-assign on connect) never closes the intro before they choose.
+  command("ttt_intro_done", (cmd) => {
+    if (cmd.callerSlot >= 0) setIntroPending(cmd.callerSlot, false);
   });
 
   command("sm_logs", (cmd) => {
