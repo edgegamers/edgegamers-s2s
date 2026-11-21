@@ -19,16 +19,16 @@ import { answerPending } from "./core/reports-provider";
 import type { CommandInvocation } from "@s2script/sdk/commands";
 import { ADMFLAG, Admin } from "@s2script/sdk/admin";
 import { ChatColors, Player } from "@s2script/cs2";
-import { GameState, MAX_SLOTS, RoleId } from "./core/enums";
+import { GameState, MAX_SLOTS, RoleId, Team } from "./core/enums";
 import { cfg } from "./core/cvars";
 import { msg, msgFor, chatMsgFor, replyPhraseFor } from "./core/msgs";
 import * as reg from "./core/registry";
 import { mayReport, reportWindowSeconds } from "./core/kill-ledger";
-import { getHealth, setHealth, teamOf, tell, tellAll } from "./cs2/pawn";
+import { getHealth, respawn, setHealth, switchTeam, teamOf, tell, tellAll } from "./cs2/pawn";
 import { game, inWarmup, startGame, endGame } from "./game/game";
 import { reserveRole, roleName, roleNameFor } from "./game/roles";
 import { printLogsTo } from "./game/logger";
-import { setIntroPending } from "./game/teams";
+import { setBenched, setIntroPending, unbench } from "./game/teams";
 import { allBodies } from "./cs2/bodies";
 import { Entity } from "@s2script/sdk/entity";
 import { damageDiag, killWithGadget } from "./cs2/combat";
@@ -302,10 +302,26 @@ export function registerCommands(): void {
     if (cmd.callerSlot < 0) return;
     setIntroPending(cmd.callerSlot, true);
   });
-  // The intro's own buttons end it. Run from the player's console by ttt-ui, so a team change the
-  // engine makes on its own (an auto-assign on connect) never closes the intro before they choose.
+  // The intro and spectate hub buttons, run server-side as the player by ttt-ui: `play` or `spectate`.
+  // TTT moves the team itself, so nothing depends on the client running `jointeam` for us, and a team
+  // change the engine makes on its own (an auto-assign on connect) never ends the intro.
   command("ttt_intro_done", (cmd) => {
-    if (cmd.callerSlot >= 0) setIntroPending(cmd.callerSlot, false);
+    const slot = cmd.callerSlot;
+    if (slot < 0) return;
+    setIntroPending(slot, false);
+    const choice = cmd.arg(0);
+    const team = teamOf(slot);
+    if (choice === "spectate") {
+      unbench(slot);
+      if (team !== Team.Spectator) switchTeam(slot, Team.Spectator);
+      return;
+    }
+    if (choice !== "play" || team === Team.Terrorist || team === Team.CounterTerrorist) return;
+    // Mid-round they wait on Spectator, and the next countdown pulls them in.
+    if (game.state === GameState.InProgress) { setBenched(slot); tell(slot, chatMsgFor(slot, "ttt.round.late_join")); return; }
+    switchTeam(slot, Team.Terrorist);
+    // Waiting or counting down: put them in the world now rather than at the next countdown.
+    if (getHealth(slot) <= 0) respawn(slot);
   });
 
   command("sm_logs", (cmd) => {

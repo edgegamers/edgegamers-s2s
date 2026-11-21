@@ -28,7 +28,7 @@ import { pawnOf, setArmor, setPawnIsAlive, setTakesDamage, tell, tellAll, toSpec
 import { type HeldWeapon } from "./inventory";
 import { nextPreFrame } from "../core/preframe";
 import { AcquireMethod, AcquireResult, type CanAcquireView } from "./acquire";
-import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, unbench, wouldRefuseTeam } from "../game/teams";
+import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, setIntroPending, unbench, wouldRefuseTeam } from "../game/teams";
 import { ROLE_COLORS, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
 import { bindSanctionProtection, isSanctionVictim } from "./sanction";
@@ -515,6 +515,9 @@ export function benchLateJoiner(slot: number): void {
  */
 export function onJoinTeamCommand(slot: number, argString: string): HookResultValue | void {
   const team = parseJoinTeam(argString);
+  // A real team pick ends the intro too (Play sends jointeam 2), in case ttt-ui's own signal was lost.
+  // `jointeam 0` (auto) does not: the engine can send that without the player choosing.
+  if (team !== Team.None) setIntroPending(slot, false);
   // Choosing spectator is a real choice: the next countdown must not pull them back in.
   if (team === Team.Spectator) unbench(slot);
   if (wouldRefuseTeam(slot, team)) return HookResult.Handled;

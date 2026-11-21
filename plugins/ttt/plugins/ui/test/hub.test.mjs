@@ -27,7 +27,7 @@ test('a new player gets the intro, Play joins through their own console', () => 
  assert.deepEqual(open[3].items.map(i=>i.id),['play','spectate','rules']);
  assert.deepEqual(t.server,['sv_disable_teamselect_menu 1']);
  t.hubs.get(1).spec.onSelect({id:'play'},t.hubs.get(1));
- assert.deepEqual(t.commands,[[1,'ttt_intro_done'],[1,'jointeam 2']],'Play tells Core the intro is done, then joins');
+ assert.deepEqual(t.commands,[[1,'ttt_intro_done play']],'Play hands the join to Core');
  t.end();
  assert.deepEqual(t.server,['sv_disable_teamselect_menu 1','sv_disable_teamselect_menu 0']);
 });
@@ -38,7 +38,7 @@ test('Spectate on the intro swaps to the spectate hub with the living in the pic
  t.api.paintHubs(row);
  t.hubs.get(1).spec.onSelect({id:'spectate'},t.hubs.get(1));
  assert.ok(t.log.some(e=>e[0]==='intro'&&e[1]==='close'));
- assert.equal(JSON.stringify(t.commands),'[[1,"ttt_intro_done"],[1,"jointeam 1"]]','Spectate is a real team choice');
+ assert.equal(JSON.stringify(t.commands),'[[1,"ttt_intro_done spectate"]]','Spectate is a real team choice');
  t.api.paintHubs(row);
  assert.ok(!t.log.some(e=>e[0]==='spectate'&&e[1]==='open'),'nothing opens until Core drops the intro');
  assert.equal(t.log.filter(e=>e[0]==='intro'&&e[1]==='open').length,1);

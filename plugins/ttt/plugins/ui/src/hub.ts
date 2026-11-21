@@ -5,7 +5,7 @@
  * gets the spectate hub: a picker of the living players and camera cuts between them. Core decides
  * who gets a hub and what they may see; this only paints it and sends each player what changed.
  *
- * Play sends the player's own `jointeam`, so Core's team rules still decide whether it lands. The
+ * Play and Spectate run `ttt_intro_done` server-side as the player, and Core moves the team. The
  * stock team menu is switched off only once a hub has actually opened, so a server that refuses the
  * surface keeps the normal way in and gets one chat line instead.
  */
@@ -19,8 +19,6 @@ import { chatPhraseFor, hudPhraseFor } from '../../../packages/contracts/phrases
 import type { UiActor, UiHub, UiHubPlayer, UiHubRow } from '../api';
 import { IntroCamera } from './introcam';
 
-const TEAM_T = 2;
-const TEAM_SPECTATOR = 1;
 const SHOT_SECONDS = 8;
 type Vec3 = { x: number; y: number; z: number };
 
@@ -183,30 +181,28 @@ export class SpectateHub {
 
   private select(slot: number, item: GameHudHubItem): void {
     if (item.id === 'spectate') { this.skip(slot); return; }
-    if (item.id === 'rules') { this.run(slot, 'sm_rules'); return; }
+    if (item.id === 'rules') { this.serverRun(slot, 'sm_rules'); return; }
     if (item.id !== 'play') return;
-    this.endIntro(slot);
-    if (!this.run(slot, `jointeam ${TEAM_T}`)) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
+    if (!this.endIntro(slot, 'play')) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
   }
 
   /** Tell Core the player chose, so it stops holding the intro. Hidden here until Core's next model agrees. */
-  private endIntro(slot: number): void {
+  private endIntro(slot: number, choice: 'play' | 'spectate'): boolean {
     this.skippedIntro.add(slot);
     this.camera.stop(slot);
-    this.run(slot, 'ttt_intro_done');
+    // Server-side as the player, and Core moves the team: nothing waits on the client.
+    return this.serverRun(slot, `ttt_intro_done ${choice}`);
   }
 
-  /** Run a command from the player's own console, not a server-side fake: the server refuses `jointeam` from that. */
-  private run(slot: number, line: string): boolean {
-    const client = Clients.fromSlot(slot);
-    return client === null ? false : client.isBot ? client.fakeCommand(line) : client.command(line);
+  /** Run a server command as the player (`FakeClientCommand`). */
+  private serverRun(slot: number, line: string): boolean {
+    return Clients.fromSlot(slot)?.fakeCommand(line) ?? false;
   }
 
   /** Spectate, or closing the intro: a real team choice, so Core stops holding the intro and leaves them spectating. */
   private skip(slot: number): void {
     if (this.skippedIntro.has(slot)) { this.closeSlot(slot); return; }
-    this.endIntro(slot);
-    this.run(slot, `jointeam ${TEAM_SPECTATOR}`);
+    this.endIntro(slot, 'spectate');
     // The next paint swaps the intro for the spectate hub.
     this.closeSlot(slot);
   }

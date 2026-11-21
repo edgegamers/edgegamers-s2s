@@ -65,7 +65,7 @@ export function gameHudDouble(phrases = {}) {
     return handle;
   };
   const commands = [];
-  const Clients = { fromSlot: (slot) => ({ slot, isBot: false, command: (c) => { commands.push([slot, c]); return true; }, fakeCommand: () => false }) };
+  const Clients = { fromSlot: (slot) => ({ slot, isBot: false, command: (c) => { commands.push([slot, c]); return true; }, fakeCommand: (c) => { commands.push([slot, c]); return true; } }) };
   const Chat = { toSlot: (slot, text) => log.push(['chat', slot, text]) };
   const Entity = { findByClass: () => [] };
   const bitsOf = new Map();
