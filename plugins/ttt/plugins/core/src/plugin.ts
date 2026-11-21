@@ -92,7 +92,7 @@ import { precacheBodyModels } from "./cs2/bodies";
 import { inspectIdentify, tickInteract } from "./cs2/interact";
 import { unspoofAlive, reassertSpoof, tickSpoof } from "./cs2/spoof";
 import { installFeedback } from "./cs2/feedback";
-import { wouldRefuseTeam } from "./game/teams";
+import { setIntroPending, wouldRefuseTeam } from "./game/teams";
 import {
   benchLateJoiner, installBombSuppressor, installHandlers, onCanAcquire, onItemPurchase,
   onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
@@ -393,6 +393,8 @@ export function OnPluginStart(): void {
     getTttHud()?.hideAll(client.slot);
     reg.setAlive(client.slot, reg.computeAlive(client.slot));
     bus.emit("join", { slot: client.slot });
+    // A person who just connected gets the intro screen (Play, Spectate, Rules) before anything else.
+    if (!client.isBot) setIntroPending(client.slot, true);
 
     // Bench a live-round arrival HERE, not only when they pick a team. A freshly connected
     // controller sits on `Team.None` with no pawn, and the engine leaves its alive mirror set — so
@@ -415,6 +417,7 @@ export function OnPluginStart(): void {
   });
 
   scope.clients.onDisconnect((client) => {
+    setIntroPending(client.slot, false);
     getTttHud()?.forget(client.slot);
     forgetReportCapture(client.slot);
     bus.emit("leave", { slot: client.slot });

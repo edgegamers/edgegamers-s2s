@@ -19,6 +19,7 @@ import { chatPhraseFor, hudPhraseFor } from '../../../packages/contracts/phrases
 import type { UiActor, UiHub, UiHubPlayer, UiHubRow } from '../api';
 
 const TEAM_T = 2;
+const TEAM_SPECTATOR = 1;
 const SHOT_SECONDS = 8;
 type Vec3 = { x: number; y: number; z: number };
 
@@ -110,6 +111,8 @@ export class SpectateHub {
       });
     }
     if (kind === 'intro') items.push({ id: 'spectate', label: hudPhraseFor(slot, 'ttt.hub.spectate') });
+    // The rules plugin's own command, run as the player: nothing here depends on that plugin.
+    items.push({ id: 'rules', label: hudPhraseFor(slot, 'ttt.hub.rules') });
     return {
       eyebrow: hudPhraseFor(slot, 'ttt.hub.eyebrow'),
       title: hudPhraseFor(slot, 'ttt.hub.title'),
@@ -171,15 +174,21 @@ export class SpectateHub {
 
   private select(slot: number, item: GameHudHubItem): void {
     if (item.id === 'spectate') { this.skip(slot); return; }
+    if (item.id === 'rules') { this.run(slot, 'sm_rules'); return; }
     if (item.id !== 'play') return;
-    const client = Clients.fromSlot(slot);
-    // The player's own console, not a server-side fake: the server refuses `jointeam` from that.
-    const sent = client === null ? false : client.isBot ? client.fakeCommand(`jointeam ${TEAM_T}`) : client.command(`jointeam ${TEAM_T}`);
-    if (!sent) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
+    if (!this.run(slot, `jointeam ${TEAM_T}`)) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
     this.skippedIntro.add(slot);
   }
 
+  /** Run a command from the player's own console, not a server-side fake: the server refuses `jointeam` from that. */
+  private run(slot: number, line: string): boolean {
+    const client = Clients.fromSlot(slot);
+    return client === null ? false : client.isBot ? client.fakeCommand(line) : client.command(line);
+  }
+
+  /** Spectate, or closing the intro: a real team choice, so Core stops holding the intro and leaves them spectating. */
   private skip(slot: number): void {
+    if (!this.skippedIntro.has(slot)) this.run(slot, `jointeam ${TEAM_SPECTATOR}`);
     this.skippedIntro.add(slot);
     // The next paint swaps the intro for the spectate hub.
     this.closeSlot(slot);

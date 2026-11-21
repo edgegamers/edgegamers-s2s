@@ -18,6 +18,7 @@ import { karmaOf, MAX_KARMA } from "../karma/karma";
 import { isDeathRevealed } from "./combat";
 import { getHealth, pawnOf, teamOf } from "./pawn";
 import { getTttHud } from "./ttthud";
+import { isIntroPending } from "../game/teams";
 
 /** Seconds between model builds. The clock only moves once a second, so this is plenty. */
 const INTERVAL = 0.25;
@@ -91,14 +92,13 @@ export function hubFor(slot: number): UiHub | null {
   const dealt = now === "live" || now === "finished";
   const team = teamOf(slot);
   const canJoin = team === Team.None || team === Team.Spectator;
-  const inRound = dealt && reg.isParticipating(slot);
   const players: UiHub["players"] = [];
   for (const other of reg.activeSlots()) {
     if (other === slot || !reg.isAlive(other)) continue;
     players.push({ slot: other, name: reg.nameOf(other), health: getHealth(other), detective: dealt && reg.roleOf(other) === RoleId.Detective });
   }
   return {
-    intro: canJoin && !inRound,
+    intro: isIntroPending(slot),
     canJoin,
     phase: now,
     round: now === "finished" ? game.roundsThisMap : game.roundsThisMap + 1,

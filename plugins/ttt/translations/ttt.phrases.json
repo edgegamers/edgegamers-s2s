@@ -310,6 +310,7 @@
   "ttt.hub.play": "{green}Play",
   "ttt.hub.play_next": "{grey}Next round",
   "ttt.hub.spectate": "{grey}Spectate",
+  "ttt.hub.rules": "{grey}Rules",
   "ttt.hub.alive": "{green}{1}{grey} alive",
   "ttt.hub.health": "{green}{1}{grey} HP",
   "ttt.hub.watching": "{grey}Watching",

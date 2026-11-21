@@ -28,7 +28,7 @@ import { pawnOf, setArmor, setPawnIsAlive, setTakesDamage, tell, tellAll, toSpec
 import { type HeldWeapon } from "./inventory";
 import { nextPreFrame } from "../core/preframe";
 import { AcquireMethod, AcquireResult, type CanAcquireView } from "./acquire";
-import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, wouldRefuseTeam } from "../game/teams";
+import { enforceRoundTeam, parseJoinTeam, revealAsInnocent, setBenched, setIntroPending, unbench, wouldRefuseTeam } from "../game/teams";
 import { ROLE_COLORS, setPawnColor } from "./color";
 import { tintBody } from "./bodies";
 import { bindSanctionProtection, isSanctionVictim } from "./sanction";
@@ -515,6 +515,10 @@ export function benchLateJoiner(slot: number): void {
  */
 export function onJoinTeamCommand(slot: number, argString: string): HookResultValue | void {
   const team = parseJoinTeam(argString);
+  // Any team choice ends the intro screen (Play sends jointeam 2, Spectate jointeam 1).
+  setIntroPending(slot, false);
+  // Choosing spectator is a real choice: the next countdown must not pull them back in.
+  if (team === Team.Spectator) unbench(slot);
   if (wouldRefuseTeam(slot, team)) return HookResult.Handled;
   if (
     inProgress() &&

@@ -15,13 +15,14 @@ const mocks:Record<string,string>={
  './pawn':'export const getHealth=()=>90,pawnOf=()=>({maxHealth:100}),teamOf=s=>fixture.teams[s]??2;',
  '@s2script/sdk/clients':'export const Clients={fromSlot:s=>({isBot:fixture.bots.has(s)})};',
  './ttthud':'export const getTttHud=()=>fixture.hud;',
+ '../game/teams':'export const isIntroPending=s=>fixture.intro.has(s);',
 };
 const code=(await build({stdin:{contents:"export * from './round-hud';",loader:'ts',resolveDir:cs2},bundle:true,write:false,format:'cjs',platform:'node',plugins:[{name:'mocks',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:mocks[a.path]!}));}}]})).outputFiles[0]!.text;
 
 function load(){
  // Slots 0-3 play: 0 traitor alive, 1 innocent alive, 2 innocent dead and found, 3 innocent dead and hidden. 4 sits out.
  const fixture={slots:[0,1,2,3,4],playing:new Set([0,1,2,3]),alive:new Set([0,1]),revealed:new Set([2]),roles:{0:2,1:1,2:1,3:1} as Record<number,number>,
-  game:{state:2,participants:4,roundsThisMap:3},clock:42,hud:null as any,teams:{4:1} as Record<number,number>,bots:new Set<number>()};
+  game:{state:2,participants:4,roundsThisMap:3},clock:42,hud:null as any,teams:{4:1} as Record<number,number>,bots:new Set<number>(),intro:new Set<number>([4])};
  const module={exports:{} as any};
  runInContext(code,createContext({fixture,module,exports:module.exports}));
  return {fixture,api:module.exports};
@@ -71,7 +72,9 @@ test('the dead and spectators get a hub listing the living; only a spectator may
  assert.equal(dead.intro,false);
  const spec=api.hubFor(4);
  assert.equal(spec.canJoin,true);
- assert.equal(spec.intro,true);
+ assert.equal(spec.intro,true,'a fresh joiner gets the intro');
+ fixture.intro.delete(4);
+ assert.equal(api.hubFor(4).intro,false,'after Play or Spectate, the spectate hub');
  fixture.bots.add(4);
  assert.equal(api.hubFor(4),null,'bots get no hub');
 });

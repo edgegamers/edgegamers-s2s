@@ -27,6 +27,7 @@
     "plugins/weaponpaints",
     "plugins/weaponpaints-ds",
     "plugins/pug",
+    "plugins/rules",
     "plugins/portal",
     "packages/*"
   ],
@@ -45,6 +46,7 @@
         "plugins/weaponpaints",
         "plugins/weaponpaints-ds",
         "plugins/pug",
+        "plugins/rules",
         "plugins/portal"
       ],
       "bundles": [
