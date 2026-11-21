@@ -39,6 +39,8 @@ export class SpectateHub {
   private readonly skippedIntro = new Set<number>();
   /** Which connection each slot's state belongs to (`steamId:generation`). */
   private readonly connection = new Map<number, string>();
+  /** The round phase each player's hub last showed, for the queued toast. */
+  private readonly phase = new Map<number, UiHub['phase']>();
   private readonly told = new Set<number>();
   private overview: GameHudShot[] | null = null;
   private menuOff = false;
@@ -64,6 +66,7 @@ export class SpectateHub {
   }
 
   private paintOne(slot: number, hub: UiHub): void {
+    this.phase.set(slot, hub.phase);
     // Core stopped holding the intro: a later sm_intro may show it again.
     if (!hub.intro) this.skippedIntro.delete(slot);
     // Chosen, and Core has not caught up yet: show nothing for that moment rather than a spectate hub
@@ -120,7 +123,10 @@ export class SpectateHub {
       : hub.phase === 'finished' ? hudPhraseFor(slot, 'ttt.hud.sub_finished')
       : hudPhraseFor(slot, 'ttt.hub.sub_waiting');
     const items: GameHudHubItem[] = [];
-    if (hub.canJoin) {
+    if (hub.canJoin && hub.queued === true && kind === 'spectate') {
+      // Pressed Play mid-round: show it took, and let them change their mind.
+      items.push({ id: 'unqueue', label: hudPhraseFor(slot, 'ttt.hub.queued'), meta: hudPhraseFor(slot, 'ttt.hub.queued_meta'), tone: 'green', selected: true });
+    } else if (hub.canJoin) {
       items.push({
         id: 'play', label: hudPhraseFor(slot, 'ttt.hub.play'),
         meta: hub.phase === 'live' ? hudPhraseFor(slot, 'ttt.hub.play_next') : undefined, tone: 'green',
@@ -190,9 +196,14 @@ export class SpectateHub {
 
   private select(slot: number, item: GameHudHubItem): void {
     if (item.id === 'spectate') { this.skip(slot); return; }
+    if (item.id === 'unqueue') { this.serverRun(slot, 'ttt_intro_done spectate'); this.repaint(slot); return; }
     if (item.id === 'rules') { this.serverRun(slot, 'sm_rules'); return; }
     if (item.id !== 'play') return;
-    if (!this.endIntro(slot, 'play')) Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed'));
+    if (!this.endIntro(slot, 'play')) { Chat.toSlot(slot, chatPhraseFor(slot, 'ttt.hub.join_failed')); return; }
+    if (this.phase.get(slot) === 'live') {
+      GameHud.toast(slot, { title: hudPhraseFor(slot, 'ttt.hub.queued'), sub: hudPhraseFor(slot, 'ttt.hub.queued_toast'), tone: 'green', seconds: 4 });
+    }
+    this.repaint(slot);
   }
 
   /** Tell Core the player chose, so it stops holding the intro. Hidden here until Core's next model agrees. */
@@ -214,6 +225,12 @@ export class SpectateHub {
     this.endIntro(slot, 'spectate');
     // The next paint swaps the intro for the spectate hub.
     this.closeSlot(slot);
+  }
+
+  /** Send the hub again on the next paint (Core's answer arrives with it). */
+  private repaint(slot: number): void {
+    const open = this.open.get(slot);
+    if (open !== undefined) open.key = '';
   }
 
   private watch(slot: number, player: { slot: number }): void {
@@ -257,6 +274,7 @@ export class SpectateHub {
     this.open.delete(slot);
     this.skippedIntro.delete(slot);
     this.told.delete(slot);
+    this.phase.delete(slot);
   }
 
   hideAll(): void {
@@ -271,6 +289,7 @@ export class SpectateHub {
     this.skippedIntro.clear();
     this.told.clear();
     this.connection.clear();
+    this.phase.clear();
     this.camera.clear();
     if (this.menuOff) { this.menuOff = false; Server.command('sv_disable_teamselect_menu 0'); }
   }

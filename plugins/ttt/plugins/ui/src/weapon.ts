@@ -45,9 +45,19 @@ export class WeaponCard {
     }
   }
 
+  private disabled = false;
+
+  /** Switch the card off (back to the stock weapons HUD) or on again, for an A/B frame-time test. */
+  setEnabled(on: boolean): void {
+    this.disabled = !on;
+    if (!on) this.dispose();
+  }
+
+  isEnabled(): boolean { return !this.disabled; }
+
   /** Swap the stock weapons HUD for the card for these players. */
   paint(slots: Iterable<number>): void {
-    if (!this.claim()) return;
+    if (this.disabled || !this.claim()) return;
     for (const slot of slots) {
       if (this.hidden.has(slot)) continue;
       this.hidden.add(slot);

@@ -115,3 +115,17 @@ test('picking a player in the spectate hub moves the camera to them', () => {
  t.hubs.get(1).spec.onPick({slot:5},t.hubs.get(1));
  assert.ok(t.log.some(e=>e[0]==='spectate'&&e[1]==='follow'&&e[3]===5));
 });
+
+test('Play mid-round shows a toast and the hub swaps Play for a queued row that can be left', () => {
+ const t=load();
+ t.api.paintHubs([{actor:actor(1),hub:hub({canJoin:true})}]);
+ t.hubs.get(1).spec.onSelect({id:'play'},t.hubs.get(1));
+ assert.deepEqual(t.commands.at(-1),[1,'ttt_intro_done play']);
+ assert.ok(t.log.some(e=>e[0]==='toast'),'queued toast');
+ t.log.length=0;
+ t.api.paintHubs([{actor:actor(1),hub:hub({canJoin:true,queued:true})}]);
+ const up=t.log.find(e=>e[0]==='spectate'&&e[1]==='update');
+ assert.deepEqual(up[3].items.map(i=>i.id),['unqueue','rules']);
+ t.hubs.get(1).spec.onSelect({id:'unqueue'},t.hubs.get(1));
+ assert.deepEqual(t.commands.at(-1),[1,'ttt_intro_done spectate']);
+});

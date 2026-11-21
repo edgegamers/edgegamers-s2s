@@ -18,7 +18,7 @@ import { karmaOf, MAX_KARMA } from "../karma/karma";
 import { isDeathRevealed } from "./combat";
 import { getHealth, pawnOf, teamOf } from "./pawn";
 import { getTttHud } from "./ttthud";
-import { holdIntroSpectator, isIntroPending } from "../game/teams";
+import { holdIntroSpectator, isBenched, isIntroPending } from "../game/teams";
 
 /** Seconds between model builds. The clock only moves once a second, so this is plenty. */
 const INTERVAL = 0.25;
@@ -103,6 +103,7 @@ export function hubFor(slot: number): UiHub | null {
   return {
     intro: isIntroPending(slot),
     canJoin,
+    queued: canJoin && isBenched(slot),
     phase: now,
     round: now === "finished" ? game.roundsThisMap : game.roundsThisMap + 1,
     players,

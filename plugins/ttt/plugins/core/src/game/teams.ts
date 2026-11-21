@@ -58,6 +58,11 @@ export function setBenched(slot: number): void {
   if (slot >= 0 && slot < MAX_SLOTS) benched[slot] = 1;
 }
 
+/** Waiting on Spectator to be pulled in at the next countdown (pressed Play mid-round, or a late join). */
+export function isBenched(slot: number): boolean {
+  return slot >= 0 && slot < MAX_SLOTS && benched[slot] === 1;
+}
+
 /** A player who chose to spectate is no longer one TTT parked: the next countdown leaves them be. */
 export function unbench(slot: number): void {
   if (slot >= 0 && slot < MAX_SLOTS) benched[slot] = 0;

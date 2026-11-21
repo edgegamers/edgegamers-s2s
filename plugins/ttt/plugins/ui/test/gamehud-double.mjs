@@ -94,6 +94,7 @@ export function gameHudDouble(phrases = {}) {
     mods: {
       '@s2script/sdk/hud': { Hud }, '@s2script/sdk/translations': { Translations },
       '@s2script/sdk/clients': { Clients }, '@s2script/sdk/chat': { Chat }, '@s2script/sdk/entity': { Entity },
+      '@s2script/sdk/commands': { command: Object.assign(() => {}, { admin: () => {} }) }, '@s2script/sdk/admin': { ADMFLAG: { CONFIG: 1 } },
     },
   };
 }

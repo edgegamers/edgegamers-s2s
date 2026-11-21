@@ -1,4 +1,6 @@
 import { createScope, publish, use } from '@s2script/sdk/plugin';
+import { command } from '@s2script/sdk/commands';
+import { ADMFLAG } from '@s2script/sdk/admin';
 import type { Scope } from '@s2script/sdk/plugin';
 import type { UiActor, UiHubRow, UiKillEntry, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 import { TttPanels } from './panels';
@@ -53,6 +55,12 @@ export function OnPluginStart(): void {
     killFeed: (viewers: UiActor[], entry: UiKillEntry): boolean => feed.push(viewers, entry),
  };
  publish('@edgegamers/ttt-ui', methods);
+ // `sm_ttt_weaponcard 0` puts the stock weapons HUD back, to compare frame times with and without the card.
+ command.admin('sm_ttt_weaponcard', ADMFLAG.CONFIG, (cmd) => {
+  const arg = cmd.arg(0);
+  if (arg === '0' || arg === '1') card.setEnabled(arg === '1');
+  cmd.reply(`[TTT] weapon card ${card.isEnabled() ? 'on' : 'off (stock weapons HUD)'}`);
+ });
  // The intro camera moves every frame; everything else here paints when Core asks.
  if (typeof createScope === 'function') {
   frames = createScope();

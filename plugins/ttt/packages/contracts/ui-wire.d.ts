@@ -22,7 +22,7 @@ export interface UiRoundHud { phase: UiRoundPhase; clock: number; round: number;
 export interface UiRoundHudRow { actor: UiActor; hud: UiRoundHud; }
 /** One viewer's spectate hub or intro. Core decides who gets one and what they may see; UI only paints it. */
 export interface UiHubPlayer { slot: number; name: string; health: number; detective: boolean; }
-export interface UiHub { intro: boolean; canJoin: boolean; phase: UiRoundPhase; round: number; players: UiHubPlayer[]; }
+export interface UiHub { intro: boolean; canJoin: boolean; queued?: boolean; phase: UiRoundPhase; round: number; players: UiHubPlayer[]; }
 export interface UiHubRow { actor: UiActor; hub: UiHub; }
 export type UiRoundWinner = 'traitor' | 'innocent' | 'none';
 export interface UiSummaryPlayer { name: string; role: UiRoundRole; alive: boolean; }

@@ -15,7 +15,7 @@ const mocks:Record<string,string>={
  './pawn':'export const getHealth=()=>90,pawnOf=()=>({maxHealth:100}),teamOf=s=>fixture.teams[s]??2;',
  '@s2script/sdk/clients':'export const Clients={fromSlot:s=>({isBot:fixture.bots.has(s)})};',
  './ttthud':'export const getTttHud=()=>fixture.hud;',
- '../game/teams':'export const isIntroPending=s=>fixture.intro.has(s);export const holdIntroSpectator=()=>{};',
+ '../game/teams':'export const isIntroPending=s=>fixture.intro.has(s);export const holdIntroSpectator=()=>{};export const isBenched=s=>fixture.benched?.has(s)??false;',
 };
 const code=(await build({stdin:{contents:"export * from './round-hud';",loader:'ts',resolveDir:cs2},bundle:true,write:false,format:'cjs',platform:'node',plugins:[{name:'mocks',setup(b){b.onResolve({filter:/.*/},a=>a.path in mocks?{path:a.path,namespace:'mock'}:undefined);b.onLoad({filter:/.*/,namespace:'mock'},a=>({loader:'js',contents:mocks[a.path]!}));}}]})).outputFiles[0]!.text;
 
