@@ -80,6 +80,7 @@ export function fixture() {
       return commands.get(name).handler({ reply() {}, replySource: "console", callerSlot, args, arg: i => args[i] ?? "", argFloat: (i, fallback) => parseFloat(args[i] ?? fallback), replyT: (...a) => replies.push(a) });
     },
     move(p) { for (const fn of moves) fn({ player: p }); },
+    moveView(view) { for (const fn of moves) fn(view); },
     event(name, slot) { events.get(name)?.({ getPlayerSlot: () => slot }); },
     tick(ms) {
       const end = now + ms;

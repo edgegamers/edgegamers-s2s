@@ -152,3 +152,16 @@ test("reentrant connection replacement while fading cannot rotate the replacemen
   const before = f.teleports.length; f.tick(1000);
   assert.equal(f.teleports.length, before); assert.equal(f.timers.size, 0);
 });
+
+test("the movement hook does not look up the player while nobody has a speed effect", () => {
+  const f = fixture(), p = f.addPlayer(); f.setTargets([p]);
+  let lookups = 0;
+  const view = { get player() { lookups++; return p; } };
+  f.moveView(view);
+  assert.equal(lookups, 0);
+  assert.equal(f.call("sm_speed", ["@me", "2"]), 2);
+  p.pawn.velocityModifier = 1;
+  f.moveView(view);
+  assert.equal(lookups, 1);
+  assert.equal(p.pawn.velocityModifier, 2);
+});
