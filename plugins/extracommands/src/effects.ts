@@ -47,6 +47,9 @@ export class FunEffects {
 
   start(): void {
     movement.onProcessMove(view => {
+      // Runs for every player on every movement tick. `view.player` scans the player slots to find
+      // whose move this is, so do not ask for it unless somebody has a speed effect.
+      if (this.speeds.size === 0) return;
       const p = view.player;
       if (!p) return;
       const state = this.speeds.get(p.slot);
