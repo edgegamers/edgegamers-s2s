@@ -2,15 +2,17 @@ import { createScope, publish, use } from '@s2script/sdk/plugin';
 import { command } from '@s2script/sdk/commands';
 import { ADMFLAG } from '@s2script/sdk/admin';
 import type { Scope } from '@s2script/sdk/plugin';
-import type { UiActor, UiHubRow, UiKillEntry, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
+import type { UiActor, UiHubRow, UiKillEntry, UiTargetRow, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 import { TttPanels } from './panels';
 import { RoundHud } from './roundhud';
 import { SpectateHub } from './hub';
 import { KillFeed } from './feed';
+import { TargetLabel } from './target';
 let hud: TttPanels | null = null;
 let round: RoundHud | null = null;
 let hubs: SpectateHub | null = null;
 let kills: KillFeed | null = null;
+let targets: TargetLabel | null = null;
 let frames: Scope | null = null;
 export function OnPluginStart(): void {
  const rounds = new RoundHud();
@@ -21,6 +23,8 @@ export function OnPluginStart(): void {
  hubs = spectate;
  const feed = new KillFeed();
  kills = feed;
+ const label = new TargetLabel();
+ targets = label;
  const methods: UiMethods = {
     ensure: (): string | null => instance.ensure(),
     showTraitor: (actor: UiActor, mates: string[]): void => instance.showTraitor(actor, mates),
@@ -42,13 +46,14 @@ export function OnPluginStart(): void {
     reportNotice: (actor: UiActor, notice: UiReportNotice): boolean => instance.reportNotice(actor, notice),
     hideAll: (actor: UiActor): void => instance.hideAll(actor),
     resetAll: (): void => instance.resetAll(),
-    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); },
+    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); label.forget(actor.slot); },
     paintRoundHud: (rows: UiRoundHudRow[]): void => rounds.paint(rows),
     roleToast: (actor: UiActor, role: UiRoundRole): void => rounds.roleToast(actor, role),
     hideRoundHud: (): void => { rounds.hideAll(); spectate.hideAll(); },
     paintHubs: (rows: UiHubRow[]): void => spectate.paint(rows),
     roundSummary: (actors: UiActor[], summary: UiRoundSummary): void => rounds.summary(actors, summary),
     killFeed: (viewers: UiActor[], entry: UiKillEntry): boolean => feed.push(viewers, entry),
+    paintTargets: (rows: UiTargetRow[]): boolean => label.paint(rows),
  };
  publish('@edgegamers/ttt-ui', methods);
  // What the round HUD holds and last sent you: whether the rail and role card are claimed, and their state.
@@ -67,4 +72,5 @@ export function OnPluginEnd(): void {
  const rounds = round; round = null; rounds?.dispose();
  const prevHubs = hubs; hubs = null; prevHubs?.dispose();
  const prevFeed = kills; kills = null; prevFeed?.dispose();
+ const prevTargets = targets; targets = null; prevTargets?.dispose();
 }

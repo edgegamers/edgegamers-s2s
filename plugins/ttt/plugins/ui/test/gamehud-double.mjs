@@ -11,7 +11,7 @@ export function gameHudDouble(phrases = {}) {
     isValid: () => born === generation,
   });
   const GameHud = {
-    rail: () => { if (hudDown) throw new Error('no HUD entity'); log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => refuseFeed ? null : region('feed'),
+    rail: () => { if (hudDown) throw new Error('no HUD entity'); log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => refuseFeed ? null : region('feed'), target: () => region('target'),
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
     drawer: (slot, spec) => panel('drawer', slot, spec),

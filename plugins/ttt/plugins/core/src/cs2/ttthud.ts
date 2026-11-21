@@ -1,5 +1,5 @@
 /** Slot-shaped compatibility calls; Panorama state and handlers belong to the UI plugin. */
-import type { UiActor, UiHub, UiHubRow, UiKillEntry, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole } from '../../../../packages/contracts/ui-types.ts';
+import type { UiActor, UiHub, UiHubRow, UiKillEntry, UiLogRow, UiRoundSummary, UiMethods, UiReportNotice, UiRoundHud, UiRoundHudRow, UiRoundRole, UiTargetRow } from '../../../../packages/contracts/ui-types.ts';
 import { captureRegistryUiActor, captureUiActor, captureViewerUiActor } from '../core/ui-actor';
 export type LogRow = UiLogRow;
 
@@ -13,6 +13,7 @@ function facade(provider: UiMethods) {
   let roundHudMissing = false;
   let hubMissing = false;
   let feedMissing = false;
+  let targetMissing = false;
   const roundHud = (run: () => void): void => {
     if (roundHudMissing) return;
     if (typeof provider.paintRoundHud !== 'function') { roundHudMissing = true; console.log('[ttt/ui] UI provider has no round HUD; update ttt-ui'); return; }
@@ -82,6 +83,19 @@ function facade(provider: UiMethods) {
         const actors: UiActor[] = [];
         for (const slot of slots) { const actor = captureViewerUiActor(slot); if (actor !== null) actors.push(actor); }
         return provider.killFeed(actors, { ...entry }) === true;
+      }, false);
+    },
+    /** The crosshair names, once per name pass. False when ttt-ui has no label, so Core uses the centre text. */
+    paintTargets: (rows: readonly { slot: number; name: string | null; detective: boolean }[]): boolean => {
+      if (targetMissing) return false;
+      if (typeof provider.paintTargets !== 'function') { targetMissing = true; console.log('[ttt/ui] UI provider has no target label; keeping the centre text'); return false; }
+      return invoke(() => {
+        const out: UiTargetRow[] = [];
+        for (const row of rows) {
+          const actor = captureUiActor(row.slot);
+          if (actor !== null) out.push({ actor, name: row.name, detective: row.detective });
+        }
+        return provider.paintTargets(out) === true;
       }, false);
     },
     forget: (slot: number) => {

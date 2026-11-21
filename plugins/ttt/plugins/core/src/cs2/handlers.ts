@@ -279,8 +279,15 @@ const NAME_MAX_DIST = 1024;
 const NAME_CHEST_Z = 48;
 
 function updateNames(): void {
-  if (!inProgress() || !cfg.showNames) return;
+  if (!inProgress() || !cfg.showNames) {
+    // Clear any labels left from the round (an empty pass clears everyone).
+    if (namesShown) { namesShown = false; targetSink?.([]); }
+    return;
+  }
+  namesShown = true;
   const active = reg.activeSlots();
+  const targets: { slot: number; name: string | null; detective: boolean }[] = [];
+  const centre: { slot: number; html: string }[] = [];
   // Each candidate's origin, resolved at most once per pass and shared by every viewer. Re-reading
   // it per viewer made this O(viewers x players) native pawn lookups in a single 4 Hz frame;
   // nothing in the pass can move a pawn, so one read per player is the same answer.
@@ -299,7 +306,7 @@ function updateNames(): void {
     // Bots remain valid targets, but there is no receiving client for their own name HUD.
     if (Clients.fromSlot(slot)?.isBot === true) continue;
     if (!reg.isAlive(slot)) {
-      setCenterHud(slot, "");
+      centre.push({ slot, html: "" });
       lastNameTarget[slot] = -1;
       continue;
     }
@@ -364,9 +371,25 @@ function updateNames(): void {
     if (best >= 0 && isCamouflaged(best)) best = -1;
 
     lastNameTarget[slot] = best;
-    setCenterHud(slot, best < 0 ? "" : hudLine(reg.nameOf(best), "#ffffff", HUD_FONT_BIG));
+    targets.push({ slot, name: best < 0 ? null : reg.nameOf(best), detective: best >= 0 && reg.roleOf(best) === RoleId.Detective });
+    centre.push({ slot, html: best < 0 ? "" : hudLine(reg.nameOf(best), "#ffffff", HUD_FONT_BIG) });
   }
+  // The GameHud label under the crosshair when ttt-ui has it; the centre text otherwise. The label
+  // only sends changes, where the centre text has to be re-sent every frame.
+  if (targetSink?.(targets) === true) {
+    if (!labelled) { labelled = true; for (const s of active) setCenterHud(s, ""); }
+    return;
+  }
+  labelled = false;
+  for (const c of centre) setCenterHud(c.slot, c.html);
 }
+type TargetRows = readonly { slot: number; name: string | null; detective: boolean }[];
+let targetSink: ((rows: TargetRows) => boolean) | null = null;
+/** Where the crosshair names go when ttt-ui has the GameHud label. Bound by the plugin, so tests need no HUD. */
+export function bindTargetLabel(sink: ((rows: TargetRows) => boolean) | null): void { targetSink = sink; }
+/** Whether the last name pass went to the GameHud label (so the centre text was cleared). */
+let labelled = false;
+let namesShown = false;
 
 /**
  * Move players who have not moved all round to spectator.

@@ -31,6 +31,8 @@ export interface UiSummaryPlayer { name: string; role: UiRoundRole; alive: boole
  * One kill feed row. Core picks who sees it, and only fills a role the viewers already know: the
  * killer's (it is them, or their Traitor partner), a Detective's, or a Traitor's to fellow Traitors.
  */
+/** Who a living viewer is aiming at, for the crosshair label. `name` null clears it. */
+export interface UiTargetRow { actor: UiActor; name: string | null; detective: boolean; }
 export interface UiKillEntry { attacker: string | null; victim: string; weapon: string | null; headshot: boolean; attackerRole: UiRoundRole | null; victimRole: UiRoundRole | null; attackerSlot: number; victimSlot: number; }
 export interface UiRoundSummary { winner: UiRoundWinner; reason: string | null; round: number; players: UiSummaryPlayer[]; }
 export interface UiModelMethods {
@@ -74,4 +76,6 @@ export interface UiMethods {
   roundSummary(actors: UiActor[], summary: UiRoundSummary): void;
   /** Show a kill on the GameHud feed to these viewers. False when the feed is unavailable, so Core keeps the stock feed. */
   killFeed(viewers: UiActor[], entry: UiKillEntry): boolean;
+  /** Paint the crosshair name for each row; viewers left out are cleared. False when the label is unavailable, so Core keeps the centre text. */
+  paintTargets(rows: UiTargetRow[]): boolean;
 }

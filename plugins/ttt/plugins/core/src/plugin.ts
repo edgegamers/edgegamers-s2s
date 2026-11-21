@@ -95,7 +95,7 @@ import { installFeedback } from "./cs2/feedback";
 import { holdIntroSpectator, setIntroPending, wouldRefuseTeam } from "./game/teams";
 import {
   benchLateJoiner, installBombSuppressor, installHandlers, onCanAcquire, onItemPurchase,
-  onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
+  bindTargetLabel, onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
   tickHandlers,
 } from "./cs2/handlers";
 
@@ -311,6 +311,7 @@ export function OnPluginStart(): void {
   // scoreboard clear that happens before anyone has died.
   installMatchStats(ordered.forModule("stats"));
   // Deaths go on the UI's GameHud feed when it has one; without it the stock feed stays.
+  bindTargetLabel((rows) => getTttHud()?.paintTargets(rows) ?? false);
   bindKillFeed((viewers, entry) => getTttHud()?.killFeed(viewers, entry) ?? false);
   // Installed HERE, in the load window — not lazily from the death hook. A `UserMessages.onPre`
   // subscribe made from inside a game-event dispatch never took effect (measured: 40 death windows,
