@@ -14,6 +14,8 @@ import { hudPhraseFor, loadPhrases } from '../../../packages/contracts/phrases.t
 import type { UiActor, UiRoundHud, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 
 const THEME = 'red' as const;
+/** Paints between claim attempts (paints come about every 0.25 s, so about 5 s). */
+const CLAIM_RETRY = 20;
 const ROLE_KEYS: Record<UiRoundRole, string> = {
   none: 'ttt.hud.role_waiting', innocent: 'ttt.role.innocent', traitor: 'ttt.role.traitor',
   detective: 'ttt.role.detective', spectator: 'ttt.role.spectator',
@@ -28,7 +30,9 @@ export class RoundHud {
   private status: GameHudStatus | null = null;
   private railPaint: RegionPainter<GameHudRailSpec> | null = null;
   private statusPaint: RegionPainter<GameHudStatusSpec> | null = null;
-  private claimed = false;
+  /** Paints to skip before claiming again after a failed claim. */
+  private retryIn = 0;
+  private claimState = '';
   private readonly themed = new Set<number>();
   private readonly timerHidden = new Set<number>();
   /** A Traitor's partners, shown on their status card. */
@@ -40,31 +44,43 @@ export class RoundHud {
 
   constructor() { loadPhrases(); }
 
-  /** Claim the rail and status card once. A region another plugin holds stays theirs. */
+  /**
+   * Claim the rail and status card. A region another plugin holds stays theirs. A claim that failed
+   * (the host had no HUD entity yet, as at plugin load or mid map change) is tried again a few
+   * seconds later instead of leaving the round HUD off for the rest of the session.
+   */
   private claim(): void {
     // A claim goes stale when the host rebuilds its HUD entity (a map change or restart). Painting a
     // stale claim draws nothing, so drop it and claim again.
-    if (this.claimed && ((this.rail !== null && !this.rail.isValid()) || (this.status !== null && !this.status.isValid()))) {
+    if ((this.rail !== null && !this.rail.isValid()) || (this.status !== null && !this.status.isValid())) {
       this.log('GameHud claim went stale; claiming again');
       this.railPaint = this.statusPaint = null;
       this.rail = this.status = null;
       this.themed.clear();
-      this.claimed = false;
+      this.retryIn = 0;
     }
-    if (this.claimed) return;
-    this.claimed = true;
+    if (this.rail !== null && this.status !== null) return;
+    if (this.retryIn > 0) { this.retryIn--; return; }
+    this.retryIn = CLAIM_RETRY;
     try {
-      this.rail = GameHud.rail();
-      this.status = GameHud.status();
+      this.rail ??= GameHud.rail();
+      this.status ??= GameHud.status();
     } catch (error) {
-      this.log(`GameHud unavailable (does the s2script runtime ship it?): ${String(error)}`);
-      this.rail = this.status = null;
+      this.logChange('error', `GameHud unavailable; trying again shortly: ${String(error)}`);
       return;
     }
-    if (this.rail === null) this.log('GameHud rail is held by another plugin; the round rail is off');
-    if (this.status === null) this.log('GameHud status card is held by another plugin; the status card is off');
-    this.railPaint = this.rail ? new RegionPainter(this.rail) : null;
-    this.statusPaint = this.status ? new RegionPainter(this.status) : null;
+    if (this.rail === null) this.logChange('rail', 'GameHud rail is held by another plugin; trying again shortly');
+    if (this.status === null) this.logChange('status', 'GameHud status card is held by another plugin; trying again shortly');
+    if (this.rail !== null && this.railPaint === null) this.railPaint = new RegionPainter(this.rail);
+    if (this.status !== null && this.statusPaint === null) this.statusPaint = new RegionPainter(this.status);
+    if (this.rail !== null && this.status !== null) this.logChange('ok', 'round HUD claimed (rail and status card)');
+  }
+
+  /** Log a claim outcome once, and again only when it changes. */
+  private logChange(state: string, line: string): void {
+    if (this.claimState === state) return;
+    this.claimState = state;
+    this.log(line);
   }
 
   paint(rows: readonly UiRoundHudRow[]): void {
@@ -220,7 +236,8 @@ export class RoundHud {
     if (this.status?.isValid()) this.status.release();
     this.rail = this.status = null;
     this.railPaint = this.statusPaint = null;
-    this.claimed = false;
+    this.retryIn = 0;
+    this.claimState = '';
     this.announced = false;
     this.themed.clear();
   }

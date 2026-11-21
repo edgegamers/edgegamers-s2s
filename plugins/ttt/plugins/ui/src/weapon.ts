@@ -16,10 +16,14 @@ const WEAPONS_BIT = HideHud.Weapons ?? 1 << 6;
 export class WeaponCard {
   private state: 'unclaimed' | 'held' | 'off' = 'unclaimed';
   private readonly hidden = new Set<number>();
+  /** Paints to skip before trying again after the host had no card (plugin load, map change). */
+  private retryIn = 0;
+  private warned = false;
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
 
   private claim(): boolean {
     if (this.state === 'off') return false;
+    if (this.retryIn > 0) { this.retryIn--; return false; }
     // A held card can be lost to a host rebuild; claiming again is safe and cheap.
     if (this.state === 'held' && GameHud.weapon.isClaimed()) return true;
     try {
@@ -33,8 +37,10 @@ export class WeaponCard {
       this.state = 'held';
       return true;
     } catch (error) {
-      this.state = 'off';
-      this.log(`GameHud weapon card unavailable (update s2script?); keeping the stock weapons HUD: ${String(error)}`);
+      // Often the host has no HUD entity yet: keep the stock HUD and try again in a few seconds.
+      this.state = 'unclaimed';
+      this.retryIn = 20;
+      if (!this.warned) { this.warned = true; this.log(`GameHud weapon card unavailable; keeping the stock weapons HUD and trying again: ${String(error)}`); }
       return false;
     }
   }

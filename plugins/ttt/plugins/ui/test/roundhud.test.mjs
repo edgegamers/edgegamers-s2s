@@ -14,7 +14,7 @@ function load(){
  const mods={...gh.mods,'@s2script/sdk/plugin':{use:()=>({}),publish:(_,m)=>{published=m;}},'@s2script/cs2':{...gh.cs2,CustomHudLayout:{components:()=>ui},hudkit:{spec:{}}},'@s2script/sdk/server':{Server:{gameTime:0}}};
  const context=vm.createContext({module:{exports:{}},console:{log:()=>{}},require:n=>{assert.ok(n in mods,n);return mods[n];}});
  vm.runInContext(plugin,context);context.module.exports.OnPluginStart();
- return {log:gh.log,bits:gh.bits,rebuild:gh.rebuild,api:published,end:()=>context.module.exports.OnPluginEnd()};
+ return {log:gh.log,bits:gh.bits,rebuild:gh.rebuild,hudDown:gh.hudDown,api:published,end:()=>context.module.exports.OnPluginEnd()};
 }
 const actor=slot=>({slot,steamId:'u'+slot,generation:1,roundEpoch:1});
 const hud=(over={})=>({phase:'live',clock:95,round:4,alive:7,participants:9,bodies:2,role:'traitor',living:true,health:84,maxHealth:100,karma:60,maxKarma:100,...over});
@@ -94,4 +94,15 @@ test('a claim that went stale (host rebuilt the HUD) is claimed again and repain
  const rail=t.log.find(e=>e[0]==='rail'&&e[1]==='set');
  assert.equal(rail[3].clock,'1:35');
  assert.ok(rail[3].left,'full spec, not a delta');
+});
+
+test('a claim that failed while the host had no HUD is tried again', () => {
+ const t=load();
+ t.hudDown(true);
+ t.api.paintRoundHud([{actor:actor(1),hud:hud()}]);
+ assert.ok(!t.log.some(e=>e[0]==='rail'&&e[1]==='set'));
+ t.hudDown(false);
+ for(let i=0;i<25;i++) t.api.paintRoundHud([{actor:actor(1),hud:hud()}]);
+ assert.ok(t.log.some(e=>e[0]==='rail'&&e[1]==='set'),'rail painted after the retry');
+ assert.ok(t.log.some(e=>e[0]==='status'&&e[1]==='set'),'status card painted after the retry');
 });

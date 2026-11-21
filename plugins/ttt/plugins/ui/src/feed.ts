@@ -14,6 +14,7 @@ const ROLE_TONE: Partial<Record<UiRoundRole, GameHudTone>> = { traitor: 'red', d
 export class KillFeed {
   private feed: GameHudFeed | null = null;
   private state: 'unclaimed' | 'held' | 'off' = 'unclaimed';
+  private warned = false;
   private readonly log = (line: string): void => console.log(`[ttt/ui] ${line}`);
 
   private claim(): GameHudFeed | null {
@@ -23,9 +24,9 @@ export class KillFeed {
     try {
       this.feed = GameHud.feed();
     } catch (error) {
+      // Often the host has no HUD entity yet: keep the stock feed for this death and try again on the next.
       this.feed = null;
-      this.state = 'off';
-      this.log(`GameHud feed unavailable; keeping the stock kill feed: ${String(error)}`);
+      if (!this.warned) { this.warned = true; this.log(`GameHud feed unavailable; keeping the stock kill feed and trying again: ${String(error)}`); }
       return null;
     }
     if (this.feed === null) {

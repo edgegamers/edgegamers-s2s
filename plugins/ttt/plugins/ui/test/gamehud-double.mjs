@@ -11,7 +11,7 @@ export function gameHudDouble(phrases = {}) {
     isValid: () => born === generation,
   });
   const GameHud = {
-    rail: () => { log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => refuseFeed ? null : region('feed'),
+    rail: () => { if (hudDown) throw new Error('no HUD entity'); log.push(['claim', 'rail']); return region('rail'); }, status: () => region('status'), feed: () => refuseFeed ? null : region('feed'),
     toast: (audience, spec) => log.push(['toast', audience, spec]),
     theme: (audience, theme) => log.push(['theme', audience, theme]),
     drawer: (slot, spec) => panel('drawer', slot, spec),
@@ -31,6 +31,7 @@ export function gameHudDouble(phrases = {}) {
   };
   let weaponHeld = false;
   let refuseFeed = false;
+  let hudDown = false;
   const hubs = new Map();
   let refuseHub = false;
   const hub = (kind, slot, spec) => {
@@ -84,6 +85,7 @@ export function gameHudDouble(phrases = {}) {
     cs2: { GameHud, HideHud: { RoundTimer: 32, Weapons: 64 } },
     weaponHeldByOther: () => { weaponHeld = 'other'; },
     refuseFeed: (v) => { refuseFeed = v; },
+    hudDown: (v) => { hudDown = v; },
     hubs,
     panels,
     refusePanels: (v) => { refusePanel = v; },
