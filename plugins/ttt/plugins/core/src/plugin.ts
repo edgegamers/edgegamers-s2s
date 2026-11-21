@@ -92,7 +92,7 @@ import { precacheBodyModels } from "./cs2/bodies";
 import { inspectIdentify, tickInteract } from "./cs2/interact";
 import { unspoofAlive, reassertSpoof, tickSpoof } from "./cs2/spoof";
 import { installFeedback } from "./cs2/feedback";
-import { setIntroPending, wouldRefuseTeam } from "./game/teams";
+import { holdIntroSpectator, setIntroPending, wouldRefuseTeam } from "./game/teams";
 import {
   benchLateJoiner, installBombSuppressor, installHandlers, onCanAcquire, onItemPurchase,
   onJoinTeamCommand, onTeamChange, removeBuyZones, resetBuyZones, setSelfSpectateHandler,
@@ -394,7 +394,8 @@ export function OnPluginStart(): void {
     reg.setAlive(client.slot, reg.computeAlive(client.slot));
     bus.emit("join", { slot: client.slot });
     // A person who just connected gets the intro screen (Play, Spectate, Rules) before anything else.
-    if (!client.isBot) setIntroPending(client.slot, true);
+    // They watch it from Spectator, with the intro camera, until they press Play.
+    if (!client.isBot) { setIntroPending(client.slot, true, true); holdIntroSpectator(client.slot); }
 
     // Bench a live-round arrival HERE, not only when they pick a team. A freshly connected
     // controller sits on `Team.None` with no pawn, and the engine leaves its alive mirror set — so

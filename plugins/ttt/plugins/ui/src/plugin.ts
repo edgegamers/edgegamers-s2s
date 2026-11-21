@@ -1,4 +1,5 @@
-import { publish, use } from '@s2script/sdk/plugin';
+import { createScope, publish, use } from '@s2script/sdk/plugin';
+import type { Scope } from '@s2script/sdk/plugin';
 import type { UiActor, UiHubRow, UiKillEntry, UiLogRow, UiMethods, UiReportNotice, UiRoundHudRow, UiRoundRole, UiRoundSummary } from '../api';
 import { TttPanels } from './panels';
 import { RoundHud } from './roundhud';
@@ -10,6 +11,7 @@ let round: RoundHud | null = null;
 let hubs: SpectateHub | null = null;
 let weapons: WeaponCard | null = null;
 let kills: KillFeed | null = null;
+let frames: Scope | null = null;
 export function OnPluginStart(): void {
  const rounds = new RoundHud();
  round = rounds;
@@ -51,8 +53,14 @@ export function OnPluginStart(): void {
     killFeed: (viewers: UiActor[], entry: UiKillEntry): boolean => feed.push(viewers, entry),
  };
  publish('@edgegamers/ttt-ui', methods);
+ // The intro camera moves every frame; everything else here paints when Core asks.
+ if (typeof createScope === 'function') {
+  frames = createScope();
+  frames.server.onGameFrame(() => spectate.camera.tick());
+ }
 }
 export function OnPluginEnd(): void {
+ const prevFrames = frames; frames = null; prevFrames?.dispose();
  const prior = hud; hud = null; prior?.dispose();
  const rounds = round; round = null; rounds?.dispose();
  const prevHubs = hubs; hubs = null; prevHubs?.dispose();

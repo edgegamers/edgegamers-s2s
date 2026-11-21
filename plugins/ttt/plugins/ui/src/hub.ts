@@ -17,6 +17,7 @@ import { Entity } from '@s2script/sdk/entity';
 import { Server } from '@s2script/sdk/server';
 import { chatPhraseFor, hudPhraseFor } from '../../../packages/contracts/phrases.ts';
 import type { UiActor, UiHub, UiHubPlayer, UiHubRow } from '../api';
+import { IntroCamera } from './introcam';
 
 const TEAM_T = 2;
 const TEAM_SPECTATOR = 1;
@@ -34,6 +35,8 @@ interface Open {
 
 export class SpectateHub {
   private readonly open = new Map<number, Open>();
+  /** The orbit over the spawns behind the intro. Ticked every frame by the plugin. */
+  readonly camera = new IntroCamera();
   /** Players who chose Spectate on the intro this connection. */
   private readonly skippedIntro = new Set<number>();
   private readonly told = new Set<number>();
@@ -100,6 +103,7 @@ export class SpectateHub {
       return;
     }
     this.open.set(slot, { kind, handle, key, shotsKey, watching: null });
+    if (kind === 'intro') this.camera.start(slot);
     this.disableTeamMenu();
   }
 
@@ -188,6 +192,7 @@ export class SpectateHub {
   /** Tell Core the player chose, so it stops holding the intro. Hidden here until Core's next model agrees. */
   private endIntro(slot: number): void {
     this.skippedIntro.add(slot);
+    this.camera.stop(slot);
     this.run(slot, 'ttt_intro_done');
   }
 
@@ -221,6 +226,7 @@ export class SpectateHub {
   }
 
   private closeSlot(slot: number): void {
+    this.camera.stop(slot);
     const open = this.open.get(slot);
     this.open.delete(slot);
     if (open?.handle.isOpen()) open.handle.close();
@@ -238,12 +244,14 @@ export class SpectateHub {
     for (const slot of [...this.open.keys()]) this.closeSlot(slot);
     // A new map has new spawns.
     this.overview = null;
+    this.camera.reset();
   }
 
   dispose(): void {
     this.hideAll();
     this.skippedIntro.clear();
     this.told.clear();
+    this.camera.clear();
     if (this.menuOff) { this.menuOff = false; Server.command('sv_disable_teamselect_menu 0'); }
   }
 }

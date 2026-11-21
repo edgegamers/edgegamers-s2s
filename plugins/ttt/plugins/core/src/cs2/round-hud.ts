@@ -18,7 +18,7 @@ import { karmaOf, MAX_KARMA } from "../karma/karma";
 import { isDeathRevealed } from "./combat";
 import { getHealth, pawnOf, teamOf } from "./pawn";
 import { getTttHud } from "./ttthud";
-import { isIntroPending } from "../game/teams";
+import { holdIntroSpectator, isIntroPending } from "../game/teams";
 
 /** Seconds between model builds. The clock only moves once a second, so this is plenty. */
 const INTERVAL = 0.25;
@@ -117,6 +117,7 @@ export function tickRoundHud(dt: number): void {
   const hud = getTttHud();
   if (hud === null) return;
   const slots = reg.activeSlots().slice();
+  for (const slot of slots) holdIntroSpectator(slot);
   hud.paintRoundHud(slots.map((slot) => ({ slot, hud: roundHudFor(slot) })));
   const hubs: { slot: number; hub: UiHub }[] = [];
   for (const slot of slots) {

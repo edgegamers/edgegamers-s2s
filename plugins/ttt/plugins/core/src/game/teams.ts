@@ -74,11 +74,27 @@ export function clearBenched(): void {
  * them, and the hub shows them the intro instead of the spectate view.
  */
 const introPending = new Uint8Array(MAX_SLOTS);
-export function setIntroPending(slot: number, pending: boolean): void {
-  if (slot >= 0 && slot < MAX_SLOTS) introPending[slot] = pending ? 1 : 0;
+/** Pending from a fresh connect, so the player is also held on Spectator until they choose. */
+const introHeld = new Uint8Array(MAX_SLOTS);
+/** `hold` (a fresh connect) also keeps them on Spectator until they choose; `!intro` only shows it. */
+export function setIntroPending(slot: number, pending: boolean, hold = false): void {
+  if (slot < 0 || slot >= MAX_SLOTS) return;
+  introPending[slot] = pending ? 1 : 0;
+  introHeld[slot] = pending && hold ? 1 : 0;
 }
 export function isIntroPending(slot: number): boolean {
   return slot >= 0 && slot < MAX_SLOTS && introPending[slot] === 1;
+}
+
+/**
+ * A fresh joiner watches the intro from Spectator. The engine can still drop them onto a team on its
+ * own after they connect (an auto-assign), so this puts them back each paint until they choose.
+ */
+export function holdIntroSpectator(slot: number): void {
+  if (slot < 0 || slot >= MAX_SLOTS || introHeld[slot] === 0) return;
+  const team = teamOf(slot);
+  if (team === Team.Spectator) return;
+  switchTeam(slot, Team.Spectator);
 }
 
 export function resetTeamsToT(): void {
