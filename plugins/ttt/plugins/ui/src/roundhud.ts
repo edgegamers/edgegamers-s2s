@@ -33,6 +33,8 @@ export class RoundHud {
   /** Paints to skip before claiming again after a failed claim. */
   private retryIn = 0;
   private claimState = '';
+  private paints = 0;
+  private readonly lastStatus = new Map<number, GameHudStatusSpec>();
   private readonly themed = new Set<number>();
   /** Which connection each slot's painted state belongs to (`steamId:generation`). */
   private readonly connection = new Map<number, string>();
@@ -86,6 +88,7 @@ export class RoundHud {
   }
 
   paint(rows: readonly UiRoundHudRow[]): void {
+    this.paints++;
     this.claim();
     // Nothing claimed (a host without GameHud, or both regions held elsewhere): already logged once.
     if (this.railPaint === null && this.statusPaint === null) return;
@@ -145,7 +148,22 @@ export class RoundHud {
     const bars: GameHudBar[] = hud.living
       ? [{ label: hudPhraseFor(slot, 'ttt.hud.bar_health'), value: percent(hud.health, hud.maxHealth), text: Math.max(0, Math.round(hud.health)), tone: 'green' }]
       : [{ label: hudPhraseFor(slot, 'ttt.hud.bar_karma'), value: percent(hud.karma, hud.maxKarma), text: Math.round(hud.karma), tone: 'yellow' }];
-    painter.paint(slot, { role, tone: leadingTone(role) ?? 'grey', hint, bars });
+    const spec: GameHudStatusSpec = { role, tone: leadingTone(role) ?? 'grey', hint, bars };
+    this.lastStatus.set(slot, spec);
+    painter.paint(slot, spec);
+  }
+
+  /** A readout for `sm_ttt_hudstate`: what is claimed and what this slot was last sent. */
+  describe(slot: number): string[] {
+    const region = (r: GameHudRail | GameHudStatus | null): string => r === null ? 'not claimed' : r.isValid() ? 'claimed' : 'claimed but stale';
+    const lines = [
+      `rail ${region(this.rail)}, role card ${region(this.status)}; claim state "${this.claimState || 'none yet'}"; ${this.paints} round HUD paints so far`,
+    ];
+    if (slot < 0) return lines;
+    lines.push(`you: rail ${this.railPaint?.isShown(slot) ? 'shown' : 'not shown'}, role card ${this.statusPaint?.isShown(slot) ? 'shown' : 'not shown'}`);
+    const last = this.lastStatus.get(slot);
+    lines.push(last === undefined ? 'role card: nothing sent to you yet' : `role card last sent: ${JSON.stringify(last)}`);
+    return lines;
   }
 
   /** "You are a Traitor" as the round goes live. */

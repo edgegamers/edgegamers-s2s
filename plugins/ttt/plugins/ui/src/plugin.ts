@@ -6,12 +6,10 @@ import type { UiActor, UiHubRow, UiKillEntry, UiLogRow, UiMethods, UiReportNotic
 import { TttPanels } from './panels';
 import { RoundHud } from './roundhud';
 import { SpectateHub } from './hub';
-import { WeaponCard } from './weapon';
 import { KillFeed } from './feed';
 let hud: TttPanels | null = null;
 let round: RoundHud | null = null;
 let hubs: SpectateHub | null = null;
-let weapons: WeaponCard | null = null;
 let kills: KillFeed | null = null;
 let frames: Scope | null = null;
 export function OnPluginStart(): void {
@@ -21,8 +19,6 @@ export function OnPluginStart(): void {
  hud = instance;
  const spectate = new SpectateHub();
  hubs = spectate;
- const card = new WeaponCard();
- weapons = card;
  const feed = new KillFeed();
  kills = feed;
  const methods: UiMethods = {
@@ -46,8 +42,8 @@ export function OnPluginStart(): void {
     reportNotice: (actor: UiActor, notice: UiReportNotice): boolean => instance.reportNotice(actor, notice),
     hideAll: (actor: UiActor): void => instance.hideAll(actor),
     resetAll: (): void => instance.resetAll(),
-    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); card.forget(actor); },
-    paintRoundHud: (rows: UiRoundHudRow[]): void => { rounds.paint(rows); card.paint(rows.map((r) => r.actor.slot)); },
+    forget: (actor: UiActor): void => { instance.forget(actor); rounds.forget(actor); spectate.forget(actor); },
+    paintRoundHud: (rows: UiRoundHudRow[]): void => rounds.paint(rows),
     roleToast: (actor: UiActor, role: UiRoundRole): void => rounds.roleToast(actor, role),
     hideRoundHud: (): void => { rounds.hideAll(); spectate.hideAll(); },
     paintHubs: (rows: UiHubRow[]): void => spectate.paint(rows),
@@ -55,11 +51,9 @@ export function OnPluginStart(): void {
     killFeed: (viewers: UiActor[], entry: UiKillEntry): boolean => feed.push(viewers, entry),
  };
  publish('@edgegamers/ttt-ui', methods);
- // `sm_ttt_weaponcard 0` puts the stock weapons HUD back, to compare frame times with and without the card.
- command.admin('sm_ttt_weaponcard', ADMFLAG.CONFIG, (cmd) => {
-  const arg = cmd.arg(0);
-  if (arg === '0' || arg === '1') card.setEnabled(arg === '1');
-  cmd.reply(`[TTT] weapon card ${card.isEnabled() ? 'on' : 'off (stock weapons HUD)'}`);
+ // What the round HUD holds and last sent you: whether the rail and role card are claimed, and their state.
+ command.admin('sm_ttt_hudstate', ADMFLAG.GENERIC, (cmd) => {
+  for (const line of rounds.describe(cmd.callerSlot)) cmd.reply(`[TTT] ${line}`);
  });
  // The intro camera moves every frame; everything else here paints when Core asks.
  if (typeof createScope === 'function') {
@@ -72,6 +66,5 @@ export function OnPluginEnd(): void {
  const prior = hud; hud = null; prior?.dispose();
  const rounds = round; round = null; rounds?.dispose();
  const prevHubs = hubs; hubs = null; prevHubs?.dispose();
- const prevCard = weapons; weapons = null; prevCard?.dispose();
  const prevFeed = kills; kills = null; prevFeed?.dispose();
 }
