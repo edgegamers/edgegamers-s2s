@@ -217,3 +217,16 @@ test('stable frames reuse live schema views and disabled viewers need none', () 
   f.players.get(0).ref = controller; f.frame();
   assert.equal(f.hidden(pawn(f, 1), 0), false, 'controller serial changes refresh both views');
 });
+
+test('frames with nobody hiding and nothing hidden read no players', () => {
+  const f = pair();
+  for (let i = 0; i < 50; i++) f.frame();
+  assert.equal(f.playerPasses, 0, 'an idle frame must not walk the players');
+  f.invoke('hide'); f.frame();
+  assert.equal(f.hidden(pawn(f, 1), 0), true);
+  f.invoke('hide'); f.frame();
+  assert.equal(f.hidden(pawn(f, 1), 0), false, 'the pass that clears the last rule still runs');
+  const passes = f.playerPasses;
+  for (let i = 0; i < 50; i++) f.frame();
+  assert.equal(f.playerPasses, passes, 'idle again once the last rule is gone');
+});

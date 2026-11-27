@@ -18,6 +18,7 @@ export function fixture(options = {}) {
   let admission = true, transmitAvailable = true, now = 0, serial = 100;
   let ruleWrites = 0;
   let schemaWraps = 0;
+  let playerPasses = 0;
   const key = ref => `${ref.index}:${ref.id}`;
   const command = (name, handler) => {
     assert.ok(!commands.has(name), `duplicate command ${name}`);
@@ -78,7 +79,7 @@ export function fixture(options = {}) {
   };
   const cs2 = {
     ChatColors: { Default: '\x01', White: '\x01', DarkRed: '\x02', LightPurple: '\x03', Green: '\x04', Olive: '\x05', Lime: '\x06', Red: '\x07', Grey: '\x08', Yellow: '\x09', Silver: '\x0a', Blue: '\x0b', DarkBlue: '\x0c', BlueGrey: '\x0d', Purple: '\x0e', LightRed: '\x0f', Orange: '\x10' },
-    Player: { allConnected: () => [...players.values()] },
+    Player: { allConnected: () => { playerPasses++; return [...players.values()]; } },
     PlayerConnectedState: { Connected: 0 },
     CSPlayerState: { STATE_OBSERVER_MODE: 6 },
     wrapEntity(className, ref) {
@@ -152,5 +153,6 @@ export function fixture(options = {}) {
     set transmitAvailable(value) { transmitAvailable = value; },
     get ruleWrites() { return ruleWrites; },
     get schemaWraps() { return schemaWraps; },
+    get playerPasses() { return playerPasses; },
   };
 }

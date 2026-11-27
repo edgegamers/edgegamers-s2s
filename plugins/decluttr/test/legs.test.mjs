@@ -57,3 +57,17 @@ test('render ownership preserves other effects and stale connections never write
   g.api.cached(a.client); g.api.update(); assert.equal(b.pawn.render, 0xfe123456);
   g.api.dispose(); assert.equal(b.pawn.render, 0xff123456);
 });
+test('a settled server reads pawns once every eight frames, and a wake reads on the next frame', () => {
+  const f = fixture(), p = f.add(0); let reads = 0;
+  const player = f.players.get(0); f.players.set(0, { get pawn() { reads++; return player.pawn; } });
+  f.api.start();
+  for (let frame = 0; frame < 16; frame++) f.api.tick(); // the burst after a join
+  assert.equal(reads, 16); assert.equal(p.pawn.render, 0xfe123456);
+  reads = 0; for (let frame = 0; frame < 64; frame++) f.api.tick();
+  assert.equal(reads, 8);
+  p.pawn.render = 0xff123456; f.api.wake(); f.api.tick(); assert.equal(p.pawn.render, 0xfe123456);
+  p.pawn.render = 0xff123456; for (let frame = 0; frame < 16; frame++) f.api.tick(); // still inside the burst
+  reads = 0; p.pawn.render = 0xff123456;
+  for (let frame = 0; frame < 8; frame++) f.api.tick(); // the backstop catches a reset nothing announced
+  assert.equal(reads, 1); assert.equal(p.pawn.render, 0xfe123456);
+});

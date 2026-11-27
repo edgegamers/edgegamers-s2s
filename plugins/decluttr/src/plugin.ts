@@ -119,7 +119,8 @@ export function OnPluginStart(): void {
     const slot = (message.readInt('entityindex') ?? 0) - 1;
     if (!policy.checkChat(slot, text)) return HookResult.Handled;
   });
-  scope.events.on('round_start', () => { roundEnded = false; });
+  scope.events.on('round_start', () => { roundEnded = false; legs.wake(); });
+  scope.events.on('player_spawn', () => legs.wake());
   scope.events.on('round_end', () => { roundEnded = true; });
   scope.events.on('player_team', event => policy.event('teamJoin', event.getPlayerSlot('userid')));
   scope.events.on('grenade_thrown', event => policy.event('grenade', event.getPlayerSlot('userid'), { grenade: event.getString('weapon') }));
@@ -127,7 +128,7 @@ export function OnPluginStart(): void {
     const client = Clients.fromSlot(event.getPlayerSlot('userid'));
     if (client?.isValid()) pendingNames.set(client.slot, client);
   });
-  scope.server.onGameFrame(() => { if (mapActive) { legs.update(); updateNames(); } }, { phase: 'post' });
+  scope.server.onGameFrame(() => { if (mapActive) { legs.tick(); if (pendingNames.size) updateNames(); } }, { phase: 'post' });
   reconcileNames();
 }
 export function OnClientPutInServer(client: Client): void { legs.join(client); pendingNames.set(client.slot, client); }
