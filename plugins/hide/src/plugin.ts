@@ -26,9 +26,12 @@ interface Preference {
     pawn?: CCSPlayerPawnBase;
   };
 }
-interface Rule { entity: EntityRef; viewers: string; }
+// One rule per hidden pawn, keyed by entity index. `lo`/`hi` are the slots hidden from it (bits
+// 0-31 and 32-63), so an unchanged rule is two integer compares and builds nothing.
+interface Rule { entity: EntityRef; id: number; lo: number; hi: number; pass: number; }
 const preferences = new Map<number, Preference>();
-const rules = new Map<string, Rule>();
+const rules = new Map<number, Rule>();
+let pass = 0;
 const slots = Array.from({ length: 64 }, (_, slot) => slot);
 const reloadCommands = new Set(['css_hide_reload', 'hide_reload']);
 let settings: HideConfig;
@@ -152,6 +155,12 @@ function updateVisibility(): void {
     if (!state.client.isValid()) preferences.delete(slot);
     else if (state.pending && now >= state.retryAt) save(state);
   }
+  // Nobody is hiding and nothing is hidden: the usual frame. Skip the player pass entirely.
+  if (rules.size === 0) {
+    let anyone = false;
+    for (const state of preferences.values()) if (state.enabled) { anyone = true; break; }
+    if (!anyone) return;
+  }
   const players = Player.allConnected().map(player => {
     const client = Clients.fromSlot(player.slot);
     const state = client?.isValid() ? preference(client) : undefined;
@@ -160,36 +169,41 @@ function updateVisibility(): void {
       hiding: !!state?.enabled && player.connected === PlayerConnectedState.Connected && !isObserver(player, state),
     };
   });
-  const active = new Set<string>();
+  pass++;
+  const mode = settings.mode;
   for (const target of players) {
-    if (!target.pawn?.isValid()) continue;
-    const key = `${target.pawn.index}:${target.pawn.id}`;
-    const hidden = new Set<number>();
+    const pawn = target.pawn;
+    if (!pawn?.isValid()) continue;
+    let lo = 0, hi = 0;
     for (const viewer of players) {
       if (!viewer.hiding || viewer.slot === target.slot) continue;
-      if (settings.mode === '@all' ||
-          (settings.mode === '@team' && viewer.team === target.team) ||
-          (settings.mode === '@enemy' && viewer.team !== target.team)) {
-        hidden.add(viewer.slot);
+      if (mode === '@all' ||
+          (mode === '@team' && viewer.team === target.team) ||
+          (mode === '@enemy' && viewer.team !== target.team)) {
+        if (viewer.slot < 32) lo |= 1 << viewer.slot; else hi |= 1 << (viewer.slot - 32);
       }
     }
-    if (hidden.size === 0) continue;
-    active.add(key);
+    if (lo === 0 && hi === 0) continue;
+    const rule = rules.get(pawn.index);
+    if (rule && rule.id === pawn.id) {
+      rule.pass = pass;
+      if (rule.lo === lo && rule.hi === hi) continue;
+    }
     // Unoccupied slots remain allowed; joining clients start with hiding off.
-    const viewers = slots.filter(slot => !hidden.has(slot));
-    const signature = viewers.join(',');
-    if (rules.get(key)?.viewers === signature) continue;
-    if (Transmit.setVisibleTo(target.pawn, viewers)) {
-      rules.set(key, { entity: target.pawn, viewers: signature });
+    const viewers = slots.filter(slot => ((slot < 32 ? lo >>> slot : hi >>> (slot - 32)) & 1) === 0);
+    if (Transmit.setVisibleTo(pawn, viewers)) {
+      // A new entity at a reused index: the old entity's rule goes with it.
+      if (rule && rule.id !== pawn.id) Transmit.reset(rule.entity);
+      rules.set(pawn.index, { entity: pawn, id: pawn.id, lo, hi, pass });
     } else if (!visibilityWarning) {
       console.log('[HidePlayers] Could not apply a transmit rule. Check the s2script transmit capability and server gamedata. Retrying.');
       visibilityWarning = true;
     }
   }
-  for (const [key, rule] of rules) {
-    if (!active.has(key)) {
+  for (const [index, rule] of rules) {
+    if (rule.pass !== pass) {
       Transmit.reset(rule.entity);
-      rules.delete(key);
+      rules.delete(index);
     }
   }
 }
